@@ -1,6 +1,5 @@
 #pragma once
 #include <JuceHeader.h>
-#include <cmath>
 
 //此处放置所有模块都需要用到的常量定义
 static constexpr int bufferSize{ 1024 };
@@ -21,7 +20,3 @@ static constexpr const char* UICacheId{"UICacheId"};
 static constexpr const char* AudioArrayId{"AudioArrayId"};//用来存储音频数组,因为数组不能直接交给APVTS管理
 static constexpr const char* DIYArrayId{"DIYArrayId"};
 
-//这个函数支持中文字符显示
-inline juce::String U(const char* str) {
-    return juce::String::fromUTF8(str);
-}
