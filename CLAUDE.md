@@ -1,0 +1,3 @@
+# Junk-Fusion音乐播放器项目
+
+这是一个以juce做UI和音频引擎，FFmpeg做编码层，onnx runtime做AI推理层，spdlog做日志分析的音乐播放器项目
