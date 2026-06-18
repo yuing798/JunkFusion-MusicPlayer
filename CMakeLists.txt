@@ -36,6 +36,8 @@ target_sources(JunkFusion
         # AiProcessManager.cpp
         # DatabaseManager.cpp
 )
+add_subdirectory(UIDesign)
+add_subdirectory(Utils)
 
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
@@ -75,3 +77,5 @@ target_link_libraries(JunkFusion
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+juce_generate_juce_header(JunkFusion)
