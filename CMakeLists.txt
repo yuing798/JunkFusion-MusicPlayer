@@ -14,6 +14,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
+if (MSVC)
+    # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
+    add_compile_options(/utf-8)
+endif()
+
 # ==============================================================================
 # 2. 定义 GUI App 目标
 # ==============================================================================
@@ -61,6 +66,9 @@ target_compile_definitions(JunkFusion
 # ==============================================================================
 target_link_libraries(JunkFusion
     PRIVATE
+        # --- 项目内部库 ---
+        # JunkFusionBinaryData
+
         # --- JUCE 官方音频与 UI 模块 ---
         juce::juce_audio_utils       # 包含底层声卡设备管理
         juce::juce_audio_processors  # 包含 AudioProcessorGraph 和 VST 宿主类!

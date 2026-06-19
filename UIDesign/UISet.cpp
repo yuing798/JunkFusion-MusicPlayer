@@ -11,6 +11,8 @@ YLookAndFeel::YLookAndFeel(){
     setColour(juce::PopupMenu::textColourId, ycolor.black);
     setColour(juce::PopupMenu::highlightedBackgroundColourId, ycolor.drakGrey);
     setColour(juce::PopupMenu::highlightedTextColourId, ycolor.black);
+
+    // customTypeface = juce::Typeface::findSystemTypeface();
 }
 
 juce::Font YLookAndFeel::getComboBoxFont(juce::ComboBox& box){

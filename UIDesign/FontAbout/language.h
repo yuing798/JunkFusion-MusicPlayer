@@ -1,5 +1,4 @@
 #pragma once
-#include "font.h"
 #include "juce_core/juce_core.h"
 
 // ── 曲库浏览 ──

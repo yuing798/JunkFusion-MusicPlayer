@@ -3,3 +3,5 @@ target_sources(JunkFusion PRIVATE
     UISet.cpp
     LeftSelectedComponent.cpp
 )
+
+add_subdirectory(FontAbout)
