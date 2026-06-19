@@ -18,7 +18,9 @@ struct selectedButton : public juce::TextButton{//这个按钮点击了颜色会
         bool shouldDrawButtonAsDown) override;
 };
 
-class LeftSelectedComponent : public juce::Component{
+class LeftSelectedComponent : public juce::Component,
+                               public juce::Button::Listener
+{
 
 //这个是滑动窗口里面的内容，还没有和外层的侧边栏绑定
 private:
@@ -49,6 +51,9 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
     size_t height = 0;
+
+    void buttonClicked(juce::Button* button) override;
+    void updateMainPage();//根据选择的按钮渲染不同的页面
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LeftSelectedComponent);
 };

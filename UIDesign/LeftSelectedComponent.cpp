@@ -40,8 +40,9 @@ void selectedButton::paintButton (juce::Graphics& g,
 LeftSelectedComponent::LeftSelectedComponent()
 {
     for(auto& button : buttons){
+        button.addListener(this);//注册监听，实现单选逻辑
         addAndMakeVisible(button);
-    }   
+    }
 
     for(auto& label : labelArray){
         addAndMakeVisible(label);
@@ -110,6 +111,44 @@ void LeftSelectedComponent::paint(juce::Graphics& g){
         g.strokePath(path, PathStrokeType(5.0f));
     }
 
+}
+
+void LeftSelectedComponent::buttonClicked(juce::Button* clickedButton)
+{
+    // 如果当前点击的按钮被关闭了（toggleState == false），不允许取消选中
+    // 保证始终有一个按钮处于选中状态（收音机行为）
+    if (!clickedButton->getToggleState())
+    {
+        clickedButton->setToggleState(true, juce::dontSendNotification);
+        return;
+    }
+
+    // 关闭其他所有按钮，只保留当前点击的按钮
+    for (auto& button : buttons)
+    {
+        if (&button != clickedButton)
+        {
+            button.setToggleState(false, juce::dontSendNotification);
+        }
+    }
+
+    updateMainPage();
+}
+
+void LeftSelectedComponent::updateMainPage()
+{
+    // 遍历找到当前选中的按钮，根据选中项渲染对应页面
+    for (size_t i = 0; i < buttons.size(); ++i)
+    {
+        if (buttons[i].getToggleState())
+        {
+            // 此处后续根据 i 的值决定主页面显示内容
+            // 0=所有音乐  1=我喜欢    2=最近播放
+            // 3=作者      4=专辑      5=歌单      6=风格
+            // 7=AI助手    8=效果器    9=均衡器    10=音箱阵列  11=设置
+            break;
+        }
+    }
 }
 
 LeftComponent::LeftComponent(){
