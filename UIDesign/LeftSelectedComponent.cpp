@@ -95,7 +95,7 @@ void LeftSelectedComponent::resized()
     for(int i = 7; i < buttons.size(); i++){
         buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
     }
-
+    height = 5 * 3 + 24 * labelArray.size() + 32 * buttons.size();
 }
 
 void LeftSelectedComponent::paint(juce::Graphics& g){
@@ -107,4 +107,13 @@ void LeftSelectedComponent::paint(juce::Graphics& g){
     g.strokePath(*paths[1], juce::PathStrokeType (3.0f));
     g.strokePath(*paths[2], juce::PathStrokeType (3.0f));
 
+}
+
+LeftSComponent::LeftSComponent(){
+    mLeftSelectedComponent.setSize(getLocalBounds().getWidth(), mLeftSelectedComponent.height);
+    mViewPort.setViewedComponent(&mLeftSelectedComponent);
+    
+    // 参数：显示垂直滚动条，隐藏水平滚动条
+    mViewPort.setScrollBarsShown(true, false, true, false);
+    addAndMakeVisible(mViewPort);
 }
