@@ -28,7 +28,7 @@ private:
     //==============================================================================
     // Your private member variables go here...
     YLookAndFeel mLook;
-    LeftSelectedComponent mLeftSelectedComponent;
+    LeftComponent mLeftComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

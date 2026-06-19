@@ -5,8 +5,8 @@
 MainComponent::MainComponent()
 {
     setLookAndFeel(&mLook);
-    addAndMakeVisible(mLeftSelectedComponent);
-    setSize (600, 400);
+    addAndMakeVisible(mLeftComponent);
+    setSize (1400, 700);
 }
 
 //==============================================================================
@@ -21,7 +21,7 @@ void MainComponent::resized()
     auto local = getLocalBounds();
     auto height = local.getHeight();
     auto width = local.getWidth();
-    mLeftSelectedComponent.setBounds(local.removeFromLeft(180));
+    mLeftComponent.setBounds(local.removeFromLeft(180));
 }
 MainComponent::~MainComponent(){
     setLookAndFeel(nullptr);

@@ -65,12 +65,17 @@ LeftSelectedComponent::LeftSelectedComponent()
     for(auto& label : labelArray){
         addAndMakeVisible(label);
     }
-    juce::Path path1;
-    juce::Path path2;
-    juce::Path path3;
-    paths.add(&path1);
-    paths.add(&path2);
-    paths.add(&path3);
+    paths.emplace_back();
+    paths.emplace_back();
+    paths.emplace_back();
+
+    height = 5 * 3 + 24 * labelArray.size() + 32 * buttons.size();
+}
+
+LeftSelectedComponent::~LeftSelectedComponent(){
+    // 关键：释放数组但不 delete 元素，因为元素是成员变量，由编译器管理生命周期
+    buttons.clear(false);
+    labelArray.clear(false);
 }
 
 void LeftSelectedComponent::resized()
@@ -78,24 +83,24 @@ void LeftSelectedComponent::resized()
     auto local = getLocalBounds();
     // auto width = local.getWidth();
     labelArray[0]->setBounds(local.removeFromTop(24));
-    paths[0]->startNewSubPath(0,local.getY());
+    paths[0].startNewSubPath(0,local.getY());
     local.removeFromTop(5);
     for(int i = 0; i < 3; i++){
         buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
     }
     labelArray[1]->setBounds(local.removeFromTop(24));
-    paths[1]->startNewSubPath(0,local.getY());
+    paths[1].startNewSubPath(0,local.getY());
     local.removeFromTop(5);
     for(int i = 3; i < 7; i++){
         buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
     }
     labelArray[2]->setBounds(local.removeFromTop(24));
-    paths[2]->startNewSubPath(0,local.getY());
+    paths[2].startNewSubPath(0,local.getY());
     local.removeFromTop(5);
     for(int i = 7; i < buttons.size(); i++){
         buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
     }
-    height = 5 * 3 + 24 * labelArray.size() + 32 * buttons.size();
+    
 }
 
 void LeftSelectedComponent::paint(juce::Graphics& g){
@@ -103,17 +108,26 @@ void LeftSelectedComponent::paint(juce::Graphics& g){
     g.fillAll();
 
     g.setColour(ycolor.midGrey);
-    g.strokePath(*paths[0], juce::PathStrokeType (3.0f));
-    g.strokePath(*paths[1], juce::PathStrokeType (3.0f));
-    g.strokePath(*paths[2], juce::PathStrokeType (3.0f));
+    g.strokePath(paths[0], juce::PathStrokeType (3.0f));
+    g.strokePath(paths[1], juce::PathStrokeType (3.0f));
+    g.strokePath(paths[2], juce::PathStrokeType (3.0f));
 
 }
 
-LeftSComponent::LeftSComponent(){
-    mLeftSelectedComponent.setSize(getLocalBounds().getWidth(), mLeftSelectedComponent.height);
+LeftComponent::LeftComponent(){
     mViewPort.setViewedComponent(&mLeftSelectedComponent);
-    
+
     // 参数：显示垂直滚动条，隐藏水平滚动条
     mViewPort.setScrollBarsShown(true, false, true, false);
     addAndMakeVisible(mViewPort);
+}
+
+void LeftComponent::resized(){
+    mViewPort.setBounds(getLocalBounds());
+    mLeftSelectedComponent.setSize(getWidth(), mLeftSelectedComponent.height);
+}
+
+void LeftComponent::paint(juce::Graphics& g){
+    g.setColour(ycolor.shallowGrey);
+    g.fillAll();
 }
