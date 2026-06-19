@@ -14,6 +14,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
+find_package(SQLiteCpp REQUIRED)
+
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
     add_compile_options(/utf-8)
@@ -77,7 +79,7 @@ target_link_libraries(JunkFusion
         
         # --- 未来第三方库的占位符
         # FFmpeg::avcodec FFmpeg::avformat FFmpeg::avutil FFmpeg::swresample
-        # SQLite::SQLite3
+        SQLiteCpp
         # ONNX::onnxruntime
 
     PUBLIC

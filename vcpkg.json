@@ -5,6 +5,7 @@
   "dependencies": [
     
     "ffmpeg",
-    "spdlog"    
+    "spdlog",
+    "sqlitecpp"    
   ]
 }
