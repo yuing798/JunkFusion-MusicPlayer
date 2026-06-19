@@ -40,7 +40,7 @@ struct YLookAndFeel : public juce::LookAndFeel_V4{
         float sliderPos, float minSliderPos, float maxSliderPos,
         const juce::Slider::SliderStyle style, juce::Slider& slider) override;
 
-    // juce::Typeface::Ptr getTypefaceForFont (const juce::Font& font) override;//重写字体
+    juce::Typeface::Ptr getTypefaceForFont (const juce::Font& font) override;//重写字体
 
 private:
     // juce::Typeface::Ptr customTypeface; // 用于存储全局字体的指针

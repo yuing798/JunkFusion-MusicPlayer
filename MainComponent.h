@@ -4,6 +4,7 @@
 // directly. If you need to remain compatible with Projucer-generated builds, and
 // have called `juce_generate_juce_header(<thisTarget>)` in your CMakeLists.txt,
 // you could `#include <JuceHeader.h>` here instead, to make all your module headers visible.
+#include "UISet.h"
 #include <juce_gui_extra/juce_gui_extra.h>
 
 //==============================================================================
@@ -16,6 +17,7 @@ class MainComponent final : public juce::Component
 public:
     //==============================================================================
     MainComponent();
+    ~MainComponent();
 
     //==============================================================================
     void paint (juce::Graphics&) override;
@@ -24,6 +26,7 @@ public:
 private:
     //==============================================================================
     // Your private member variables go here...
+    YLookAndFeel mLook;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

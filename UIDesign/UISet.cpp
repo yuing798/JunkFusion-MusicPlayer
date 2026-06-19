@@ -15,6 +15,17 @@ YLookAndFeel::YLookAndFeel(){
     // customTypeface = juce::Typeface::findSystemTypeface();
 }
 
+juce::Typeface::Ptr YLookAndFeel::getTypefaceForFont (const juce::Font& font){
+    // 用 static 确保整个生命周期内只调用一次 findSystemTypeface()
+    static auto systemUIFace = juce::Typeface::findSystemTypeface();
+
+    if (systemUIFace != nullptr)
+        return systemUIFace;
+
+    // 如果获取失败（极罕见），回退到 JUCE 默认字体
+    return LookAndFeel_V4::getTypefaceForFont (font);
+}
+
 juce::Font YLookAndFeel::getComboBoxFont(juce::ComboBox& box){
     return juce::Font (juce::FontOptions().withHeight (16.0f));
 }
