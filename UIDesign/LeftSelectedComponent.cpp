@@ -39,66 +39,45 @@ void selectedButton::paintButton (juce::Graphics& g,
 
 LeftSelectedComponent::LeftSelectedComponent()
 {
-    // 将所有按钮指针加入 vector
-    buttons.add(&allMusic);
-    buttons.add(&myLike);
-    buttons.add(&recentPlay);
-    buttons.add(&artist);
-    buttons.add(&album);
-    buttons.add(&playlist);
-    buttons.add(&genre);
-    buttons.add(&aiAssistant);
-    buttons.add(&effects);
-    buttons.add(&equalizer);
-    buttons.add(&speakerArray);
-    buttons.add(&settings);
-    // buttons.add(&);
+
+
 
     for(auto& button : buttons){
         addAndMakeVisible(button);
     }
 
-    labelArray.add(&musicLibraryBrowse);
-    labelArray.add(&categoryBrowse);
-    labelArray.add(&featureSection);
-
     for(auto& label : labelArray){
         addAndMakeVisible(label);
     }
-    paths.emplace_back();
-    paths.emplace_back();
-    paths.emplace_back();
 
     height = 5 * 3 + 24 * labelArray.size() + 32 * buttons.size();
 }
 
 LeftSelectedComponent::~LeftSelectedComponent(){
-    // 关键：释放数组但不 delete 元素，因为元素是成员变量，由编译器管理生命周期
-    buttons.clear(false);
-    labelArray.clear(false);
+
 }
 
 void LeftSelectedComponent::resized()
 {
     auto local = getLocalBounds();
     // auto width = local.getWidth();
-    labelArray[0]->setBounds(local.removeFromTop(24));
+    labelArray[0].setBounds(local.removeFromTop(24));
     paths[0].startNewSubPath(0,local.getY());
     local.removeFromTop(5);
     for(int i = 0; i < 3; i++){
-        buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
+        buttons[i].setBounds(local.removeFromTop(32).reduced(3));
     }
-    labelArray[1]->setBounds(local.removeFromTop(24));
+    labelArray[1].setBounds(local.removeFromTop(24));
     paths[1].startNewSubPath(0,local.getY());
     local.removeFromTop(5);
     for(int i = 3; i < 7; i++){
-        buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
+        buttons[i].setBounds(local.removeFromTop(32).reduced(3));
     }
-    labelArray[2]->setBounds(local.removeFromTop(24));
+    labelArray[2].setBounds(local.removeFromTop(24));
     paths[2].startNewSubPath(0,local.getY());
     local.removeFromTop(5);
     for(int i = 7; i < buttons.size(); i++){
-        buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
+        buttons[i].setBounds(local.removeFromTop(32).reduced(3));
     }
     
 }
@@ -115,7 +94,7 @@ void LeftSelectedComponent::paint(juce::Graphics& g){
 }
 
 LeftComponent::LeftComponent(){
-    mViewPort.setViewedComponent(&mLeftSelectedComponent);
+    mViewPort.setViewedComponent(&mLeftSelectedComponent,false);
 
     // 参数：显示垂直滚动条，隐藏水平滚动条
     mViewPort.setScrollBarsShown(true, false, true, false);

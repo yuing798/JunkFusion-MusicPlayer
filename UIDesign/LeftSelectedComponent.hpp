@@ -6,6 +6,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -20,30 +21,26 @@ class LeftSelectedComponent : public juce::Component{
 
 //这个是滑动窗口里面的内容，还没有和外层的侧边栏绑定
 private:
-    juce::OwnedArray<selectedButton> buttons;
-    juce::OwnedArray<YLabel> labelArray;
-    std::vector<juce::Path> paths;
-
-    // ── 曲库浏览 ──
-    YLabel musicLibraryBrowse{U(musicLibraryBrowseID)};
-    selectedButton allMusic           {U(allMusicID)};
-    selectedButton myLike             {U(myLikeID)};
-    selectedButton recentPlay         {U(recentPlayID)};
-
-    // ── 分类浏览 ──
-    YLabel categoryBrowse{U(categoryBrowseID)};
-    selectedButton artist        {U(artistID)};
-    selectedButton album         {U(albumID)};
-    selectedButton playlist      {U(playlistID)};
-    selectedButton genre         {U(genreID)};
-
-    // ── 功能板块 ──
-    YLabel featureSection{U(featureSectionID)};
-    selectedButton aiAssistant   {U(aiAssistantID)};
-    selectedButton effects       {U(effectsID)};
-    selectedButton equalizer     {U(equalizerID)};
-    selectedButton speakerArray  {U(speakerArrayID)};
-    selectedButton settings      {U(settingsID)};
+    std::array<selectedButton, 12> buttons{
+        selectedButton(U(allMusicID)),
+        selectedButton(U(myLikeID)),
+        selectedButton(U(recentPlayID)),
+        selectedButton(U(artistID)),
+        selectedButton(U(albumID)),
+        selectedButton(U(playlistID)),
+        selectedButton(U(genreID)),
+        selectedButton(U(aiAssistantID)),
+        selectedButton(U(effectsID)),
+        selectedButton(U(equalizerID)),
+        selectedButton(U(speakerArrayID)),
+        selectedButton(U(settingsID))
+    };//UI组件是不可拷贝且不可移动的，所以不能直接把实例塞入vector中
+    std::array<YLabel,3> labelArray{
+        YLabel(U(musicLibraryBrowseID)),
+        YLabel(U(categoryBrowseID)),
+        YLabel(U(featureSectionID))
+    };
+    std::array<juce::Path,3> paths;   
 
 public:
     LeftSelectedComponent();
