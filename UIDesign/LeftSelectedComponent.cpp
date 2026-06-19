@@ -39,18 +39,15 @@ void selectedButton::paintButton (juce::Graphics& g,
 
 LeftSelectedComponent::LeftSelectedComponent()
 {
-
-
-
     for(auto& button : buttons){
         addAndMakeVisible(button);
-    }
+    }   
 
     for(auto& label : labelArray){
         addAndMakeVisible(label);
     }
 
-    height = 5 * 3 + 24 * labelArray.size() + 32 * buttons.size();
+    height = (10+50+10)*3+40*buttons.size();
 }
 
 LeftSelectedComponent::~LeftSelectedComponent(){
@@ -60,24 +57,46 @@ LeftSelectedComponent::~LeftSelectedComponent(){
 void LeftSelectedComponent::resized()
 {
     auto local = getLocalBounds();
-    // auto width = local.getWidth();
-    labelArray[0].setBounds(local.removeFromTop(24));
+    auto width = local.getWidth();
+
+    local.removeFromTop(10);
     paths[0].startNewSubPath(0,local.getY());
-    local.removeFromTop(5);
-    for(int i = 0; i < 3; i++){
-        buttons[i].setBounds(local.removeFromTop(32).reduced(3));
-    }
-    labelArray[1].setBounds(local.removeFromTop(24));
+    paths[0].lineTo(width,local.getY());
+    paths[0].closeSubPath();
+    labelArray[0].setBounds(local.removeFromTop(50));
     paths[1].startNewSubPath(0,local.getY());
-    local.removeFromTop(5);
-    for(int i = 3; i < 7; i++){
-        buttons[i].setBounds(local.removeFromTop(32).reduced(3));
+    paths[1].lineTo(width,local.getY());
+    paths[1].closeSubPath();
+
+    local.removeFromTop(10);
+    for(size_t i = 0; i < 3; i++){
+        buttons[i].setBounds(local.removeFromTop(40).reduced(3));
     }
-    labelArray[2].setBounds(local.removeFromTop(24));
+
+    local.removeFromTop(10);
     paths[2].startNewSubPath(0,local.getY());
-    local.removeFromTop(5);
-    for(int i = 7; i < buttons.size(); i++){
-        buttons[i].setBounds(local.removeFromTop(32).reduced(3));
+    paths[2].lineTo(width,local.getY());
+    paths[2].closeSubPath();
+    labelArray[1].setBounds(local.removeFromTop(50));
+    paths[3].startNewSubPath(0,local.getY());
+    paths[3].lineTo(width,local.getY());
+    paths[3].closeSubPath();
+    local.removeFromTop(10);
+    for(size_t i = 3; i < 7; i++){
+        buttons[i].setBounds(local.removeFromTop(40).reduced(3));
+    }
+
+    local.removeFromTop(10);
+    paths[4].startNewSubPath(0,local.getY());
+    paths[4].lineTo(width,local.getY());
+    paths[4].closeSubPath();
+    labelArray[2].setBounds(local.removeFromTop(50));
+    paths[5].startNewSubPath(0,local.getY());
+    paths[5].lineTo(width,local.getY());
+    paths[5].closeSubPath();
+    local.removeFromTop(10);
+    for(size_t i = 7; i < buttons.size(); i++){
+        buttons[i].setBounds(local.removeFromTop(40).reduced(3));
     }
     
 }
@@ -87,9 +106,9 @@ void LeftSelectedComponent::paint(juce::Graphics& g){
     g.fillAll();
 
     g.setColour(ycolor.midGrey);
-    g.strokePath(paths[0], juce::PathStrokeType (3.0f));
-    g.strokePath(paths[1], juce::PathStrokeType (3.0f));
-    g.strokePath(paths[2], juce::PathStrokeType (3.0f));
+    for(auto& path : paths){
+        g.strokePath(path, PathStrokeType(5.0f));
+    }
 
 }
 
