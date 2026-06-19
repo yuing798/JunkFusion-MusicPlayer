@@ -11,11 +11,12 @@
 struct YColor{
     juce::Colour black = juce::Colours::black;
     juce::Colour shallowGrey {0xfff0eded};//"#f0eded"
-    juce::Colour midGrey {0xff9c9999};//"#9c9999"
-    juce::Colour drakGrey {0xff5d5d5d};//"#5d5d5d"
+    juce::Colour midGrey {0xffc2bfbf};//"#c2bfbf"
+    juce::Colour drakGrey {0xff909090};//"#909090"
     juce::Colour white = juce::Colours::white;
     juce::Colour greyBlue {0xff6e75dd};//"#6e75dd"
     juce::Colour greyGreen {0xff33c4de};//"#33c4de"
+    juce::Colour transparent {0x00000000};//"#000000"
     //注意juce的透明度要放在首位
 };
 
@@ -92,5 +93,9 @@ struct plusAndMinusButton{
 };//因为加减号按钮肯定是成对出现的
 
 struct noneButton : public juce::ToggleButton{//这个按钮只允许点击，没其他用处了，在UI界面什么都不显示
+    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+};
+
+struct transparentButton : public juce::ToggleButton{
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };

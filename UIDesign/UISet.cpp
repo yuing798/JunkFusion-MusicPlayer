@@ -335,3 +335,18 @@ void minusButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlig
 void noneButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
 
 }
+
+void transparentButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+    
+    
+
+    if(getToggleState()){
+        g.setColour(ycolor.greyBlue);
+        g.fillAll();
+    }else{
+        g.setColour(ycolor.transparent);
+        g.fillAll();
+        g.setColour(ycolor.midGrey);
+        if(shouldDrawButtonAsHighlighted) g.fillAll();
+    }
+}
