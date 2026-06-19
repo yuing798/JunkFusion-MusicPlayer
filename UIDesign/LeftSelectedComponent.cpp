@@ -3,6 +3,8 @@
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <cstddef>
+#include <type_traits>
 
 selectedButton::selectedButton(juce::String initText){
     setButtonText(initText);
@@ -34,60 +36,75 @@ void selectedButton::paintButton (juce::Graphics& g,
 
     g.drawText (getButtonText(), local, juce::Justification::centred, true);
 }
+
 LeftSelectedComponent::LeftSelectedComponent()
 {
     // 将所有按钮指针加入 vector
-    buttons = {
-        // &musicLibraryBrowse,
-        &allMusic,
-        &myLike,
-        &recentPlay,
-        // &categoryBrowse,
-        &artist,
-        &album,
-        &playlist,
-        &genre,
-        // &featureSection,
-        &aiAssistant,
-        &effects,
-        &equalizer,
-        &speakerArray,
-        &settings
-    };
+    buttons.add(&allMusic);
+    buttons.add(&myLike);
+    buttons.add(&recentPlay);
+    buttons.add(&artist);
+    buttons.add(&album);
+    buttons.add(&playlist);
+    buttons.add(&genre);
+    buttons.add(&aiAssistant);
+    buttons.add(&effects);
+    buttons.add(&equalizer);
+    buttons.add(&speakerArray);
+    buttons.add(&settings);
+    // buttons.add(&);
 
-    // 将按钮添加到内容组件并设为可见
-    for (auto* btn : buttons)
-    {
-        mContentComponent.addAndMakeVisible(btn);
+    for(auto& button : buttons){
+        addAndMakeVisible(button);
     }
 
-    // 设置 Viewport：垂直可滚动，水平不滚动
-    mViewPort.setViewedComponent(&mContentComponent, false);
-    mViewPort.setScrollBarsShown(true, false);
-    addAndMakeVisible(mViewPort);
+    labelArray.add(&musicLibraryBrowse);
+    labelArray.add(&categoryBrowse);
+    labelArray.add(&featureSection);
 
-    // 设置内容组件初始尺寸（按钮纵向排列）
-    const int buttonHeight = 32;
-    const int contentWidth  = 200;
-    mContentComponent.setSize(contentWidth,
-                              static_cast<int>(buttons.size()) * buttonHeight);
+    for(auto& label : labelArray){
+        addAndMakeVisible(label);
+    }
+    juce::Path path1;
+    juce::Path path2;
+    juce::Path path3;
+    paths.add(&path1);
+    paths.add(&path2);
+    paths.add(&path3);
 }
 
 void LeftSelectedComponent::resized()
 {
-    auto area = getLocalBounds();
-    mViewPort.setBounds(area);
-
-    const int buttonHeight = 32;
-    auto contentArea = mContentComponent.getLocalBounds();
-
-    for (auto* btn : buttons)
-    {
-        btn->setBounds(contentArea.removeFromTop(buttonHeight));
+    auto local = getLocalBounds();
+    // auto width = local.getWidth();
+    labelArray[0]->setBounds(local.removeFromTop(24));
+    paths[0]->startNewSubPath(0,local.getY());
+    local.removeFromTop(5);
+    for(int i = 0; i < 3; i++){
+        buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
     }
+    labelArray[1]->setBounds(local.removeFromTop(24));
+    paths[1]->startNewSubPath(0,local.getY());
+    local.removeFromTop(5);
+    for(int i = 3; i < 7; i++){
+        buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
+    }
+    labelArray[2]->setBounds(local.removeFromTop(24));
+    paths[2]->startNewSubPath(0,local.getY());
+    local.removeFromTop(5);
+    for(int i = 7; i < buttons.size(); i++){
+        buttons[i]->setBounds(local.removeFromTop(32).reduced(3));
+    }
+
 }
 
 void LeftSelectedComponent::paint(juce::Graphics& g){
-    g.setColour(ycolor.shallowGrey);
+    g.setColour(ycolor.transparent);
     g.fillAll();
+
+    g.setColour(ycolor.midGrey);
+    g.strokePath(*paths[0], juce::PathStrokeType (3.0f));
+    g.strokePath(*paths[1], juce::PathStrokeType (3.0f));
+    g.strokePath(*paths[2], juce::PathStrokeType (3.0f));
+
 }
