@@ -10,10 +10,11 @@
 
 struct YColor{
     juce::Colour black = juce::Colours::black;
-    juce::Colour shallowGrey {0xfff0eded};//"#f0eded"
-    juce::Colour midGrey {0xffc2bfbf};//"#c2bfbf"
-    juce::Colour drakGrey {0xff909090};//"#909090"
-    juce::Colour white = juce::Colours::white;
+    juce::Colour white {0xfff0eded};//"#f0eded"这个不是纯白色，因为纯白色太亮了
+    juce::Colour shallowGrey {0xffd8d6d6};//"#d8d6d6"
+    juce::Colour midGrey {0xffc5c3c3};//"#c5c3c3"
+    juce::Colour darkGrey{0xff575656};//"#999898"
+    juce::Colour blackGrey{0xff706f6f};//"#706f6f"
     juce::Colour greyBlue {0xff6e75dd};//"#6e75dd"
     juce::Colour greyGreen {0xff33c4de};//"#33c4de"
     juce::Colour transparent {0x00000000};//"#000000"
@@ -78,7 +79,7 @@ struct verticalSlider : public juce::Slider{
 };
 
 struct yTextButton : public juce::TextButton{
-    yTextButton(juce::String initText);
+    yTextButton(juce::String initText,bool shouldBeToggle = true);
 };
 
 struct yComboBox : public juce::ComboBox{
@@ -101,6 +102,11 @@ struct noneButton : public juce::ToggleButton{//这个按钮只允许点击，�
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
 
-struct transparentButton : public juce::ToggleButton{
-    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
-};
+// struct transparentButton : public juce::ToggleButton{
+//     transparentButton(juce::String text);
+//     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+// };
+
+// struct unchangeButton : transparentButton{
+// //这个按钮点击了不会发生文字翻转
+// };

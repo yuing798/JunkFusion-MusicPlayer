@@ -9,7 +9,7 @@ YColor ycolor;
 YLookAndFeel::YLookAndFeel(){
     setColour(juce::PopupMenu::backgroundColourId,ycolor.midGrey);
     setColour(juce::PopupMenu::textColourId, ycolor.black);
-    setColour(juce::PopupMenu::highlightedBackgroundColourId, ycolor.drakGrey);
+    setColour(juce::PopupMenu::highlightedBackgroundColourId, ycolor.darkGrey);
     setColour(juce::PopupMenu::highlightedTextColourId, ycolor.black);
 
     // customTypeface = juce::Typeface::findSystemTypeface();
@@ -125,7 +125,7 @@ void YLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width,
     g.fillPath (pointer);
 
     // 给指针加一个细黑边，使其更有立体感
-    g.setColour (ycolor.drakGrey);
+    g.setColour (ycolor.darkGrey);
     g.strokePath (pointer, juce::PathStrokeType (1.0f));
 }
 
@@ -192,7 +192,7 @@ void YLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int width,
         );
         hadWalkedPath.closeSubPath();
     }
-    g.setColour(ycolor.drakGrey);
+    g.setColour(ycolor.darkGrey);
     g.fillPath(hadWalkedPath);
 }
 
@@ -218,7 +218,7 @@ void PlayStopButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHigh
 
     g.setColour(ycolor.midGrey);
     if(shouldDrawButtonAsHighlighted) g.fillAll();
-    g.setColour(ycolor.drakGrey);
+    g.setColour(ycolor.darkGrey);
     if(shouldDrawButtonAsDown) g.fillAll();
 
     // 1. 获取按钮区域，并向内缩进一点，防止图形贴边
@@ -263,14 +263,24 @@ verticalSlider::verticalSlider(){
     setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
 }
 
-yTextButton::yTextButton(juce::String initText)
+yTextButton::yTextButton(juce::String initText,bool shouldBeToggle)
 {
+    setToggleState (shouldBeToggle, juce::dontSendNotification);
+
     
-    setColour(juce::TextButton::buttonColourId, ycolor.midGrey);
-    setColour(juce::TextButton::buttonOnColourId, ycolor.midGrey);
+    setColour(juce::TextButton::buttonColourId, ycolor.transparent);
+    setColour(juce::TextButton::buttonOnColourId, ycolor.darkGrey);
     setColour(juce::TextButton::textColourOffId, ycolor.black);
     setColour(juce::TextButton::textColourOnId, ycolor.black);
     setButtonText(initText);
+
+    if(!getToggleState()){
+        //只有在off状态才改变颜色
+        if(isOver()){
+            setColour(juce::TextButton::buttonColourId, ycolor.midGrey);
+        }
+    }
+    
 }
 
 yComboBox::yComboBox(){
@@ -284,7 +294,7 @@ void plusButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighligh
 
     g.setColour(ycolor.midGrey);
     if(shouldDrawButtonAsHighlighted) g.fillAll();
-    g.setColour(ycolor.drakGrey);
+    g.setColour(ycolor.darkGrey);
     if(shouldDrawButtonAsDown) g.fillAll();
 
     auto local = getLocalBounds().reduced(getWidth() / 4.0f);
@@ -316,7 +326,7 @@ void minusButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlig
 
     g.setColour(ycolor.midGrey);
     if(shouldDrawButtonAsHighlighted) g.fillAll();
-    g.setColour(ycolor.drakGrey);
+    g.setColour(ycolor.darkGrey);
     if(shouldDrawButtonAsDown) g.fillAll();
 
     auto local = getLocalBounds().reduced(getWidth() / 4.0f);
@@ -349,17 +359,23 @@ void noneButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighligh
 
 }
 
-void transparentButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+// transparentButton::transparentButton(juce::String text){
+//     setButtonText(text);
+// }
+
+// void transparentButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
     
     
 
-    if(getToggleState()){
-        g.setColour(ycolor.greyBlue);
-        g.fillAll();
-    }else{
-        g.setColour(ycolor.transparent);
-        g.fillAll();
-        g.setColour(ycolor.midGrey);
-        if(shouldDrawButtonAsHighlighted) g.fillAll();
-    }
-}
+//     if(getToggleState()){
+//         g.setColour(ycolor.greyBlue);
+//         g.fillAll();
+//     }else{
+//         g.setColour(ycolor.transparent);
+//         g.fillAll();
+//         g.setColour(ycolor.darkGrey);
+//         if(shouldDrawButtonAsHighlighted) g.fillAll();
+//     }
+//     g.setColour(ycolor.black);
+    
+// }
