@@ -77,7 +77,7 @@ target_link_libraries(JunkFusion
         juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
         juce::juce_gui_extra         # 包含高级 UI 组件
         
-        # --- 未来第三方库的占位符
+        # 第三方库
         # FFmpeg::avcodec FFmpeg::avformat FFmpeg::avutil FFmpeg::swresample
         SQLiteCpp
         # ONNX::onnxruntime

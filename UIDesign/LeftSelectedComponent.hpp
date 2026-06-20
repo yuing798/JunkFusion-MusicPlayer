@@ -53,7 +53,8 @@ public:
     size_t height = 0;
 
     void buttonClicked(juce::Button* button) override;
-    void updateMainPage();//根据选择的按钮渲染不同的页面
+    
+    static int onButtonID;//现在选择的按钮的ID
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LeftSelectedComponent);
 };
