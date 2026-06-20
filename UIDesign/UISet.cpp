@@ -401,32 +401,22 @@ svgButton::svgButton(const juce::String& buttonName,std::unique_ptr<juce::Drawab
 :juce::DrawableButton (buttonName, juce::DrawableButton::ImageFitted),
 svg(std::move(svg)){
 
-    if(svg) setImages(svg.get());
     setTooltip(buttonName);
 }
 
 void svgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
 
-    juce::Colour bgColour;
-    auto width = getLocalBounds().getWidth();
+    g.setColour(ycolor.shallowGrey); // 替换为你的颜色
+    auto bounds = getLocalBounds().toFloat();
+    auto width{bounds.getWidth()};
+    auto reducedWidth{width * (1.0f - 0.707f)};//因为图形是圆形的，所以需要把边缘削去一部分
+    g.fillRoundedRectangle(bounds, width / 2.0f);
 
-    if (shouldDrawButtonAsDown)
-    {
-        bgColour = ycolor.darkGrey;
-    }
-    else if (shouldDrawButtonAsHighlighted)
-    {
-        bgColour = ycolor.midGrey; 
-    }
-    else
-    {
-        bgColour = ycolor.shallowGrey;
-    }
 
-    g.setColour (bgColour);
-    g.fillRoundedRectangle (getLocalBounds().toFloat(), width / 2.0f); 
-
-    juce::DrawableButton::paintButton (g, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+    // 绘制 SVG，居中适应按钮区域
+    svg.get()->drawWithin(g, bounds.reduced(reducedWidth).reduced(1.0f),
+                            juce::RectanglePlacement::centred,
+                              1.0f);
 }
 
 doubleSvgButton::doubleSvgButton(const juce::String& name1,std::unique_ptr<juce::Drawable> svg1,

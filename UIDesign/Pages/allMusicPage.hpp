@@ -26,9 +26,16 @@ private:
     littleLabel numSongsLabel{U("共 0 首")};
     YLabel sortWayLabel{U("排列方法")};
     yComboBox sortWaysComboBox;
-    
+
     //搜索框
     juce::Viewport mViewPort;
+    doubleSvgButton upAndDownButton{
+        U("升序"),
+        juce::Drawable::createFromImageData(BinaryData::up_svg, BinaryData::up_svgSize),
+        U("降序"),
+        juce::Drawable::createFromImageData(BinaryData::down_svg, BinaryData::down_svgSize)
+    };
+    
 
 public:
 
