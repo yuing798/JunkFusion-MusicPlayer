@@ -23,6 +23,10 @@ private:
         U("刷新"),
         juce::Drawable::createFromImageData(BinaryData::refresh_svg, BinaryData::refresh_svgSize)
     };
+    littleLabel numSongsLabel{U("共 0 首")};
+    YLabel sortWayLabel{U("排列方法")};
+    yComboBox sortWaysComboBox;
+    
     //搜索框
     juce::Viewport mViewPort;
 

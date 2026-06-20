@@ -26,6 +26,31 @@ juce::Typeface::Ptr YLookAndFeel::getTypefaceForFont (const juce::Font& font){
     return LookAndFeel_V4::getTypefaceForFont (font);
 }
 
+void YLookAndFeel::drawTooltip (juce::Graphics& g, const juce::String& text, int width, int height){
+    auto bounds = juce::Rectangle<float> (0, 0, width,  height);
+    g.setColour (ycolor.midGrey);
+    g.fillRoundedRectangle (bounds, 5.0f); // 圆角背景
+
+    g.setColour(ycolor.greyBlue);
+    g.drawRoundedRectangle(
+        bounds.getX(),
+        bounds.getY(),
+        bounds.getWidth(),
+        bounds.getHeight(),
+        5.0f,
+        3.0f
+    );
+
+    g.setColour (ycolor.black);
+    g.setFont (15.0f);
+    g.drawFittedText (
+        text, 
+        bounds.reduced(5.0f).toNearestInt(), 
+        juce::Justification::centred, 
+        5
+    );
+}
+
 juce::Font YLookAndFeel::getComboBoxFont(juce::ComboBox& box){
     return juce::Font (juce::FontOptions().withHeight (16.0f));
 }

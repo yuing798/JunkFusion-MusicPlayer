@@ -3,7 +3,7 @@
 
 //==============================================================================
 MainComponent::MainComponent()
-{
+:tooltipWindow(this,400){
     setLookAndFeel(&mLook);
     addAndMakeVisible(mLeftComponent);
     setSize (1400, 700);

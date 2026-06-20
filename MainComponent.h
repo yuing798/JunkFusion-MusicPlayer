@@ -29,6 +29,7 @@ private:
     // Your private member variables go here...
     YLookAndFeel mLook;
     LeftComponent mLeftComponent;
+    juce::TooltipWindow tooltipWindow;//悬停说明
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -43,6 +43,8 @@ struct YLookAndFeel : public juce::LookAndFeel_V4{
 
     juce::Typeface::Ptr getTypefaceForFont (const juce::Font& font) override;//重写字体
 
+    void drawTooltip (juce::Graphics& g, const juce::String& text, int width, int height) override;//重写提示悬浮窗外观
+
 private:
     // juce::Typeface::Ptr customTypeface; // 用于存储全局字体的指针
 
