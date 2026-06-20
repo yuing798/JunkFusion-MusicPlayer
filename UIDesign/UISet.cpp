@@ -240,6 +240,13 @@ littleLabel::littleLabel(juce::String text){
     setJustificationType (juce::Justification::centred);
     setText(text, juce::dontSendNotification);
 }//字号小一点的标签
+BigLabel::BigLabel(juce::String text){
+    setFont (juce::FontOptions (21.0f).withStyle("Bold"));
+    setColour (juce::Label::textColourId, juce::Colours::black);
+    setJustificationType (juce::Justification::centred);
+    setText(text, juce::dontSendNotification);
+
+}//大标签!!!
 
 YSlider::YSlider(){
     setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);

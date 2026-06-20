@@ -18,7 +18,7 @@ class allMusicPage : public juce::Component{
 private:
     AllMusicComponent mAllMusicComponent;
     yTextButton selectFileButton{U("导入文件")};
-    YLabel allMusicLabel{U("全部音乐")};
+    BigLabel allMusicLabel{U("全部音乐")};
     svgButton refreshButton{
         U("刷新"),
         juce::Drawable::createFromImageData(BinaryData::refresh_svg, BinaryData::refresh_svgSize)
@@ -35,7 +35,7 @@ private:
         U("降序"),
         juce::Drawable::createFromImageData(BinaryData::down_svg, BinaryData::down_svgSize)
     };
-    
+
 
 public:
 

@@ -58,6 +58,9 @@ struct YLabel : public juce::Label
 struct littleLabel : juce::Label{
     littleLabel(juce::String text);
 };//字号比较小一点的标签
+struct BigLabel : juce::Label{
+    BigLabel(juce::String text);
+};//大大大字号标签
 
 class YSlider : public juce::Slider{
 public:
