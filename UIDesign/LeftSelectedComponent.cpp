@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <type_traits>
 
+int LeftSelectedComponent::onButtonID = 0;  // static 成员定义（分配内存）
+
 selectedButton::selectedButton(juce::String initText){
     setButtonText(initText);
     setClickingTogglesState(true);//允许点击切换状态
@@ -49,7 +51,6 @@ LeftSelectedComponent::LeftSelectedComponent()
     }
 
     height = (10+50+10)*3+40*buttons.size();
-    onButtonID = 0;
 }
 
 LeftSelectedComponent::~LeftSelectedComponent(){
