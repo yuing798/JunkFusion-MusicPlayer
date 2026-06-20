@@ -6,6 +6,7 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <JuceHeader.h>
+#include <memory>
 
 
 struct YColor{
@@ -109,4 +110,15 @@ struct noneButton : public juce::ToggleButton{//这个按钮只允许点击，�
 struct svgButton : public juce::DrawableButton{//每个可以点击的svg矢量的按钮，不可进行状态翻转
     svgButton(const juce::String& buttonName,std::unique_ptr<juce::Drawable>);
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    std::unique_ptr<juce::Drawable> svg;
+};
+
+struct doubleSvgButton : public juce::DrawableButton{//点击后能够根据toggle状态改变svg图片的按钮
+    doubleSvgButton(const juce::String& name1,std::unique_ptr<juce::Drawable> svg1,
+        const juce::String& name2,std::unique_ptr<juce::Drawable> svg2);
+
+    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+
+    juce::String name1,name2;
+    std::unique_ptr<juce::Drawable> svg1,svg2;
 };

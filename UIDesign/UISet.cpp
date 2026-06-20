@@ -3,6 +3,7 @@
 #include "juce_events/juce_events.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <utility>
 
 YColor ycolor;
 
@@ -397,9 +398,11 @@ void minusButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlig
 void noneButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){}
 
 svgButton::svgButton(const juce::String& buttonName,std::unique_ptr<juce::Drawable> svg)
-    :juce::DrawableButton (buttonName, juce::DrawableButton::ImageFitted){
+:juce::DrawableButton (buttonName, juce::DrawableButton::ImageFitted),
+svg(std::move(svg)){
 
     if(svg) setImages(svg.get());
+    setTooltip(buttonName);
 }
 
 void svgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
@@ -424,4 +427,38 @@ void svgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlight
     g.fillRoundedRectangle (getLocalBounds().toFloat(), width / 2.0f); 
 
     juce::DrawableButton::paintButton (g, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+}
+
+doubleSvgButton::doubleSvgButton(const juce::String& name1,std::unique_ptr<juce::Drawable> svg1,
+    const juce::String& name2,std::unique_ptr<juce::Drawable> svg2)
+:juce::DrawableButton ("", juce::DrawableButton::ImageFitted),
+name1(name1),name2(name2),svg1(std::move(svg1)),svg2(std::move(svg2)){
+
+    setClickingTogglesState(true);
+    // 初始工具提示
+    setTooltip(name1);
+    // 状态变化时更新工具提示
+    onStateChange = [this] {
+        setTooltip(getToggleState() ? this->name1 : this->name2);
+        //因为lambda不会隐式捕获类变量且发生了名称遮蔽(变量和传参重名)，所以需要this->
+    };
+
+}
+void doubleSvgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+
+    g.setColour(ycolor.shallowGrey); // 替换为你的颜色
+    auto bounds = getLocalBounds().toFloat();
+    auto width{bounds.getWidth()};
+    auto reducedWidth{width * (1.0f - 0.707f)};//因为图形是圆形的，所以需要把边缘削去一部分
+    g.fillRoundedRectangle(bounds, width / 2.0f);
+
+    // 2. 根据 toggle 状态选择 SVG
+    auto* svgToDraw = getToggleState() ? svg1.get() : svg2.get();
+    if (svgToDraw != nullptr)
+    {
+        // 绘制 SVG，居中适应按钮区域
+        svgToDraw->drawWithin(g, bounds.reduced(reducedWidth).reduced(1.0f),
+                              juce::RectanglePlacement::centred,
+                              1.0f);
+    }
 }
