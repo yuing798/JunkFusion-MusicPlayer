@@ -78,8 +78,9 @@ struct verticalSlider : public juce::Slider{
     verticalSlider();
 };
 
-struct yTextButton : public juce::TextButton{
+struct yTextButton : public juce::TextButton{//这个按钮可以点击，但是不会发生状态翻转
     yTextButton(juce::String initText,bool shouldBeToggle = true);
+    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
 
 struct yComboBox : public juce::ComboBox{

@@ -265,22 +265,29 @@ verticalSlider::verticalSlider(){
 
 yTextButton::yTextButton(juce::String initText,bool shouldBeToggle)
 {
-    setToggleState (shouldBeToggle, juce::dontSendNotification);
-
-    
-    setColour(juce::TextButton::buttonColourId, ycolor.transparent);
-    setColour(juce::TextButton::buttonOnColourId, ycolor.darkGrey);
-    setColour(juce::TextButton::textColourOffId, ycolor.black);
-    setColour(juce::TextButton::textColourOnId, ycolor.black);
     setButtonText(initText);
-
-    if(!getToggleState()){
-        //只有在off状态才改变颜色
-        if(isOver()){
-            setColour(juce::TextButton::buttonColourId, ycolor.midGrey);
-        }
-    }
+    setClickingTogglesState(false);
     
+}
+
+void yTextButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+    auto local = getLocalBounds().toFloat();
+
+    
+    g.setColour(ycolor.shallowGrey);
+    g.fillRoundedRectangle(local,6.0f);
+    if(shouldDrawButtonAsHighlighted){
+        g.setColour(ycolor.midGrey);
+        g.fillRoundedRectangle(local,6.0f);
+    }
+    if(shouldDrawButtonAsDown){
+        g.setColour(ycolor.darkGrey);
+        g.fillRoundedRectangle(local,6.0f);
+    }
+    g.setColour (ycolor.black);
+    g.setFont (juce::FontOptions { 18.0f });
+
+    g.drawText (getButtonText(), local, juce::Justification::centred, true);
 }
 
 yComboBox::yComboBox(){
@@ -358,24 +365,3 @@ void minusButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlig
 void noneButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
 
 }
-
-// transparentButton::transparentButton(juce::String text){
-//     setButtonText(text);
-// }
-
-// void transparentButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
-    
-    
-
-//     if(getToggleState()){
-//         g.setColour(ycolor.greyBlue);
-//         g.fillAll();
-//     }else{
-//         g.setColour(ycolor.transparent);
-//         g.fillAll();
-//         g.setColour(ycolor.darkGrey);
-//         if(shouldDrawButtonAsHighlighted) g.fillAll();
-//     }
-//     g.setColour(ycolor.black);
-    
-// }

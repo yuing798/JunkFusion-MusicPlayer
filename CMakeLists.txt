@@ -28,6 +28,8 @@ juce_add_gui_app(JunkFusion
     VERSION ${PROJECT_VERSION}
     COMPANY_NAME "YusekX"
     PRODUCT_NAME "JunkFusion"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
 )
 
 # ==============================================================================
@@ -43,6 +45,7 @@ target_sources(JunkFusion
         # AiProcessManager.cpp
         # DatabaseManager.cpp
 )
+add_subdirectory(image)
 add_subdirectory(UIDesign)
 add_subdirectory(Utils)
 
@@ -69,7 +72,7 @@ target_compile_definitions(JunkFusion
 target_link_libraries(JunkFusion
     PRIVATE
         # --- 项目内部库 ---
-        # JunkFusionBinaryData
+        JunkFusionBinaryData
 
         # --- JUCE 官方音频与 UI 模块 ---
         juce::juce_audio_utils       # 包含底层声卡设备管理
@@ -83,9 +86,9 @@ target_link_libraries(JunkFusion
         # ONNX::onnxruntime
 
     PUBLIC
-        juce::juce_recommended_config_flags
-        juce::juce_recommended_lto_flags
-        juce::juce_recommended_warning_flags
+        juce::juce_recommended_config_flags#基础编译与调试配置
+        juce::juce_recommended_lto_flags#链接时代码优化
+        juce::juce_recommended_warning_flags#推荐的警告级别
 )
 
 juce_generate_juce_header(JunkFusion)

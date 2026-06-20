@@ -6,3 +6,4 @@ target_sources(JunkFusion PRIVATE
 )
 
 add_subdirectory(FontAbout)
+add_subdirectory(Pages)
