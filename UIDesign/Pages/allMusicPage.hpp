@@ -6,6 +6,23 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
+class EachSong : public juce::Component{
+private:
+
+    littleLabel No_;//序号
+    YLabel name;
+    YLabel composer;
+    YLabel album;
+    YLabel style;
+    YLabel hadPlayNums;//播放次数
+    YLabel length;//歌曲时长
+public:
+
+    void resized() override;
+    void paint(juce::Graphics& g) override;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
+};
+
 class AllMusicComponent : public juce::Component{
 private:
 
@@ -41,6 +58,6 @@ public:
 
     allMusicPage();
     void resized() override;
-    void paint(juce::Graphics& g) override;
+    // void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(allMusicPage)
 };

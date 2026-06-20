@@ -42,6 +42,6 @@ void allMusicPage::resized(){
     numSongsLabel.setBounds(row1.removeFromLeft(90));
 
 }
-void allMusicPage::paint(juce::Graphics& g){
+// void allMusicPage::paint(juce::Graphics& g){
 
-}
+// }
