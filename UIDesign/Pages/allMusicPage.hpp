@@ -3,6 +3,7 @@
 #include "BinaryData.h"
 #include "FontAbout/font.h"
 #include "UISet.h"
+#include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
 class AllMusicComponent : public juce::Component{
@@ -18,14 +19,17 @@ private:
     AllMusicComponent mAllMusicComponent;
     yTextButton selectFileButton{U("导入文件")};
     YLabel allMusicLabel{U("全部音乐")};
-    std::unique_ptr<juce::Drawable> refreshSvg{
+    svgButton refreshButton{
+        U("刷新"),
         juce::Drawable::createFromImageData(BinaryData::refresh_svg, BinaryData::refresh_svgSize)
     };
     //搜索框
     juce::Viewport mViewPort;
-    
+
 public:
 
     allMusicPage();
+    void resized() override;
+    void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(allMusicPage)
 };

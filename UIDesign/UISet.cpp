@@ -270,7 +270,7 @@ verticalSlider::verticalSlider(){
     setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
 }
 
-yTextButton::yTextButton(juce::String initText,bool shouldBeToggle)
+yTextButton::yTextButton(juce::String initText)
 {
     setButtonText(initText);
     setClickingTogglesState(false);
@@ -369,6 +369,34 @@ void minusButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlig
 
 }//单纯就是把加号的那一竖给去除，所以直接把加号的逻辑注释一部分就可以了
 
-void noneButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+void noneButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){}
 
+svgButton::svgButton(const juce::String& buttonName,std::unique_ptr<juce::Drawable> svg)
+    :juce::DrawableButton (buttonName, juce::DrawableButton::ImageFitted){
+
+    if(svg) setImages(svg.get());
+}
+
+void svgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+
+    juce::Colour bgColour;
+    auto width = getLocalBounds().getWidth();
+
+    if (shouldDrawButtonAsDown)
+    {
+        bgColour = ycolor.darkGrey;
+    }
+    else if (shouldDrawButtonAsHighlighted)
+    {
+        bgColour = ycolor.midGrey; 
+    }
+    else
+    {
+        bgColour = ycolor.shallowGrey;
+    }
+
+    g.setColour (bgColour);
+    g.fillRoundedRectangle (getLocalBounds().toFloat(), width / 2.0f); 
+
+    juce::DrawableButton::paintButton (g, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
 }

@@ -80,7 +80,7 @@ struct verticalSlider : public juce::Slider{
 };
 
 struct yTextButton : public juce::TextButton{//这个按钮可以点击，但是不会发生状态翻转
-    yTextButton(juce::String initText,bool shouldBeToggle = true);
+    yTextButton(juce::String initText);
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
 
@@ -104,11 +104,7 @@ struct noneButton : public juce::ToggleButton{//这个按钮只允许点击，�
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
 
-// struct transparentButton : public juce::ToggleButton{
-//     transparentButton(juce::String text);
-//     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
-// };
-
-// struct unchangeButton : transparentButton{
-// //这个按钮点击了不会发生文字翻转
-// };
+struct svgButton : public juce::DrawableButton{//每个可以点击的svg矢量的按钮，不可进行状态翻转
+    svgButton(const juce::String& buttonName,std::unique_ptr<juce::Drawable>);
+    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+};
