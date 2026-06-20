@@ -207,6 +207,13 @@ YLabel::YLabel(juce::String text)
     setText(text, juce::dontSendNotification);
     
 }
+littleLabel::littleLabel(juce::String text){
+    setFont (juce::FontOptions (14.0f));
+    
+    setColour (juce::Label::textColourId, juce::Colours::darkgrey);
+    setJustificationType (juce::Justification::centred);
+    setText(text, juce::dontSendNotification);
+}//字号小一点的标签
 
 YSlider::YSlider(){
     setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);

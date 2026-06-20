@@ -51,11 +51,12 @@ private:
 struct YLabel : public juce::Label
 {
     YLabel(juce::String text);
-    
 };
+struct littleLabel : juce::Label{
+    littleLabel(juce::String text);
+};//字号比较小一点的标签
 
 class YSlider : public juce::Slider{
-
 public:
     YSlider();
 };
