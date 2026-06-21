@@ -42,11 +42,11 @@
 
 ### cpp规范
 
-1. 类方法在头文件中声明，头文件中的声明的参数列表除非有多个同类型变量，否则只需写出类型，而不用形参,类方法在cpp文件中定义，除非函数内容很短或者使用嵌套结构体
+1. 类方法在头文件中声明,类方法在cpp文件中定义，除非函数内容很短或者使用嵌套结构体
 如：
 ```cpp
 struct myClass{
-    void processBlock(juce::AudioBuffer&);//方法声明,头文件中的声明的参数列表只需写出类型，而不用形参
+    void processBlock(juce::AudioBuffer& buffer);
 
     int c;
     

@@ -11,18 +11,25 @@ class EachSong : public juce::Component{
 private:
 
     littleLabel No_;//序号
-    PlayStopButton mPlayAndStopButton;
     YLabel name;
     littleLabel composer;
     YLabel album;
     YLabel style;
-    juce::String hadPlayNums;//播放次数
-    juce::String length;//歌曲时长
-    juce::String bitRate;
+
+    PlayStopButton mPlayAndStopButton;
+    WhatsMoreToolTip mWhatsMore;//悬停显示：播放次数、时长、比特率
 
 public:
 
-    EachSong();
+    EachSong(int,
+             const juce::String&,
+             const juce::String&,
+             const juce::String&,
+             const juce::String&,
+             const juce::String&,
+             const juce::String&,
+             const juce::String&
+    );
     void resized() override;
     void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
@@ -38,6 +45,7 @@ public:
 
 class allMusicPage : public juce::Component{
 private:
+
     AllMusicComponent mAllMusicComponent;
     yTextButton selectFileButton{U("导入文件")};
     BigLabel allMusicLabel{U("全部音乐")};

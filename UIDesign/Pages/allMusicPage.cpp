@@ -2,8 +2,30 @@
 #include "FontAbout/font.h"
 #include "juce_graphics/juce_graphics.h"
 
-EachSong::EachSong(){
-
+EachSong::EachSong(int          songNo,
+    const juce::String& songName,
+    const juce::String& songComposer,
+    const juce::String& songAlbum,
+    const juce::String& songStyle,
+    const juce::String& playNums,
+    const juce::String& songLength,
+    const juce::String& songBitRate)
+: No_(juce::String(songNo))
+, name(songName)
+, composer(songComposer)
+, album(songAlbum)
+, style(songStyle)
+, mWhatsMore(U("播放次数: ") + playNums
+           + U("\n时长: ") + songLength
+           + U("\n比特率: ") + songBitRate)
+{
+    addAndMakeVisible(No_);
+    addAndMakeVisible(name);
+    addAndMakeVisible(composer);
+    addAndMakeVisible(album);
+    addAndMakeVisible(style);
+    addAndMakeVisible(mPlayAndStopButton);
+    addAndMakeVisible(mWhatsMore);
 }
 void EachSong::resized(){
 
