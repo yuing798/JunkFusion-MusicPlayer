@@ -48,6 +48,7 @@ target_sources(JunkFusion
 add_subdirectory(image)
 add_subdirectory(UIDesign)
 add_subdirectory(Utils)
+add_subdirectory(fileManage)
 
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
