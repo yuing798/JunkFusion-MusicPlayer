@@ -1,8 +1,10 @@
 #include "UISet.h"
+#include "BinaryData.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <memory>
 #include <utility>
 
 YColor ycolor;
@@ -255,32 +257,33 @@ YSlider::YSlider(){
 
 void PlayStopButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) 
 {
-
-    g.setColour(ycolor.midGrey);
-    if(shouldDrawButtonAsHighlighted) g.fillAll();
-    g.setColour(ycolor.darkGrey);
-    if(shouldDrawButtonAsDown) g.fillAll();
-
     // 1. 获取按钮区域，并向内缩进一点，防止图形贴边
-    auto bounds = getLocalBounds().toFloat().reduced (getWidth() / 4.0f);
+    auto bounds = getLocalBounds().toFloat();
+    auto width = bounds.getWidth();
+    g.setColour(ycolor.shallowGrey);
+    if(shouldDrawButtonAsHighlighted) g.fillRoundedRectangle(bounds,width / 2.0f);
+    g.setColour(ycolor.midGrey);
+    if(shouldDrawButtonAsDown) g.fillRoundedRectangle(bounds,width / 2.0f);
     
     // 2. 设置线条颜色和粗细
     g.setColour (juce::Colours::black);
     const float lineThickness = 3.0f;
+    auto reducedWidth = (1.0f - 0.707f) * width;
+    auto lineBounds = bounds.reduced(reducedWidth).reduced(1.0f);
 
     // 3. 根据按钮的开关状态（ToggleState）绘制不同的形状
     if (getToggleState())
     {
         // 状态为 true (开启/运行中)：绘制【停止方块】
-        g.drawRect (bounds, lineThickness);
+        g.drawRect (lineBounds, lineThickness);
     }
     else
     {
         // 状态为 false (关闭/停止中)：绘制【播放三角】
         juce::Path triangle;
-        triangle.startNewSubPath (bounds.getX(), bounds.getY());             // 左上角
-        triangle.lineTo (bounds.getRight(), bounds.getCentreY());            // 右侧中心点
-        triangle.lineTo (bounds.getX(), bounds.getBottom());                 // 左下角
+        triangle.startNewSubPath (lineBounds.getX(), lineBounds.getY());             // 左上角
+        triangle.lineTo (lineBounds.getRight(), lineBounds.getCentreY());            // 右侧中心点
+        triangle.lineTo (lineBounds.getX(), lineBounds.getBottom());                 // 左下角
         triangle.closeSubPath();                                             // 闭合路径
 
         g.strokePath (triangle, juce::PathStrokeType (lineThickness));
@@ -458,4 +461,29 @@ void doubleSvgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHig
                               juce::RectanglePlacement::centred,
                               1.0f);
     }
+}
+
+WhatsMoreToolTip::WhatsMoreToolTip(const juce::String& text)
+:juce::DrawableButton ("", juce::DrawableButton::ImageFitted)
+{
+
+    setTooltip(text);
+    setClickingTogglesState(false);
+    svg = juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize);
+}
+
+void WhatsMoreToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+
+    g.setColour(ycolor.shallowGrey);
+    if(shouldDrawButtonAsHighlighted) g.setColour(ycolor.midGrey);
+    auto bounds = getLocalBounds().toFloat();
+    auto width{bounds.getWidth()};
+    auto reducedWidth{width * (1.0f - 0.707f)};//因为图形是圆形的，所以需要把边缘削去一部分
+    g.fillRoundedRectangle(bounds, width / 2.0f);
+
+
+    // 绘制 SVG，居中适应按钮区域
+    svg.get()->drawWithin(g, bounds.reduced(reducedWidth).reduced(1.0f),
+                            juce::RectanglePlacement::centred,
+                              1.0f);
 }

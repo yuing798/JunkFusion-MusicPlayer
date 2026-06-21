@@ -125,3 +125,10 @@ struct doubleSvgButton : public juce::DrawableButton{//点击后能够根据togg
     juce::String name1,name2;
     std::unique_ptr<juce::Drawable> svg1,svg2;
 };
+
+struct WhatsMoreToolTip : juce::DrawableButton{
+//一个省略号图形，悬停显示注释
+    WhatsMoreToolTip(const juce::String& text);
+    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+    std::unique_ptr<juce::Drawable> svg;
+};
