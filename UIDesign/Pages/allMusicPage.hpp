@@ -3,6 +3,7 @@
 #include "BinaryData.h"
 #include "FontAbout/font.h"
 #include "UISet.h"
+#include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
@@ -10,14 +11,18 @@ class EachSong : public juce::Component{
 private:
 
     littleLabel No_;//序号
+    PlayStopButton mPlayAndStopButton;
     YLabel name;
-    YLabel composer;
+    littleLabel composer;
     YLabel album;
     YLabel style;
-    YLabel hadPlayNums;//播放次数
-    YLabel length;//歌曲时长
+    juce::String hadPlayNums;//播放次数
+    juce::String length;//歌曲时长
+    juce::String bitRate;
+
 public:
 
+    EachSong();
     void resized() override;
     void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
@@ -46,13 +51,8 @@ private:
 
     //搜索框
     juce::Viewport mViewPort;
-    doubleSvgButton upAndDownButton{
-        U("升序"),
-        juce::Drawable::createFromImageData(BinaryData::up_svg, BinaryData::up_svgSize),
-        U("降序"),
-        juce::Drawable::createFromImageData(BinaryData::down_svg, BinaryData::down_svgSize)
-    };
-
+    upDownButton mUpDownButton;
+    yTextButton playAll{U("播放全部")};
 
 public:
 

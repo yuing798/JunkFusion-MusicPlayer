@@ -13,7 +13,7 @@ allMusicPage::allMusicPage(){
     addAndMakeVisible(numSongsLabel);
     addAndMakeVisible(sortWayLabel);
     addAndMakeVisible(sortWaysComboBox);
-    addAndMakeVisible(upAndDownButton);
+    addAndMakeVisible(mUpDownButton);
 
     sortWaysComboBox.addItem(U("标题"), 1);
     sortWaysComboBox.addItem(U("作者"), 2);
@@ -34,7 +34,7 @@ void allMusicPage::resized(){
 
     selectFileButton.setBounds(row2.removeFromLeft(80));
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()));
-    upAndDownButton.setBounds(row2.removeFromRight(row2.getHeight()));
+   mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()));
     sortWaysComboBox.setBounds(row2.removeFromRight(80));
     sortWayLabel.setBounds(row2.removeFromRight(70));
 

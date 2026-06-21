@@ -1,4 +1,5 @@
 #pragma once
+#include "FontAbout/font.h"
 #include "constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
@@ -124,6 +125,13 @@ struct doubleSvgButton : public juce::DrawableButton{//点击后能够根据togg
 
     juce::String name1,name2;
     std::unique_ptr<juce::Drawable> svg1,svg2;
+};
+
+struct playPauseButton : doubleSvgButton{
+    playPauseButton();
+};
+struct upDownButton : doubleSvgButton{
+    upDownButton();
 };
 
 struct WhatsMoreToolTip : juce::DrawableButton{

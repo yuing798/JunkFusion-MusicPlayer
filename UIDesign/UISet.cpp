@@ -463,6 +463,24 @@ void doubleSvgButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHig
     }
 }
 
+playPauseButton::playPauseButton()
+:doubleSvgButton(U("播放"),
+    juce::Drawable::createFromImageData(BinaryData::play_svg, BinaryData::play_svgSize),
+    U("暂停"),
+    juce::Drawable::createFromImageData(BinaryData::pause_svg, BinaryData::pause_svgSize)
+){
+
+}
+upDownButton::upDownButton()
+:doubleSvgButton(
+    U("升序"),
+    juce::Drawable::createFromImageData(BinaryData::up_svg, BinaryData::up_svgSize),
+    U("降序"),
+    juce::Drawable::createFromImageData(BinaryData::down_svg, BinaryData::down_svgSize)
+){
+    
+}
+
 WhatsMoreToolTip::WhatsMoreToolTip(const juce::String& text)
 :juce::DrawableButton ("", juce::DrawableButton::ImageFitted)
 {
