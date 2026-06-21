@@ -61,4 +61,6 @@ struct myClass{
     int& getC(){return c;}//只有一行的方法直接在头文件定义就行了
 }
 ```
+2. 完成任务后不要自行build
+
 

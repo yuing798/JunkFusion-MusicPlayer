@@ -1,5 +1,6 @@
 #include "allMusicPage.hpp"
 #include "FontAbout/font.h"
+#include "fileUtils.hpp"
 #include "juce_graphics/juce_graphics.h"
 
 EachSong::EachSong(int          songNo,
@@ -56,6 +57,8 @@ allMusicPage::allMusicPage(){
     sortWaysComboBox.addItem(U("歌曲时长"), 6);
     sortWaysComboBox.setSelectedId(1);
 
+    selectFileButton.addListener(this);
+
 }
 void allMusicPage::resized(){
 
@@ -74,6 +77,32 @@ void allMusicPage::resized(){
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));
 
+}
+void allMusicPage::buttonClicked(juce::Button* button)
+{
+    if (button == &selectFileButton)
+    {
+        getMultiMediaFileChoose(
+            [this](const juce::Array<juce::File>& selectedFiles)
+            {
+                inputFilePaths.clear();
+                for (auto& file : selectedFiles)
+                {
+                    inputFilePaths.push_back(
+                        std::filesystem::path(file.getFullPathName().toStdString())
+                    );
+                }
+                
+            },
+            this
+        );
+        selectFileButton.setClickingTogglesState(false);//在推入数据库的时候先把按钮锁定
+        //使用FFmpeg提取元数据
+        //推入数据库
+
+        inputFilePaths.clear();//推入数据库后就可以清空了，等待下一次推入
+        selectFileButton.setClickingTogglesState(true);
+    }
 }
 // void allMusicPage::paint(juce::Graphics& g){
 

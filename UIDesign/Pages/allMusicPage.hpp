@@ -6,6 +6,9 @@
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <filesystem>
+#include <vector>
+
 
 class EachSong : public juce::Component{
 private:
@@ -43,7 +46,9 @@ public:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicComponent)
 };
 
-class allMusicPage : public juce::Component{
+class allMusicPage : public juce::Component,
+                     public juce::Button::Listener
+{
 private:
 
     AllMusicComponent mAllMusicComponent;
@@ -62,10 +67,13 @@ private:
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
 
+    std::vector<std::filesystem::path> inputFilePaths;
+
 public:
 
     allMusicPage();
     void resized() override;
+    void buttonClicked(juce::Button*) override;
     // void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(allMusicPage)
 };

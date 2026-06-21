@@ -14,6 +14,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
+find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 
 if (MSVC)
@@ -70,6 +71,14 @@ target_compile_definitions(JunkFusion
 # ==============================================================================
 # 5. 链接库依赖 (JUCE 模块与第三方库)
 # ==============================================================================
+target_include_directories(JunkFusion
+    PRIVATE
+        ${FFMPEG_INCLUDE_DIRS}
+)
+target_link_directories(JunkFusion
+    PRIVATE
+        ${FFMPEG_LIBRARY_DIRS}
+)
 target_link_libraries(JunkFusion
     PRIVATE
         # --- 项目内部库 ---
@@ -82,7 +91,7 @@ target_link_libraries(JunkFusion
         juce::juce_gui_extra         # 包含高级 UI 组件
         
         # 第三方库
-        # FFmpeg::avcodec FFmpeg::avformat FFmpeg::avutil FFmpeg::swresample
+        ${FFMPEG_LIBRARIES}
         SQLiteCpp
         # ONNX::onnxruntime
 
