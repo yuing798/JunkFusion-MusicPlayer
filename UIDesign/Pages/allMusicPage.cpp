@@ -1,6 +1,17 @@
 #include "allMusicPage.hpp"
 #include "FontAbout/font.h"
 #include "juce_graphics/juce_graphics.h"
+
+EachSong::EachSong(){
+
+}
+void EachSong::resized(){
+
+}
+void EachSong::paint(juce::Graphics& g){
+    
+}
+
 AllMusicComponent::AllMusicComponent(){
 
 }

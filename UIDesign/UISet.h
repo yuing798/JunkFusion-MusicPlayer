@@ -54,12 +54,18 @@ private:
 
 struct YLabel : public juce::Label
 {
+
+    YLabel();
     YLabel(juce::String text);
 };
 struct littleLabel : juce::Label{
+    
+    littleLabel();
     littleLabel(juce::String text);
 };//字号比较小一点的标签
 struct BigLabel : juce::Label{
+    
+    BigLabel();
     BigLabel(juce::String text);
 };//大大大字号标签
 

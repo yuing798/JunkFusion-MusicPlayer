@@ -224,31 +224,40 @@ void YLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int width,
     g.fillPath(hadWalkedPath);
 }
 
-YLabel::YLabel(juce::String text) 
-{
-    // 在构造函数里设置默认样式
-    // 使用最新的 FontOptions (JUCE 8+)
+
+YLabel::YLabel(){
     setFont (juce::FontOptions (18.0f));
-    
+
     setColour (juce::Label::textColourId, juce::Colours::black);
     setJustificationType (juce::Justification::centred);
+}
+YLabel::YLabel(juce::String text) 
+:YLabel(){
     setText(text, juce::dontSendNotification);
     
 }
-littleLabel::littleLabel(juce::String text){
+littleLabel::littleLabel(){
     setFont (juce::FontOptions (14.0f));
-    
     setColour (juce::Label::textColourId, juce::Colours::darkgrey);
     setJustificationType (juce::Justification::centred);
+}
+littleLabel::littleLabel(juce::String text)
+:littleLabel(){
+
     setText(text, juce::dontSendNotification);
 }//字号小一点的标签
-BigLabel::BigLabel(juce::String text){
+BigLabel::BigLabel(){
     setFont (juce::FontOptions (21.0f).withStyle("Bold"));
     setColour (juce::Label::textColourId, juce::Colours::black);
     setJustificationType (juce::Justification::centred);
+}
+BigLabel::BigLabel(juce::String text)
+:BigLabel(){
+
     setText(text, juce::dontSendNotification);
 
 }//大标签!!!
+
 
 YSlider::YSlider(){
     setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
