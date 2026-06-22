@@ -237,7 +237,7 @@ YLabel::YLabel(juce::String text)
     
 }
 littleLabel::littleLabel(){
-    setFont (juce::FontOptions (14.0f));
+    setFont (juce::FontOptions (15.0f));
     setColour (juce::Label::textColourId, juce::Colours::darkgrey);
     setJustificationType (juce::Justification::centred);
 }
