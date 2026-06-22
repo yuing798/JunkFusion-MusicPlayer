@@ -28,3 +28,6 @@ struct logSystem
 
     void initLog();
 };
+
+//输出错误码
+std::string ffmpegErrorOutput(int result);

@@ -103,13 +103,16 @@ SongInfo getMetaData(std::filesystem::path& filePath)
                             filePath.string().c_str(),
                             nullptr, nullptr) != 0)
     {
-        return info;  // 无法打开，仅返回文件信息
+        //非多媒体文件也会返回AVERROR
+        //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
+        return {};  // 无法打开直接返回空
     }
 
     if (avformat_find_stream_info(pFormatCtx, nullptr) < 0)
     {
+        //SPDLOG:记录无法找到流信息
         avformat_close_input(&pFormatCtx);
-        return info;
+        return {};
     }
 
     // ═══════════════════════════════════════════════════════════════

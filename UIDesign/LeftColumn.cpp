@@ -1,12 +1,10 @@
-#include "LeftSelectedComponent.hpp"
+#include "LeftColumn.hpp"
+#include "BinaryData.h"
 #include "UISet.h"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <cstddef>
-#include <type_traits>
-
-int LeftSelectedComponent::onButtonID = 0;  // static 成员定义（分配内存）
 
 selectedButton::selectedButton(juce::String initText){
     setButtonText(initText);
@@ -50,7 +48,13 @@ LeftSelectedComponent::LeftSelectedComponent()
         addAndMakeVisible(label);
     }
 
-    height = (10+50+10)*3+40*buttons.size();
+    height = (10+50+10)*3+40*buttons.size()+60;
+
+    logo.setImage(juce::ImageCache::getFromMemory(BinaryData::junkfusion_png, BinaryData::junkfusion_pngSize));
+    logo.setImagePlacement(juce::RectanglePlacement::centred);
+    addAndMakeVisible(logo);
+
+
 }
 
 LeftSelectedComponent::~LeftSelectedComponent(){
@@ -61,6 +65,8 @@ void LeftSelectedComponent::resized()
 {
     auto local = getLocalBounds();
     auto width = local.getWidth();
+
+    logo.setBounds(local.removeFromTop(60).reduced(5));
 
     local.removeFromTop(10);
     paths[0].startNewSubPath(0,local.getY());
@@ -132,19 +138,17 @@ void LeftSelectedComponent::buttonClicked(juce::Button* clickedButton)
         {
             buttons[i].setToggleState(false, juce::dontSendNotification);
         }
-        if(buttons[i].getToggleState()){
-            // 此处后续根据 i 的值决定主页面显示内容
-            // 0=所有音乐  1=我喜欢    2=最近播放
-            // 3=作者      4=专辑      5=歌单      6=风格
-            // 7=AI助手    8=效果器    9=均衡器    10=音箱阵列  11=设置
-            onButtonID = i;
+        if (buttons[i].getToggleState())
+        {
+            selectID = static_cast<int>(i);
+            if (onSelectionChanged)
+                onSelectionChanged(selectID);
         }
     }
-
 }
 
 
-LeftComponent::LeftComponent(){
+LeftColumn::LeftColumn(){
     mViewPort.setViewedComponent(&mLeftSelectedComponent,false);
 
     // 参数：显示垂直滚动条，隐藏水平滚动条
@@ -152,12 +156,12 @@ LeftComponent::LeftComponent(){
     addAndMakeVisible(mViewPort);
 }
 
-void LeftComponent::resized(){
+void LeftColumn::resized(){
     mViewPort.setBounds(getLocalBounds());
     mLeftSelectedComponent.setSize(getWidth(), mLeftSelectedComponent.height);
 }
 
-void LeftComponent::paint(juce::Graphics& g){
+void LeftColumn::paint(juce::Graphics& g){
     g.setColour(ycolor.shallowGrey);
     g.fillAll();
 }

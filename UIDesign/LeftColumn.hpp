@@ -8,6 +8,7 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -24,6 +25,7 @@ class LeftSelectedComponent : public juce::Component,
 
 //这个是滑动窗口里面的内容，还没有和外层的侧边栏绑定
 private:
+    juce::ImageComponent logo;
     std::array<selectedButton, 12> buttons{
         selectedButton(U(allMusicID)),
         selectedButton(U(myLikeID)),
@@ -43,7 +45,9 @@ private:
         YLabel(U(categoryBrowseID)),
         YLabel(U(featureSectionID))
     };
-    std::array<juce::Path,6> paths;   
+    std::array<juce::Path,6> paths;//绘制使用的线段
+    int selectID{0};
+    std::function<void(int)> onSelectionChanged;
 
 public:
     LeftSelectedComponent();
@@ -53,21 +57,24 @@ public:
     size_t height = 0;
 
     void buttonClicked(juce::Button* button) override;
-    
-    static int onButtonID;//现在选择的按钮的ID
+    int getSelectID() const {return selectID;}
+    void setOnSelectionChanged(std::function<void(int)> callback)
+        { onSelectionChanged = std::move(callback); }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LeftSelectedComponent);
 };
 
-class LeftComponent : public juce::Component{
+class LeftColumn : public juce::Component{
 //这个东西就是主页面左边可以用来切换页面的侧边框，选择我喜欢的音乐，作者，那些乱七八糟的东西
 private:
     LeftSelectedComponent mLeftSelectedComponent;
     juce::Viewport mViewPort;
 public:
-    LeftComponent();
+    LeftColumn();
     void resized() override;
     void paint(juce::Graphics& g) override;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LeftComponent);
+    LeftSelectedComponent& getLeftSelectedComponent() { return mLeftSelectedComponent; }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LeftColumn);
 };

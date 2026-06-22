@@ -16,6 +16,7 @@ FetchContent_MakeAvailable(JUCE)
 
 find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
@@ -41,10 +42,6 @@ target_sources(JunkFusion
         Main.cpp
         MainComponent.h
         MainComponent.cpp
-        # 未来你可以把这里分组，比如：
-        # AudioEngine.cpp
-        # AiProcessManager.cpp
-        # DatabaseManager.cpp
 )
 add_subdirectory(image)
 add_subdirectory(UIDesign)
@@ -94,6 +91,7 @@ target_link_libraries(JunkFusion
         # 第三方库
         ${FFMPEG_LIBRARIES}
         SQLiteCpp
+        spdlog::spdlog
         # ONNX::onnxruntime
 
     PUBLIC

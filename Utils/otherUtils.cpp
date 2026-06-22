@@ -2,6 +2,9 @@
 #include "juce_core/juce_core.h"
 #include <cstddef>
 #include <iostream>
+extern "C"{
+    #include <libavutil/error.h>//负责日志信息
+}
 
 /*
  * 日志架构 (7 个日志文件)
@@ -141,4 +144,10 @@ void logSystem::initLog()
     {
         std::cerr << "日志系统初始化失败: " << ex.what() << std::endl;
     }
+}
+
+std::string ffmpegErrorOutput(int result){
+    char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0}; 
+    // 将错误码ret转换为可读字符串存入errbuf
+    av_strerror(result, errbuf, sizeof(errbuf));
 }

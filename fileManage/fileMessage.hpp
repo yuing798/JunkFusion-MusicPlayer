@@ -39,6 +39,7 @@ struct SongInfo
     std::string addTime;                // 添加到应用的时间
 
     // ── 2. FFmpeg 解码层信息 ──
+    int streamIndex{0};//因为音频文件中可能有多条流
     double duration     = 0.0;          // 歌曲时长（秒）
     int    bitRate      = 0;            // 比特率（kbps）
     double sampleRate   = 0.0;          // 采样率（Hz）
