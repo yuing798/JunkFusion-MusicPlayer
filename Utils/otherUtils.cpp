@@ -2,6 +2,7 @@
 #include "juce_core/juce_core.h"
 #include <cstddef>
 #include <iostream>
+#include <string>
 extern "C"{
     #include <libavutil/error.h>//负责日志信息
 }
@@ -150,4 +151,5 @@ std::string ffmpegErrorOutput(int result){
     char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0}; 
     // 将错误码ret转换为可读字符串存入errbuf
     av_strerror(result, errbuf, sizeof(errbuf));
+    return std::string(errbuf); 
 }

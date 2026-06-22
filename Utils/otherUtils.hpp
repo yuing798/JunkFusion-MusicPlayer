@@ -4,6 +4,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/daily_file_sink.h>
 #include <memory>
+#include <string>
 
 struct logSystem
 {

@@ -1,6 +1,7 @@
 #include "fileUtils.hpp"
 #include "FontAbout/font.h"
 #include "UISet.h"
+#include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <spdlog/spdlog.h>
@@ -20,8 +21,7 @@ extern "C" {
 
 
 
-void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)> onFileSelected,
-                          juce::Component* parentComponent)
+void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)> onFileSelected,juce::Component* parentComponent)
 {
 
     // 1. 构建过滤器字符串（用分号分隔）
@@ -76,61 +76,24 @@ SongInfo getMetaData(std::filesystem::path& filePath)
     SongInfo info{};  // 值初始化：数值类型为 0，std::string 为空
 
     // ═══════════════════════════════════════════════════════════════
-    // 1. 文件信息（直接文件系统操作）
-    // ═══════════════════════════════════════════════════════════════
-    info.filePath = filePath.string();
-    info.fileName = filePath.filename().string();
-
-    juce::File juceFile(filePath.string());
-    if (juceFile.existsAsFile())
-    {
-        info.fileSize = static_cast<size_t>(juceFile.getSize());
-        info.lastModifiedTime = juceFile.getLastModificationTime()
-                                    .toString(true, true, false, false)
-                                    .toStdString();
-    }
-
-    info.addTime = juce::Time::getCurrentTime()
-                       .toString(true, true, false, false)
-                       .toStdString();
-
-    // ═══════════════════════════════════════════════════════════════
     // 2. FFmpeg 打开文件
     // ═══════════════════════════════════════════════════════════════
-    AVFormatContext* pFormatCtx = nullptr;
-
-    if (avformat_open_input(&pFormatCtx,
-                            filePath.string().c_str(),
-                            nullptr, nullptr) != 0)
-    {
-        //非多媒体文件也会返回AVERROR
-        //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
-        return {};  // 无法打开直接返回空
-    }
-
-    if (avformat_find_stream_info(pFormatCtx, nullptr) < 0)
-    {
-        //SPDLOG:记录无法找到流信息
-        avformat_close_input(&pFormatCtx);
-        return {};
-    }
+    AVFormatContext* inputContext = nullptr;
 
     // ═══════════════════════════════════════════════════════════════
     // 2. 音频流解码层信息
     // ═══════════════════════════════════════════════════════════════
-    int audioStreamIndex = av_find_best_stream(pFormatCtx,
-                                               AVMEDIA_TYPE_AUDIO,
-                                               -1, -1, nullptr, 0);
+    int audioStreamIndex = 0;
 
     if (audioStreamIndex >= 0)
     {
-        AVStream*           pAudioStream = pFormatCtx->streams[audioStreamIndex];
+        AVStream*           pAudioStream = inputContext->streams[audioStreamIndex];
         AVCodecParameters*  pPar         = pAudioStream->codecpar;
 
         // 时长（秒）
-        if (pFormatCtx->duration != AV_NOPTS_VALUE)
+        if (inputContext->duration != AV_NOPTS_VALUE)
         {
-            info.duration = static_cast<double>(pFormatCtx->duration)
+            info.duration = static_cast<double>(inputContext->duration)
                             / AV_TIME_BASE;
         }
         else if (pAudioStream->duration != AV_NOPTS_VALUE)
@@ -183,7 +146,7 @@ SongInfo getMetaData(std::filesystem::path& filePath)
     // ═══════════════════════════════════════════════════════════════
     // 3. 标签信息（读取容器级元数据）
     // ═══════════════════════════════════════════════════════════════
-    AVDictionary*   pTags = pFormatCtx->metadata;
+    AVDictionary*   pTags = inputContext->metadata;
     AVDictionaryEntry* pEntry = nullptr;
 
     if ((pEntry = av_dict_get(pTags, "artist",       nullptr, 0)))
@@ -204,11 +167,67 @@ SongInfo getMetaData(std::filesystem::path& filePath)
         info.composer = pEntry->value;
 
     // ── 清理 ──
-    avformat_close_input(&pFormatCtx);
+    avformat_close_input(&inputContext);
 
     return info;
 }
 
-void getMultiMediaFileDir(){
-    
+SongInfo getFileMetaData(const juce::File& name){
+    SongInfo info{};
+    info.filePath = name.getFullPathName().toStdString();
+    info.fileName = name.getFileName().toStdString();
+    info.fileSize = name.getSize();
+    info.lastModifiedTime = name.getLastModificationTime().toString(true, true).toStdString();
+    info.addTime = juce::Time::getCurrentTime().toString(true, true).toStdString();
+
+    return info;
+}
+
+std::vector<SongInfo> getStreamMetaData(const SongInfo& info){
+
+    std::vector<SongInfo> infos;
+
+    if(info.filePath.empty()){
+        //SPDLOG:传参错误
+        return {};
+    }
+    //ffmpeg解码层信息
+    int result{0};//解码层结果，一般成功返回零
+    AVFormatContext* inputContext{nullptr};
+    result = avformat_open_input(&inputContext, info.filePath.c_str(), nullptr, nullptr);
+    if(result!=0){
+        //非多媒体文件也会返回AVERROR
+        //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
+        avformat_close_input(&inputContext);
+        return {};  // 无法打开直接返回空
+    }
+    result = avformat_find_stream_info(inputContext, nullptr);
+    if(result<0){
+        //SPDLOG:无法找到流信息
+        avformat_close_input(&inputContext);
+        return {};
+    }
+    std::vector<int> audioStreamIndex;
+
+    for(size_t j = 0; j < inputContext->nb_streams; j++){
+        if(inputContext->streams[j]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
+            //验证编码器类型，编码器类型由流类型决定。
+            audioStreamIndex.push_back(j);
+        }
+    }//因为一个文件中可能拥有多个音频流，比如一个视频，有英文流，法语流，中文流同时存在
+    if(audioStreamIndex.empty()){
+        //SPDLOG:打开的文件并没有音频流
+        avformat_close_input(&inputContext);//如果这个文件没有音频流就释放资源
+        return {};
+    }
+    for(size_t i=0; i<audioStreamIndex.size(); i++){//按每条流迭代
+
+        auto currentIndex{audioStreamIndex[i]};
+
+        AVStream*           pAudioStream = inputContext->streams[currentIndex];
+        AVCodecParameters*  pPar         = pAudioStream->codecpar;
+
+    }
+
+    return infos;
 }
