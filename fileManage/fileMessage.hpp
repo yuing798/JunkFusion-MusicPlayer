@@ -60,7 +60,7 @@ struct SongInfo
         int streamCount{0};//因为音频文件中可能有多条流,这个直接1+1+1递增，反正给用户看streamIndex也没个屁用
         
         int    bitRate      = 0;            // 比特率（kbps）
-        int sampleRate   = 0.0;          // 采样率（Hz）ffmpeg只能读取整数采样率，
+        int sampleRate{0};          // 采样率（Hz）ffmpeg只能读取整数采样率，
         // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
         int    numChannels  = 0;            // 通道数
         int    bitDepth     = 0;            // 位深
@@ -73,7 +73,7 @@ struct SongInfo
         double      bpm         = 0.0;      // 节拍数
         std::string key;                    // 调性（如 C major, A minor）        
         bool        aiProcessed = false;    // 是否已经进行过 AI 处理
-                
+
         std::string extraMetadata;//其他元数据(文件中自带的)
     };
     std::vector<stream> streams;
