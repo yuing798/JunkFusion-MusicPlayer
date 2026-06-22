@@ -1,5 +1,5 @@
 #include "MainComponent.h"
-
+#include "otherUtils.hpp"
 
 //==============================================================================
 class GuiAppApplication final : public juce::JUCEApplication
@@ -20,6 +20,7 @@ public:
     {
         // This method is where you should put your application's initialisation code..
         juce::ignoreUnused (commandLine);
+        mLogSystem.initLog();
 
         mainWindow.reset (new MainWindow (getApplicationName()));
     }
@@ -94,6 +95,7 @@ public:
     };
 
 private:
+    logSystem mLogSystem;
     std::unique_ptr<MainWindow> mainWindow;
 };
 

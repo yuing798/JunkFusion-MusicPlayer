@@ -50,7 +50,7 @@ add_subdirectory(image)
 add_subdirectory(UIDesign)
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
-add_subdirectory(logManage)
+# add_subdirectory(logManage)
 
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
