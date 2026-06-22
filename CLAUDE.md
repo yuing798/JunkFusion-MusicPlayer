@@ -66,7 +66,6 @@ struct myClass{
 ```cpp
 namespace
 {
-    // 安全字符串转 int，失败返回 0；处理 "3/12" 格式的轨道号
     int safeToInt(const char* str)
     {
         try { return std::stoi(str); }
@@ -80,5 +79,6 @@ auto safeToInt = [](const char* str) -> int{
 };//写成这种形式，然后在同一个函数定义体中使用
 ```
 4. 禁止使用namespace
+5. 进行架构调整的时候建议看一下我的git记录
 
 

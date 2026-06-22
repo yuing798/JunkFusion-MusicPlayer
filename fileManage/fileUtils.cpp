@@ -121,12 +121,10 @@ SongInfo getStreamMetaData(const juce::File& file){
     info.streams.resize(audioStreamIndex.size());
 
     int streamCount{0};//最终提取流个数计数器
-    infos.resize(audioStreamIndex.size());
 
     for(size_t i=0; i<inputContext->nb_streams; i++){//按每条流迭代
 
         auto currentIndex{audioStreamIndex[i]};
-        auto& info{infos[currentIndex]};//太长了简写一点
 
         AVStream*           pAudioStream = inputContext->streams[currentIndex];
         AVCodecParameters*  decoderPar      = pAudioStream->codecpar;
@@ -135,46 +133,46 @@ SongInfo getStreamMetaData(const juce::File& file){
             //这一个流索引没有音频编码器，跳过就可以了，不需要报错
             continue;
         }
-        info.streamCount = streamCount;
+        info.streams[streamCount].streamCount = streamCount;
         streamCount++;
-        info.codecName = avcodec_get_name(decoderPar->codec_id);
+        info.streams[streamCount].codecName = avcodec_get_name(decoderPar->codec_id);
         
         // 时长（秒）
         if (inputContext->duration != AV_NOPTS_VALUE)
         {
-            info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
+            info.streams[streamCount].duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
         }
         else if (pAudioStream->duration != AV_NOPTS_VALUE)
         {
-            info.duration = static_cast<double>(pAudioStream->duration)
+            info.streams[streamCount].duration = static_cast<double>(pAudioStream->duration)
                             * pAudioStream->time_base.num
                             / pAudioStream->time_base.den;
         }
 
         // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
-        info.bitRate = decoderPar->bit_rate / 1000;
-        if (info.bitRate <= 0 && info.duration > 0.0 && info.fileSize > 0)
+        info.streams[streamCount].bitRate = decoderPar->bit_rate / 1000;
+        if (info.streams[streamCount].bitRate <= 0 && info.streams[streamCount].duration > 0.0 && info.fileSize > 0)
         {
-            info.bitRate = static_cast<int>(
-                info.fileSize * 8.0 / info.duration / 1000.0);
+            info.streams[streamCount].bitRate = static_cast<int>(
+                info.fileSize * 8.0 / info.streams[streamCount].duration / 1000.0);
         }
 
         // 采样率（Hz）
-        info.sampleRate = decoderPar->sample_rate;
+        info.streams[streamCount].sampleRate = decoderPar->sample_rate;
 
         // 通道数
-        info.numChannels = decoderPar->ch_layout.nb_channels;
+        info.streams[streamCount].numChannels = decoderPar->ch_layout.nb_channels;
 
         // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
         int bytesPerSample = av_get_bytes_per_sample(
             static_cast<AVSampleFormat>(decoderPar->format));
         if (bytesPerSample > 0)
         {
-            info.bitDepth = bytesPerSample * 8;
+            info.streams[streamCount].bitDepth = bytesPerSample * 8;
         }
         else
         {
-            info.bitDepth = decoderPar->bits_per_coded_sample;
+            info.streams[streamCount].bitDepth = decoderPar->bits_per_coded_sample;
         }
 
         //提取标签数据
@@ -182,26 +180,26 @@ SongInfo getStreamMetaData(const juce::File& file){
         AVDictionaryEntry* pEntry = nullptr;
 
         if ((pEntry = av_dict_get(pTags, "title",       nullptr, 0)))
-            info.artist = pEntry->value;
+            info.streams[streamCount].artist = pEntry->value;
         if ((pEntry = av_dict_get(pTags, "artist",       nullptr, 0)))
-            info.artist = pEntry->value;
+            info.streams[streamCount].artist = pEntry->value;
         if ((pEntry = av_dict_get(pTags, "album",        nullptr, 0)))
-            info.album = pEntry->value;
+            info.streams[streamCount].album = pEntry->value;
         if ((pEntry = av_dict_get(pTags, "album_artist", nullptr, 0)))
-            info.albumArtist = pEntry->value;
+            info.streams[streamCount].albumArtist = pEntry->value;
         if ((pEntry = av_dict_get(pTags, "genre",        nullptr, 0)))
-            info.genre = pEntry->value;
+            info.streams[streamCount].genre = pEntry->value;
         if ((pEntry = av_dict_get(pTags, "track",        nullptr, 0)))
-            info.trackNumber = safeToInt(pEntry->value);
+            info.streams[streamCount].trackNumber = safeToInt(pEntry->value);
         if ((pEntry = av_dict_get(pTags, "disc",         nullptr, 0)))
-            info.discNumber = safeToInt(pEntry->value);
+            info.streams[streamCount].discNumber = safeToInt(pEntry->value);
         if ((pEntry = av_dict_get(pTags, "date",         nullptr, 0)))
-            info.year = safeToInt(pEntry->value);
+            info.streams[streamCount].year = safeToInt(pEntry->value);
         if ((pEntry = av_dict_get(pTags, "composer",     nullptr, 0)))
-            info.composer = pEntry->value;
+            info.streams[streamCount].composer = pEntry->value;
 
     }
     avformat_close_input(&inputContext);
 
-    return infos;
+    return info;
 }
