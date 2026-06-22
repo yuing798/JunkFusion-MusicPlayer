@@ -62,5 +62,23 @@ struct myClass{
 }
 ```
 2. 完成任务后不要自行build
+3. 临时工具函数请使用lambda的形式，不要在外部在加上一个namespace或者static来定义，如
+```cpp
+namespace
+{
+    // 安全字符串转 int，失败返回 0；处理 "3/12" 格式的轨道号
+    int safeToInt(const char* str)
+    {
+        try { return std::stoi(str); }
+        catch (...) { return 0; }
+    }
+}//这种写法是错的，应该写成下面这种形式
+
+auto safeToInt = [](const char* str) -> int{
+    try { return std::stoi(str); }
+    catch (...) { return 0; }
+};//写成这种形式，然后在同一个函数定义体中使用
+```
+4. 禁止使用namespace
 
 
