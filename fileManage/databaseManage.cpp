@@ -23,7 +23,7 @@ SongsManage::SongsManage(){
             U("数据库错误"),
             U("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: ") + juce::String(e.what())
         );
-        
+        //spdlog:报错
     }
 }
 

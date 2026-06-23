@@ -43,10 +43,13 @@ void logSystem::initLog()
 
         // ── 3. 按表创建 7 个日志器 ──
 
+        constexpr size_t kAudioMaxSize  = 5 * 1024 * 1024;   // 5 MB
+        constexpr size_t kAudioMaxFiles = 3;
+
         // ── 0: player_audio.log — 音频流水线 (Error, async) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/player_audio.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/player_audio.log", kAudioMaxSize, kAudioMaxFiles);
             audioLogger = std::make_shared<spdlog::async_logger>(
                 "audio", std::move(sink), spdlog::thread_pool(),
                 spdlog::async_overflow_policy::block);
@@ -55,10 +58,13 @@ void logSystem::initLog()
             spdlog::register_logger(audioLogger);
         }
 
+        constexpr size_t kSchedulerMaxSize  = 5 * 1024 * 1024;   // 5 MB
+        constexpr size_t kSchedulerMaxFiles = 3;
+
         // ── 1: player_scheduler.log — 多线程调度与队列 (Info) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/player_scheduler.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/player_scheduler.log", kSchedulerMaxSize, kSchedulerMaxFiles);
             schedulerLogger = std::make_shared<spdlog::logger>(
                 "scheduler", std::move(sink));
             schedulerLogger->set_pattern(pattern);
@@ -66,10 +72,13 @@ void logSystem::initLog()
             spdlog::register_logger(schedulerLogger);
         }
 
+        constexpr size_t kUiMaxSize  = 5 * 1024 * 1024;   // 5 MB
+        constexpr size_t kUiMaxFiles = 3;
+
         // ── 2: player_ui.log — 用户行为与操作 (Info) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/player_ui.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/player_ui.log", kUiMaxSize, kUiMaxFiles);
             uiLogger = std::make_shared<spdlog::logger>(
                 "ui", std::move(sink));
             uiLogger->set_pattern(pattern);
@@ -77,10 +86,13 @@ void logSystem::initLog()
             spdlog::register_logger(uiLogger);
         }
 
+        constexpr size_t kAiMaxSize  = 10 * 1024 * 1024;  // 10 MB（AI 日志量大）
+        constexpr size_t kAiMaxFiles = 3;
+
         // ── 3: ai_worker.log — AI 跨进程 IPC (Info, async) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/ai_worker.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/ai_worker.log", kAiMaxSize, kAiMaxFiles);
             aiLogger = std::make_shared<spdlog::async_logger>(
                 "ai", std::move(sink), spdlog::thread_pool(),
                 spdlog::async_overflow_policy::block);
@@ -89,10 +101,13 @@ void logSystem::initLog()
             spdlog::register_logger(aiLogger);
         }
 
+        constexpr size_t kVstMaxSize  = 5 * 1024 * 1024;   // 5 MB
+        constexpr size_t kVstMaxFiles = 3;
+
         // ── 4: vst_host.log — VST/AU 插件宿主 (Warn) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/vst_host.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/vst_host.log", kVstMaxSize, kVstMaxFiles);
             vstLogger = std::make_shared<spdlog::logger>(
                 "vst", std::move(sink));
             vstLogger->set_pattern(pattern);
@@ -100,10 +115,13 @@ void logSystem::initLog()
             spdlog::register_logger(vstLogger);
         }
 
+        constexpr size_t kCrashMaxSize  = 2 * 1024 * 1024;   // 2 MB
+        constexpr size_t kCrashMaxFiles = 5;                 // 崩溃日志多留几份
+
         // ── 5: crash.log — 全进程崩溃转储 (Fatal) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/crash.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/crash.log", kCrashMaxSize, kCrashMaxFiles);
             crashLogger = std::make_shared<spdlog::logger>(
                 "crash", std::move(sink));
             crashLogger->set_pattern(pattern);
@@ -113,10 +131,13 @@ void logSystem::initLog()
             spdlog::register_logger(crashLogger);
         }
 
+        constexpr size_t kAllMaxSize  = 20 * 1024 * 1024;  // 20 MB（全量调试日志量大）
+        constexpr size_t kAllMaxFiles = 3;
+
         // ── 6: all.log — 全量汇聚 (Debug, async, release 关闭) ──
         {
-            auto sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
-                logDirPath + "/all.log", 0, 0);
+            auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+                logDirPath + "/all.log", kAllMaxSize, kAllMaxFiles);
             allLogger = std::make_shared<spdlog::async_logger>(
                 "all", std::move(sink), spdlog::thread_pool(),
                 spdlog::async_overflow_policy::block);

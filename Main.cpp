@@ -1,4 +1,5 @@
 #include "MainComponent.h"
+#include "fileManage/databaseManage.hpp"
 #include "otherUtils.hpp"
 
 //==============================================================================
@@ -20,7 +21,7 @@ public:
     {
         // This method is where you should put your application's initialisation code..
         juce::ignoreUnused (commandLine);
-        mLogSystem.initLog();
+        // mLogSystem.initLog();
 
         mainWindow.reset (new MainWindow (getApplicationName()));
     }
@@ -96,6 +97,7 @@ public:
 
 private:
     logSystem mLogSystem;
+    SongsManage mSongsManage;
     std::unique_ptr<MainWindow> mainWindow;
 };
 
