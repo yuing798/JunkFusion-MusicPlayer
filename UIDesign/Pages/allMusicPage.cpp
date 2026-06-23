@@ -65,16 +65,16 @@ void allMusicPage::resized(){
     auto local = getLocalBounds();
     auto height = local.getHeight();
     mViewPort.setBounds(local.removeFromBottom(height * 0.8f));
-    auto row2 = local.removeFromBottom(height * 0.06f).reduced(5.0f);
+    auto row2 = local.removeFromBottom(height * 0.09f).reduced(5.0f);
     auto row1 = local.reduced(5);
 
     row2.removeFromLeft(20);
-    selectFileButton.setBounds(row2.removeFromLeft(80));
-    refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()));
-    row2.removeFromRight(20);
-    mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()));
-    sortWaysComboBox.setBounds(row2.removeFromRight(100));
-    sortWayLabel.setBounds(row2.removeFromRight(70));
+    selectFileButton.setBounds(row2.removeFromLeft(80).reduced(5,10));
+    refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
+    row2.removeFromRight(30);
+    mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
+    sortWaysComboBox.setBounds(row2.removeFromRight(120).reduced(10));
+    sortWayLabel.setBounds(row2.removeFromRight(90).reduced(10));
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));

@@ -1,6 +1,5 @@
 target_include_directories(JunkFusion PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_sources(JunkFusion PRIVATE
-    UISet.cpp
     LeftColumn.cpp
     mainPage.cpp
     uiUtils.cpp
@@ -8,3 +7,4 @@ target_sources(JunkFusion PRIVATE
 
 add_subdirectory(FontAbout)
 add_subdirectory(Pages)
+add_subdirectory(diyComponent)

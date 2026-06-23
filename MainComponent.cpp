@@ -1,5 +1,6 @@
 #include "MainComponent.h"
-#include "UIDesign/UISet.h"
+#include "UIDesign/diyComponent/lookandfeel.hpp"
+#include "UIDesign/diyComponent/otherComponent.hpp"
 
 //==============================================================================
 MainComponent::MainComponent()

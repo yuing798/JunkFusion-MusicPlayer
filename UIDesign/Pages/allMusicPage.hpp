@@ -2,12 +2,13 @@
 
 #include "BinaryData.h"
 #include "FontAbout/font.h"
-#include "UISet.h"
+#include "./diyComponent/otherComponent.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <filesystem>
 #include <vector>
+#include "./diyComponent/buttons.hpp"
 
 
 class EachSong : public juce::Component{
