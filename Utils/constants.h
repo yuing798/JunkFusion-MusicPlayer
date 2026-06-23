@@ -20,3 +20,12 @@ static constexpr const char* UICacheId{"UICacheId"};
 static constexpr const char* AudioArrayId{"AudioArrayId"};//用来存储音频数组,因为数组不能直接交给APVTS管理
 static constexpr const char* DIYArrayId{"DIYArrayId"};
 
+//日志id
+static constexpr const char* LogAudioID{"audio"};
+static constexpr const char* LogSchedulerID{"scheduler"};
+static constexpr const char* LogUiID{"ui"};
+static constexpr const char* LogAiID{"ai"};
+static constexpr const char* LogVSTID{"vst"};
+static constexpr const char* LogCrashID{"crash"};
+static constexpr const char* LogAllID{"all"};
+

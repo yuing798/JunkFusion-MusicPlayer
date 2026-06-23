@@ -1,4 +1,5 @@
 #include "otherUtils.hpp"
+#include "constants.h"
 #include "juce_core/juce_core.h"
 #include <cstddef>
 #include <iostream>
@@ -51,7 +52,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/player_audio.log", kAudioMaxSize, kAudioMaxFiles);
             audioLogger = std::make_shared<spdlog::async_logger>(
-                "audio", std::move(sink), spdlog::thread_pool(),
+                LogAudioID, std::move(sink), spdlog::thread_pool(),
                 spdlog::async_overflow_policy::block);
             audioLogger->set_pattern(pattern);
             audioLogger->set_level(spdlog::level::err);
@@ -66,7 +67,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/player_scheduler.log", kSchedulerMaxSize, kSchedulerMaxFiles);
             schedulerLogger = std::make_shared<spdlog::logger>(
-                "scheduler", std::move(sink));
+                LogSchedulerID, std::move(sink));
             schedulerLogger->set_pattern(pattern);
             schedulerLogger->set_level(spdlog::level::info);
             spdlog::register_logger(schedulerLogger);
@@ -80,7 +81,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/player_ui.log", kUiMaxSize, kUiMaxFiles);
             uiLogger = std::make_shared<spdlog::logger>(
-                "ui", std::move(sink));
+                LogUiID, std::move(sink));
             uiLogger->set_pattern(pattern);
             uiLogger->set_level(spdlog::level::info);
             spdlog::register_logger(uiLogger);
@@ -94,7 +95,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/ai_worker.log", kAiMaxSize, kAiMaxFiles);
             aiLogger = std::make_shared<spdlog::async_logger>(
-                "ai", std::move(sink), spdlog::thread_pool(),
+                LogAiID, std::move(sink), spdlog::thread_pool(),
                 spdlog::async_overflow_policy::block);
             aiLogger->set_pattern(pattern);
             aiLogger->set_level(spdlog::level::info);
@@ -109,7 +110,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/vst_host.log", kVstMaxSize, kVstMaxFiles);
             vstLogger = std::make_shared<spdlog::logger>(
-                "vst", std::move(sink));
+                LogVSTID, std::move(sink));
             vstLogger->set_pattern(pattern);
             vstLogger->set_level(spdlog::level::warn);
             spdlog::register_logger(vstLogger);
@@ -123,7 +124,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/crash.log", kCrashMaxSize, kCrashMaxFiles);
             crashLogger = std::make_shared<spdlog::logger>(
-                "crash", std::move(sink));
+                LogCrashID, std::move(sink));
             crashLogger->set_pattern(pattern);
             crashLogger->set_level(spdlog::level::critical);
             // 崩溃日志每条立即刷盘
@@ -139,7 +140,7 @@ void logSystem::initLog()
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
                 logDirPath + "/all.log", kAllMaxSize, kAllMaxFiles);
             allLogger = std::make_shared<spdlog::async_logger>(
-                "all", std::move(sink), spdlog::thread_pool(),
+                LogAllID, std::move(sink), spdlog::thread_pool(),
                 spdlog::async_overflow_policy::block);
             allLogger->set_pattern(pattern);
 #ifdef NDEBUG
