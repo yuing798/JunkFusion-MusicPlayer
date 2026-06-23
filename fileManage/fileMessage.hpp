@@ -32,12 +32,13 @@ const std::vector<std::string> fileTypeArray{
 struct SongInfo
 {
     // ── 1. 文件信息 ──
+    int id{0};//这个文件对应的唯一id索引号
     std::string filePath;               // 文件完整路径
     std::string fileName;               // 文件名称（含扩展名）
     size_t      fileSize    = 0;        // 文件大小（字节）
     std::string lastModifiedTime;       // 文件最后一次修改时间
     std::string addTime;                // 添加到应用的时间
-    int numAudioStreams{0};
+    int numAudioStreams{0};//一共有多少音频流
     double duration     = 0.0;          // 歌曲时长（秒）时长应该每条流都一样
 
     // ── 3. 标签信息 ──
@@ -54,6 +55,7 @@ struct SongInfo
 
     std::string extraMetadata;//文件层和流层都有自己独属的额外元数据
     std::string comment;                // 备注(用户写进去的)
+    std::string imageHash;             //图片所对应的哈希值索引
 
     struct stream{
         // ── 2. FFmpeg 解码层信息 ──
