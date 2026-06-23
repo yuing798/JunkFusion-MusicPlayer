@@ -6,6 +6,7 @@
     
     "ffmpeg",
     "spdlog",
-    "sqlitecpp"    
+    "sqlitecpp",
+    "hash-library"    
   ]
 }

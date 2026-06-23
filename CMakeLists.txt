@@ -17,6 +17,7 @@ FetchContent_MakeAvailable(JUCE)
 find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(unofficial-hash-library CONFIG REQUIRED)
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
@@ -94,6 +95,7 @@ target_link_libraries(JunkFusion
         ${FFMPEG_LIBRARIES}
         SQLiteCpp
         spdlog::spdlog
+        unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
 
     PUBLIC
