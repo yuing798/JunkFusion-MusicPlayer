@@ -1,6 +1,7 @@
 #pragma once
 #include "FontAbout/font.h"
 #include "constants.h"
+#include "juce_animation/juce_animation.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
@@ -48,6 +49,7 @@ public:
 
 
 
+
 struct rotarySlider : public juce::Slider{
 
     rotarySlider();
@@ -65,4 +67,44 @@ struct WhatsMoreToolTip : juce::DrawableButton{
     WhatsMoreToolTip(const juce::String& text);
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     std::unique_ptr<juce::Drawable> svg;
+};
+
+class OverlayMenu : public juce::Component
+{
+public:
+    // 传入点击回调函数
+    OverlayMenu ();
+
+    ~OverlayMenu();
+
+    //触发弹出动画
+    void showMenu (juce::Rectangle<int> targetBounds);
+
+    //触发收回动画
+    void hideMenu();
+    
+
+    void paint (juce::Graphics& g) override
+    {
+        // 在这里绘制你精致的组合框菜单背景、圆角、阴影等
+        auto bounds = getLocalBounds().toFloat();
+        g.setColour (juce::Colour (0xff1e1e1e));
+        g.fillRoundedRectangle (bounds, 6.0f);
+
+        g.setColour (juce::Colour (0xff333333));
+        g.drawRoundedRectangle (bounds.reduced (0.5f), 6.0f, 1.0f);
+    }
+
+    // 假设这是鼠标点击菜单项的逻辑
+    void mouseDown (const juce::MouseEvent& e) override;
+
+private:
+    std::function<void (int)> onItemClicked;
+
+    // 🌟 JUCE 8 的动画黄金搭档
+    // juce::Animator menuAnimator;
+    // juce::VBlankAnimatorUpdater vBlankUpdater;
+    juce::Animator mAnimator;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OverlayMenu)
 };

@@ -2,10 +2,10 @@
 #include "./otherComponent.hpp"
 
 YLookAndFeel::YLookAndFeel(){
-    setColour(juce::PopupMenu::backgroundColourId,ycolor.midGrey);
-    setColour(juce::PopupMenu::textColourId, ycolor.black);
-    setColour(juce::PopupMenu::highlightedBackgroundColourId, ycolor.darkGrey);
-    setColour(juce::PopupMenu::highlightedTextColourId, ycolor.black);
+    // setColour(juce::PopupMenu::backgroundColourId,ycolor.midGrey);
+    // setColour(juce::PopupMenu::textColourId, ycolor.black);
+    // setColour(juce::PopupMenu::highlightedBackgroundColourId, ycolor.darkGrey);
+    // setColour(juce::PopupMenu::highlightedTextColourId, ycolor.black);
 
     // customTypeface = juce::Typeface::findSystemTypeface();
 }

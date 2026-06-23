@@ -86,9 +86,3 @@ void WhatsMoreToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHi
                             juce::RectanglePlacement::centred,
                               1.0f);
 }
-yComboBox::yComboBox(){
-    setColour(juce::ComboBox::arrowColourId, ycolor.black);
-    setColour(juce::ComboBox::backgroundColourId, ycolor.midGrey);
-    setColour(juce::ComboBox::textColourId, ycolor.black);
-
-}
