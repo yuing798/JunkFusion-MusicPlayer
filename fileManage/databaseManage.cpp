@@ -23,7 +23,10 @@ void createTables(SQLite::Database& db)
 // ============================================================
 bool isSongExists(SQLite::Database& db, const std::string& filePath)
 {
-    SQLite::Statement query(db, "SELECT COUNT(*) FROM songs WHERE file_path = ?");
+    //SQLite::Database:存储数据库连接句柄（一个指向 .db 文件的指针）、连接状态、是否开启事务等管理信息。它是你操作数据库的“总入口”。
+    //SQLite::Statement存储预编译好的 SQL 语句模板（比如 SELECT * FROM songs WHERE id = ?）、
+    // 绑定的参数值（你填入的 filePath）、以及当前正在读取的那一行数据（执行查询后的结果缓冲区）。
+    SQLite::Statement query(db, "SELECT COUNT(*) FROM songs WHERE filePath = ?");
     //告诉数据库“我要数一下，songs 表里有多少行的 file_path 等于后面那个问号”。
     //这个 ? 是一个“空位”，专门留给后面的 C++ 变量来填的
     //目的：防止 SQL 注入攻击
@@ -35,6 +38,7 @@ bool isSongExists(SQLite::Database& db, const std::string& filePath)
     query.executeStep();
     //执行查询：数据库跑去找数据。
     return query.getColumn(0).getInt() > 0;
+    //getColumn 数 SELECT 的列（从 0 开始）
 }
 
 // ============================================================
@@ -90,14 +94,16 @@ int insertSong(SQLite::Database& db, const SongInfo& info)
 
         {
             SQLite::Statement checkQuery(db,
-                "SELECT song_id, file_size, last_modified_time FROM songs WHERE file_path = ?");
+                "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = ?");
             checkQuery.bind(1, info.filePath);
 
-            if (checkQuery.executeStep())
+            if (checkQuery.executeStep())//getColumn() 有一个铁律：在调用 getColumn() 之前，必须确保 executeStep() 返回了 true
             {
                 existingId = checkQuery.getColumn(0).getInt64();
                 int64_t existingSize = checkQuery.getColumn(1).getInt64();
                 std::string existingTime = checkQuery.getColumn(2).getString();
+                //这里的aIndex是相对于上面写的SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = ?
+                //而不是表中的顺序
 
                 // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
                 if (static_cast<int64_t>(info.fileSize) == existingSize
@@ -108,7 +114,7 @@ int insertSong(SQLite::Database& db, const SongInfo& info)
             }
         }
 
-        // ── 事务开始（RAII：析构时若未 commit 则自动 ROLLBACK） ──
+        // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
         SQLite::Transaction transaction(db);
 
         int64_t songId = 0;
@@ -117,22 +123,22 @@ int insertSong(SQLite::Database& db, const SongInfo& info)
         {
             // ── 文件已变更：先删除旧流记录 ──
             {
-                SQLite::Statement delStreams(db, "DELETE FROM streams WHERE song_id = ?");
+                SQLite::Statement delStreams(db, "DELETE FROM streams WHERE songId = ?");
                 delStreams.bind(1, existingId);
                 delStreams.exec();
             }
 
             // ── 更新 songs 记录（包含 file_path 以对齐 bindSongFields 的绑定顺序） ──
             SQLite::Statement updateSong(db,
-                "UPDATE songs SET file_path = ?, file_name = ?, file_size = ?, "
-                "last_modified_time = ?, add_time = ?, num_audio_streams = ?, "
-                "duration = ?, title = ?, artist = ?, album = ?, album_artist = ?, "
-                "genre = ?, track_number = ?, disc_number = ?, year = ?, composer = ?, "
-                "extra_metadata = ?, comment = ?, image_hash = ? "
-                "WHERE song_id = ?");
+                "UPDATE songs SET filePath = ?, fileName = ?, fileSize = ?, "
+                "lastModifiedTime = ?, addTime = ?, numAudioStreams = ?, "
+                "duration = ?, title = ?, artist = ?, album = ?, albumArtist = ?, "
+                "genre = ?, trackNumber = ?, discNumber = ?, year = ?, composer = ?, "
+                "extraMetadata = ?, comment = ?, imageHash = ? "
+                "WHERE songId = ?");
 
             bindSongFields(updateSong);
-            updateSong.bind(20, existingId);
+            updateSong.bind(20, existingId);//这里把id绑在最后一位
             updateSong.exec();
 
             songId = existingId;
@@ -141,9 +147,9 @@ int insertSong(SQLite::Database& db, const SongInfo& info)
         {
             // ── 新文件：插入 songs 记录 ──
             SQLite::Statement insertSong(db,
-                "INSERT INTO songs (file_path, file_name, file_size, last_modified_time, "
-                "add_time, num_audio_streams, duration, title, artist, album, album_artist, "
-                "genre, track_number, disc_number, year, composer, extra_metadata, comment, image_hash) "
+                "INSERT INTO songs (filePath, fileName, fileSize, lastModifiedTime, "
+                "addTime, numAudioStreams, duration, title, artist, album, albumArtist, "
+                "genre, trackNumber, discNumber, year, composer, extraMetadata, comment, imageHash) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             bindSongFields(insertSong);
@@ -155,9 +161,9 @@ int insertSong(SQLite::Database& db, const SongInfo& info)
         // ── 插入 streams 记录（新文件和变更文件共用） ──
         {
             SQLite::Statement insertStream(db,
-                "INSERT INTO streams (song_id, stream_count, bit_rate, sample_rate, "
-                "num_channels, bit_depth, codec_name, is_music, ai_genre, ai_mood, "
-                "bpm, key, ai_processed, extra_metadata) "
+                "INSERT INTO streams (songId, streamCount, bitRate, sampleRate, "
+                "numChannels, bitDepth, codecName, isMusic, aiGenre, aiMood, "
+                "bpm, key, aiProcessed, extraMetadata) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             for (const auto& stream : info.streams)
@@ -165,7 +171,7 @@ int insertSong(SQLite::Database& db, const SongInfo& info)
                 bindStreamFields(insertStream, songId, stream);
                 insertStream.exec();
                 insertStream.reset();
-                insertStream.clearBindings();
+                // insertStream.clearBindings();
             }
         }
 

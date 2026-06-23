@@ -15,48 +15,48 @@
 //REAL:存储浮点数
 inline const char* createSongsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songs (
-        song_id             INTEGER PRIMARY KEY AUTOINCREMENT,
-        file_path           TEXT    UNIQUE NOT NULL,
-        file_name           TEXT NOT NULL,
-        file_size           INTEGER NOT NULL,
-        last_modified_time  TEXT NOT NULL,
-        add_time            TEXT,
-        num_audio_streams   INTEGER,
+        songId             INTEGER PRIMARY KEY AUTOINCREMENT,
+        filePath           TEXT    UNIQUE NOT NULL,
+        fileName           TEXT NOT NULL,
+        fileSize           INTEGER NOT NULL,
+        lastModifiedTime  TEXT NOT NULL,
+        addTime            TEXT,
+        numAudioStreams   INTEGER,
         duration            REAL,
         title               TEXT,
         artist              TEXT,
         album               TEXT,
-        album_artist        TEXT,
+        albumArtist        TEXT,
         genre               TEXT,
-        track_number        INTEGER,
-        disc_number         INTEGER,
+        trackNumber        INTEGER,
+        discNumber         INTEGER,
         year                INTEGER,
         composer            TEXT,
-        extra_metadata      TEXT,
+        extraMetadata      TEXT,
         comment             TEXT,
-        image_hash          TEXT
+        imageHash          TEXT
     )
 )";
 
 // streams 表：存储流层信息，通过 song_id 外键关联到 songs 表
 inline const char* createStreamsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS streams (
-        stream_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-        song_id         INTEGER NOT NULL,
-        stream_count    INTEGER,
-        bit_rate        INTEGER,
-        sample_rate     INTEGER,
-        num_channels    INTEGER,
-        bit_depth       INTEGER,
-        codec_name      TEXT,
-        is_music        INTEGER,
-        ai_genre        TEXT,
-        ai_mood         TEXT,
-        bpm             REAL,
+        streamId       INTEGER PRIMARY KEY AUTOINCREMENT,
+        songId         INTEGER NOT NULL,
+        streamCount    INTEGER,
+        bitRate        INTEGER,
+        sampleRate     INTEGER,
+        numChannels    INTEGER,
+        bitDepth       INTEGER,
+        codecName      TEXT,
+        isMusic        INTEGER,
+        aiGenre        TEXT,
+        aiGood         TEXT,
+        bpm             INTEGER,
         key             TEXT,
-        ai_processed    INTEGER,
+        aiProcessed    INTEGER,
         extra_metadata  TEXT,
-        FOREIGN KEY (song_id) REFERENCES songs(song_id) ON DELETE CASCADE
+        FOREIGN KEY (songId) REFERENCES songs(songId) ON DELETE CASCADE
     )
 )";
 //FOREIGN KEY (song_id) REFERENCES songs(song_id) ON DELETE CASCADE
@@ -66,7 +66,7 @@ inline const char* createStreamsTableSQL = R"(
 
 // 索引：加速按 song_id 查询 streams
 inline const char* createStreamsIndexSQL = R"(
-    CREATE INDEX IF NOT EXISTS idx_streams_song_id ON streams(song_id)
+    CREATE INDEX IF NOT EXISTS idx_streams_songId ON streams(songId)
 )";
 //CREATE INDEX：创建一个索引（可以理解为给数据库做一张“目录”或“快捷方式”）
 //IF NOT EXISTS：如果这个索引不存在才创建，防止重复执行 SQL 时报错
