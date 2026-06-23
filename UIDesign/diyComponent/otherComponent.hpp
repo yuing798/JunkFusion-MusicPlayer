@@ -59,9 +59,6 @@ struct rotarySlider : public juce::Slider{
 struct verticalSlider : public juce::Slider{
     verticalSlider();
 };
-struct yComboBox : public juce::ComboBox{
-    yComboBox();
-};
 struct WhatsMoreToolTip : juce::DrawableButton{
 //一个省略号图形，悬停显示注释
     WhatsMoreToolTip(const juce::String& text);
@@ -69,13 +66,13 @@ struct WhatsMoreToolTip : juce::DrawableButton{
     std::unique_ptr<juce::Drawable> svg;
 };
 
-class OverlayMenu : public juce::Component
+class YComboBox : public juce::Component
 {
 public:
-    // 传入点击回调函数
-    OverlayMenu ();
 
-    ~OverlayMenu();
+    YComboBox ();
+
+    ~YComboBox();
 
     //触发弹出动画
     void showMenu (juce::Rectangle<int> targetBounds);
@@ -83,17 +80,8 @@ public:
     //触发收回动画
     void hideMenu();
     
-
-    void paint (juce::Graphics& g) override
-    {
-        // 在这里绘制你精致的组合框菜单背景、圆角、阴影等
-        auto bounds = getLocalBounds().toFloat();
-        g.setColour (juce::Colour (0xff1e1e1e));
-        g.fillRoundedRectangle (bounds, 6.0f);
-
-        g.setColour (juce::Colour (0xff333333));
-        g.drawRoundedRectangle (bounds.reduced (0.5f), 6.0f, 1.0f);
-    }
+    void resized() override;
+    void paint (juce::Graphics& g) override;
 
     // 假设这是鼠标点击菜单项的逻辑
     void mouseDown (const juce::MouseEvent& e) override;
@@ -101,10 +89,8 @@ public:
 private:
     std::function<void (int)> onItemClicked;
 
-    // 🌟 JUCE 8 的动画黄金搭档
-    // juce::Animator menuAnimator;
-    // juce::VBlankAnimatorUpdater vBlankUpdater;
     juce::Animator mAnimator;
+    juce::VBlankAnimatorUpdater mVBlankAnimatorUpdater;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OverlayMenu)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (YComboBox)
 };
