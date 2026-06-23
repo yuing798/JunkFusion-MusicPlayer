@@ -49,13 +49,13 @@ allMusicPage::allMusicPage(){
     addAndMakeVisible(sortWaysComboBox);
     addAndMakeVisible(mUpDownButton);
 
-    sortWaysComboBox.addItem(U("标题"), 1);
-    sortWaysComboBox.addItem(U("作者"), 2);
-    sortWaysComboBox.addItem(U("专辑"), 3);
-    sortWaysComboBox.addItem(U("添加时间"), 4);
-    sortWaysComboBox.addItem(U("音乐风格"), 5);
-    sortWaysComboBox.addItem(U("歌曲时长"), 6);
-    sortWaysComboBox.setSelectedId(1);
+    sortWaysComboBox.addItem(U("标题"));
+    sortWaysComboBox.addItem(U("作者"));
+    sortWaysComboBox.addItem(U("专辑"));
+    sortWaysComboBox.addItem(U("添加时间"));
+    sortWaysComboBox.addItem(U("音乐风格"));
+    sortWaysComboBox.addItem(U("歌曲时长"));
+    // sortWaysComboBox.setSelectedId(1);
 
     selectFileButton.addListener(this);
 

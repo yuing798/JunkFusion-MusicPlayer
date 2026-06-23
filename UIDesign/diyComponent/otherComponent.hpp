@@ -69,28 +69,70 @@ struct WhatsMoreToolTip : juce::DrawableButton{
 class YComboBox : public juce::Component
 {
 public:
-
     YComboBox ();
+    ~YComboBox() override;
 
-    ~YComboBox();
+    // === 数据管理 ===
+    void addItem (const juce::String& itemText);
+    void addItems (const juce::StringArray& items);
+    void addChineseItems (std::vector<const char*> items);
+    void clearItems();
+    int  getNumItems() const;
+    juce::String getItemText (int index) const;
 
-    //触发弹出动画
+    // === 选择管理 ===
+    void setSelectedItemIndex (int index, juce::NotificationType notification = juce::dontSendNotification);
+    int  getSelectedItemIndex() const;
+    juce::String getSelectedItemText() const;
+
+    // === 回调 ===
+    void onItemSelected (std::function<void (int)> callback);
+
+    // === 弹出/收回（由内部动画驱动） ===
     void showMenu (juce::Rectangle<int> targetBounds);
-
-    //触发收回动画
     void hideMenu();
-    
+
+    // === juce::Component ===
     void resized() override;
     void paint (juce::Graphics& g) override;
-
-    // 假设这是鼠标点击菜单项的逻辑
     void mouseDown (const juce::MouseEvent& e) override;
+    void mouseMove (const juce::MouseEvent& e) override;
+    void mouseExit (const juce::MouseEvent& e) override;
 
 private:
-    std::function<void (int)> onItemClicked;
+    // --- 内部方法 ---
+    void buildAnimators();
+    void createPopup();
+    void removePopup();
+    void updatePopupAppearance();
+    void selectItem (int index);   // 由 popup 调用，触发回调 + repaint
 
-    juce::Animator mAnimator;
-    juce::VBlankAnimatorUpdater mVBlankAnimatorUpdater;
+    // --- 常量 ---
+    static constexpr float kCornerRadius      = 6.0f;
+    static constexpr float kOutlineWidth      = 3.0f;
+    static constexpr float kPopupOutlineWidth = 1.0f;
+    static constexpr float kArrowSize         = 8.0f;
+    static constexpr float kFontSize          = 17.0f;
+    static constexpr float kAnimDurationMs    = 200.0;
+
+    // --- 成员 ---
+    juce::StringArray mItems;
+    int mSelectedIndex    = -1;
+    bool mIsPopupVisible  = false;
+    bool mIsHoveringArrow = false;
+
+    std::unique_ptr<juce::VBlankAnimatorUpdater> mVBlankAnimatorUpdater;
+    juce::Animator mOpenAnimator;
+    juce::Animator mCloseAnimator;
+    float mPopupOpacity = 0.0f;
+
+    class YComboPopup;
+    std::unique_ptr<YComboPopup> mPopup;
+
+    class PopupDismissListener;
+    std::unique_ptr<PopupDismissListener> mDismissListener;
+
+    std::function<void (int)> onItemClicked;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (YComboBox)
 };

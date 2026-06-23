@@ -61,7 +61,7 @@ private:
     };
     littleLabel numSongsLabel{U("共 0 首")};
     YLabel sortWayLabel{U("排列方法")};
-    juce::ComboBox sortWaysComboBox;
+    YComboBox sortWaysComboBox;
 
     //搜索框
     juce::Viewport mViewPort;
