@@ -2,7 +2,6 @@
 Diagnostics:
   Suppress:
     - -Wunused-const-variable
-    - misc-definitions-in-headers#头文件不宜定义变量
 
 CompileFlags:
     CompilationDatabase: "build/debug"  # 如果切到了 release，需要改成 build/release，这一句话是为了防止clangd报错

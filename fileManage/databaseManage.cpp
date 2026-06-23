@@ -1,9 +1,36 @@
 #include "databaseManage.hpp"
+#include "FontAbout/font.h"
+#include "juce_core/juce_core.h"
+#include "juce_gui_basics/juce_gui_basics.h"
+#include <SQLiteCpp/Database.h>
+#include <memory>
+
+SongsManage::SongsManage(){
+    auto databaseDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getChildFile("database");
+    if(!databaseDir.exists()) databaseDir.createDirectory();
+
+    songsDbFile = databaseDir.getChildFile("songs.db");
+
+    try{
+        songsDatabase = std::make_unique<SQLite::Database>(
+            songsDbFile.getFullPathName().toStdString(),
+            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
+        );
+        createTables(*songsDatabase);
+    }catch(const std::exception& e){
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::WarningIcon,
+            U("数据库错误"),
+            U("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: ") + juce::String(e.what())
+        );
+        
+    }
+}
 
 // ============================================================
 // createTables
 // ============================================================
-void createTables(SQLite::Database& db)
+void SongsManage::createTables(SQLite::Database& db)
 {
     db.exec(createSongsTableSQL);
     db.exec(createStreamsTableSQL);
@@ -21,7 +48,7 @@ void createTables(SQLite::Database& db)
 // ============================================================
 // isSongExists
 // ============================================================
-bool isSongExists(SQLite::Database& db, const std::string& filePath)
+bool SongsManage::isSongExists(SQLite::Database& db, const std::string& filePath)
 {
     //SQLite::Database:存储数据库连接句柄（一个指向 .db 文件的指针）、连接状态、是否开启事务等管理信息。它是你操作数据库的“总入口”。
     //SQLite::Statement存储预编译好的 SQL 语句模板（比如 SELECT * FROM songs WHERE id = ?）、
@@ -44,13 +71,13 @@ bool isSongExists(SQLite::Database& db, const std::string& filePath)
 // ============================================================
 // insertSong
 // ============================================================
-int insertSong(SQLite::Database& db, const SongInfo& info)
+int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
 {
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
         stmt.bind(1,  info.filePath);
         stmt.bind(2,  info.fileName);
-        stmt.bind(3,  static_cast<int64_t>(info.fileSize));
+        stmt.bind(3,  info.fileSize);
         stmt.bind(4,  info.lastModifiedTime);
         stmt.bind(5,  info.addTime);
         stmt.bind(6,  info.numAudioStreams);

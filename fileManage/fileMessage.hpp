@@ -35,7 +35,7 @@ struct SongInfo
     int id{0};//这个文件对应的唯一id索引号
     std::string filePath;               // 文件完整路径
     std::string fileName;               // 文件名称（含扩展名）
-    size_t      fileSize    = 0;        // 文件大小（字节）
+    int64_t      fileSize    = 0;        // 文件大小（字节）
     std::string lastModifiedTime;       // 文件最后一次修改时间
     std::string addTime;                // 添加到应用的时间
     int numAudioStreams{0};//一共有多少音频流

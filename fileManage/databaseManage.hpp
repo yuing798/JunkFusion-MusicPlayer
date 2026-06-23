@@ -1,8 +1,11 @@
 #pragma once
 
+#include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <SQLiteCpp/Transaction.h>
+#include <memory>
 #include "fileMessage.hpp"
+#include "juce_core/juce_core.h"
 
 // ============================================================
 // 建表 SQL
@@ -74,28 +77,38 @@ inline const char* createStreamsIndexSQL = R"(
 //ON streams(song_id)：在 streams 表的 song_id 这一列上建立索引
 //如果你没有提前创建索引，数据库就只能把整个表从头到尾翻一遍（全表扫描）来找匹配的行
 
-// ============================================================
-// API 函数声明
-// ============================================================
 
-/** 创建所有表（songs + streams）和索引，如果已存在则跳过 */
-void createTables(SQLite::Database& db);
 
-/**
- * 插入一首歌及其所有流，带事务保护。
- *
- * 防重复策略：
- *   1. 数据库层：file_path 有 UNIQUE 约束
- *   2. 代码层：插入前先查询 file_path，比较 file_size 和 last_modified_time
- *      - 完全相同 → 视为重复，跳过插入，返回已有 song_id
- *      - 不同 → 文件已更新，删除旧记录后重新插入
- *      - 不存在 → 正常插入
- *
- * @param db       SQLite 数据库连接
- * @param info     歌曲信息（包含文件层和流层数据）
- * @return         song_id（成功），-1（失败）
- */
-int insertSong(SQLite::Database& db, const SongInfo& info);
+class SongsManage{
+private:
+    std::unique_ptr<SQLite::Database> songsDatabase;
+    juce::File songsDbFile;//歌曲管理文件
 
-/** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
-bool isSongExists(SQLite::Database& db, const std::string& filePath);
+public:
+    // ============================================================
+    // API 函数声明
+    // ============================================================
+
+    /** 创建所有表（songs + streams）和索引，如果已存在则跳过 */
+    void createTables(SQLite::Database& db);
+
+    /**
+     * 插入一首歌及其所有流，带事务保护。
+     *
+     * 防重复策略：
+     *   1. 数据库层：file_path 有 UNIQUE 约束
+     *   2. 代码层：插入前先查询 file_path，比较 file_size 和 last_modified_time
+     *      - 完全相同 → 视为重复，跳过插入，返回已有 song_id
+     *      - 不同 → 文件已更新，删除旧记录后重新插入
+     *      - 不存在 → 正常插入
+     *
+     * @param db       SQLite 数据库连接
+     * @param info     歌曲信息（包含文件层和流层数据）
+     * @return         song_id（成功），-1（失败）
+     */
+    int insertSong(SQLite::Database& db, const SongInfo& info);
+
+    /** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
+    bool isSongExists(SQLite::Database& db, const std::string& filePath);
+    SongsManage();
+};
