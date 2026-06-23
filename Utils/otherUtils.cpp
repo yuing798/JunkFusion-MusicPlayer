@@ -22,7 +22,7 @@ extern "C"{
  * all.log                   Debug    是      开发调试全量，release 关闭
  */
 
-void logSystem::initLog()
+logSystem::logSystem()
 {
     try
     {

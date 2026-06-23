@@ -1,9 +1,11 @@
 #include "databaseManage.hpp"
 #include "FontAbout/font.h"
+#include "constants.h"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Database.h>
 #include <memory>
+#include <spdlog/spdlog.h>
 
 SongsManage::SongsManage(){
     auto databaseDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getChildFile("database");
@@ -24,6 +26,8 @@ SongsManage::SongsManage(){
             U("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: ") + juce::String(e.what())
         );
         //spdlog:报错
+        auto logger = spdlog::get(LogCrashID);
+        if(logger) logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: ",e.what());
     }
 }
 

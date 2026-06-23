@@ -72,7 +72,7 @@ struct SongInfo
         bool isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
         std::string aiGenre;                // AI 分析体裁
         std::string aiMood;                 // AI 分析情绪
-        double      bpm         = 0.0;      // 节拍数
+        int      bpm         {0};      // 节拍数
         std::string key;                    // 调性（如 C major, A minor）        
         bool        aiProcessed = false;    // 是否已经进行过 AI 处理
 

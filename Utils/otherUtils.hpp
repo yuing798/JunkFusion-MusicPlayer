@@ -6,8 +6,9 @@
 #include <memory>
 #include <string>
 
-struct logSystem
+class logSystem
 {
+private:
     static constexpr size_t numLogs{7};
 
     // ── 日志器实例 ──
@@ -26,8 +27,8 @@ struct logSystem
     std::shared_ptr<spdlog::logger> vstLogger;
     std::shared_ptr<spdlog::logger> crashLogger;
     std::shared_ptr<spdlog::logger> allLogger;
-
-    void initLog();
+public:
+    logSystem();
 };
 
 //输出错误码

@@ -89,7 +89,7 @@ target_link_libraries(JunkFusion
         juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
         juce::juce_gui_extra         # 包含高级 UI 组件
         juce::juce_gui_basics#基础UI组件
-        juce::juce_animation
+        juce::juce_animation#动画效果模块
         
         # 第三方库
         ${FFMPEG_LIBRARIES}
