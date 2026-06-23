@@ -73,7 +73,7 @@ void allMusicPage::resized(){
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
     row2.removeFromRight(30);
     mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
-    sortWaysComboBox.setBounds(row2.removeFromRight(120).reduced(10));
+    sortWaysComboBox.setBounds(row2.removeFromRight(140).reduced(10));
     sortWayLabel.setBounds(row2.removeFromRight(90).reduced(10));
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));

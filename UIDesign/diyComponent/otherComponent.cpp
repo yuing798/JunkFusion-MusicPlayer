@@ -326,10 +326,14 @@ void YComboBox::updatePopupAppearance()
 {
     if (mPopup == nullptr)
         return;
+    auto* topLevel = this->getTopLevelComponent();
+    
+    auto thisPos = topLevel->getLocalPoint(this, juce::Point<int>(0, 0));
+    //获取当前组件在整个窗口的绝对坐标
 
     auto comboBounds = getLocalBounds();
-    int popupX   = comboBounds.getX();
-    int popupY   = comboBounds.getBottom() + 1;
+    int popupX   = thisPos.getX();
+    int popupY   = thisPos.getY() + getHeight();
     int popupW   = comboBounds.getWidth();
     int popupH   = getHeight() * mItems.size();
 
