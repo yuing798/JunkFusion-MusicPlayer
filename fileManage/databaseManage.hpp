@@ -9,13 +9,17 @@
 // ============================================================
 
 // songs 表：存储文件层信息
+//PRIMARY KEY:主键 AUTOINCREMENT：自动递增
+//NOT NULL:禁止留空
+//UNIQUE:唯一
+//REAL:存储浮点数
 inline const char* createSongsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songs (
         song_id             INTEGER PRIMARY KEY AUTOINCREMENT,
         file_path           TEXT    UNIQUE NOT NULL,
-        file_name           TEXT,
-        file_size           INTEGER,
-        last_modified_time  TEXT,
+        file_name           TEXT NOT NULL,
+        file_size           INTEGER NOT NULL,
+        last_modified_time  TEXT NOT NULL,
         add_time            TEXT,
         num_audio_streams   INTEGER,
         duration            REAL,
@@ -55,11 +59,20 @@ inline const char* createStreamsTableSQL = R"(
         FOREIGN KEY (song_id) REFERENCES songs(song_id) ON DELETE CASCADE
     )
 )";
+//FOREIGN KEY (song_id) REFERENCES songs(song_id) ON DELETE CASCADE
+//FOREIGN KEY (song_id):这是从外界借来的键
+//REFERENCES songs(song_id):参考外界的songs表中的song_id
+//ON DELETE CASCADE:母表的song_id删除，所有相对应的流表也要删除
 
 // 索引：加速按 song_id 查询 streams
 inline const char* createStreamsIndexSQL = R"(
     CREATE INDEX IF NOT EXISTS idx_streams_song_id ON streams(song_id)
 )";
+//CREATE INDEX：创建一个索引（可以理解为给数据库做一张“目录”或“快捷方式”）
+//IF NOT EXISTS：如果这个索引不存在才创建，防止重复执行 SQL 时报错
+//idx_streams_song_id：给这个索引起的名字（习惯用 idx_表名_字段名 的格式）
+//ON streams(song_id)：在 streams 表的 song_id 这一列上建立索引
+//如果你没有提前创建索引，数据库就只能把整个表从头到尾翻一遍（全表扫描）来找匹配的行
 
 // ============================================================
 // API 函数声明

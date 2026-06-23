@@ -8,6 +8,14 @@ void createTables(SQLite::Database& db)
     db.exec(createSongsTableSQL);
     db.exec(createStreamsTableSQL);
     db.exec(createStreamsIndexSQL);
+    //db.exec() 这个函数的全称是 “执行 SQL 语句”，而不是“创建表”
+    /*
+    SQL命令：
+    CREATE TABLE ...	在硬盘里划分一块区域，建一栋楼（表）存放数据。
+    CREATE INDEX ...	在硬盘里划分另一块区域，建一部直达电梯（索引）。
+    INSERT INTO ...	往楼里搬家具（插入数据行）。
+    DROP TABLE ...	把整栋楼爆破拆除（删除表）
+    */
 }
 
 // ============================================================
@@ -16,8 +24,16 @@ void createTables(SQLite::Database& db)
 bool isSongExists(SQLite::Database& db, const std::string& filePath)
 {
     SQLite::Statement query(db, "SELECT COUNT(*) FROM songs WHERE file_path = ?");
+    //告诉数据库“我要数一下，songs 表里有多少行的 file_path 等于后面那个问号”。
+    //这个 ? 是一个“空位”，专门留给后面的 C++ 变量来填的
+    //目的：防止 SQL 注入攻击
+    //SQLite 会先把带 ? 的 SQL 编译成“执行计划”，然后只替换 ? 的值。如果你要循环插入一万首歌，这种写法比拼字符串快得多。
     query.bind(1, filePath);
+    //把函数传进来的 filePath（比如 "C:\Music\Adele.mp3"）塞到刚才那个 ? 的位置上
+    //参数绑定看“问号的位置”，列读取看“SELECT 写的顺序”
+    //而在SQLite 中，? 占位符的索引从 1 开始，所以bind函数这里填1
     query.executeStep();
+    //执行查询：数据库跑去找数据。
     return query.getColumn(0).getInt() > 0;
 }
 
