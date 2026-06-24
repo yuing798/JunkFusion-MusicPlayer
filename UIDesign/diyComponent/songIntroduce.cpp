@@ -5,7 +5,7 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 
 popupWindow::popupWindow(){
-
+    xButton.setClickingTogglesState(true);
 }
 popupWindow::~popupWindow(){
 
@@ -59,6 +59,8 @@ mCloseAnimator(juce::ValueAnimatorBuilder{}
     juce::Component* topComponent{nullptr};
     topComponent = getTopLevelComponent();
     topComponent->addAndMakeVisible(mPopupWindow);
+
+    whatsmoreButton.setClickingTogglesState(true);
     
     popupWidth = topComponent->getLocalBounds().getWidth() / 5.0f;
     minPopupHeight = topComponent->getLocalBounds().getHeight() / 3.0f;//最小高为3分之一,宽度固定
