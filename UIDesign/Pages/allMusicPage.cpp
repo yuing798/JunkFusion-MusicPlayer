@@ -47,15 +47,15 @@ allMusicPage::allMusicPage(){
     addAndMakeVisible(mViewPort);
     addAndMakeVisible(numSongsLabel);
     addAndMakeVisible(sortWayLabel);
-    addAndMakeVisible(sortWaysComboBox);
+    // addAndMakeVisible(sortWaysComboBox);
     addAndMakeVisible(mUpDownButton);
 
-    sortWaysComboBox.addItem(U("标题"));
-    sortWaysComboBox.addItem(U("作者"));
-    sortWaysComboBox.addItem(U("专辑"));
-    sortWaysComboBox.addItem(U("添加时间"));
-    sortWaysComboBox.addItem(U("音乐风格"));
-    sortWaysComboBox.addItem(U("歌曲时长"));
+    // sortWaysComboBox.addItem(U("标题"));
+    // sortWaysComboBox.addItem(U("作者"));
+    // sortWaysComboBox.addItem(U("专辑"));
+    // sortWaysComboBox.addItem(U("添加时间"));
+    // sortWaysComboBox.addItem(U("音乐风格"));
+    // sortWaysComboBox.addItem(U("歌曲时长"));
     // sortWaysComboBox.setSelectedId(1);
 
     selectFileButton.addListener(this);
@@ -74,7 +74,7 @@ void allMusicPage::resized(){
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
     row2.removeFromRight(30);
     mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
-    sortWaysComboBox.setBounds(row2.removeFromRight(140).reduced(10));
+    // sortWaysComboBox.setBounds(row2.removeFromRight(140).reduced(10));
     sortWayLabel.setBounds(row2.removeFromRight(90).reduced(10));
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
@@ -94,7 +94,7 @@ void allMusicPage::buttonClicked(juce::Button* button)
                     auto eachSong{getStreamMetaData(file)};//FFmpeg提取原数据
                     if(!eachSong.filePath.empty()) SongsManage::getInstance().insertSong(eachSong);
                     //推入数据库
-                    
+
                 }
                 
             },

@@ -6,10 +6,10 @@
 class YComboBox::YComboPopup : public juce::Component
 {
 public:
-    YComboPopup (YComboBox& owner, const juce::StringArray& items)
+    YComboPopup (YComboBox& owner, const juce::StringArray& items)//管有它的comboBox和comboBox中注册了哪些字符串
         : mOwner (owner), mItems (items) {}
 
-    void setHighlightedIndex (int index)
+    void setHighlightedIndex (int index)//设置鼠标对应区域的高亮显示
     {
         if (mHighlightedIndex != index)
         {
@@ -18,14 +18,8 @@ public:
         }
     }
 
-    int getHighlightedIndex() const { return mHighlightedIndex; }
-    int getItemCount() const        { return mItems.size(); }
-
-    void setOpacity (float opacity)
-    {
-        mOpacity = opacity;
-        setAlpha (opacity);
-    }
+    int getHighlightedIndex() const { return mHighlightedIndex; }//得到高亮显示区域的索引号
+    int getItemCount() const        { return mItems.size(); }//得到现在有多少个注册了的字符串参数
 
     void paint (juce::Graphics& g) override
     {
@@ -102,7 +96,7 @@ private:
     YComboBox& mOwner;
     const juce::StringArray& mItems;
     int mHighlightedIndex = -1;
-    float mOpacity = 1.0f;
+    // float mOpacity = 1.0f;
 };
 
 // ======================================================================
@@ -133,12 +127,39 @@ private:
 // ======================================================================
 
 YComboBox::YComboBox()
-    : mOpenAnimator (std::shared_ptr<juce::Animator::Impl> {})
-    , mCloseAnimator (std::shared_ptr<juce::Animator::Impl> {})
-{
-    mVBlankAnimatorUpdater = std::make_unique<juce::VBlankAnimatorUpdater> (this);
-    buildAnimators();
+    :mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater> (this)),
 
+    // --- 打开动画器 (easeOut, 200ms) ---
+    mOpenAnimator(juce::ValueAnimatorBuilder{}
+    .withDurationMs (kAnimDurationMs)
+    .withEasing (juce::Easings::createEaseOut())//淡出
+    .withOnStartCallback ([this]
+    {
+        mIsPopupVisible = true;
+        createPopup();
+    })
+    .withValueChangedCallback ([this] (float progress)
+    {
+        mPopupOpacity = progress;
+        updatePopupAppearance();
+    })
+    .build()),
+
+    // --- 关闭动画器 (easeIn, 200ms) ---
+    mCloseAnimator(juce::ValueAnimatorBuilder{}
+    .withDurationMs (kAnimDurationMs)
+    .withEasing (juce::Easings::createEaseIn())//淡入
+    .withValueChangedCallback ([this] (float progress)
+    {
+        mPopupOpacity = 1.0f - progress;
+        updatePopupAppearance();
+    })
+    .withOnCompleteCallback ([this]
+    {
+        removePopup();
+    })
+    .build())
+{
     mVBlankAnimatorUpdater->addAnimator (mOpenAnimator);
     mVBlankAnimatorUpdater->addAnimator (mCloseAnimator);
 }
@@ -157,56 +178,15 @@ YComboBox::~YComboBox()
         mVBlankAnimatorUpdater->removeAnimator (mCloseAnimator);
     }
 }
-
-// ----------------------------------------------------------------------
-// 动画构建
-// ----------------------------------------------------------------------
-void YComboBox::buildAnimators()
-{
-    // --- 打开动画器 (easeOut, 200ms) ---
-    mOpenAnimator = juce::ValueAnimatorBuilder{}
-        .withDurationMs (kAnimDurationMs)
-        .withEasing (juce::Easings::createEaseOut())
-        .withOnStartCallback ([this]
-        {
-            mIsPopupVisible = true;
-            createPopup();
-        })
-        .withValueChangedCallback ([this] (float progress)
-        {
-            mPopupOpacity = progress;
-            updatePopupAppearance();
-        })
-        .build();
-
-    // --- 关闭动画器 (easeIn, 200ms) ---
-    mCloseAnimator = juce::ValueAnimatorBuilder{}
-        .withDurationMs (kAnimDurationMs)
-        .withEasing (juce::Easings::createEaseIn())
-        .withValueChangedCallback ([this] (float progress)
-        {
-            mPopupOpacity = 1.0f - progress;
-            updatePopupAppearance();
-        })
-        .withOnCompleteCallback ([this]
-        {
-            removePopup();
-        })
-        .build();
-}
-
 // ----------------------------------------------------------------------
 // 弹出菜单生命周期
 // ----------------------------------------------------------------------
 void YComboBox::createPopup()
 {
-    if (mPopup != nullptr)
-        return;
-
     mPopup = std::make_unique<YComboPopup> (*this, mItems);
 
-    if (auto* tl = getTopLevelComponent())
-        tl->addAndMakeVisible (*mPopup);
+    if (auto* tl = getTopLevelComponent()) tl->addAndMakeVisible (*mPopup);
+    //注意这个YComboPopup是属于主窗口的
 
     updatePopupAppearance();
 
@@ -215,6 +195,7 @@ void YComboBox::createPopup()
     {
         mDismissListener = std::make_unique<PopupDismissListener> (*this);
         juce::Desktop::getInstance().addGlobalMouseListener (mDismissListener.get());
+        //注册为全局鼠标监听器，之后整个应用程序中发生的所有鼠标事件，这个对象都会收到通知
     }
 }
 
@@ -238,19 +219,18 @@ void YComboBox::updatePopupAppearance()
 {
     if (mPopup == nullptr)
         return;
-    auto* topLevel = this->getTopLevelComponent();
     
-    auto thisPos = topLevel->getLocalPoint(this, juce::Point<int>(0, 0));
+    auto thisPos = getTopLevelComponent()->getLocalPoint(this, juce::Point<int>(0, 0));
     //获取当前组件在整个窗口的绝对坐标
+    //将当前组件左上角 (0,0) 这个点，转换到顶层组件的本地坐标系中，从而得到当前组件在顶层组件（即主窗口）内的相对位置
 
-    auto comboBounds = getLocalBounds();
     int popupX   = thisPos.getX();
     int popupY   = thisPos.getY() + getHeight();
-    int popupW   = comboBounds.getWidth();
+    int popupW   = getWidth();
     int popupH   = getHeight() * mItems.size();
 
     mPopup->setBounds (popupX, popupY, popupW, popupH);
-    mPopup->setOpacity (mPopupOpacity);
+    mPopup->setAlpha(mPopupOpacity);
 }
 
 // ----------------------------------------------------------------------

@@ -45,7 +45,6 @@ public:
 
 private:
     // --- 内部方法 ---
-    void buildAnimators();
     void createPopup();
     void removePopup();
     void updatePopupAppearance();
@@ -57,7 +56,7 @@ private:
     static constexpr float kPopupOutlineWidth = 1.0f;
     static constexpr float kArrowSize         = 8.0f;
     static constexpr float kFontSize          = 17.0f;
-    static constexpr float kAnimDurationMs    = 200.0;
+    static constexpr float kAnimDurationMs    = 200.0;//动画持续时间为200ms
 
     // --- 成员 ---
     juce::StringArray mItems;
@@ -71,7 +70,7 @@ private:
     float mPopupOpacity = 0.0f;
 
     class YComboPopup;
-    std::unique_ptr<YComboPopup> mPopup;
+    std::unique_ptr<YComboPopup> mPopup{nullptr};
 
     class PopupDismissListener;
     std::unique_ptr<PopupDismissListener> mDismissListener;

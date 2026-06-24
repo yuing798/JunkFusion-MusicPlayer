@@ -24,12 +24,12 @@ public:
         // This method is where you should put your application's initialisation code..
         juce::ignoreUnused (commandLine);
 
+        mainWindow.reset (new MainWindow (getApplicationName()));
+
         if(!UserDirId.exists()) UserDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();
         if(!databaseDirId.exists()) databaseDirId.createDirectory();
         if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//创建对应的用户数据保存文件夹
-
-        mainWindow.reset (new MainWindow (getApplicationName()));
     }
 
     void shutdown() override

@@ -218,3 +218,7 @@ void SongsManage::insertSong(const SongInfo& info)
         if(logger) logger->error("data update error",e.what());
     }
 }
+
+SongsManage::~SongsManage(){
+    
+}
