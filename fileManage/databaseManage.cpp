@@ -14,11 +14,11 @@ SongsManage::SongsManage(){
     songsDbFile = databaseDir.getChildFile("songs.db");
 
     try{
-        songsDatabase = std::make_unique<SQLite::Database>(
+        db = std::make_unique<SQLite::Database>(
             songsDbFile.getFullPathName().toStdString(),
             SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
         );
-        createTables(*songsDatabase);
+        createTables();
     }catch(const std::exception& e){
         juce::AlertWindow::showMessageBoxAsync(
             juce::AlertWindow::WarningIcon,
@@ -34,11 +34,11 @@ SongsManage::SongsManage(){
 // ============================================================
 // createTables
 // ============================================================
-void SongsManage::createTables(SQLite::Database& db)
+void SongsManage::createTables()
 {
-    db.exec(createSongsTableSQL);
-    db.exec(createStreamsTableSQL);
-    db.exec(createStreamsIndexSQL);
+    db->exec(createSongsTableSQL);
+    db->exec(createStreamsTableSQL);
+    db->exec(createStreamsIndexSQL);
     //db.exec() 这个函数的全称是 “执行 SQL 语句”，而不是“创建表”
     /*
     SQL命令：
@@ -52,12 +52,12 @@ void SongsManage::createTables(SQLite::Database& db)
 // ============================================================
 // isSongExists
 // ============================================================
-bool SongsManage::isSongExists(SQLite::Database& db, const std::string& filePath)
+bool SongsManage::isSongExists(const std::string& filePath)
 {
     //SQLite::Database:存储数据库连接句柄（一个指向 .db 文件的指针）、连接状态、是否开启事务等管理信息。它是你操作数据库的“总入口”。
     //SQLite::Statement存储预编译好的 SQL 语句模板（比如 SELECT * FROM songs WHERE id = ?）、
     // 绑定的参数值（你填入的 filePath）、以及当前正在读取的那一行数据（执行查询后的结果缓冲区）。
-    SQLite::Statement query(db, "SELECT COUNT(*) FROM songs WHERE filePath = ?");
+    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs WHERE filePath = ?");
     //告诉数据库“我要数一下，songs 表里有多少行的 file_path 等于后面那个问号”。
     //这个 ? 是一个“空位”，专门留给后面的 C++ 变量来填的
     //目的：防止 SQL 注入攻击
@@ -75,7 +75,7 @@ bool SongsManage::isSongExists(SQLite::Database& db, const std::string& filePath
 // ============================================================
 // insertSong
 // ============================================================
-int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
+int SongsManage::insertSong(const SongInfo& info)
 {
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
@@ -124,7 +124,7 @@ int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
         int64_t existingId = -1;
 
         {
-            SQLite::Statement checkQuery(db,
+            SQLite::Statement checkQuery(*db,
                 "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = ?");
             checkQuery.bind(1, info.filePath);
 
@@ -146,7 +146,7 @@ int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
         }
 
         // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
-        SQLite::Transaction transaction(db);
+        SQLite::Transaction transaction(*db);
 
         int64_t songId = 0;
 
@@ -154,13 +154,13 @@ int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
         {
             // ── 文件已变更：先删除旧流记录 ──
             {
-                SQLite::Statement delStreams(db, "DELETE FROM streams WHERE songId = ?");
+                SQLite::Statement delStreams(*db, "DELETE FROM streams WHERE songId = ?");
                 delStreams.bind(1, existingId);
                 delStreams.exec();
             }
 
             // ── 更新 songs 记录（包含 file_path 以对齐 bindSongFields 的绑定顺序） ──
-            SQLite::Statement updateSong(db,
+            SQLite::Statement updateSong(*db,
                 "UPDATE songs SET filePath = ?, fileName = ?, fileSize = ?, "
                 "lastModifiedTime = ?, addTime = ?, numAudioStreams = ?, "
                 "duration = ?, title = ?, artist = ?, album = ?, albumArtist = ?, "
@@ -177,7 +177,7 @@ int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
         else
         {
             // ── 新文件：插入 songs 记录 ──
-            SQLite::Statement insertSong(db,
+            SQLite::Statement insertSong(*db,
                 "INSERT INTO songs (filePath, fileName, fileSize, lastModifiedTime, "
                 "addTime, numAudioStreams, duration, title, artist, album, albumArtist, "
                 "genre, trackNumber, discNumber, year, composer, extraMetadata, comment, imageHash) "
@@ -186,12 +186,12 @@ int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
             bindSongFields(insertSong);
             insertSong.exec();
 
-            songId = db.getLastInsertRowid();
+            songId = db->getLastInsertRowid();
         }
 
         // ── 插入 streams 记录（新文件和变更文件共用） ──
         {
-            SQLite::Statement insertStream(db,
+            SQLite::Statement insertStream(*db,
                 "INSERT INTO streams (songId, streamCount, bitRate, sampleRate, "
                 "numChannels, bitDepth, codecName, isMusic, aiGenre, aiMood, "
                 "bpm, key, aiProcessed, extraMetadata) "
@@ -210,10 +210,12 @@ int SongsManage::insertSong(SQLite::Database& db, const SongInfo& info)
         transaction.commit();
         return static_cast<int>(songId);
     }
-    catch (const SQLite::Exception&)
+    catch (const SQLite::Exception& e)
     {
         // 事务 RAII 保证：析构时检测到未 commit → 自动 ROLLBACK
         // 数据库恢复到"这首歌完全没存在过"的干净状态
+        auto logger = spdlog::get(LogSchedulerID);
+        if(logger) logger->error("data update error",e.what());
         return -1;
     }
 }

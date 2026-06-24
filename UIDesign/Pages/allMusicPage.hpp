@@ -68,7 +68,7 @@ private:
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
 
-    std::vector<std::filesystem::path> inputFilePaths;
+    
 
 public:
 

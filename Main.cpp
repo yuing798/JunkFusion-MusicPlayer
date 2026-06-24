@@ -102,8 +102,7 @@ public:
     };
 
 private:
-    logSystem mLogSystem;
-    SongsManage mSongsManage;
+    // logSystem mLogSystem;
     std::unique_ptr<MainWindow> mainWindow;
 };
 

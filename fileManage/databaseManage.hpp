@@ -58,7 +58,7 @@ inline const char* createStreamsTableSQL = R"(
         bpm             INTEGER,
         key             TEXT,
         aiProcessed    INTEGER,
-        extra_metadata  TEXT,
+        extraMetadata  TEXT,
         FOREIGN KEY (songId) REFERENCES songs(songId) ON DELETE CASCADE
     )
 )";
@@ -81,16 +81,11 @@ inline const char* createStreamsIndexSQL = R"(
 
 class SongsManage{
 private:
-    std::unique_ptr<SQLite::Database> songsDatabase;
+    std::unique_ptr<SQLite::Database> db;
     juce::File songsDbFile;//歌曲管理文件
 
-public:
-    // ============================================================
-    // API 函数声明
-    // ============================================================
-
     /** 创建所有表（songs + streams）和索引，如果已存在则跳过 */
-    void createTables(SQLite::Database& db);
+    void createTables();
 
     /**
      * 插入一首歌及其所有流，带事务保护。
@@ -106,9 +101,27 @@ public:
      * @param info     歌曲信息（包含文件层和流层数据）
      * @return         song_id（成功），-1（失败）
      */
-    int insertSong(SQLite::Database& db, const SongInfo& info);
+    int insertSong(const SongInfo& info);
+
+public:
+    // ============================================================
+    // API 函数声明
+    // ============================================================
+
+    
 
     /** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
-    bool isSongExists(SQLite::Database& db, const std::string& filePath);
+    bool isSongExists(const std::string& filePath);
     SongsManage();
+    ~SongsManage();
+
+    static SongsManage& getInstance() {
+        static SongsManage instance; //首次调用时创建，程序结束时自动析构
+        return instance;
+    }
+
+    SongsManage(const SongsManage&) = delete;
+    SongsManage& operator=(const SongsManage&) = delete;
+    SongsManage(SongsManage&&) = delete;
+    SongsManage& operator=(SongsManage&&) = delete;//强调全局唯一单例
 };

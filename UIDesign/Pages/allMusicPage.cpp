@@ -87,12 +87,10 @@ void allMusicPage::buttonClicked(juce::Button* button)
         getMultiMediaFileChoose(
             [this](const juce::Array<juce::File>& selectedFiles)
             {
-                inputFilePaths.clear();
                 for (auto& file : selectedFiles)
                 {
-                    inputFilePaths.push_back(
-                        std::filesystem::path(file.getFullPathName().toStdString())
-                    );
+                    auto eachSong{getStreamMetaData(file)};
+                    
                 }
                 
             },
@@ -102,7 +100,7 @@ void allMusicPage::buttonClicked(juce::Button* button)
         //使用FFmpeg提取元数据
         //推入数据库
 
-        inputFilePaths.clear();//推入数据库后就可以清空了，等待下一次推入
+        //推入数据库后就可以清空了，等待下一次推入
         selectFileButton.setClickingTogglesState(true);
     }
 }
