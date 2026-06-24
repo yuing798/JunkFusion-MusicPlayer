@@ -60,6 +60,8 @@ allMusicPage::allMusicPage(){
 
     selectFileButton.addListener(this);
 
+    addAndMakeVisible(mSongIntroduce);
+
 }
 void allMusicPage::resized(){
 
@@ -79,6 +81,7 @@ void allMusicPage::resized(){
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));
+    mSongIntroduce.setBounds(row1.removeFromLeft(row2.getHeight()));
 
 }
 void allMusicPage::buttonClicked(juce::Button* button)

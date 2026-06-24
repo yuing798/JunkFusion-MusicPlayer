@@ -2,6 +2,7 @@
 #include "songIntroduce.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 
 popupWindow::popupWindow(){
 
@@ -20,7 +21,7 @@ void popupWindow::paint(juce::Graphics&g){
     g.drawRoundedRectangle(0,0,local.getWidth(),local.getHeight(),4.0f,3.0f);
 }
 
-SongIntroduce::SongIntroduce(juce::String& text)
+SongIntroduce::SongIntroduce(juce::String text)
 :mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater> (this)),
 
 
@@ -50,13 +51,15 @@ mCloseAnimator(juce::ValueAnimatorBuilder{}
 {
 
 })
-.build()),
-topComponent(getTopLevelComponent())
+.build())
 {
     mVBlankAnimatorUpdater->addAnimator (mOpenAnimator);
     mVBlankAnimatorUpdater->addAnimator (mCloseAnimator);
     
-    if(topComponent) topComponent->addAndMakeVisible(mPopupWindow);
+    juce::Component* topComponent{nullptr};
+    topComponent = getTopLevelComponent();
+    topComponent->addAndMakeVisible(mPopupWindow);
+    
     popupWidth = topComponent->getLocalBounds().getWidth() / 5.0f;
     minPopupHeight = topComponent->getLocalBounds().getHeight() / 3.0f;//最小高为3分之一,宽度固定
 
@@ -73,6 +76,8 @@ topComponent(getTopLevelComponent())
     whatsmoreButton.addListener(this);
     mPopupWindow.xButton.addListener(this);
 
+    addAndMakeVisible(whatsmoreButton);
+
 }
 SongIntroduce::~SongIntroduce(){
 
@@ -85,6 +90,7 @@ void SongIntroduce::resized(){
         popupWidth,
         popupHeight
     );
+    whatsmoreButton.setBounds(getLocalBounds());
 }
 void SongIntroduce::paint(juce::Graphics&){
 

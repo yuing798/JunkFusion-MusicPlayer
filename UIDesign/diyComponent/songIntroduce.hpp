@@ -41,7 +41,6 @@ private:
     float popupHeight{0.0f};
 
     float minPopupHeight{0};//popup窗口的最小数值
-    juce::Component* topComponent;
     juce::Font fontSize{juce::FontOptions().withHeight (16.0f)};
 
     svgButton whatsmoreButton{
@@ -50,7 +49,7 @@ private:
     };
 public:
     
-    SongIntroduce(juce::String& text);
+    SongIntroduce(juce::String text);
     ~SongIntroduce();
     void resized() override;
     void paint(juce::Graphics&) override;
