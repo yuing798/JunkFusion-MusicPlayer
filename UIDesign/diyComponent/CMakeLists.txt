@@ -4,4 +4,5 @@ target_sources(JunkFusion PRIVATE
     lookandfeel.cpp
     otherComponent.cpp
     YComboBox.cpp
+    songIntroduce.cpp
 )

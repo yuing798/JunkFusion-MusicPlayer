@@ -9,18 +9,6 @@ public:
     YComboPopup (YComboBox& owner, const juce::StringArray& items)//管有它的comboBox和comboBox中注册了哪些字符串
         : mOwner (owner), mItems (items) {}
 
-    void setHighlightedIndex (int index)//设置鼠标对应区域的高亮显示
-    {
-        if (mHighlightedIndex != index)
-        {
-            mHighlightedIndex = index;
-            repaint();
-        }
-    }
-
-    int getHighlightedIndex() const { return mHighlightedIndex; }//得到高亮显示区域的索引号
-    int getItemCount() const        { return mItems.size(); }//得到现在有多少个注册了的字符串参数
-
     void paint (juce::Graphics& g) override
     {
         auto bounds = getLocalBounds().toFloat();
@@ -60,12 +48,21 @@ public:
         }
     }
 
-    void mouseMove (const juce::MouseEvent& e) override
+    void setHighlightedIndex (int index)//设置鼠标对应区域的高亮显示
+    {
+        if (mHighlightedIndex != index)
+        {
+            mHighlightedIndex = index;
+            repaint();
+        }
+    }
+
+    void mouseMove (const juce::MouseEvent& e) override//当鼠标在组件区域内移动，且“没有按下任何鼠标键”时持续触发
     {
         setHighlightedIndex (getItemIndexAtPosition (e.position));
     }
 
-    void mouseUp (const juce::MouseEvent& e) override
+    void mouseUp (const juce::MouseEvent& e) override//当用户松开鼠标按键时触发
     {
         int clickedIndex = getItemIndexAtPosition (e.position);
         if (clickedIndex >= 0 && clickedIndex < mItems.size())
@@ -75,7 +72,7 @@ public:
         }
     }
 
-    void mouseExit (const juce::MouseEvent&) override
+    void mouseExit (const juce::MouseEvent&) override//当鼠标光标完全离开（滑出）了组件的边界时触发
     {
         setHighlightedIndex (-1);
     }
@@ -87,7 +84,7 @@ private:
             return -1;
 
         auto itemHeight = (float) getHeight() / (float) mItems.size();
-        int index = (int) (pos.y / itemHeight);
+        int index = (int) (pos.y / itemHeight);//表明这个自定义类的索引从0开始
         if (index < 0 || index >= mItems.size())
             return -1;
         return index;
@@ -96,7 +93,6 @@ private:
     YComboBox& mOwner;
     const juce::StringArray& mItems;
     int mHighlightedIndex = -1;
-    // float mOpacity = 1.0f;
 };
 
 // ======================================================================
@@ -141,7 +137,7 @@ YComboBox::YComboBox()
     .withValueChangedCallback ([this] (float progress)
     {
         mPopupOpacity = progress;
-        updatePopupAppearance();
+        mPopup->setAlpha(mPopupOpacity);
     })
     .build()),
 
@@ -152,7 +148,7 @@ YComboBox::YComboBox()
     .withValueChangedCallback ([this] (float progress)
     {
         mPopupOpacity = 1.0f - progress;
-        updatePopupAppearance();
+        mPopup->setAlpha(mPopupOpacity);
     })
     .withOnCompleteCallback ([this]
     {
@@ -168,6 +164,7 @@ YComboBox::~YComboBox()
 {
     if (mDismissListener != nullptr)
         juce::Desktop::getInstance().removeGlobalMouseListener (mDismissListener.get());
+    //static确保唯一全局监听
 
     mPopup.reset();
     mDismissListener.reset();
@@ -203,8 +200,9 @@ void YComboBox::removePopup()
 {
     if (mDismissListener != nullptr)
     {
-        juce::Desktop::getInstance().removeGlobalMouseListener (mDismissListener.get());
-        mDismissListener.reset();
+        juce::Desktop::getInstance().removeGlobalMouseListener (mDismissListener.get());//获取裸指针，但不转移所有权
+        mDismissListener.reset();//释放内存，原来的智能指针变成nullptr
+        //移除的原因是全局监听的开销非常大
     }
 
     if (mPopup != nullptr)
@@ -215,7 +213,7 @@ void YComboBox::removePopup()
     }
 }
 
-void YComboBox::updatePopupAppearance()
+void YComboBox::updatePopupAppearance()//设置popupMenu的坐标，大小和透明度
 {
     if (mPopup == nullptr)
         return;
@@ -263,8 +261,7 @@ void YComboBox::selectItem (int index)
         mSelectedIndex = index;
         repaint();
 
-        if (onItemClicked)
-            onItemClicked (index);
+        if (onItemClicked) onItemClicked (index);
     }
 }
 

@@ -6,4 +6,5 @@ juce_add_binary_data(JunkFusionBinaryData SOURCES
     play.svg
     pause.svg
     junk-fusion.png
+    x.svg
     )

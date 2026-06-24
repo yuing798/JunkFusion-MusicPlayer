@@ -30,7 +30,7 @@ public:
     juce::String getSelectedItemText() const;
 
     // === 回调 ===
-    void onItemSelected (std::function<void (int)> callback);
+    void onItemSelected (std::function<void (int)> callback);//这个是外界获取选择元素的接口
 
     // === 弹出/收回（由内部动画驱动） ===
     void showMenu (juce::Rectangle<int> targetBounds);
@@ -47,7 +47,7 @@ private:
     // --- 内部方法 ---
     void createPopup();
     void removePopup();
-    void updatePopupAppearance();
+    void updatePopupAppearance();//设置popupMenu的透明度，布局位置，大小
     void selectItem (int index);   // 由 popup 调用，触发回调 + repaint
 
     // --- 常量 ---
@@ -67,9 +67,9 @@ private:
     std::unique_ptr<juce::VBlankAnimatorUpdater> mVBlankAnimatorUpdater;
     juce::Animator mOpenAnimator;
     juce::Animator mCloseAnimator;
-    float mPopupOpacity = 0.0f;
+    float mPopupOpacity{0.0f};
 
-    class YComboPopup;
+    class YComboPopup;//popup菜单栏
     std::unique_ptr<YComboPopup> mPopup{nullptr};
 
     class PopupDismissListener;
