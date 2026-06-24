@@ -68,8 +68,6 @@ private:
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
 
-    
-
 public:
 
     allMusicPage();

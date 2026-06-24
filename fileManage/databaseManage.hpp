@@ -86,6 +86,12 @@ private:
 
     /** 创建所有表（songs + streams）和索引，如果已存在则跳过 */
     void createTables();
+public:
+
+    /** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
+    bool isSongExists(const std::string& filePath);
+    SongsManage();
+    ~SongsManage();
 
     /**
      * 插入一首歌及其所有流，带事务保护。
@@ -101,19 +107,7 @@ private:
      * @param info     歌曲信息（包含文件层和流层数据）
      * @return         song_id（成功），-1（失败）
      */
-    int insertSong(const SongInfo& info);
-
-public:
-    // ============================================================
-    // API 函数声明
-    // ============================================================
-
-    
-
-    /** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
-    bool isSongExists(const std::string& filePath);
-    SongsManage();
-    ~SongsManage();
+    void insertSong(const SongInfo& info);
 
     static SongsManage& getInstance() {
         static SongsManage instance; //首次调用时创建，程序结束时自动析构

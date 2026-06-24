@@ -75,7 +75,7 @@ bool SongsManage::isSongExists(const std::string& filePath)
 // ============================================================
 // insertSong
 // ============================================================
-int SongsManage::insertSong(const SongInfo& info)
+void SongsManage::insertSong(const SongInfo& info)
 {
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
@@ -140,7 +140,7 @@ int SongsManage::insertSong(const SongInfo& info)
                 if (static_cast<int64_t>(info.fileSize) == existingSize
                     && info.lastModifiedTime == existingTime)
                 {
-                    return static_cast<int>(existingId);
+                    return;
                 }
             }
         }
@@ -208,7 +208,7 @@ int SongsManage::insertSong(const SongInfo& info)
 
         // ── 全部成功，提交事务 ──
         transaction.commit();
-        return static_cast<int>(songId);
+        return;
     }
     catch (const SQLite::Exception& e)
     {
@@ -216,6 +216,5 @@ int SongsManage::insertSong(const SongInfo& info)
         // 数据库恢复到"这首歌完全没存在过"的干净状态
         auto logger = spdlog::get(LogSchedulerID);
         if(logger) logger->error("data update error",e.what());
-        return -1;
     }
 }

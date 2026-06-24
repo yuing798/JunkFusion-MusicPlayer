@@ -1,5 +1,6 @@
 #include "allMusicPage.hpp"
 #include "FontAbout/font.h"
+#include "databaseManage.hpp"
 #include "fileUtils.hpp"
 #include "juce_graphics/juce_graphics.h"
 
@@ -84,19 +85,22 @@ void allMusicPage::buttonClicked(juce::Button* button)
 {
     if (button == &selectFileButton)
     {
+        selectFileButton.setClickingTogglesState(false);//在推入数据库的时候先把按钮锁定
         getMultiMediaFileChoose(
-            [this](const juce::Array<juce::File>& selectedFiles)
+            [](const juce::Array<juce::File>& selectedFiles)
             {
                 for (auto& file : selectedFiles)
                 {
-                    auto eachSong{getStreamMetaData(file)};
+                    auto eachSong{getStreamMetaData(file)};//FFmpeg提取原数据
+                    if(!eachSong.filePath.empty()) SongsManage::getInstance().insertSong(eachSong);
+                    //推入数据库
                     
                 }
                 
             },
             this
         );
-        selectFileButton.setClickingTogglesState(false);//在推入数据库的时候先把按钮锁定
+        
         //使用FFmpeg提取元数据
         //推入数据库
 
