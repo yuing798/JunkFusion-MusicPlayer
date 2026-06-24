@@ -1,15 +1,19 @@
 #include "fileUtils.hpp"
 #include "FontAbout/font.h"
+#include "constants.h"
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include "otherUtils.hpp"
 #include <spdlog/spdlog.h>
 #include <cstddef>
 #include <chrono>
 #include <memory>
 #include <set>
+#include <string>
 #include <thread>
 #include <vector>
+#include "sha1.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -92,6 +96,8 @@ SongInfo getStreamMetaData(const juce::File& file){
     info.lastModifiedTime = file.getLastModificationTime().toString(true, true).toStdString();
     info.addTime = juce::Time::getCurrentTime().toString(true, true).toStdString();
 
+    auto logger{spdlog::get(LogSchedulerID)};
+
     //ffmpeg解码层信息
     int result{0};//解码层结果，一般成功返回零
     AVFormatContext* inputContext{nullptr};
@@ -99,12 +105,16 @@ SongInfo getStreamMetaData(const juce::File& file){
     if(result!=0){
         //非多媒体文件也会返回AVERROR
         //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
+        
+        
+        if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
         return {};  // 无法打开直接返回空
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if(result<0){
         //SPDLOG:无法找到流信息
+        if(logger) logger->error("无法找到该文件的流信息:",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
         return {};
     }
@@ -129,6 +139,36 @@ SongInfo getStreamMetaData(const juce::File& file){
     }
     info.numAudioStreams = audioStreamIndex.size();
     info.streams.resize(audioStreamIndex.size());
+
+    //这里进行封面提取
+    AVPacket coverPacket;
+    coverPacket.data = nullptr;
+    coverPacket.size = 0;
+    SHA1 sha1;
+    for(size_t i=0; i<inputContext->nb_streams; i++){
+        auto* stream{inputContext->streams[i]};
+        auto type{stream->codecpar->codec_type};
+        if(type == AVMEDIA_TYPE_ATTACHMENT || (type == AVMEDIA_TYPE_VIDEO && (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))){
+            coverPacket = stream->attached_pic;
+            break;
+        }
+
+    }
+    if(coverPacket.data && coverPacket.size > 0){
+        do{
+            std::string hashHex = sha1(coverPacket.data,coverPacket.size);
+            std::string fileName{hashHex + ".jpg"};
+            juce::File filePath{imageDirId.getChildFile(fileName)};
+            info.imageHash = hashHex;
+            if(filePath.existsAsFile()) break;//如果这个文件已经存在，直接退出，避免保存两个相同图片
+            juce::FileOutputStream outputStream(filePath);
+            if(outputStream.openedOk()){
+                outputStream.write(coverPacket.data, coverPacket.size);
+                outputStream.flush();
+            }
+
+        }while(0);
+    }
 
     int streamCount{0};//最终提取流个数计数器
 

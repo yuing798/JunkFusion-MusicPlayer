@@ -46,5 +46,10 @@ auto safeToInt = [](const char* str) -> int{
 ```
 4. 禁止使用namespace
 5. 进行架构调整的时候建议看一下我的git记录
+6. 对于短且可复用的字符串，需要在Utils/constants.h中先定义再使用
+如：
+```cpp
+static constexpr const char* LogCrashID{"crash"};
+```
 
 
