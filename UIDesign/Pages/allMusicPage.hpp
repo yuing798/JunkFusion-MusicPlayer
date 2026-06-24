@@ -3,6 +3,7 @@
 #include "BinaryData.h"
 #include "FontAbout/font.h"
 #include "./diyComponent/otherComponent.hpp"
+#include "./diyComponent/YComboBox.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
@@ -25,14 +26,14 @@ private:
 
 public:
 
-    EachSong(int,
-             const juce::String&,
-             const juce::String&,
-             const juce::String&,
-             const juce::String&,
-             const juce::String&,
-             const juce::String&,
-             const juce::String&
+    EachSong(int songNo,
+        const juce::String& songName,
+        const juce::String& songComposer,
+        const juce::String& songAlbum,
+        const juce::String& songStyle,
+        const juce::String& playNums,
+        const juce::String& songLength,
+        const juce::String& songBitRate
     );
     void resized() override;
     void paint(juce::Graphics& g) override;
