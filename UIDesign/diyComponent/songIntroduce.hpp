@@ -13,11 +13,12 @@
 
 class popupWindow : public juce::Component{
 private:
+    
+public:
     svgButton xButton{
         U("关闭"),
         juce::Drawable::createFromImageData(BinaryData::x_svg, BinaryData::x_svgSize)
     };
-public:
     popupWindow();
     ~popupWindow();
     void resized() override;
@@ -26,7 +27,7 @@ public:
 
 };//点击省略号按钮会在应用的中间区域画出一个矩形来显示歌曲的额外信息
 
-class SongIntroduce : public juce::Component{
+class SongIntroduce : public juce::Component,public juce::Button::Listener{
 private:
     
     std::unique_ptr<juce::VBlankAnimatorUpdater> mVBlankAnimatorUpdater;
@@ -47,14 +48,14 @@ private:
         U("更多信息"),
         juce::Drawable::createFromImageData(BinaryData::whatsMore_svg,BinaryData::whatsMore_svgSize)
     };
-    juce::String mText;
 public:
     
     SongIntroduce(juce::String& text);
     ~SongIntroduce();
     void resized() override;
     void paint(juce::Graphics&) override;
-    juce::Rectangle<float> computeRealRectSize();//实际根据文本量计算出来的窗口大小
+    void buttonClicked(juce::Button*) override;
+    void setPopupNoSee();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SongIntroduce)
 };

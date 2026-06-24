@@ -51,8 +51,7 @@ mCloseAnimator(juce::ValueAnimatorBuilder{}
 
 })
 .build()),
-topComponent(getTopLevelComponent()),
-mText(text)
+topComponent(getTopLevelComponent())
 {
     mVBlankAnimatorUpdater->addAnimator (mOpenAnimator);
     mVBlankAnimatorUpdater->addAnimator (mCloseAnimator);
@@ -70,7 +69,9 @@ mText(text)
     popupHeight = layout.getHeight();
     popupHeight = juce::jmax(popupHeight,minPopupHeight);
 
-    mPopupWindow.setSize(popupWidth, popupHeight);
+    //注册监听
+    whatsmoreButton.addListener(this);
+    mPopupWindow.xButton.addListener(this);
 
 }
 SongIntroduce::~SongIntroduce(){
@@ -78,13 +79,29 @@ SongIntroduce::~SongIntroduce(){
 }
 void SongIntroduce::resized(){
     auto screen{getScreenBounds().toFloat()};
-    mPopupWindow.setBounds(screen.getWidth()-popupWidth/2.0f,screen.getHeight()-popupHeight/2.0f,popupWidth,popupHeight);
+    mPopupWindow.setBounds(
+        (screen.getWidth()-popupWidth)/2.0f,
+        (screen.getHeight()-popupHeight)/2.0f,
+        popupWidth,
+        popupHeight
+    );
 }
 void SongIntroduce::paint(juce::Graphics&){
 
 }
-juce::Rectangle<float> SongIntroduce::computeRealRectSize(){
-    juce::Rectangle<float> rect;
+void SongIntroduce::buttonClicked(juce::Button* button){
 
-    return rect;
+    if(button == &whatsmoreButton){
+        if(button->getToggleState()){
+            mPopupWindow.setVisible(true);
+        }else{
+            setPopupNoSee();
+        }
+    }
+    if(button == &mPopupWindow.xButton){
+        setPopupNoSee();
+    }
+}
+void SongIntroduce::setPopupNoSee(){
+    mPopupWindow.setVisible(false);
 }
