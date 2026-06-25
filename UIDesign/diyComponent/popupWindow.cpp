@@ -1,7 +1,9 @@
-#include "songIntroduce.hpp"
+#include "popupWindow.hpp"
+#include "buttons.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <memory>
 
 // ======================================================================
 // popupWindow 实现
@@ -103,12 +105,16 @@ void popupWindow::resetPosition()
 }
 
 // ======================================================================
-// SongIntroduce 实现
+// PopupWindowButton 实现
 // ======================================================================
+//原来的传参：juce::Image image, juce::String text, juce::String title
 
-SongIntroduce::SongIntroduce(juce::Image image, juce::String text, juce::String title)
+PopupWindowButton::PopupWindowButton(
+    std::unique_ptr<svgButton> button,
+    juce::String windowTitle,
+    std::unique_ptr<juce::Component> windowComponent
+)
     : 
-      mPopupWindow(image, text, title),
       mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater>(this)),
 
       // --- 打开动画器 (easeOut, 200ms) ---
@@ -119,24 +125,24 @@ SongIntroduce::SongIntroduce(juce::Image image, juce::String text, juce::String 
                         {
                             // 延迟到动画启动时才添加到顶层组件，确保组件树已建立
                             auto* topLevel = getTopLevelComponent();
-                            if (mPopupWindow.getParentComponent() != topLevel)
+                            if (mPopupWindow->getParentComponent() != topLevel)
                             {
-                                if (auto* oldParent = mPopupWindow.getParentComponent())
-                                    oldParent->removeChildComponent(&mPopupWindow);
-                                topLevel->addChildComponent(mPopupWindow);
+                                if (auto* oldParent = mPopupWindow->getParentComponent())
+                                    oldParent->removeChildComponent(mPopupWindow.get());
+                                topLevel->addChildComponent(mPopupWindow.get());
                             }
                             mIsPopupVisible = true;
-                            mPopupWindow.resetPosition();
-                            mPopupWindow.setAlpha(0.0f);
-                            mPopupWindow.setVisible(true);
-                            mPopupWindow.xButton.setToggleState(false, juce::dontSendNotification);
+                            mPopupWindow->resetPosition();
+                            mPopupWindow->setAlpha(0.0f);
+                            mPopupWindow->setVisible(true);
+                            mPopupWindow->xButton.setToggleState(false, juce::dontSendNotification);
                         })
                         .withValueChangedCallback([this](float progress)
                         {
-                            mPopupWindow.setAlpha(progress);
-                            auto cx = static_cast<float>(mPopupWindow.getWidth()) / 2.0f;
-                            auto cy = static_cast<float>(mPopupWindow.getHeight()) / 2.0f;
-                            mPopupWindow.setTransform(
+                            mPopupWindow->setAlpha(progress);
+                            auto cx = static_cast<float>(mPopupWindow->getWidth()) / 2.0f;
+                            auto cy = static_cast<float>(mPopupWindow->getHeight()) / 2.0f;
+                            mPopupWindow->setTransform(
                                 juce::AffineTransform::scale(progress, progress, cx, cy));
                         })
                         .build()),
@@ -148,37 +154,38 @@ SongIntroduce::SongIntroduce(juce::Image image, juce::String text, juce::String 
                          .withValueChangedCallback([this](float progress)
                          {
                              float invProgress = 1.0f - progress;
-                             mPopupWindow.setAlpha(invProgress);
-                             auto cx = static_cast<float>(mPopupWindow.getWidth()) / 2.0f;
-                             auto cy = static_cast<float>(mPopupWindow.getHeight()) / 2.0f;
-                             mPopupWindow.setTransform(
+                             mPopupWindow->setAlpha(invProgress);
+                             auto cx = static_cast<float>(mPopupWindow->getWidth()) / 2.0f;
+                             auto cy = static_cast<float>(mPopupWindow->getHeight()) / 2.0f;
+                             mPopupWindow->setTransform(
                                  juce::AffineTransform::scale(invProgress, invProgress, cx, cy));
                          })
                          .withOnCompleteCallback([this]
                          {
-                             mPopupWindow.setVisible(false);
-                             mPopupWindow.setTransform(juce::AffineTransform());
-                             if (auto* parent = mPopupWindow.getParentComponent())
-                                 parent->removeChildComponent(&mPopupWindow);
+                             mPopupWindow->setVisible(false);
+                             mPopupWindow->setTransform(juce::AffineTransform());
+                             if (auto* parent = mPopupWindow->getParentComponent())
+                                 parent->removeChildComponent(mPopupWindow.get());
                          })
                          .build())
 {
+    mButton = button.get();
     mVBlankAnimatorUpdater->addAnimator(mOpenAnimator);
     mVBlankAnimatorUpdater->addAnimator(mCloseAnimator);
 
-    whatsmoreButton.setClickingTogglesState(true);
+    mButton->setClickingTogglesState(true);
 
     // 注册监听
-    whatsmoreButton.addListener(this);
-    mPopupWindow.xButton.addListener(this);
+    mButton->addListener(this);
+    mPopupWindow->xButton.addListener(this);
 
-    addAndMakeVisible(whatsmoreButton);
+    addAndMakeVisible(mButton);
 }
 
-SongIntroduce::~SongIntroduce()
+PopupWindowButton::~PopupWindowButton()
 {
-    if (auto* parent = mPopupWindow.getParentComponent())
-        parent->removeChildComponent(&mPopupWindow);
+    if (auto* parent = mPopupWindow->getParentComponent())
+        parent->removeChildComponent(mPopupWindow.get());
 
     if (mVBlankAnimatorUpdater != nullptr)
     {
@@ -187,16 +194,16 @@ SongIntroduce::~SongIntroduce()
     }
 }
 
-void SongIntroduce::resized()
+void PopupWindowButton::resized()
 {
-    whatsmoreButton.setBounds(getLocalBounds());
+    mButton->setBounds(getLocalBounds());
 }
 
-void SongIntroduce::paint(juce::Graphics&) {}
+void PopupWindowButton::paint(juce::Graphics&) {}
 
-void SongIntroduce::buttonClicked(juce::Button* button)
+void PopupWindowButton::buttonClicked(juce::Button* button)
 {
-    if (button == &whatsmoreButton)
+    if (button == mButton)
     {
         if (button->getToggleState())
         {
@@ -212,23 +219,23 @@ void SongIntroduce::buttonClicked(juce::Button* button)
             }
         }
     }
-    if (button == &mPopupWindow.xButton)
+    if (button == &(mPopupWindow->xButton))
     {
         if (mIsPopupVisible)
         {
             mIsPopupVisible = false;
-            whatsmoreButton.setToggleState(false, juce::dontSendNotification);
+            mButton->setToggleState(false, juce::dontSendNotification);
             mCloseAnimator.start();
         }
     }
 }
 
-void SongIntroduce::setPopupNoSee()
+void PopupWindowButton::setPopupNoSee()
 {
     if (!mIsPopupVisible)
         return;
 
     mIsPopupVisible = false;
-    whatsmoreButton.setToggleState(false, juce::dontSendNotification);
+    mButton->setToggleState(false, juce::dontSendNotification);
     mCloseAnimator.start();
 }

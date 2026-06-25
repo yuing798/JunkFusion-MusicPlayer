@@ -29,12 +29,13 @@ EachStream::EachStream(SongInfo::stream& stream){
     mEllipsisToolTip = std::make_unique<EllipsisToolTip>(longUTF8(
         "AI分析体裁:",stream.aiGenre,
         "\nAI分析情绪:",stream.aiMood,
+        "\n是否为音乐资源",isMusic,
         "\n是否已经进行过AI分析:",isAIprocessed,
         "\nBPM:",juce::String(stream.bpm),
-        "\n是否为音乐资源",isMusic,
+        
         "\n调性:",juce::String(stream.key),
         "\n采样率:",juce::String(stream.sampleRate),
-        "\n额外信息",stream.extraMetadata
+        "\n额外信息:",stream.extraMetadata
     ));
 
     setSize(700, 100);

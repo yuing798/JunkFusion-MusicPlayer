@@ -11,6 +11,12 @@
 #include "otherComponent.hpp"
 #include <memory>
 
+//点击按钮实现一个跳到屏幕中间的窗口
+
+class OtherInfoIntro : juce::Component{
+
+};
+
 class popupWindow : public juce::Component{
 private:
     static constexpr float kPopupWidth = 400.0f;
@@ -42,27 +48,24 @@ public:
 
 };//点击省略号按钮会在应用的中间区域画出一个矩形来显示歌曲的额外信息
 
-class SongIntroduce : public juce::Component,public juce::Button::Listener{
+class PopupWindowButton : public juce::Component,public juce::Button::Listener{
 private:
 
-    popupWindow mPopupWindow;
+    std::unique_ptr<popupWindow> mPopupWindow;
     std::unique_ptr<juce::VBlankAnimatorUpdater> mVBlankAnimatorUpdater;
     juce::Animator mOpenAnimator;
     juce::Animator mCloseAnimator;
     bool mIsPopupVisible{false};
 
-    svgButton whatsmoreButton{
-        U("更多信息"),
-        juce::Drawable::createFromImageData(BinaryData::whatsMore_svg,BinaryData::whatsMore_svgSize)
-    };
+    svgButton* mButton;
 public:
 
-    SongIntroduce(juce::Image image, juce::String text, juce::String title);
-    ~SongIntroduce();
+    PopupWindowButton(std::unique_ptr<svgButton> button,juce::String windowTitle,std::unique_ptr<juce::Component> windowComponent);
+    ~PopupWindowButton();
     void resized() override;
     void paint(juce::Graphics&) override;
     void buttonClicked(juce::Button*) override;
     void setPopupNoSee();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SongIntroduce)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PopupWindowButton)
 };
