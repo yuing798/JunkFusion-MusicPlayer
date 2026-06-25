@@ -51,5 +51,30 @@ auto safeToInt = [](const char* str) -> int{
 ```cpp
 static constexpr const char* LogCrashID{"crash"};
 ```
+7. 统一称呼
+在我的提问和你的回答中
+```cpp
+struct classB{
+    ......
+}
+struct classA{
+    classB mClassB;
+}//这种统一称呼为父类和子类
+
+struct classB{
+    ......
+}
+struct classA{
+    classB mClassB;
+    classA(){
+        addAndMakeVisible(mClassB);
+    }
+}//这种统一叫作父组件和子组件
+
+struct classA : classB{
+
+}//这种统一叫作基类和继承类
+```
+这条规范很重要，请不要弄错名称
 
 
