@@ -3,18 +3,41 @@
 #include "databaseManage.hpp"
 #include "fileMessage.hpp"
 #include "fileUtils.hpp"
+#include "juce_core/juce_core.h"
+#include "juce_events/juce_events.h"
 #include "juce_graphics/juce_graphics.h"
 
 EachSong::EachSong(int songNo,SongInfo info)
 
 {
-    addAndMakeVisible(No_);
-    addAndMakeVisible(name);
-    addAndMakeVisible(composer);
-    addAndMakeVisible(album);
-    addAndMakeVisible(style);
     addAndMakeVisible(mPlayAndStopButton);
-    addAndMakeVisible(mWhatsMore);
+
+    No_.setText(juce::String(songNo), juce::dontSendNotification);
+    addAndMakeVisible(No_);
+    
+    juce::String songTitle{""};//歌曲名称
+    if(!info.title.empty()){
+        songTitle = juce::String(info.title);
+    }else{
+        songTitle = juce::File(info.filePath).getFileNameWithoutExtension();
+    }//如果文件没有title，直接使用文件的stem名称
+    mName.setText(songTitle, juce::dontSendNotification);
+    addAndMakeVisible(mName);
+
+    juce::String artistName{U("未知")};
+    if(!info.artist.empty()){
+        artistName = juce::String(info.artist);
+    }
+    mArtist.setText(artistName, dontSendNotification);
+    addAndMakeVisible(mArtist);
+
+    juce::String albumName{U("未知")};
+    if(!info.album.empty()){
+        albumName = juce::String(info.album);
+    }
+    mAlbum.setText(albumName, dontSendNotification);
+    addAndMakeVisible(mAlbum);
+    
 }
 void EachSong::resized(){
 

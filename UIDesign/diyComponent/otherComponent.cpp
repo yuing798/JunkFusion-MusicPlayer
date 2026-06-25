@@ -62,16 +62,16 @@ verticalSlider::verticalSlider(){
     setColour(juce::Slider::textBoxHighlightColourId, juce::Colours::transparentWhite);
     setColour(juce::Slider::textBoxTextColourId, juce::Colours::black);
 }
-WhatsMoreToolTip::WhatsMoreToolTip(const juce::String& text)
+EllipsisToolTip::EllipsisToolTip(const juce::String& text)
 :juce::DrawableButton ("", juce::DrawableButton::ImageFitted)
 {
 
     setTooltip(text);
     setClickingTogglesState(false);
-    svg = juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize);
+    // svg = juce::Drawable::createFromImageData(BinaryData::Ellipsis_svg, BinaryData::Ellipsis_svgSize);
 }
 
-void WhatsMoreToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
+void EllipsisToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
 
     g.setColour(ycolor.shallowGrey);
     if(shouldDrawButtonAsHighlighted) g.setColour(ycolor.midGrey);

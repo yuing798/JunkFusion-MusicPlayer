@@ -9,6 +9,7 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <filesystem>
+#include <memory>
 #include <vector>
 #include "./diyComponent/buttons.hpp"
 #include "songIntroduce.hpp"
@@ -21,10 +22,9 @@ private:
     YLabel mName;
     littleLabel mArtist;
     YLabel mAlbum;
-    YLabel mStyle;
 
     PlayStopButton mPlayAndStopButton;//播放按钮
-    SongIntroduce mSongIntroduce;
+    std::unique_ptr<SongIntroduce> mOtherInfo;//储存歌曲的额外信息
 
 public:
 

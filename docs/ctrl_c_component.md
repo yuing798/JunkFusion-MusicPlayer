@@ -1,23 +1,23 @@
 
 //这些内容用来复制粘贴的，因为内容重复,到时候ctrlF替换一下名称就可以了
 
-class EachSong : public juce::Component{
+class EachStream : public juce::Component{
 private:
 
 public:
 
-    EachSong();
+    EachStream();
     void resized() override;
     void paint(juce::Graphics& g) override;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachStream)
 };
 
-EachSong::EachSong(){
+EachStream::EachStream(){
 
 }
-void EachSong::resized(){
+void EachStream::resized(){
 
 }
-void EachSong::paint(juce::Graphics& g){
+void EachStream::paint(juce::Graphics& g){
     
 }

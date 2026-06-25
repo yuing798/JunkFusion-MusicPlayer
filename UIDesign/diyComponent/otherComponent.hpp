@@ -59,9 +59,9 @@ struct rotarySlider : public juce::Slider{
 struct verticalSlider : public juce::Slider{
     verticalSlider();
 };
-struct WhatsMoreToolTip : juce::DrawableButton{
+struct EllipsisToolTip : juce::DrawableButton{
 //一个省略号图形，悬停显示注释
-    WhatsMoreToolTip(const juce::String& text);
+    EllipsisToolTip(const juce::String& text);
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     std::unique_ptr<juce::Drawable> svg;
 };
