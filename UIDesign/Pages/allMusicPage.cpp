@@ -1,11 +1,58 @@
 #include "allMusicPage.hpp"
+#include "BinaryData.h"
 #include "FontAbout/font.h"
+#include "buttons.hpp"
 #include "databaseManage.hpp"
 #include "fileMessage.hpp"
 #include "fileUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "juce_graphics/juce_graphics.h"
+#include "juce_gui_basics/juce_gui_basics.h"
+#include "popupWindow.hpp"
+#include <memory>
+#include <utility>
+
+OtherSongInfoIntro::OtherSongInfoIntro(juce::Image image, juce::String text)
+:mImage(image),mText(text){
+    // 计算文本区域高度
+    juce::AttributedString attributedText{mText};
+    attributedText.setFont(mTextFont);
+    attributedText.setWordWrap(juce::AttributedString::WordWrap::byWord);
+
+    float textMaxWidth = kPopupWidth - 2.0f * kPadding;
+    mTextLayout.createLayout(attributedText, textMaxWidth);
+    mTextHeight = mTextLayout.getHeight();
+
+    float imageSize{kImageSize};
+    if(image.isNull()){
+        imageSize = 0;
+    }//如果没有放置图片则删掉图片的占位区域
+    
+    realHeight = juce::jmax(350.0f,kPadding + imageSize + kPadding + mTextHeight + kPadding);
+    setSize(kPopupWidth, realHeight);
+}
+
+void OtherSongInfoIntro::paint(juce::Graphics& g){
+
+    float currentY{0.0f};
+    // 图片 — 若有图则 200×200 居中，无图则不占空间
+    if (mImage.isValid())
+    {
+        float imageX = (kPopupWidth - kImageSize) / 2.0f;
+        juce::Rectangle<float> imageBounds(imageX, currentY, kImageSize, kImageSize);
+        g.drawImage(mImage, imageBounds, juce::RectanglePlacement::centred);
+        currentY += kImageSize + kPadding;
+    }
+
+    // 文本 — 左对齐
+    {
+        juce::Rectangle<float> textBounds(kPadding, currentY,
+                                           kPopupWidth - 2.0f * kPadding, mTextHeight);
+        mTextLayout.draw(g, textBounds);
+    }
+}
+
 
 EachSong::EachSong(int songNo,SongInfo info)
 
@@ -72,6 +119,22 @@ allMusicPage::allMusicPage(){
 
     // addAndMakeVisible(mSongIntroduce);
 
+    //测试
+    // auto mySvgButton = std::make_unique<svgButton>(
+    //     U("更多信息"),
+    //     juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize)
+    // );
+    // auto windowComponent = std::make_unique<OtherSongInfoIntro>(
+    //     juce::ImageCache::getFromMemory(BinaryData::junkfusion_png, BinaryData::junkfusion_pngSize),
+    //     U("拟分为菲比围而不攻点点滴滴顶顶顶顶的大大大大大大顶顶顶顶的啦啦啦啦啦啦啦啦啦啦了反弹道导弹导弹大大大大大大\n那那那男男女女男男女女杀杀杀杀杀杀杀杀杀杀杀杀杀杀是呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅轻轻巧巧轻轻巧巧请求权请求权")
+    // );
+    // mPopupWindowButton = std::make_unique<PopupWindowButton>(
+    //     std::move(mySvgButton),
+    //     U("more info"),
+    //     std::move(windowComponent)
+    // );
+    // addAndMakeVisible(*mPopupWindowButton);
+
 }
 void allMusicPage::resized(){
 
@@ -91,7 +154,7 @@ void allMusicPage::resized(){
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));
-    // mSongIntroduce.setBounds(row1.removeFromLeft(row2.getHeight()));
+    mPopupWindowButton->setBounds(row1.removeFromLeft(row2.getHeight()));
 
 }
 void allMusicPage::buttonClicked(juce::Button* button)

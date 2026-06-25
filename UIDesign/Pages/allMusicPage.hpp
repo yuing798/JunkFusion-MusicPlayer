@@ -12,8 +12,29 @@
 #include <memory>
 #include <vector>
 #include "./diyComponent/buttons.hpp"
-#include "songIntroduce.hpp"
+#include "./diyComponent/popupWindow.hpp"
 
+class OtherSongInfoIntro : public juce::Component{
+private:
+    static constexpr float kPopupWidth = 400.0f;
+    static constexpr float kImageSize = 200.0f;
+    static constexpr float kPadding = 10.0f;
+
+    juce::Image mImage;
+    juce::String mText;
+    
+    juce::Font mTextFont{juce::FontOptions().withHeight(16.0f)};
+    juce::TextLayout mTextLayout;
+    float mTextHeight{0.0f};
+
+public:
+    float realHeight{0.0f};//如果信息太少会有一个最小高度
+    OtherSongInfoIntro(juce::Image image, juce::String text);
+    // ~OtherSongInfoIntro();
+    // void resized() override;
+    void paint(juce::Graphics& g) override;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OtherSongInfoIntro)
+};
 
 class EachSong : public juce::Component{
 private:
@@ -24,7 +45,7 @@ private:
     YLabel mAlbum;
 
     PlayStopButton mPlayAndStopButton;//播放按钮
-    std::unique_ptr<SongIntroduce> mOtherInfo;//储存歌曲的额外信息
+    // std::unique_ptr<SongIntroduce> mOtherInfo;//储存歌曲的额外信息
 
 public:
 
@@ -63,7 +84,7 @@ private:
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
     //这个是用来测试的
-    // SongIntroduce mSongIntroduce{juce::Image{}, U("1"), U("歌曲信息")};
+    std::unique_ptr<PopupWindowButton> mPopupWindowButton;
 
 public:
 

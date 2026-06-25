@@ -13,32 +13,20 @@
 
 //点击按钮实现一个跳到屏幕中间的窗口
 
-class OtherInfoIntro : juce::Component{
 
-};
 
 class popupWindow : public juce::Component{
 private:
-    static constexpr float kPopupWidth = 400.0f;
-    static constexpr float kImageSize = 200.0f;
-    static constexpr float kPadding = 10.0f;
-
-    juce::Image mImage;
-    juce::String mText;
     juce::String mTitle;
     juce::Font mTitleFont{juce::FontOptions().withHeight(18.0f).withStyle("Bold")};
-    juce::Font mTextFont{juce::FontOptions().withHeight(16.0f)};
-    juce::TextLayout mTextLayout;
-    float mTextHeight{0.0f};
+    std::unique_ptr<juce::Component> mWindowComponent;
     juce::ComponentDragger mDragger;
-
 public:
     svgButton xButton{
         U("关闭"),
         juce::Drawable::createFromImageData(BinaryData::x_svg, BinaryData::x_svgSize)
     };
-    popupWindow(juce::Image image, juce::String text, juce::String title);
-    ~popupWindow();
+    popupWindow(juce::String title,std::unique_ptr<juce::Component>);
     void resized() override;
     void paint(juce::Graphics& g) override;
     void mouseDown(const juce::MouseEvent& e) override;
@@ -50,17 +38,17 @@ public:
 
 class PopupWindowButton : public juce::Component,public juce::Button::Listener{
 private:
-
+    std::unique_ptr<juce::Button> mButton;
     std::unique_ptr<popupWindow> mPopupWindow;
     std::unique_ptr<juce::VBlankAnimatorUpdater> mVBlankAnimatorUpdater;
     juce::Animator mOpenAnimator;
     juce::Animator mCloseAnimator;
     bool mIsPopupVisible{false};
 
-    svgButton* mButton;
+    
 public:
 
-    PopupWindowButton(std::unique_ptr<svgButton> button,juce::String windowTitle,std::unique_ptr<juce::Component> windowComponent);
+    PopupWindowButton(std::unique_ptr<juce::Button> button,juce::String windowTitle,std::unique_ptr<juce::Component> windowComponent);
     ~PopupWindowButton();
     void resized() override;
     void paint(juce::Graphics&) override;
@@ -69,3 +57,5 @@ public:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PopupWindowButton)
 };
+
+

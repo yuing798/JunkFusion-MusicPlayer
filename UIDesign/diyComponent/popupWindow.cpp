@@ -4,50 +4,37 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <memory>
+#include <utility>
+
 
 // ======================================================================
 // popupWindow 实现
 // ======================================================================
 
-popupWindow::popupWindow(juce::Image image, juce::String text, juce::String title)
-    : mImage(image), mText(text), mTitle(title)
+popupWindow::popupWindow(juce::String title,std::unique_ptr<juce::Component> windowComponent)
+    : mTitle(title),mWindowComponent(std::move(windowComponent))
 {
     xButton.setClickingTogglesState(true);
     addAndMakeVisible(xButton);
+    addAndMakeVisible(*mWindowComponent);
 
-    // 计算文本区域高度
-    juce::AttributedString attributedText{mText};
-    attributedText.setFont(mTextFont);
-    attributedText.setWordWrap(juce::AttributedString::WordWrap::byWord);
-
-    float textMaxWidth = kPopupWidth - 2.0f * kPadding;
-    mTextLayout.createLayout(attributedText, textMaxWidth);
-    mTextHeight = mTextLayout.getHeight();
-
-    float imageSize{kImageSize};
-    if(image.isNull()){
-        imageSize = 0;
-    }//如果没有放置图片则删掉图片的占位区域
-    float realHeight{0.0f};//如果信息太少会有一个最小高度
-    realHeight = juce::jmax(350.0f,kPadding + imageSize + kPadding + mTextHeight + kPadding);
-
-    // 总高度 = 标题行 + 间距 + 图片 + 间距 + 文本 + 间距
-    float titleRowHeight = mTitleFont.getHeight() + kPadding;
-    float totalHeight = titleRowHeight + realHeight;
-    setSize(static_cast<int>(kPopupWidth), static_cast<int>(totalHeight));
+    // 总高度 = 标题行 + 间距 + 次组件的高度
+    float titleRowHeight = mTitleFont.getHeight() + 10.0f;
+    float totalHeight = titleRowHeight + mWindowComponent->getHeight();
+    setSize(static_cast<int>(mWindowComponent->getWidth()), static_cast<int>(totalHeight));
 }
-
-popupWindow::~popupWindow() {}
 
 void popupWindow::resized()
 {
     auto bounds = getLocalBounds();
-    float titleRowHeight = mTitleFont.getHeight() + kPadding;
+    float titleRowHeight = mTitleFont.getHeight() + 10.0f;
 
     // xButton — 右上角，正方形
     int buttonSize = static_cast<int>(titleRowHeight);
     auto titleRow = bounds.removeFromTop(buttonSize);
     xButton.setBounds(titleRow.removeFromRight(buttonSize).reduced(4));
+    bounds.removeFromTop(10);
+    mWindowComponent->setTopLeftPosition(bounds.getX(),bounds.getY());
 }
 
 void popupWindow::paint(juce::Graphics& g)
@@ -58,34 +45,18 @@ void popupWindow::paint(juce::Graphics& g)
     g.setColour(ycolor.shallowGrey);
     g.fillRoundedRectangle(local, 7.0f);
 
-    float titleRowHeight = mTitleFont.getHeight() + kPadding;
-    float currentY = 0.0f;
+    float titleRowHeight = mTitleFont.getHeight() + 10.0f;
 
     // 标题 — 标题行内居中
     {
-        juce::Rectangle<float> titleBounds(kPadding, currentY,
-                                            kPopupWidth - 2.0f * kPadding, titleRowHeight);
+        juce::Rectangle<float> titleBounds(10.0f, 0.0f,
+                                            mWindowComponent->getWidth() - 2.0f * 10.0f, titleRowHeight);
         g.setFont(mTitleFont);
         g.setColour(ycolor.black);
         g.drawText(mTitle, titleBounds, juce::Justification::centred, false);
-        currentY += titleRowHeight + kPadding;
     }
 
-    // 图片 — 若有图则 200×200 居中，无图则不占空间
-    if (mImage.isValid())
-    {
-        float imageX = (kPopupWidth - kImageSize) / 2.0f;
-        juce::Rectangle<float> imageBounds(imageX, currentY, kImageSize, kImageSize);
-        g.drawImage(mImage, imageBounds, juce::RectanglePlacement::centred);
-        currentY += kImageSize + kPadding;
-    }
 
-    // 文本 — 左对齐
-    {
-        juce::Rectangle<float> textBounds(kPadding, currentY,
-                                           kPopupWidth - 2.0f * kPadding, mTextHeight);
-        mTextLayout.draw(g, textBounds);
-    }
 }
 
 void popupWindow::mouseDown(const juce::MouseEvent& e)
@@ -110,11 +81,12 @@ void popupWindow::resetPosition()
 //原来的传参：juce::Image image, juce::String text, juce::String title
 
 PopupWindowButton::PopupWindowButton(
-    std::unique_ptr<svgButton> button,
+    std::unique_ptr<juce::Button> button,
     juce::String windowTitle,
     std::unique_ptr<juce::Component> windowComponent
 )
-    : 
+    : mButton(std::move(button)),
+      mPopupWindow(std::make_unique<popupWindow>(windowTitle,std::move(windowComponent))),
       mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater>(this)),
 
       // --- 打开动画器 (easeOut, 200ms) ---
@@ -169,7 +141,6 @@ PopupWindowButton::PopupWindowButton(
                          })
                          .build())
 {
-    mButton = button.get();
     mVBlankAnimatorUpdater->addAnimator(mOpenAnimator);
     mVBlankAnimatorUpdater->addAnimator(mCloseAnimator);
 
@@ -179,7 +150,7 @@ PopupWindowButton::PopupWindowButton(
     mButton->addListener(this);
     mPopupWindow->xButton.addListener(this);
 
-    addAndMakeVisible(mButton);
+    addAndMakeVisible(*mButton);
 }
 
 PopupWindowButton::~PopupWindowButton()
@@ -203,7 +174,7 @@ void PopupWindowButton::paint(juce::Graphics&) {}
 
 void PopupWindowButton::buttonClicked(juce::Button* button)
 {
-    if (button == mButton)
+    if (button == mButton.get())
     {
         if (button->getToggleState())
         {

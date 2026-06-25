@@ -64,8 +64,8 @@ struct classA{
 struct classB{
     ......
 }
-struct classA{
-    classB mClassB;
+struct classA : juce::Component{
+    juce::Component mClassB;
     classA(){
         addAndMakeVisible(mClassB);
     }
@@ -76,5 +76,7 @@ struct classA : classB{
 }//这种统一叫作基类和继承类
 ```
 这条规范很重要，请不要弄错名称
+
+8. 在UI设计的时候，请不要使用emoji，需要的符号请告诉我，我去lucide.dev网站上面给你找
 
 
