@@ -45,12 +45,11 @@ public:
 class SongIntroduce : public juce::Component,public juce::Button::Listener{
 private:
 
+    popupWindow mPopupWindow;
     std::unique_ptr<juce::VBlankAnimatorUpdater> mVBlankAnimatorUpdater;
     juce::Animator mOpenAnimator;
     juce::Animator mCloseAnimator;
     bool mIsPopupVisible{false};
-
-    popupWindow mPopupWindow;
 
     svgButton whatsmoreButton{
         U("更多信息"),

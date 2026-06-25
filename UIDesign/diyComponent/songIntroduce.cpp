@@ -22,9 +22,16 @@ popupWindow::popupWindow(juce::Image image, juce::String text, juce::String titl
     mTextLayout.createLayout(attributedText, textMaxWidth);
     mTextHeight = mTextLayout.getHeight();
 
+    float imageSize{kImageSize};
+    if(image.isNull()){
+        imageSize = 0;
+    }//如果没有放置图片则删掉图片的占位区域
+    float realHeight{0.0f};//如果信息太少会有一个最小高度
+    realHeight = juce::jmax(350.0f,kPadding + imageSize + kPadding + mTextHeight + kPadding);
+
     // 总高度 = 标题行 + 间距 + 图片 + 间距 + 文本 + 间距
     float titleRowHeight = mTitleFont.getHeight() + kPadding;
-    float totalHeight = titleRowHeight + kPadding + kImageSize + kPadding + mTextHeight + kPadding;
+    float totalHeight = titleRowHeight + realHeight;
     setSize(static_cast<int>(kPopupWidth), static_cast<int>(totalHeight));
 }
 
@@ -38,7 +45,7 @@ void popupWindow::resized()
     // xButton — 右上角，正方形
     int buttonSize = static_cast<int>(titleRowHeight);
     auto titleRow = bounds.removeFromTop(buttonSize);
-    xButton.setBounds(titleRow.removeFromRight(buttonSize));
+    xButton.setBounds(titleRow.removeFromRight(buttonSize).reduced(4));
 }
 
 void popupWindow::paint(juce::Graphics& g)
@@ -46,10 +53,8 @@ void popupWindow::paint(juce::Graphics& g)
     auto local{getLocalBounds().toFloat()};
 
     // 背景与边框
-    g.setColour(ycolor.white);
-    g.fillRoundedRectangle(local, 4.0f);
-    g.setColour(ycolor.darkGrey);
-    g.drawRoundedRectangle(0, 0, local.getWidth(), local.getHeight(), 4.0f, 3.0f);
+    g.setColour(ycolor.shallowGrey);
+    g.fillRoundedRectangle(local, 7.0f);
 
     float titleRowHeight = mTitleFont.getHeight() + kPadding;
     float currentY = 0.0f;
@@ -64,12 +69,12 @@ void popupWindow::paint(juce::Graphics& g)
         currentY += titleRowHeight + kPadding;
     }
 
-    // 图片 — 200×200 居中
+    // 图片 — 若有图则 200×200 居中，无图则不占空间
+    if (mImage.isValid())
     {
         float imageX = (kPopupWidth - kImageSize) / 2.0f;
         juce::Rectangle<float> imageBounds(imageX, currentY, kImageSize, kImageSize);
-        if (mImage.isValid())
-            g.drawImage(mImage, imageBounds, juce::RectanglePlacement::centred);
+        g.drawImage(mImage, imageBounds, juce::RectanglePlacement::centred);
         currentY += kImageSize + kPadding;
     }
 
@@ -102,8 +107,9 @@ void popupWindow::resetPosition()
 // ======================================================================
 
 SongIntroduce::SongIntroduce(juce::Image image, juce::String text, juce::String title)
-    : mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater>(this)),
+    : 
       mPopupWindow(image, text, title),
+      mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater>(this)),
 
       // --- 打开动画器 (easeOut, 200ms) ---
       mOpenAnimator(juce::ValueAnimatorBuilder{}
