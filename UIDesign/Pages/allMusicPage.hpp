@@ -4,6 +4,7 @@
 #include "FontAbout/font.h"
 #include "./diyComponent/otherComponent.hpp"
 #include "./diyComponent/YComboBox.hpp"
+#include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
@@ -17,25 +18,17 @@ class EachSong : public juce::Component{
 private:
 
     littleLabel No_;//序号
-    YLabel name;
-    littleLabel composer;
-    YLabel album;
-    YLabel style;
+    YLabel mName;
+    littleLabel mArtist;
+    YLabel mAlbum;
+    YLabel mStyle;
 
-    PlayStopButton mPlayAndStopButton;
-    WhatsMoreToolTip mWhatsMore;//悬停显示：播放次数、时长、比特率
+    PlayStopButton mPlayAndStopButton;//播放按钮
+    SongIntroduce mSongIntroduce;
 
 public:
 
-    EachSong(int songNo,
-        const juce::String& songName,
-        const juce::String& songComposer,
-        const juce::String& songAlbum,
-        const juce::String& songStyle,
-        const juce::String& playNums,
-        const juce::String& songLength,
-        const juce::String& songBitRate
-    );
+    EachSong(int songNo,SongInfo info);
     void resized() override;
     void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
