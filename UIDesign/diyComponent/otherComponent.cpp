@@ -68,7 +68,7 @@ EllipsisToolTip::EllipsisToolTip(const juce::String& text)
 
     setTooltip(text);
     setClickingTogglesState(false);
-    // svg = juce::Drawable::createFromImageData(BinaryData::Ellipsis_svg, BinaryData::Ellipsis_svgSize);
+    svg = juce::Drawable::createFromImageData(BinaryData::ellipsis_svg, BinaryData::ellipsis_svgSize);
 }
 
 void EllipsisToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){

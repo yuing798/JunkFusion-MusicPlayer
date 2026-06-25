@@ -2,10 +2,11 @@
 #include "FontAbout/font.h"
 #include "juce_events/juce_events.h"
 #include "otherComponent.hpp"
-#include "songIntroduce.hpp"
+#include "multiStreamCard.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <memory>
 
 EachStream::EachStream(SongInfo::stream& stream){
     addAndMakeVisible(mPlayStopButton);
@@ -14,12 +15,27 @@ EachStream::EachStream(SongInfo::stream& stream){
     addAndMakeVisible(mBitDepth);
     addAndMakeVisible(mBitRate);
     addAndMakeVisible(mDecoderName);
+    addAndMakeVisible(*mEllipsisToolTip);
 
     mCountLabel.setText(juce::String(stream.streamCount), dontSendNotification);
     mNumChannels.setText(juce::String(stream.numChannels), dontSendNotification);
     mBitDepth.setText(juce::String(stream.bitDepth), dontSendNotification);
     mBitRate.setText(juce::String(stream.bitRate), dontSendNotification);
     mDecoderName.setText(juce::String(stream.codecName), dontSendNotification);
+
+    juce::String isMusic = stream.isMusic ? U("是") : U("否");
+    juce::String isAIprocessed = stream.aiProcessed ? U("是") : U("否");
+
+    mEllipsisToolTip = std::make_unique<EllipsisToolTip>(longUTF8(
+        "AI分析体裁:",stream.aiGenre,
+        "\nAI分析情绪:",stream.aiMood,
+        "\n是否已经进行过AI分析:",isAIprocessed,
+        "\nBPM:",juce::String(stream.bpm),
+        "\n是否为音乐资源",isMusic,
+        "\n调性:",juce::String(stream.key),
+        "\n采样率:",juce::String(stream.sampleRate),
+        "\n额外信息",stream.extraMetadata
+    ));
 
     setSize(700, 100);
 }
@@ -31,16 +47,19 @@ void EachStream::resized(){
     mBitDepth.setBounds(local.removeFromLeft(100).reduced(10));
     mBitRate.setBounds(local.removeFromLeft(100).reduced(10));
     mDecoderName.setBounds(local.removeFromLeft(200).reduced(10));
+    mEllipsisToolTip->setBounds(local.removeFromLeft(getHeight()).reduced(30));
 }
 void EachStream::paint(juce::Graphics& g){
-    
+    auto local{getLocalBounds().toFloat()};
+    g.setColour(ycolor.shallowGrey);
+    g.fillRoundedRectangle(local,15.0f);
 }
 
 // ======================================================================
-// popupWindow 实现
+// MultiStreamPopupWindow 实现
 // ======================================================================
 
-popupWindow::popupWindow(juce::Image image, juce::String text, juce::String title)
+MultiStreamPopupWindow::MultiStreamPopupWindow(juce::Image image, juce::String text, juce::String title)
     : mImage(image), mText(text), mTitle(title)
 {
     xButton.setClickingTogglesState(true);
@@ -68,9 +87,9 @@ popupWindow::popupWindow(juce::Image image, juce::String text, juce::String titl
     setSize(static_cast<int>(kPopupWidth), static_cast<int>(totalHeight));
 }
 
-popupWindow::~popupWindow() {}
+MultiStreamPopupWindow::~MultiStreamPopupWindow() {}
 
-void popupWindow::resized()
+void MultiStreamPopupWindow::resized()
 {
     auto bounds = getLocalBounds();
     float titleRowHeight = mTitleFont.getHeight() + kPadding;
@@ -81,7 +100,7 @@ void popupWindow::resized()
     xButton.setBounds(titleRow.removeFromRight(buttonSize).reduced(4));
 }
 
-void popupWindow::paint(juce::Graphics& g)
+void MultiStreamPopupWindow::paint(juce::Graphics& g)
 {
     auto local{getLocalBounds().toFloat()};
 
@@ -119,24 +138,24 @@ void popupWindow::paint(juce::Graphics& g)
     }
 }
 
-void popupWindow::mouseDown(const juce::MouseEvent& e)
+void MultiStreamPopupWindow::mouseDown(const juce::MouseEvent& e)
 {
     mDragger.startDraggingComponent(this, e);
 }
 
-void popupWindow::mouseDrag(const juce::MouseEvent& e)
+void MultiStreamPopupWindow::mouseDrag(const juce::MouseEvent& e)
 {
     mDragger.dragComponent(this, e, nullptr);
 }
 
-void popupWindow::resetPosition()
+void MultiStreamPopupWindow::resetPosition()
 {
     if (auto* parent = getParentComponent())
         setCentrePosition(parent->getLocalBounds().getCentre());
 }
 
 // ======================================================================
-// SongIntroduce 实现
+// MultiStreamCard 实现
 // ======================================================================
 
 MultiStreamCardButton::MultiStreamCardButton(){
@@ -152,7 +171,7 @@ void MultiStreamCardButton::paintButton(juce::Graphics& g, bool shouldDrawButton
     g.drawText(getButtonText(),local,juce::Justification::centred,true);
 }
 
-SongIntroduce::SongIntroduce(juce::Image image, juce::String text, juce::String title)
+MultiStreamCard::MultiStreamCard(juce::Image image, juce::String text, juce::String title)
     : 
       mPopupWindow(image, text, title),
       mVBlankAnimatorUpdater(std::make_unique<juce::VBlankAnimatorUpdater>(this)),
@@ -212,16 +231,16 @@ SongIntroduce::SongIntroduce(juce::Image image, juce::String text, juce::String 
     mVBlankAnimatorUpdater->addAnimator(mOpenAnimator);
     mVBlankAnimatorUpdater->addAnimator(mCloseAnimator);
 
-    whatsmoreButton.setClickingTogglesState(true);
+    cardButton.setClickingTogglesState(true);
 
     // 注册监听
-    whatsmoreButton.addListener(this);
+    cardButton.addListener(this);
     mPopupWindow.xButton.addListener(this);
 
-    addAndMakeVisible(whatsmoreButton);
+    addAndMakeVisible(cardButton);
 }
 
-SongIntroduce::~SongIntroduce()
+MultiStreamCard::~MultiStreamCard()
 {
     if (auto* parent = mPopupWindow.getParentComponent())
         parent->removeChildComponent(&mPopupWindow);
@@ -233,16 +252,16 @@ SongIntroduce::~SongIntroduce()
     }
 }
 
-void SongIntroduce::resized()
+void MultiStreamCard::resized()
 {
-    whatsmoreButton.setBounds(getLocalBounds());
+    cardButton.setBounds(getLocalBounds());
 }
 
-void SongIntroduce::paint(juce::Graphics&) {}
+void MultiStreamCard::paint(juce::Graphics&) {}
 
-void SongIntroduce::buttonClicked(juce::Button* button)
+void MultiStreamCard::buttonClicked(juce::Button* button)
 {
-    if (button == &whatsmoreButton)
+    if (button == &cardButton)
     {
         if (button->getToggleState())
         {
@@ -263,18 +282,18 @@ void SongIntroduce::buttonClicked(juce::Button* button)
         if (mIsPopupVisible)
         {
             mIsPopupVisible = false;
-            whatsmoreButton.setToggleState(false, juce::dontSendNotification);
+            cardButton.setToggleState(false, juce::dontSendNotification);
             mCloseAnimator.start();
         }
     }
 }
 
-void SongIntroduce::setPopupNoSee()
+void MultiStreamCard::setPopupNoSee()
 {
     if (!mIsPopupVisible)
         return;
 
     mIsPopupVisible = false;
-    whatsmoreButton.setToggleState(false, juce::dontSendNotification);
+    cardButton.setToggleState(false, juce::dontSendNotification);
     mCloseAnimator.start();
 }

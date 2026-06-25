@@ -20,6 +20,7 @@ private:
     YLabel mBitRate;
     YLabel mDecoderName;
     YLabel mBitDepth;
+    std::unique_ptr<EllipsisToolTip> mEllipsisToolTip;
 public:
     EachStream(SongInfo::stream&);
     void resized() override;
