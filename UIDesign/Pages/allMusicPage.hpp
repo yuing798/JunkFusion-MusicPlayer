@@ -70,7 +70,7 @@ private:
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
     //这个是用来测试的
-    SongIntroduce mSongIntroduce{U("1221425135\n124112wrwer1\n4dubsdu\n12udg18g2d812\nd2d\n\n\nr32r\n\n23r13\n")};
+    SongIntroduce mSongIntroduce{juce::Image{}, U("1221425125\n124112wrwer1\n4dubsdu\n12udg18g2d812\nd2d\n\n\nr32r\n\n23r13\n"), U("歌曲信息")};
 
 public:
 
