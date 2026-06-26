@@ -18,6 +18,11 @@ find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+# 使用 pkg-config 查找 ICU 的主库（i18n 会自动依赖 uc）
+# 如果需要 io 模块，可追加 icu-io
+pkg_check_modules(ICU IMPORTED_TARGET REQUIRED icu-i18n)
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
@@ -97,6 +102,7 @@ target_link_libraries(JunkFusion
         spdlog::spdlog
         unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
+        PkgConfig::ICU
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置

@@ -5,7 +5,6 @@
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "otherUtils.hpp"
-#include <libavutil/avutil.h>
 #include <spdlog/spdlog.h>
 #include <cstddef>
 #include <chrono>
