@@ -6,28 +6,29 @@
 #include <SQLiteCpp/Database.h>
 #include <memory>
 #include <spdlog/spdlog.h>
+auto logger = spdlog::get(LogAllID);
 
-SongsManage::SongsManage(){
-    auto databaseDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getChildFile("database");
-    if(!databaseDir.exists()) databaseDir.createDirectory();
+SongsManage::SongsManage()
+{
+    // 使用 constants.h 中统一定义的 databaseDirId，避免路径不一致
+    if (!databaseDirId.exists())
+        databaseDirId.createDirectory();
 
-    songsDbFile = databaseDir.getChildFile("songs.db");
+    songsDbFile = databaseDirId.getChildFile("songs.db");
 
-    try{
+    try
+    {
         db = std::make_unique<SQLite::Database>(
             songsDbFile.getFullPathName().toStdString(),
             SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
         );
         createTables();
-    }catch(const std::exception& e){
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::AlertWindow::WarningIcon,
-            U("数据库错误"),
-            U("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: ") + juce::String(e.what())
-        );
-        //spdlog:报错
-        auto logger = spdlog::get(LogCrashID);
-        if(logger) logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: ",e.what());
+    }
+    catch (const std::exception& e)
+    {
+        // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
+        
+        if (logger) logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}", e.what());
     }
 }
 
@@ -52,6 +53,7 @@ void SongsManage::createTables()
 // ============================================================
 bool SongsManage::isSongExists(const std::string& filePath)
 {
+    if (!db) return false;
     //SQLite::Database:存储数据库连接句柄（一个指向 .db 文件的指针）、连接状态、是否开启事务等管理信息。它是你操作数据库的“总入口”。
     //SQLite::Statement存储预编译好的 SQL 语句模板（比如 SELECT * FROM songs WHERE id = ?）、
     // 绑定的参数值（你填入的 filePath）、以及当前正在读取的那一行数据（执行查询后的结果缓冲区）。
@@ -75,6 +77,7 @@ bool SongsManage::isSongExists(const std::string& filePath)
 // ============================================================
 void SongsManage::insertSong(const SongInfo& info)
 {
+    if (!db) return;
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
         stmt.bind(1,  info.filePath);
@@ -172,6 +175,81 @@ void SongsManage::insertSong(const SongInfo& info)
     }
 }
 
+// ============================================================
+// getTotalSongCount
+// ============================================================
+int SongsManage::getTotalSongCount()
+{
+    if (!db) {
+        logger->debug("查询歌曲总数阶段发生空指针问题");
+        return 0;
+    };
+    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs");
+    if (query.executeStep())
+        return query.getColumn(0).getInt();
+    return 0;
+}
+
+// ============================================================
+// getSongsPage
+// ============================================================
+std::vector<SongInfo> SongsManage::getSongsPage(int offset, int limit)
+{
+    std::vector<SongInfo> result;
+    if (!db) {
+        logger->debug("更新歌曲页码阶段发生空指针问题");
+        return result;
+    };
+    SQLite::Statement query(*db,
+        "SELECT filePath, fileName, fileSize, lastModifiedTime, addTime, "
+        "isMultiStreamFile, duration, title, artist, album, albumArtist, "
+        "genre, trackNumber, discNumber, year, composer, imageHash, "
+        "bitRate, bitDepth, sampleRate, numChannels, codecName, "
+        "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
+        "isMyLike, comment, hadPlayedNum "
+        "FROM songs ORDER BY addTime DESC LIMIT ? OFFSET ?");
+    query.bind(1, limit);
+    query.bind(2, offset);
+
+    while (query.executeStep())
+    {
+        SongInfo info;
+        info.filePath         = query.getColumn(0).getString();
+        info.fileName         = query.getColumn(1).getString();
+        info.fileSize         = query.getColumn(2).getInt64();
+        info.lastModifiedTime = query.getColumn(3).getString();
+        info.addTime          = query.getColumn(4).getString();
+        info.isMultiStreamFile = query.getColumn(5).getInt() != 0;
+        info.duration         = query.getColumn(6).getDouble();
+        info.title            = query.getColumn(7).getString();
+        info.artist           = query.getColumn(8).getString();
+        info.album            = query.getColumn(9).getString();
+        info.albumArtist      = query.getColumn(10).getString();
+        info.genre            = query.getColumn(11).getString();
+        info.trackNumber      = query.getColumn(12).getInt();
+        info.discNumber       = query.getColumn(13).getInt();
+        info.year             = query.getColumn(14).getInt();
+        info.composer         = query.getColumn(15).getString();
+        info.imageHash        = query.getColumn(16).getString();
+        info.bitRate          = query.getColumn(17).getInt();
+        info.bitDepth         = query.getColumn(18).getInt();
+        info.sampleRate       = query.getColumn(19).getInt();
+        info.numChannels      = query.getColumn(20).getInt();
+        info.codecName        = query.getColumn(21).getString();
+        info.isMusic          = query.getColumn(22).getInt() != 0;
+        info.aiGenre          = query.getColumn(23).getString();
+        info.aiMood           = query.getColumn(24).getString();
+        info.bpm              = query.getColumn(25).getInt();
+        info.key              = query.getColumn(26).getString();
+        info.aiProcessed      = query.getColumn(27).getInt() != 0;
+        info.isMyLike         = query.getColumn(28).getInt() != 0;
+        info.comment          = query.getColumn(29).getString();
+        info.hadPlayedNum     = query.getColumn(30).getInt();
+        result.push_back(std::move(info));
+    }
+    return result;
+}
+
 SongsManage::~SongsManage(){
-    
+
 }

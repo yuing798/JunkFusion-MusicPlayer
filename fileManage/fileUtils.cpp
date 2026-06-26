@@ -33,7 +33,7 @@ void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>
 
     // 2. 创建 FileChooser 对象（使用 shared_ptr 管理生命周期）
     auto chooser = std::make_shared<juce::FileChooser>(
-        "请选择多媒体文件（音频或视频）",                // 对话框标题
+        U("请选择多媒体文件（音频或视频）"),                // 对话框标题
         juce::File::getSpecialLocation(juce::File::userHomeDirectory), // 初始目录
         filters,                                         // 过滤器字符串
         true,                                            // 使用原生对话框（外观更好）

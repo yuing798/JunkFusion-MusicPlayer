@@ -6,12 +6,13 @@
 #include <memory>
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
+#include <spdlog/spdlog.h>
 
 // ============================================================
 // 建表 SQL
 // ============================================================
 
-// songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息）
+// songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
 //PRIMARY KEY:主键 AUTOINCREMENT：自动递增
 //NOT NULL:禁止留空
 //UNIQUE:唯一
@@ -40,7 +41,16 @@ inline const char* createSongsTableSQL = R"(
         bitDepth           INTEGER,
         sampleRate         INTEGER,
         numChannels        INTEGER,
-        codecName          TEXT
+        codecName          TEXT,
+        isMusic            INTEGER DEFAULT 0,
+        aiGenre            TEXT,
+        aiMood             TEXT,
+        bpm                INTEGER DEFAULT 0,
+        key                TEXT,
+        aiProcessed        INTEGER DEFAULT 0,
+        isMyLike           INTEGER DEFAULT 0,
+        comment            TEXT,
+        hadPlayedNum       INTEGER DEFAULT 0
     )
 )";
 
@@ -53,6 +63,7 @@ private:
 
     /** 创建 songs 表，如果已存在则跳过 */
     void createTables();
+    
 public:
 
     /** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
@@ -73,6 +84,12 @@ public:
      * @param info     歌曲信息
      */
     void insertSong(const SongInfo& info);
+
+    /** 获取歌曲总数 */
+    int getTotalSongCount();
+
+    /** 分页获取歌曲，offset 从 0 开始，返回 limit 条记录 */
+    std::vector<SongInfo> getSongsPage(int offset, int limit);
 
     static SongsManage& getInstance() {
         static SongsManage instance; //首次调用时创建，程序结束时自动析构
