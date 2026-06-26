@@ -43,8 +43,6 @@ private:
     juce::Viewport mViewPort;
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
-    //这个是用来测试的
-    std::unique_ptr<PopupWindowButton> mPopupWindowButton;
 
 public:
 

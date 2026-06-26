@@ -53,6 +53,64 @@ void OtherSongInfoIntro::paint(juce::Graphics& g){
 }
 
 
+
+// ======================================================================
+// MyLikeButton 实现
+// ======================================================================
+
+void MyLikeButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    // 圆形背景
+    auto baseColor = ycolor.transparent;
+    g.setColour(baseColor);
+    auto bounds = getLocalBounds().toFloat();
+    auto width = bounds.getWidth();
+    g.fillRoundedRectangle(bounds, width / 2.0f);
+
+    // 爱心区域
+    auto heartBounds = bounds.reduced(width * (1.0f - 0.707f)).reduced(1.0f);
+
+    // 使用参数方程生成爱心路径
+    // x(t) = 16 sin³(t),  y(t) = 13 cos(t) - 5 cos(2t) - 2 cos(3t) - cos(4t)
+    juce::Path heartPath;
+    const int numPoints = 200;
+    const float scaleX = heartBounds.getWidth() / 32.0f;
+    const float scaleY = heartBounds.getHeight() / 32.0f;
+    const float centerX = heartBounds.getCentreX();
+    const float centerY = heartBounds.getCentreY();
+
+    for (int i = 0; i <= numPoints; ++i)
+    {
+        float t = juce::MathConstants<float>::twoPi * i / numPoints;
+        float sinT = std::sin(t);
+        float cosT = std::cos(t);
+        float x = 16.0f * sinT * sinT * sinT;
+        float y = -(13.0f * cosT - 5.0f * std::cos(2.0f * t) - 2.0f * std::cos(3.0f * t) - std::cos(4.0f * t));
+
+        float px = centerX + x * scaleX;
+        float py = centerY + y * scaleY;
+
+        if (i == 0)
+            heartPath.startNewSubPath(px, py);
+        else
+            heartPath.lineTo(px, py);
+    }
+    heartPath.closeSubPath();
+
+    if (getToggleState())
+    {
+        // 选中态：红色填满爱心
+        g.setColour(juce::Colours::red);
+        g.fillPath(heartPath);
+    }
+    else
+    {
+        // 未选中态：仅描边，画笔粗 5px
+        g.setColour(juce::Colours::black);
+        g.strokePath(heartPath, juce::PathStrokeType(5.0f));
+    }
+}
+
 EachSong::EachSong(int songNo,SongInfo info)
 {
     addAndMakeVisible(mPlayPauseButton);
@@ -154,7 +212,8 @@ EachSong::EachSong(int songNo,SongInfo info)
         mMultiStreamToolTip.setVisible(false);
     }
     addAndMakeVisible(aiLabel);
-    
+    addAndMakeVisible(myLikeButton);
+
 }
 void EachSong::resized(){
 
@@ -168,6 +227,7 @@ void EachSong::resized(){
     mArtist.setBounds(nameBounds);
     mAlbum.setBounds(local.removeFromLeft(150));
     aiLabel.setBounds(local.removeFromLeft(100));
+    myLikeButton.setBounds(local.removeFromRight(height).reduced(height * 0.15f));
 }
 void EachSong::paint(juce::Graphics& g){
     

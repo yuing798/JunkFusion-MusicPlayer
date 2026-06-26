@@ -9,6 +9,11 @@
 #include "popupWindow.hpp"
 #include <memory>
 
+class MyLikeButton : public juce::ToggleButton{
+public:
+    void paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+};
+
 class MultiStreamToolTip : public juce::TextButton{
 public:
     MultiStreamToolTip(){
@@ -61,10 +66,7 @@ private:
 
     playPauseButton mPlayPauseButton;//播放按钮
     std::unique_ptr<PopupWindowButton> mMoreInfoButton;
-    svgButton myLikeButton{
-        U("我喜欢"),
-        juce::Drawable::createFromImageData(BinaryData::heart_svg, BinaryData::heart_svgSize)
-    };
+    MyLikeButton myLikeButton;
 public:
 
     EachSong(int songNo,SongInfo info);
