@@ -27,9 +27,7 @@ logSystem::logSystem()
     try
     {
         // ── 1. 准备日志目录 ──
-        juce::File exeFile = juce::File::getSpecialLocation(
-            juce::File::currentExecutableFile);
-        auto logDir = exeFile.getParentDirectory().getChildFile("logs");
+        auto logDir = logInfoDirId.getChildFile("logs");
         if (!logDir.exists())
             logDir.createDirectory();
 

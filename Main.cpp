@@ -104,7 +104,7 @@ public:
     };
 
 private:
-    // logSystem mLogSystem;
+    logSystem mLogSystem;
     std::unique_ptr<MainWindow> mainWindow;
 };
 

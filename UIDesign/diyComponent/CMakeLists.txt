@@ -6,3 +6,4 @@ target_sources(JunkFusion PRIVATE
     YComboBox.cpp
     popupWindow.cpp
 )
+add_subdirectory(cell)
