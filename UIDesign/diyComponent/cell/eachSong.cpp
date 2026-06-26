@@ -103,33 +103,40 @@ EachSong::EachSong(int songNo,SongInfo info)
         }
         return longUTF8(str, value);
     };
+    auto isTrackNumberValid = [](const char* str,int value){
+        if(value >= 0){
+            return longUTF8(str, value);
+        }else{
+            return juce::String();
+        }
+    };//轨道号0是可能存在的，所以这里要做单一逻辑修改
 
     auto isMusic{info.isMusic ? U("是") : U("否")};
     auto isAIprocessed{info.aiProcessed ? U("是") : U("否")};
 
     juce::String fileExtraInfo{longUTF8(
-        "文件路径：",info.filePath,
-        "\n文件名称：",info.fileName,
-        "\n文件大小：",info.fileSize,
-        "\n最后修改时间：",info.lastModifiedTime,
-        "\n上传时间：",info.addTime,
-        isInfoEmpty("\n专辑艺术家：",info.albumArtist),
-        isInfoEmpty("\n体裁：",info.genre),
-        isInfoEmpty("\n轨道号：",info.trackNumber),
-        isInfoEmpty("\n碟片号：",info.discNumber),
-        isInfoEmpty("\n发行年份：",info.year),
-        isInfoEmpty("\n作曲者：",info.composer),
+        isInfoEmpty("\nBPM:",info.bpm),
+        isInfoEmpty("\n调性:",info.key),
+        isInfoEmpty("\n采样率:",info.sampleRate),
         isInfoEmpty("\n比特率：",info.bitRate),
         isInfoEmpty("\n通道数：",info.numChannels),
         isInfoEmpty("\n位深：",info.bitDepth),
         isInfoEmpty("\n解码器名称：",info.codecName),
+        "\n是否已经进行过AI分析:",isAIprocessed,
         isInfoEmpty("\nAI分析体裁:",info.aiGenre),
         isInfoEmpty("\nAI分析情绪:",info.aiMood),
         isInfoEmpty("\n是否为音乐资源:",isMusic),
-        "\n是否已经进行过AI分析:",isAIprocessed,
-        isInfoEmpty("\nBPM:",info.bpm),
-        isInfoEmpty("\n调性:",info.key),
-        isInfoEmpty("\n采样率:",info.sampleRate)
+        isInfoEmpty("\n专辑艺术家：",info.albumArtist),
+        isInfoEmpty("\n体裁：",info.genre),
+        isTrackNumberValid("\n轨道号：",info.trackNumber),
+        isInfoEmpty("\n碟片号：",info.discNumber),
+        isInfoEmpty("\n发行年份：",info.year),
+        isInfoEmpty("\n作曲者：",info.composer),
+        "文件路径：",info.filePath,
+        "\n文件名称：",info.fileName,
+        "\n文件大小：",info.fileSize,
+        "\n最后修改时间：",info.lastModifiedTime,
+        "\n上传时间：",info.addTime  
     )};
 
     mMoreInfoButton = std::make_unique<PopupWindowButton>(

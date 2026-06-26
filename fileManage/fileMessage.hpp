@@ -47,7 +47,7 @@ struct SongInfo
     std::string album;                  // 专辑
     std::string albumArtist;            // 专辑艺术家
     std::string genre;                  // 体裁
-    int         trackNumber = 0;        // 轨道号
+    int         trackNumber = -1;        // 轨道号
     int         discNumber  = 0;        // 碟片号
     int         year        = 0;        // 发行年份
     std::string composer;               // 作曲者
