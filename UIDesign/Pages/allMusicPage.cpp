@@ -116,23 +116,6 @@ allMusicPage::allMusicPage(){
     // sortWaysComboBox.setSelectedId(1);
 
     selectFileButton.addListener(this);
-
-    // addAndMakeVisible(mSongIntroduce);
-
-    //测试
-    mPopupWindowButton = std::make_unique<PopupWindowButton>(
-        std::make_unique<svgButton>(
-            U("更多信息"),
-            juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize)
-        ),
-        U("more info"),
-        std::make_unique<OtherSongInfoIntro>(
-            juce::ImageCache::getFromMemory(BinaryData::junkfusion_png, BinaryData::junkfusion_pngSize),
-            U("拟分为菲比围而不攻点点滴滴顶顶顶顶的大大大大大大顶顶顶顶的啦啦啦啦啦啦啦啦啦啦了反弹道导弹导弹大大大大大大\n那那那男男女女男男女女杀杀杀杀杀杀杀杀杀杀杀杀杀杀是呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅轻轻巧巧轻轻巧巧请求权请求权")
-        )   
-    );
-    addAndMakeVisible(*mPopupWindowButton);
-
 }
 void allMusicPage::resized(){
 
@@ -152,7 +135,6 @@ void allMusicPage::resized(){
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));
-    mPopupWindowButton->setBounds(row1.removeFromLeft(row2.getHeight()));
 
 }
 void allMusicPage::buttonClicked(juce::Button* button)
@@ -168,9 +150,7 @@ void allMusicPage::buttonClicked(juce::Button* button)
                     auto eachSong{getStreamMetaData(file)};//FFmpeg提取原数据
                     if(!eachSong.filePath.empty()) SongsManage::getInstance().insertSong(eachSong);
                     //推入数据库
-
                 }
-                
             },
             this
         );

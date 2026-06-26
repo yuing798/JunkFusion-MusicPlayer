@@ -5,5 +5,5 @@ target_sources(JunkFusion PRIVATE
     otherComponent.cpp
     YComboBox.cpp
     popupWindow.cpp
-    multiStreamCard.cpp
+    card.cpp
 )

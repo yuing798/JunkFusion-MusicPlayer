@@ -12,9 +12,6 @@
 #include <memory>
 
 //点击按钮实现一个跳到屏幕中间的窗口
-
-
-
 class popupWindow : public juce::Component{
 private:
     juce::String mTitle;
@@ -57,5 +54,19 @@ public:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PopupWindowButton)
 };
+
+//接口示例：
+// mPopupWindowButton = std::make_unique<PopupWindowButton>(
+//     std::make_unique<svgButton>(//这个传参std::unique_ptr<juce::Button>
+//         U("更多信息"),
+//         juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize)
+//     ),
+//     U("more info"),//这个传参juce::String
+//     std::make_unique<OtherSongInfoIntro>(//这个是std::unique_ptr<juce::Component>
+//         juce::Image{},
+//         U("我的文本")
+//     )   
+// );
+// addAndMakeVisible(*mPopupWindowButton);
 
 
