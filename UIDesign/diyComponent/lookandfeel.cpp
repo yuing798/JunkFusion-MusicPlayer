@@ -2,12 +2,6 @@
 #include "./otherComponent.hpp"
 
 YLookAndFeel::YLookAndFeel(){
-    // setColour(juce::PopupMenu::backgroundColourId,ycolor.midGrey);
-    // setColour(juce::PopupMenu::textColourId, ycolor.black);
-    // setColour(juce::PopupMenu::highlightedBackgroundColourId, ycolor.darkGrey);
-    // setColour(juce::PopupMenu::highlightedTextColourId, ycolor.black);
-
-    // customTypeface = juce::Typeface::findSystemTypeface();
 }
 
 juce::Typeface::Ptr YLookAndFeel::getTypefaceForFont (const juce::Font& font){
@@ -34,14 +28,6 @@ void YLookAndFeel::drawTooltip (juce::Graphics& g, const juce::String& text, int
         juce::Justification::centred, 
         5
     );
-}
-
-juce::Font YLookAndFeel::getComboBoxFont(juce::ComboBox& box){
-    return juce::Font (juce::FontOptions().withHeight (16.0f));
-}
-
-juce::Font YLookAndFeel::getPopupMenuFont(){
-    return juce::Font (juce::FontOptions().withHeight (16.0f));
 }
 
 void YLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
@@ -205,35 +191,3 @@ void YLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int width,
     g.setColour(ycolor.darkGrey);
     g.fillPath(hadWalkedPath);
 }
-
-// void YLookAndFeel::drawComboBox	(	
-//     Graphics &	g,
-//     int	width,
-//     int	height,
-//     bool	isButtonDown,
-//     int	buttonX,
-//     int	buttonY,
-//     int	buttonW,
-//     int	buttonH,//这两个指的是右侧的箭头选择方块
-//     ComboBox &	 combo)
-// {
-
-// }
-// void YLookAndFeel::drawPopupMenuItemWithOptions	(	
-//     Graphics &	g,
-//     const Rectangle< int > &	area,
-//     bool	isHighlighted,
-//     const PopupMenu::Item &	item,
-//     const PopupMenu::Options &	option )
-// {
-
-// }
-
-// void YLookAndFeel::drawPopupMenuBackgroundWithOptions	(	
-//     Graphics &	g,
-//     int	width,
-//     int	height,
-//     const PopupMenu::Options &	 option)
-// {
-
-// }

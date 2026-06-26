@@ -36,7 +36,6 @@ private:
 
     playPauseButton mPlayPauseButton;//播放按钮
     std::unique_ptr<PopupWindowButton> mMoreInfoButton;
-    std::unique_ptr<PopupWindowButton> mMultiStreamButton;
 public:
 
     EachSong(int songNo,SongInfo info);
