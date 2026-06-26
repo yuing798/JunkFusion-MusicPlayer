@@ -3,6 +3,7 @@
 #include "fileManage/databaseManage.hpp"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
+#include <string>
 
 //==============================================================================
 class GuiAppApplication final : public juce::JUCEApplication
@@ -23,6 +24,7 @@ public:
     {
         // This method is where you should put your application's initialisation code..
         juce::ignoreUnused (commandLine);
+        // std::cout << juce::String(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getFullPathName()).toStdString();
 
         if(!UserDirId.exists()) UserDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();

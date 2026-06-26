@@ -33,7 +33,7 @@ static constexpr const char* LogAllID{"all"};
 //文件路径操作
 
 static const juce::File UserDirId{
-    juce::File::getSpecialLocation(juce::File::currentExecutableFile).getChildFile("user")};
+    juce::File::getSpecialLocation(juce::File::currentExecutableFile).getParentDirectory().getChildFile("user")};
 static const juce::File imageDirId{UserDirId.getChildFile("image")};
 static const juce::File databaseDirId{UserDirId.getChildFile("database")};
 static const juce::File logInfoDirId{UserDirId.getChildFile("logInfo")};
