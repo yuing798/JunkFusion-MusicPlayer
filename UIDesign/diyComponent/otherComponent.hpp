@@ -46,10 +46,6 @@ class YSlider : public juce::Slider{
 public:
     YSlider();
 };
-
-
-
-
 struct rotarySlider : public juce::Slider{
 
     rotarySlider();

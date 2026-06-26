@@ -9,7 +9,6 @@
 
 YColor ycolor;
 
-
 YLabel::YLabel(){
     setFont (juce::FontOptions (18.0f));
 
@@ -79,8 +78,6 @@ void EllipsisToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHig
     auto width{bounds.getWidth()};
     auto reducedWidth{width * (1.0f - 0.707f)};//因为图形是圆形的，所以需要把边缘削去一部分
     g.fillRoundedRectangle(bounds, width / 2.0f);
-
-
     // 绘制 SVG，居中适应按钮区域
     svg.get()->drawWithin(g, bounds.reduced(reducedWidth).reduced(1.0f),
                             juce::RectanglePlacement::centred,

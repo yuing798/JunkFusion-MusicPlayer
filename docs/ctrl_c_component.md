@@ -1,27 +1,27 @@
 
 //这些内容用来复制粘贴的，因为内容重复,到时候ctrlF替换一下名称就可以了
 
-class OtherSongInfoIntro : public juce::Component{
+class StreamCardComponent : public juce::Component{
 private:
 
 public:
 
-    OtherSongInfoIntro();
-    ~OtherSongInfoIntro();
+    StreamCardComponent();
+    ~StreamCardComponent();
     void resized() override;
     void paint(juce::Graphics& g) override;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OtherSongInfoIntro)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StreamCardComponent)
 };
 
-OtherSongInfoIntro::OtherSongInfoIntro(){
+StreamCardComponent::StreamCardComponent(){
 
 }
-OtherSongInfoIntro::~OtherSongInfoIntro(){
+StreamCardComponent::~StreamCardComponent(){
 
 }
-void OtherSongInfoIntro::resized(){
+void StreamCardComponent::resized(){
 
 }
-void OtherSongInfoIntro::paint(juce::Graphics& g){
+void StreamCardComponent::paint(juce::Graphics& g){
     
 }

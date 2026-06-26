@@ -18,8 +18,12 @@ inline juce::String longUTF8(Args... args) {
             return U(args);
         } else if constexpr (std::is_same_v<Args, juce::String>) {
             return args;
-        } else {
-            return juce::String(args); // 需确保支持
+        } else if constexpr (std::is_same_v<Args, int>){
+            return juce::String(args);
+        } else if constexpr (std::is_same_v<Args, float>){
+            return juce::String(args);
+        } else{
+            return "";
         }
     }()), ...);
     //折叠表达式 ( ... , ... )

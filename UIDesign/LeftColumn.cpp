@@ -29,9 +29,6 @@ void selectedButton::paintButton (juce::Graphics& g,
     }
     g.setColour (ycolor.black);
     g.setFont (juce::FontOptions { 18.0f });
-    // if (shouldDrawButtonAsHighlighted) {
-    //     local = local.translated(0.0f, 1.0f);
-    // }
 
     g.drawText (getButtonText(), local, juce::Justification::centred, true);
 }
@@ -52,8 +49,6 @@ LeftSelectedComponent::LeftSelectedComponent()
     logo.setImage(juce::ImageCache::getFromMemory(BinaryData::junkfusion_png, BinaryData::junkfusion_pngSize));
     logo.setImagePlacement(juce::RectanglePlacement::centred);
     addAndMakeVisible(logo);
-
-
 }
 
 LeftSelectedComponent::~LeftSelectedComponent(){
