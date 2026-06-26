@@ -87,7 +87,7 @@ EachSong::EachSong(int songNo,SongInfo info)
     if(imageFile.existsAsFile()){
         songImage = juce::ImageCache::getFromFile(imageFile);
     }
-    juce::String extraInfo{longUTF8(
+    juce::String fileExtraInfo{longUTF8(
         "文件路径：",info.filePath,
         "\n文件名称：",info.fileName,
         "\n文件大小：",info.fileSize,
@@ -98,31 +98,22 @@ EachSong::EachSong(int songNo,SongInfo info)
         "\n轨道号：",info.trackNumber,
         "\n碟片号：",info.discNumber,
         "\n发行年份：",info.year,
-        "\n作曲者：",info.composer
+        "\n作曲者：",info.composer,
+        "\n比特率：",info.streams[0].bitRate,
+        "\n通道数：",info.streams[0].numChannels,
+        "\n位深：",info.streams[0].bitDepth,
+        "\n解码器名称：",info.streams[0].codecName,
+        "\nAI分析体裁:",info.streams[0].aiGenre,
+        "\nAI分析情绪:",info.streams[0].aiMood,
+        "\n是否为音乐资源:",info.streams[0].isMusic ? U("是") : U("否"),
+        "\n是否已经进行过AI分析:",info.streams[0].aiProcessed ? U("是") : U("否"),
+        "\nBPM:",info.streams[0].bpm,
+        "\n调性:",info.streams[0].key,
+        "\n采样率:",info.streams[0].sampleRate,
+        "\n额外信息:",info.extraMetadata + info.streams[0].extraMetadata
         // "\n：",,
-    )};
-    if(info.numAudioStreams == 1){
-        //如果只有一条流的话直接把剩余的所有信息都写进去
-        extraInfo += longUTF8(
-            "\n比特率：",info.streams[0].bitRate,
-            "\n通道数：",info.streams[0].numChannels,
-            "\n位深：",info.streams[0].bitDepth,
-            "\n解码器名称：",info.streams[0].codecName,
-            "\nAI分析体裁:",info.streams[0].aiGenre,
-            "\nAI分析情绪:",info.streams[0].aiMood,
-            "\n是否为音乐资源:",info.streams[0].isMusic ? U("是") : U("否"),
-            "\n是否已经进行过AI分析:",info.streams[0].aiProcessed ? U("是") : U("否"),
-            "\nBPM:",info.streams[0].bpm,
-            "\n调性:",info.streams[0].key,
-            "\n采样率:",info.streams[0].sampleRate,
-            "\n额外信息:",info.extraMetadata + info.streams[0].extraMetadata
-        );
-    }else if(info.numAudioStreams > 1){
-        //如果有多条流只写文件层的额外信息，流层的额外信息有单独的一张卡片
-        extraInfo += longUTF8(
-            "\n额外信息:",info.extraMetadata
-        );
-    }
+    )};//我觉得就算有好几条流的话也要显示完成第一条流的全部信息
+    //多流的自带信息自己去多流卡片中查看
 
     mMoreInfoButton = std::make_unique<PopupWindowButton>(
         std::make_unique<svgButton>(
@@ -132,9 +123,10 @@ EachSong::EachSong(int songNo,SongInfo info)
         songTitle,
         std::make_unique<OtherSongInfoIntro>(
             songImage,
-            longUTF8("")
+            fileExtraInfo
         )
     );
+    // mMultiStreamButton = std::make_unique()
     
 }
 void EachSong::resized(){

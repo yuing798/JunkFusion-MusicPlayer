@@ -52,8 +52,6 @@ struct SongInfo
     int         year        = 0;        // 发行年份
     std::string composer;               // 作曲者
     //这些基础数据都是文件容器层面的
-
-    std::string extraMetadata;//文件层和流层都有自己独属的额外元数据
     std::string comment;                // 备注(用户写进去的)
     std::string imageHash;             //图片所对应的哈希值索引
 
@@ -76,7 +74,6 @@ struct SongInfo
         std::string key;                    // 调性（如 C major, A minor）        
         bool        aiProcessed = false;    // 是否已经进行过 AI 处理
 
-        std::string extraMetadata;//其他元数据(文件中自带的)
     };
     std::vector<stream> streams;
 };
