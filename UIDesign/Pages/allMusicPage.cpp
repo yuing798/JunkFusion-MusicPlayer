@@ -120,20 +120,18 @@ allMusicPage::allMusicPage(){
     // addAndMakeVisible(mSongIntroduce);
 
     //测试
-    // auto mySvgButton = std::make_unique<svgButton>(
-    //     U("更多信息"),
-    //     juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize)
-    // );
-    // auto windowComponent = std::make_unique<OtherSongInfoIntro>(
-    //     juce::ImageCache::getFromMemory(BinaryData::junkfusion_png, BinaryData::junkfusion_pngSize),
-    //     U("拟分为菲比围而不攻点点滴滴顶顶顶顶的大大大大大大顶顶顶顶的啦啦啦啦啦啦啦啦啦啦了反弹道导弹导弹大大大大大大\n那那那男男女女男男女女杀杀杀杀杀杀杀杀杀杀杀杀杀杀是呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅轻轻巧巧轻轻巧巧请求权请求权")
-    // );
-    // mPopupWindowButton = std::make_unique<PopupWindowButton>(
-    //     std::move(mySvgButton),
-    //     U("more info"),
-    //     std::move(windowComponent)
-    // );
-    // addAndMakeVisible(*mPopupWindowButton);
+    mPopupWindowButton = std::make_unique<PopupWindowButton>(
+        std::make_unique<svgButton>(
+            U("更多信息"),
+            juce::Drawable::createFromImageData(BinaryData::whatsMore_svg, BinaryData::whatsMore_svgSize)
+        ),
+        U("more info"),
+        std::make_unique<OtherSongInfoIntro>(
+            juce::ImageCache::getFromMemory(BinaryData::junkfusion_png, BinaryData::junkfusion_pngSize),
+            U("拟分为菲比围而不攻点点滴滴顶顶顶顶的大大大大大大顶顶顶顶的啦啦啦啦啦啦啦啦啦啦了反弹道导弹导弹大大大大大大\n那那那男男女女男男女女杀杀杀杀杀杀杀杀杀杀杀杀杀杀是呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅鹅轻轻巧巧轻轻巧巧请求权请求权")
+        )   
+    );
+    addAndMakeVisible(*mPopupWindowButton);
 
 }
 void allMusicPage::resized(){
