@@ -213,6 +213,7 @@ EachSong::EachSong(int songNo,SongInfo info)
     }
     addAndMakeVisible(aiLabel);
     addAndMakeVisible(myLikeButton);
+    addAndMakeVisible(hadPlayedNumLabel);
 
 }
 void EachSong::resized(){
@@ -227,8 +228,7 @@ void EachSong::resized(){
     mArtist.setBounds(nameBounds);
     mAlbum.setBounds(local.removeFromLeft(150));
     aiLabel.setBounds(local.removeFromLeft(100));
+    hadPlayedNumLabel.setBounds(local.removeFromRight(60));
     myLikeButton.setBounds(local.removeFromRight(height).reduced(height * 0.15f));
-}
-void EachSong::paint(juce::Graphics& g){
-    
+
 }

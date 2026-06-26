@@ -11,6 +11,9 @@
 
 class MyLikeButton : public juce::ToggleButton{
 public:
+    MyLikeButton(){
+        setTooltip(U("添加到<我喜欢>中"));
+    }
     void paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
 
@@ -67,10 +70,11 @@ private:
     playPauseButton mPlayPauseButton;//播放按钮
     std::unique_ptr<PopupWindowButton> mMoreInfoButton;
     MyLikeButton myLikeButton;
+    littleLabel hadPlayedNumLabel;
 public:
 
     EachSong(int songNo,SongInfo info);
     void resized() override;
-    void paint(juce::Graphics& g) override;
+    // void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
 };
