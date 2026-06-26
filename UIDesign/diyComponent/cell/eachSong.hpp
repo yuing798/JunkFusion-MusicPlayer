@@ -1,9 +1,28 @@
+#include "FontAbout/font.h"
 #include "buttons.hpp"
 #include "fileMessage.hpp"
+#include "juce_core/juce_core.h"
+#include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "otherComponent.hpp"
 #include "popupWindow.hpp"
 #include <memory>
+
+class MultiStreamToolTip : juce::TextButton{
+    MultiStreamToolTip(){
+        setTooltip(U("该文件包含多路音频流（如多语言、多声道）。当前播放器将自动为您选择质量最佳的默认音轨。如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序"));
+        setClickingTogglesState(false);
+        setColour(juce::TextButton::textColourOffId, ycolor.white);
+    }
+    void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override{
+        g.setColour(ycolor.darkGrey);
+        g.fillRoundedRectangle(getLocalBounds().toFloat(),3.0f);
+        g.setColour(ycolor.white);
+        g.setFont(juce::FontOptions().withHeight(16.0f).withStyle("Bold"));
+        g.drawText(U("多流音频"),getLocalBounds(),juce::Justification::centred,false);
+    }
+};
+
 class OtherSongInfoIntro : public juce::Component{
 private:
     static constexpr float kPopupWidth = 400.0f;
