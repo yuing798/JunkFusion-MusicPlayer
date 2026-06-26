@@ -2,6 +2,8 @@
 #include "fileMessage.hpp"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "otherComponent.hpp"
+#include "popupWindow.hpp"
+#include <memory>
 class OtherSongInfoIntro : public juce::Component{
 private:
     static constexpr float kPopupWidth = 400.0f;
@@ -33,8 +35,8 @@ private:
     YLabel mAlbum;
 
     playPauseButton mPlayPauseButton;//播放按钮
-    // std::unique_ptr<SongIntroduce> mOtherInfo;//储存歌曲的额外信息
-
+    std::unique_ptr<PopupWindowButton> mMoreInfoButton;
+    std::unique_ptr<PopupWindowButton> mMultiStreamButton;
 public:
 
     EachSong(int songNo,SongInfo info);

@@ -1,6 +1,8 @@
 #pragma once
 #include "juce_core/juce_core.h"
 #include <JuceHeader.h>
+#include <cstddef>
+#include <string>
 #include <type_traits>
 
 //这个函数支持UTF8字符显示
@@ -18,9 +20,13 @@ inline juce::String longUTF8(Args... args) {
             return U(args);
         } else if constexpr (std::is_same_v<Args, juce::String>) {
             return args;
-        } else if constexpr (std::is_same_v<Args, int>){
-            return juce::String(args);
-        } else if constexpr (std::is_same_v<Args, float>){
+        } else if constexpr (std::is_same_v<Args, std::string>){
+            return U(args.c_str());
+        } else if constexpr (
+            std::is_same_v<Args, int> || 
+            std::is_same_v<Args, float> || 
+            std::is_same_v<Args, size_t>
+        ){
             return juce::String(args);
         } else{
             return "";
