@@ -5,6 +5,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "otherUtils.hpp"
+#include <libavutil/avutil.h>
 #include <spdlog/spdlog.h>
 #include <cstddef>
 #include <chrono>
@@ -105,8 +106,6 @@ SongInfo getStreamMetaData(const juce::File& file){
     if(result!=0){
         //非多媒体文件也会返回AVERROR
         //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
-        
-        
         if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
         return {};  // 无法打开直接返回空
@@ -118,27 +117,13 @@ SongInfo getStreamMetaData(const juce::File& file){
         avformat_close_input(&inputContext);
         return {};
     }
+    // av_find_best_stream(AVFormatContext *ic, enum AVMediaType type, int wanted_stream_nb, int related_stream, const struct AVCodec **decoder_ret, int flags)
 
     // 时长（秒）
     if (inputContext->duration != AV_NOPTS_VALUE)
     {
         info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
     }
-    std::vector<int> audioStreamIndex;
-
-    for(size_t j = 0; j < inputContext->nb_streams; j++){
-        if(inputContext->streams[j]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
-            //验证编码器类型，编码器类型由流类型决定。
-            audioStreamIndex.push_back(j);
-        }
-    }//因为一个文件中可能拥有多个音频流，比如一个视频，有英文流，法语流，中文流同时存在
-    if(audioStreamIndex.empty()){
-        //SPDLOG:打开的文件并没有音频流
-        avformat_close_input(&inputContext);//如果这个文件没有音频流就释放资源
-        return {};
-    }
-    info.numAudioStreams = audioStreamIndex.size();
-    info.streams.resize(audioStreamIndex.size());
 
     //这里进行封面提取
     AVPacket coverPacket;
@@ -172,52 +157,38 @@ SongInfo getStreamMetaData(const juce::File& file){
 
     int streamCount{0};//最终提取流个数计数器
 
-    for(int i=0; i<info.numAudioStreams; i++){//按每条流迭代
 
-        auto currentIndex{audioStreamIndex[i]};
+    auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0) >= 0};
 
-        AVStream*           pAudioStream = inputContext->streams[currentIndex];
-        AVCodecParameters*  decoderPar      = pAudioStream->codecpar;
-        auto* decoder = avcodec_find_decoder(decoderPar->codec_id);
-        if(decoder == nullptr){
-            //SPDLOG:找不到编码器
-            info.streams[streamCount] = {};
-            continue;
-        }
-        info.streams[streamCount].streamCount = streamCount;
-        streamCount++;
-        info.streams[streamCount].codecName = avcodec_get_name(decoderPar->codec_id);
-        
-        // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
-        info.streams[streamCount].bitRate = decoderPar->bit_rate / 1000;
-        if (info.streams[streamCount].bitRate <= 0 && info.duration > 0.0 && info.fileSize > 0)
-        {
-            info.streams[streamCount].bitRate = static_cast<int>(
-                info.fileSize * 8.0 / info.duration / 1000.0);
-        }
-
-        // 采样率（Hz）
-        info.streams[streamCount].sampleRate = decoderPar->sample_rate;
-
-        // 通道数
-        info.streams[streamCount].numChannels = decoderPar->ch_layout.nb_channels;
-
-        // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
-        int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(decoderPar->format));
-        if (bytesPerSample > 0)
-        {
-            info.streams[streamCount].bitDepth = bytesPerSample * 8;
-        }
-        else
-        {
-            info.streams[streamCount].bitDepth = decoderPar->bits_per_coded_sample;
-        }
-
-        auto* tags = pAudioStream->metadata;
-        info.streams[streamCount].extraMetadata = buildExtraMetadata(tags);
-
+    AVStream*           pAudioStream = inputContext->streams[currentIndex];
+    AVCodecParameters*  decoderPar      = pAudioStream->codecpar;
+    auto* decoder = avcodec_find_decoder(decoderPar->codec_id);
+    info.codecName = avcodec_get_name(decoderPar->codec_id);
+    
+    // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
+    info.bitRate = decoderPar->bit_rate / 1000;
+    if (info.bitRate <= 0 && info.duration > 0.0 && info.fileSize > 0)
+    {
+        info.bitRate = static_cast<int>(
+            info.fileSize * 8.0 / info.duration / 1000.0);
     }
 
+    // 采样率（Hz）
+    info.sampleRate = decoderPar->sample_rate;
+
+    // 通道数
+    info.numChannels = decoderPar->ch_layout.nb_channels;
+
+    // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
+    int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(decoderPar->format));
+    if (bytesPerSample > 0)
+    {
+        info.bitDepth = bytesPerSample * 8;
+    }
+    else
+    {
+        info.bitDepth = decoderPar->bits_per_coded_sample;
+    }
     //提取文件层面的标签数据
     AVDictionary*   pTags = inputContext->metadata;
     AVDictionaryEntry* pEntry = nullptr;
@@ -240,7 +211,6 @@ SongInfo getStreamMetaData(const juce::File& file){
         info.year = safeToInt(pEntry->value);
     if ((pEntry = av_dict_get(pTags, "composer",     nullptr, 0)))
         info.composer = pEntry->value;
-    info.extraMetadata = buildExtraMetadata(pTags);
 
     avformat_close_input(&inputContext);
 

@@ -55,25 +55,22 @@ struct SongInfo
     std::string comment;                // 备注(用户写进去的)
     std::string imageHash;             //图片所对应的哈希值索引
 
-    struct stream{
-        // ── 2. FFmpeg 解码层信息 ──
-        int streamCount{0};//因为音频文件中可能有多条流,这个直接1+1+1递增，反正给用户看streamIndex也没个屁用
-        
-        int    bitRate      = 0;            // 比特率（kbps）
-        int sampleRate{0};          // 采样率（Hz）ffmpeg只能读取整数采样率，
-        // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
-        int    numChannels  = 0;            // 通道数
-        int    bitDepth     = 0;            // 位深
-        std::string codecName;              // 编码器名称
+    // ── 2. FFmpeg 解码层信息 ──
+    int streamCount{0};//因为音频文件中可能有多条流,这个直接1+1+1递增，反正给用户看streamIndex也没个屁用
+    
+    int    bitRate      = 0;            // 比特率（kbps）
+    int sampleRate{0};          // 采样率（Hz）ffmpeg只能读取整数采样率，
+    // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
+    int    numChannels  = 0;            // 通道数
+    int    bitDepth     = 0;            // 位深
+    std::string codecName;              // 编码器名称
 
-        // ── 4. AI 分析信息 ──，ai分析是和具体音频流相关的，所以没有必要放在文件层
-        bool isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
-        std::string aiGenre;                // AI 分析体裁
-        std::string aiMood;                 // AI 分析情绪
-        int      bpm         {0};      // 节拍数
-        std::string key;                    // 调性（如 C major, A minor）        
-        bool        aiProcessed = false;    // 是否已经进行过 AI 处理
+    // ── 4. AI 分析信息 ──，ai分析是和具体音频流相关的，所以没有必要放在文件层
+    bool isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
+    std::string aiGenre;                // AI 分析体裁
+    std::string aiMood;                 // AI 分析情绪
+    int      bpm         {0};      // 节拍数
+    std::string key;                    // 调性（如 C major, A minor）        
+    bool        aiProcessed = false;    // 是否已经进行过 AI 处理
 
-    };
-    std::vector<stream> streams;
 };
