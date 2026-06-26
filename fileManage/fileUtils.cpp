@@ -154,9 +154,16 @@ SongInfo getStreamMetaData(const juce::File& file){
 
         }while(0);
     }
-
-    int streamCount{0};//最终提取流个数计数器
-
+    int streamCount{0};
+    for(size_t i = 0; i < inputContext->nb_streams; i++){
+        if(inputContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
+            streamCount++;
+            if(streamCount > 1){
+                info.isMultiStreamFile = 1;
+                break;
+            }
+        }
+    }
 
     auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0) >= 0};
 

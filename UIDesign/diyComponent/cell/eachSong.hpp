@@ -1,3 +1,4 @@
+#include "BinaryData.h"
 #include "FontAbout/font.h"
 #include "buttons.hpp"
 #include "fileMessage.hpp"
@@ -8,7 +9,8 @@
 #include "popupWindow.hpp"
 #include <memory>
 
-class MultiStreamToolTip : juce::TextButton{
+class MultiStreamToolTip : public juce::TextButton{
+public:
     MultiStreamToolTip(){
         setTooltip(U("该文件包含多路音频流（如多语言、多声道）。当前播放器将自动为您选择质量最佳的默认音轨。如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序"));
         setClickingTogglesState(false);
@@ -52,9 +54,17 @@ private:
     YLabel mName;
     littleLabel mArtist;
     YLabel mAlbum;
+    YLabel aiLabel;//ai识别出来的体裁和情绪
+    MultiStreamToolTip mMultiStreamToolTip;
+    YLabel mSongLength;
+    bool isPlay{false};//当前这首歌是否正在播放，如果正在播放的话就不显示序号了
 
     playPauseButton mPlayPauseButton;//播放按钮
     std::unique_ptr<PopupWindowButton> mMoreInfoButton;
+    svgButton myLikeButton{
+        U("我喜欢"),
+        juce::Drawable::createFromImageData(BinaryData::heart_svg, BinaryData::heart_svgSize)
+    };
 public:
 
     EachSong(int songNo,SongInfo info);

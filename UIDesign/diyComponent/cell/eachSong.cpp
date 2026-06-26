@@ -54,7 +54,6 @@ void OtherSongInfoIntro::paint(juce::Graphics& g){
 
 
 EachSong::EachSong(int songNo,SongInfo info)
-
 {
     addAndMakeVisible(mPlayPauseButton);
 
@@ -132,7 +131,7 @@ EachSong::EachSong(int songNo,SongInfo info)
         isInfoEmpty("\n碟片号: ",info.discNumber),
         isInfoEmpty("\n发行年份: ",info.year),
         isInfoEmpty("\n作曲者: ",info.composer),
-        "文件路径: ",info.filePath,
+        "\n文件路径: ",info.filePath,
         "\n文件名称: ",info.fileName,
         "\n文件大小: ",info.fileSize,
         "\n最后修改时间: ",info.lastModifiedTime,
@@ -150,11 +149,25 @@ EachSong::EachSong(int songNo,SongInfo info)
             fileExtraInfo
         )
     );
-    // mMultiStreamButton = std::make_unique()
+    addChildComponent(mMultiStreamToolTip);
+    if(!info.isMultiStreamFile){
+        mMultiStreamToolTip.setVisible(false);
+    }
+    addAndMakeVisible(aiLabel);
     
 }
 void EachSong::resized(){
 
+    auto local{getLocalBounds()};
+    auto height{local.getHeight()};
+    auto noBounds = local.removeFromLeft(height).reduced(height/2.0f);
+    mPlayPauseButton.setBounds(noBounds);
+    No_.setBounds(noBounds);
+    auto nameBounds{local.removeFromLeft(200)};
+    mName.setBounds(nameBounds.removeFromTop(height/2.0f));
+    mArtist.setBounds(nameBounds);
+    mAlbum.setBounds(local.removeFromLeft(150));
+    aiLabel.setBounds(local.removeFromLeft(100));
 }
 void EachSong::paint(juce::Graphics& g){
     

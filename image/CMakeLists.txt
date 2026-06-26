@@ -8,4 +8,5 @@ juce_add_binary_data(JunkFusionBinaryData SOURCES
     junk-fusion.png
     x.svg
     ellipsis.svg
+    heart.svg
     )

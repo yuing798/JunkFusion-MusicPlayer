@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FontAbout/font.h"
 #include <vector>
 #include <string>
 
@@ -32,13 +33,11 @@ const std::vector<std::string> fileTypeArray{
 struct SongInfo
 {
     // ── 1. 文件信息 ──
-    int id{0};//这个文件对应的唯一id索引号
     std::string filePath;               // 文件完整路径
     std::string fileName;               // 文件名称（含扩展名）
     int64_t      fileSize    = 0;        // 文件大小（字节）
     std::string lastModifiedTime;       // 文件最后一次修改时间
     std::string addTime;                // 添加到应用的时间
-    int numAudioStreams{0};//一共有多少音频流
     double duration     = 0.0;          // 歌曲时长（秒）时长应该每条流都一样
 
     // ── 3. 标签信息 ──
@@ -52,11 +51,11 @@ struct SongInfo
     int         year        = 0;        // 发行年份
     std::string composer;               // 作曲者
     //这些基础数据都是文件容器层面的
-    std::string comment;                // 备注(用户写进去的)
+    
     std::string imageHash;             //图片所对应的哈希值索引
 
     // ── 2. FFmpeg 解码层信息 ──
-    int streamCount{0};//因为音频文件中可能有多条流,这个直接1+1+1递增，反正给用户看streamIndex也没个屁用
+    bool isMultiStreamFile{0};
     
     int    bitRate      = 0;            // 比特率（kbps）
     int sampleRate{0};          // 采样率（Hz）ffmpeg只能读取整数采样率，
@@ -72,5 +71,10 @@ struct SongInfo
     int      bpm         {0};      // 节拍数
     std::string key;                    // 调性（如 C major, A minor）        
     bool        aiProcessed = false;    // 是否已经进行过 AI 处理
+
+    //5.用户信息
+    bool isMyLike{0};//是否添加到了我喜欢列表
+    std::string comment;                // 备注(用户写进去的)
+    int hadPlayedNum{0};//已经播放了多少次
 
 };
