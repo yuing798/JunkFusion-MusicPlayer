@@ -31,16 +31,14 @@ class MultiStreamCardButton : juce::TextButton{
     MultiStreamCardButton();
     void paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
+
+
 class StreamCardComponent : public juce::Component{
 private:
-    juce::Viewport mViewPort;
     std::vector<EachStream> streams;
-    juce::Component viewComponent;
 public:
     StreamCardComponent();
-    ~StreamCardComponent();
     void resized() override;
-    void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StreamCardComponent)
 };
 

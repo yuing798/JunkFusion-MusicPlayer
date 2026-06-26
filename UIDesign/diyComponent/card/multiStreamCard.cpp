@@ -41,7 +41,7 @@ EachStream::EachStream(SongInfo::stream& stream){
     setSize(700, 100);
 }
 void EachStream::resized(){
-    auto local{getLocalBounds()};
+    auto local{getLocalBounds().reduced(5)};
     mPlayStopButton.setBounds(local.removeFromLeft(getHeight()).reduced(30));
     mCountLabel.setBounds(local.removeFromLeft(50).reduced(8));
     mNumChannels.setBounds(local.removeFromLeft(50).reduced(8));
@@ -70,18 +70,18 @@ void MultiStreamCardButton::paintButton(juce::Graphics& g, bool shouldDrawButton
 }
 
 StreamCardComponent::StreamCardComponent(){
-    mViewPort.setViewedComponent(&viewComponent,false);
-    mViewPort.setScrollBarsShown(true,false,true,false);
-    addAndMakeVisible(mViewPort);
-
-    auto height{streams.size()*(streams[0].getHeight())};
-}
-StreamCardComponent::~StreamCardComponent(){
+    auto height{streams.size()*(streams[0].getHeight())+10.0f};
+    auto width{streams[0].getWidth()};
+    for(auto& stream:streams){
+        addAndMakeVisible(stream);
+    }
+    setSize(width,height);
 
 }
 void StreamCardComponent::resized(){
-
-}
-void StreamCardComponent::paint(juce::Graphics& g){
-    
+    float currentY{0.0f};
+    for(auto& stream:streams){
+        stream.setTopLeftPosition(0,currentY);
+        currentY += stream.getHeight();
+    }
 }
