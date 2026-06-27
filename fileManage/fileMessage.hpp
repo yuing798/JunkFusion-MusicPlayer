@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FontAbout/font.h"
+#include <cstdint>
 #include <vector>
 #include <string>
 
@@ -37,7 +38,7 @@ struct SongInfo
     std::string fileName;               // 文件名称（含扩展名）
     int64_t      fileSize    = 0;        // 文件大小（字节）
     std::string lastModifiedTime;       // 文件最后一次修改时间
-    std::string addTime;                // 添加到应用的时间
+    // std::string addTime;                // 添加到应用的时间
     double duration     = 0.0;          // 歌曲时长（秒）时长应该每条流都一样
 
     // ── 3. 标签信息 ──
@@ -57,7 +58,7 @@ struct SongInfo
     // ── 2. FFmpeg 解码层信息 ──
     bool isMultiStreamFile{0};
     
-    int    bitRate      = 0;            // 比特率（kbps）
+    int64_t    bitRate      = 0;            // 比特率（kbps）
     int sampleRate{0};          // 采样率（Hz）ffmpeg只能读取整数采样率，
     // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
     int    numChannels  = 0;            // 通道数

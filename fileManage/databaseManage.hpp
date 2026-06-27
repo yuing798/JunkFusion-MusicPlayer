@@ -7,6 +7,7 @@
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include <spdlog/spdlog.h>
+#include <vector>
 
 // ============================================================
 // 建表 SQL
@@ -17,6 +18,7 @@
 //NOT NULL:禁止留空
 //UNIQUE:唯一
 //REAL:存储浮点数
+//CREATE TABLE IF NOT EXISTS songs:如果名为 songs 的表在当前数据库中不存在，则创建它；如果已经存在，则直接忽略，什么也不做（不会报错）
 inline const char* createSongsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songs (
         songId             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,8 +55,9 @@ inline const char* createSongsTableSQL = R"(
         hadPlayedNum       INTEGER DEFAULT 0
     )
 )";
-
-
+inline const char* createTitleIndexSQL = R"(
+    CREATE INDEX IF NOT EXISTS idx_songs_title ON songs (title)
+)";
 
 class SongsManage{
 private:
@@ -88,8 +91,9 @@ public:
     /** 获取歌曲总数 */
     int getTotalSongCount();
 
-    /** 分页获取歌曲，offset 从 0 开始，返回 limit 条记录 */
-    std::vector<SongInfo> getSongsPage(int offset, int limit);
+    /** 分页获取歌曲，offset 从 0 开始，返回 limit 条记录 根据添加时间排序获得歌曲*/
+    std::vector<SongInfo> getSongsPageBySongId(int offset, int limit,bool ascending);
+    std::vector<SongInfo> getSongPageByName(int offset,int limit,bool ascending);
 
     static SongsManage& getInstance() {
         static SongsManage instance; //首次调用时创建，程序结束时自动析构

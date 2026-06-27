@@ -94,7 +94,6 @@ SongInfo getStreamMetaData(const juce::File& file){
     info.fileName = file.getFileName().toStdString();
     info.fileSize = file.getSize();
     info.lastModifiedTime = file.getLastModificationTime().toString(true, true).toStdString();
-    info.addTime = juce::Time::getCurrentTime().toString(true, true).toStdString();
 
     auto logger{spdlog::get(LogSchedulerID)};
 
@@ -168,7 +167,6 @@ SongInfo getStreamMetaData(const juce::File& file){
 
     AVStream*           pAudioStream = inputContext->streams[currentIndex];
     AVCodecParameters*  decoderPar      = pAudioStream->codecpar;
-    auto* decoder = avcodec_find_decoder(decoderPar->codec_id);
     info.codecName = avcodec_get_name(decoderPar->codec_id);
     
     // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
@@ -199,8 +197,14 @@ SongInfo getStreamMetaData(const juce::File& file){
     AVDictionary*   pTags = inputContext->metadata;
     AVDictionaryEntry* pEntry = nullptr;
 
-    if ((pEntry = av_dict_get(pTags, "title",       nullptr, 0)))
-        info.artist = pEntry->value;
+    if ((pEntry = av_dict_get(pTags, "title",       nullptr, 0))){
+        if(pEntry->value){
+            info.title = pEntry->value;
+        }else{
+            info.title = juce::File(info.filePath).getFileNameWithoutExtension().toStdString();
+        }
+    }
+        
     if ((pEntry = av_dict_get(pTags, "artist",       nullptr, 0)))
         info.artist = pEntry->value;
     if ((pEntry = av_dict_get(pTags, "album",        nullptr, 0)))
