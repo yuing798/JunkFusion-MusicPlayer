@@ -2,6 +2,7 @@
 #include "Utils/constants.h"
 #include "fileManage/databaseManage.hpp"
 #include "juce_core/juce_core.h"
+#include "juce_data_structures/juce_data_structures.h"
 #include "otherUtils.hpp"
 #include <string>
 
@@ -59,6 +60,7 @@ public:
         // the other instance's command-line arguments were.
         juce::ignoreUnused (commandLine);
     }
+    juce::ValueTree treeRoot{TreeRootId};
 
     //==============================================================================
     /*

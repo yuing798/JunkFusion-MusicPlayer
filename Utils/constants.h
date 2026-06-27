@@ -15,10 +15,6 @@ using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-//用来序列化的ID
-static constexpr const char* TreeRootId{"TreeRoot"};//树根
-static constexpr const char* UIRootId{"UIRoot"};//UI缓存的根
-
 //日志id
 static constexpr const char* LogAudioID{"audio"};
 static constexpr const char* LogSchedulerID{"scheduler"};
