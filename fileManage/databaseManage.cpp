@@ -4,6 +4,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Statement.h>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -200,7 +201,43 @@ int SongsManage::getTotalSongCount()
         return query.getColumn(0).getInt();
     return 0;
 }
-
+auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
+    while (query.executeStep())
+    {
+        SongInfo info;
+        info.filePath         = query.getColumn(0).getString();
+        info.fileName         = query.getColumn(1).getString();
+        info.fileSize         = query.getColumn(2).getInt64();
+        info.lastModifiedTime = query.getColumn(3).getString();
+        info.isMultiStreamFile = query.getColumn(4).getInt() != 0;
+        info.duration         = query.getColumn(5).getDouble();
+        info.title            = query.getColumn(6).getString();
+        info.artist           = query.getColumn(7).getString();
+        info.album            = query.getColumn(8).getString();
+        info.albumArtist      = query.getColumn(9).getString();
+        info.genre            = query.getColumn(10).getString();
+        info.trackNumber      = query.getColumn(11).getInt();
+        info.discNumber       = query.getColumn(12).getInt();
+        info.year             = query.getColumn(13).getInt();
+        info.composer         = query.getColumn(14).getString();
+        info.imageHash        = query.getColumn(15).getString();
+        info.bitRate          = query.getColumn(16).getInt64();
+        info.bitDepth         = query.getColumn(17).getInt();
+        info.sampleRate       = query.getColumn(18).getInt();
+        info.numChannels      = query.getColumn(19).getInt();
+        info.codecName        = query.getColumn(20).getString();
+        info.isMusic          = query.getColumn(21).getInt() != 0;
+        info.aiGenre          = query.getColumn(22).getString();
+        info.aiMood           = query.getColumn(23).getString();
+        info.bpm              = query.getColumn(24).getInt();
+        info.key              = query.getColumn(25).getString();
+        info.aiProcessed      = query.getColumn(26).getInt() != 0;
+        info.isMyLike         = query.getColumn(27).getInt() != 0;
+        info.comment          = query.getColumn(28).getString();
+        info.hadPlayedNum     = query.getColumn(29).getInt();
+        result.push_back(std::move(info));
+    }
+};
 // ============================================================
 // getSongsPage
 // ============================================================
@@ -234,42 +271,9 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
     query.bind(1, limit);
     query.bind(2, offset);
 
-    while (query.executeStep())
-    {
-        SongInfo info;
-        info.filePath         = query.getColumn(0).getString();
-        info.fileName         = query.getColumn(1).getString();
-        info.fileSize         = query.getColumn(2).getInt64();
-        info.lastModifiedTime = query.getColumn(3).getString();
-        // info.addTime          = query.getColumn(4).getString();
-        info.isMultiStreamFile = query.getColumn(4).getInt() != 0;
-        info.duration         = query.getColumn(5).getDouble();
-        info.title            = query.getColumn(6).getString();
-        info.artist           = query.getColumn(7).getString();
-        info.album            = query.getColumn(8).getString();
-        info.albumArtist      = query.getColumn(9).getString();
-        info.genre            = query.getColumn(10).getString();
-        info.trackNumber      = query.getColumn(11).getInt();
-        info.discNumber       = query.getColumn(12).getInt();
-        info.year             = query.getColumn(13).getInt();
-        info.composer         = query.getColumn(14).getString();
-        info.imageHash        = query.getColumn(15).getString();
-        info.bitRate          = query.getColumn(16).getInt64();
-        info.bitDepth         = query.getColumn(17).getInt();
-        info.sampleRate       = query.getColumn(18).getInt();
-        info.numChannels      = query.getColumn(19).getInt();
-        info.codecName        = query.getColumn(20).getString();
-        info.isMusic          = query.getColumn(21).getInt() != 0;
-        info.aiGenre          = query.getColumn(22).getString();
-        info.aiMood           = query.getColumn(23).getString();
-        info.bpm              = query.getColumn(24).getInt();
-        info.key              = query.getColumn(25).getString();
-        info.aiProcessed      = query.getColumn(26).getInt() != 0;
-        info.isMyLike         = query.getColumn(27).getInt() != 0;
-        info.comment          = query.getColumn(28).getString();
-        info.hadPlayedNum     = query.getColumn(29).getInt();
-        result.push_back(std::move(info));
-    }
+    
+    dataLookfor(query, result);
+    
     return result;
 }
 std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool ascending)
@@ -293,41 +297,7 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
             "isMyLike, comment, hadPlayedNum "
             "FROM songs");
 
-        while (query.executeStep())
-        {
-            SongInfo info;
-            info.filePath         = query.getColumn(0).getString();
-            info.fileName         = query.getColumn(1).getString();
-            info.fileSize         = query.getColumn(2).getInt64();
-            info.lastModifiedTime = query.getColumn(3).getString();
-            info.isMultiStreamFile = query.getColumn(4).getInt() != 0;
-            info.duration         = query.getColumn(5).getDouble();
-            info.title            = query.getColumn(6).getString();
-            info.artist           = query.getColumn(7).getString();
-            info.album            = query.getColumn(8).getString();
-            info.albumArtist      = query.getColumn(9).getString();
-            info.genre            = query.getColumn(10).getString();
-            info.trackNumber      = query.getColumn(11).getInt();
-            info.discNumber       = query.getColumn(12).getInt();
-            info.year             = query.getColumn(13).getInt();
-            info.composer         = query.getColumn(14).getString();
-            info.imageHash        = query.getColumn(15).getString();
-            info.bitRate          = query.getColumn(16).getInt64();
-            info.bitDepth         = query.getColumn(17).getInt();
-            info.sampleRate       = query.getColumn(18).getInt();
-            info.numChannels      = query.getColumn(19).getInt();
-            info.codecName        = query.getColumn(20).getString();
-            info.isMusic          = query.getColumn(21).getInt() != 0;
-            info.aiGenre          = query.getColumn(22).getString();
-            info.aiMood           = query.getColumn(23).getString();
-            info.bpm              = query.getColumn(24).getInt();
-            info.key              = query.getColumn(25).getString();
-            info.aiProcessed      = query.getColumn(26).getInt() != 0;
-            info.isMyLike         = query.getColumn(27).getInt() != 0;
-            info.comment          = query.getColumn(28).getString();
-            info.hadPlayedNum     = query.getColumn(29).getInt();
-            allSongs.push_back(std::move(info));
-        }
+        dataLookfor(query, result);
     }
 
     if (allSongs.empty()) return result;
