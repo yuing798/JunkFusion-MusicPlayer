@@ -20,25 +20,30 @@ void Serial::init(){
     }else{
         loadInDisk();
     }
+    startTimer(60000);//一分钟自动保存一次
 
 }
 void Serial::save2disk(){
+
+    ScopedWriteGuard guard(isWriting);
+    if (!guard.tryLock())
+        return; // 正在写入，直接返回
+
     juce::TemporaryFile tempFile(serialFile);
-    bool writeState{false};
     
     {
         juce::FileOutputStream stream(tempFile.getFile());
         if(stream.openedOk()){
             treeRoot.writeToStream(stream);
             stream.flush();
-            writeState = true;
+            isWriting.store(true);
             
         }else{
             auto logger{spdlog::get(LogSchedulerID)};
             if(logger) logger->error("磁盘存储流打开失败");
         }
     }
-    if(writeState){
+    if(isWriting.load()){
         if(!tempFile.overwriteTargetFileWithTemporary()){
             auto logger{spdlog::get(LogSchedulerID)};
             if(logger) logger->error("序列化文件覆盖失败");
@@ -57,5 +62,7 @@ void Serial::loadInDisk(){
         auto logger{spdlog::get(LogSchedulerID)};
         if(logger) logger->error("二进制数据解析失败");
     }
-
+}
+void Serial::timerCallback(){
+    save2disk();
 }
