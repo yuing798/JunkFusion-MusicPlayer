@@ -8,6 +8,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include "otherComponent.hpp"
 #include "popupWindow.hpp"
 #include <cstdint>
 #include <memory>
@@ -192,8 +193,7 @@ EachSong::EachSong(int songNo,SongInfo info)
         "\n文件路径: ",info.filePath,
         "\n文件名称: ",info.fileName,
         "\n文件大小: ",info.fileSize,
-        "\n最后修改时间: ",info.lastModifiedTime,
-        "\n上传时间: ",info.addTime  
+        "\n最后修改时间: ",info.lastModifiedTime
     )};
 
     mMoreInfoButton = std::make_unique<PopupWindowButton>(
@@ -231,4 +231,9 @@ void EachSong::resized(){
     hadPlayedNumLabel.setBounds(local.removeFromRight(60));
     myLikeButton.setBounds(local.removeFromRight(height).reduced(height * 0.15f));
 
+}
+void EachSong::paint(juce::Graphics& g){
+    auto local{getLocalBounds().toFloat()};
+    g.setColour(ycolor.shallowGrey);
+    g.fillRoundedRectangle(local.reduced(5.0f),10.0f);
 }

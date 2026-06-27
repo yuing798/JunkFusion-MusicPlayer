@@ -20,9 +20,9 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-# 使用 pkg-config 查找 ICU 的主库（i18n 会自动依赖 uc）
-# 如果需要 io 模块，可追加 icu-io
-pkg_check_modules(ICU IMPORTED_TARGET REQUIRED icu-i18n)
+# 使用 pkg-config 查找 ICU（i18n 依赖 uc，但 pkg_check_modules 不会传递 Requires.private，
+# 所以显式列出两个模块确保链接正确的 .lib）
+pkg_check_modules(ICU IMPORTED_TARGET REQUIRED icu-i18n icu-uc)
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件

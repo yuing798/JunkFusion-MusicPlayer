@@ -75,6 +75,6 @@ public:
 
     EachSong(int songNo,SongInfo info);
     void resized() override;
-    // void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics& g) override;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EachSong)
 };
