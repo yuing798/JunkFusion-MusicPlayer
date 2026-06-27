@@ -1,6 +1,8 @@
 #include "MainComponent.h"
 #include "UIDesign/diyComponent/lookandfeel.hpp"
 #include "UIDesign/diyComponent/otherComponent.hpp"
+#include "juce_gui_basics/juce_gui_basics.h"
+#include "serial.hpp"
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -107,6 +109,15 @@ void MainComponent::switchPage(int id)
 
     // 触发重新布局
     resized();
+}
+
+bool MainComponent::keyPressed(const juce::KeyPress& key){
+    if(key==juce::KeyPress('s',juce::ModifierKeys::commandModifier,0)){
+        //序列化保存逻辑
+        Serial::getInstance().stopTimer();
+        Serial::getInstance().save2disk();
+        Serial::getInstance().startTimer(60000);
+    }
 }
 
 MainComponent::~MainComponent(){
