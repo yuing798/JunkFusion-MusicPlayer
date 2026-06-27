@@ -65,17 +65,16 @@ struct EllipsisToolTip : juce::DrawableButton{
 };
 
 struct loadingAnimator : public juce::Component,public juce::Timer{
-
-    loadingAnimator(std::function<void(void)> beginState = nullptr);
-    std::function<void(void)> onBeginCallback;//开始加载的时候最好传入日志信息
+private:
     std::unique_ptr<juce::Drawable> svg{
         juce::Drawable::createFromImageData(BinaryData::loadercircle_svg, BinaryData::loadercircle_svgSize)};
     float currentAngle{0.0f};
-
+    const float angleIncrement = 0.05f;   // 每帧增量（弧度）
+public:
     void start();
     void end();
     void paint(juce::Graphics&) override;
     void timerCallback() override;
-    const float angleIncrement = 0.05f;   // 每帧增量（弧度）
+
 };
 

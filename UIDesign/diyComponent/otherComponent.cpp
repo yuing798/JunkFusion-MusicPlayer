@@ -86,15 +86,9 @@ void EllipsisToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHig
                               1.0f);
 }
 
-loadingAnimator::loadingAnimator(std::function<void(void)> beginState)
-:onBeginCallback(std::move(beginState))
-{
-    
-}
 void loadingAnimator::start(){
     if(isTimerRunning()) return;
     currentAngle = 0.0f;
-    if(onBeginCallback) onBeginCallback();
     startTimerHz(60);
     repaint();
 }
@@ -115,5 +109,5 @@ void loadingAnimator::paint(juce::Graphics& g){
     local = local.reduced(reducedWidth);
     auto center{local.getCentre()};
     g.addTransform(juce::AffineTransform::rotation(currentAngle,center.x,center.y));
-    svg->drawWithin(g, local, juce::RectanglePlacement::centred, 1.0f)
+    svg->drawWithin(g, local, juce::RectanglePlacement::centred, 1.0f);
 }
