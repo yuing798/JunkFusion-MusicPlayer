@@ -4,6 +4,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_data_structures/juce_data_structures.h"
 #include <spdlog/spdlog.h>
+#include <string>
 
 static const juce::File SerialCacheDirId{UserDirId.getChildFile("SerialCache")};
 //用来序列化的ID
@@ -27,15 +28,23 @@ public:
     Serial();
 
     template<typename Ty>
-    void saveArithmetic2RAM(juce::ValueTree& tree,juce::Identifier& key,Ty value){
+    void saveUISingleValue2RAM(juce::Identifier& key,Ty value){//保存单一UI变量
         if constexpr (std::is_arithmetic_v<Ty>){
-            tree.setProperty(key, value, nullptr);
+            uiRoot.setProperty(key, value, nullptr);
+        }
+    }
+
+    template<typename Ty>
+    Ty loadUISingleValueInRAM(const juce::Identifier& key,Ty defaultValue){
+        if constexpr (std::is_arithmetic_v<Ty>){
+            return uiRoot.getProperty(key,defaultValue);
         }else {
             auto logger{spdlog::get(LogSchedulerID)};
-            logger->debug("变量{}不是算数类型",value);
+            logger->debug("变量{}不是算数类型",key.toString().toStdString());
         }
     }
     void save2disk();
+    void loadInDisk();
 
     Serial(const Serial&) = delete;
     Serial& operator=(const Serial&) = delete;
