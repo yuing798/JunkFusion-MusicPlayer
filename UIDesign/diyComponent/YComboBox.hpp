@@ -60,7 +60,7 @@ private:
 
     // --- 成员 ---
     juce::StringArray mItems;
-    int mSelectedIndex    = -1;
+    int mSelectedIndex    = -1;//这个逼玩意的索引号从0开始
     bool mIsPopupVisible  = false;
     bool mIsHoveringArrow = false;
 

@@ -20,9 +20,13 @@ class PageChange : public juce::Component{
 private:
     std::vector<std::unique_ptr<yTextButton>> Buttons;
     //按钮点击切换
-    //索引0为第一页，最后一个索引为最后一页，应该只显示出当前页码的前后共五页
     yTextButton popButton{U("跳转")};
     juce::TextEditor mTextEditor;
+    yTextButton previousButton{U("上一页")};
+    yTextButton nextButton{U("下一页")};
+    yTextButton button1{U("1")};//第一页
+    yTextButton button_1;//最后一页
+    YLabel ellipsisLabel{U("...")};
 public:
     void resized() override;
     PageChange();
@@ -33,7 +37,7 @@ public:
 
 class AllMusicComponent : public juce::Component{
 private:
-
+    PageChange mPageChange;
 public:
     AllMusicComponent();
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicComponent)
@@ -52,6 +56,8 @@ private:
         juce::Drawable::createFromImageData(BinaryData::refresh_svg, BinaryData::refresh_svgSize)
     };
     littleLabel numSongsLabel{U("共 0 首")};
+    YComboBox seqWays;//排序方法
+    juce::String selectedSeqWays;//当前选择的排列方法
 
     //搜索框
     juce::Viewport mViewPort;

@@ -23,7 +23,11 @@ extern "C"{
  */
 
 logSystem::logSystem()
-{
+:audioLogger(nullptr),schedulerLogger(nullptr),uiLogger(nullptr),
+aiLogger(nullptr),vstLogger(nullptr),crashLogger(nullptr),allLogger(nullptr){
+    
+}
+void logSystem::init(){
     try
     {
         // ── 1. 准备日志目录 ──

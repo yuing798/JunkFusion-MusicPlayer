@@ -31,6 +31,9 @@ public:
         if(!databaseDirId.exists()) databaseDirId.createDirectory();
         if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//创建对应的用户数据保存文件夹
 
+        SongsManage::getInstance().init();
+        mLogSystem.init();//spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
+
         mainWindow.reset (new MainWindow (getApplicationName()));
     }
 
@@ -104,8 +107,8 @@ public:
     };
 
 private:
-    logSystem mLogSystem;
     std::unique_ptr<MainWindow> mainWindow;
+    logSystem mLogSystem;
 };
 
 //==============================================================================

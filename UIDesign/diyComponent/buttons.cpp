@@ -49,8 +49,6 @@ yTextButton::yTextButton(juce::String initText)
 
 void yTextButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){
     auto local = getLocalBounds().toFloat();
-
-    
     g.setColour(ycolor.shallowGrey);
     g.fillRoundedRectangle(local,6.0f);
     if(shouldDrawButtonAsHighlighted){

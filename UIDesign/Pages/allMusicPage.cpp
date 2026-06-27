@@ -26,6 +26,15 @@ allMusicPage::allMusicPage(){
     addAndMakeVisible(mUpDownButton);
 
     selectFileButton.addListener(this);
+    seqWays.addItem(U("歌曲名称排列"));
+    seqWays.addItem(U("添加时间排列"));
+    addAndMakeVisible(seqWays);
+
+    seqWays.onItemSelected([this](int value){
+        //更新排序方法
+        //加入序列化
+        
+    });
 }
 void allMusicPage::resized(){
 
@@ -40,6 +49,7 @@ void allMusicPage::resized(){
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
     row2.removeFromRight(30);
     mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
+    seqWays.setBounds(local.removeFromRight(120).reduced(10));
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));

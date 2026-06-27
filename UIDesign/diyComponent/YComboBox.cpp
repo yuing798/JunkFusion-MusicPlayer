@@ -65,7 +65,7 @@ public:
     void mouseUp (const juce::MouseEvent& e) override//当用户松开鼠标按键时触发
     {
         int clickedIndex = getItemIndexAtPosition (e.position);
-        if (clickedIndex >= 0 && clickedIndex < mItems.size())
+        if (clickedIndex >= 0 && clickedIndex < mItems.size())//这个逼玩意从0开始
         {
             mOwner.selectItem (clickedIndex);
             mOwner.hideMenu();

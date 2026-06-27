@@ -16,10 +16,8 @@ using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
 //用来序列化的ID
-static constexpr const char* TotalAppId{"TotalAppId"};
-static constexpr const char* UICacheId{"UICacheId"};
-static constexpr const char* AudioArrayId{"AudioArrayId"};//用来存储音频数组,因为数组不能直接交给APVTS管理
-static constexpr const char* DIYArrayId{"DIYArrayId"};
+static constexpr const char* TreeRootId{"TreeRoot"};//树根
+static constexpr const char* UIRootId{"UIRoot"};//UI缓存的根
 
 //日志id
 static constexpr const char* LogAudioID{"audio"};

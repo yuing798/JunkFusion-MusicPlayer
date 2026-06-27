@@ -29,6 +29,8 @@ private:
     std::shared_ptr<spdlog::logger> allLogger;
 public:
     logSystem();
+
+    void init();
 };
 
 //输出错误码

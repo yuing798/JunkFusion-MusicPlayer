@@ -99,6 +99,7 @@ public:
         static SongsManage instance; //首次调用时创建，程序结束时自动析构
         return instance;
     }
+    void init();
 
     SongsManage(const SongsManage&) = delete;
     SongsManage& operator=(const SongsManage&) = delete;

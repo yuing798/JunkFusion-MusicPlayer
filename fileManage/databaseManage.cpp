@@ -11,10 +11,12 @@
 #include <unicode/coll.h>
 #include <unicode/locid.h>
 #include <unicode/stringpiece.h>
-auto logger = spdlog::get(LogAllID);
 
 SongsManage::SongsManage()
-{
+:db(nullptr){
+    
+}
+void SongsManage::init(){
     // 使用 constants.h 中统一定义的 databaseDirId，避免路径不一致
     if (!databaseDirId.exists())
         databaseDirId.createDirectory();
@@ -32,7 +34,7 @@ SongsManage::SongsManage()
     catch (const std::exception& e)
     {
         // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
-        
+        auto logger = spdlog::get(LogAllID);
         if (logger) logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}", e.what());
     }
 }
@@ -183,6 +185,7 @@ void SongsManage::insertSong(const SongInfo& info)
     {
         // 事务 RAII 保证：析构时检测到未 commit → 自动 ROLLBACK
         // 数据库恢复到"这首歌完全没存在过"的干净状态
+        auto logger = spdlog::get(LogAllID);
         if(logger) logger->error("data update error",e.what());
     }
 }
@@ -193,6 +196,7 @@ void SongsManage::insertSong(const SongInfo& info)
 int SongsManage::getTotalSongCount()
 {
     if (!db) {
+        auto logger = spdlog::get(LogAllID);
         logger->debug("查询歌曲总数阶段发生空指针问题");
         return 0;
     };
@@ -245,6 +249,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
 {
     std::vector<SongInfo> result;
     if (!db) {
+        auto logger = spdlog::get(LogAllID);
         logger->debug("更新歌曲页码阶段发生空指针问题");
         return result;
     };
@@ -281,6 +286,7 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
     std::vector<SongInfo> result;
     if (!db)
     {
+        auto logger = spdlog::get(LogAllID);
         if (logger) logger->debug("按名称排序查询歌曲阶段发生空指针问题");
         return result;
     }
