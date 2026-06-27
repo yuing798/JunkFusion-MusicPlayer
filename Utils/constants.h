@@ -32,3 +32,10 @@ static const juce::File imageDirId{UserDirId.getChildFile("image")};
 static const juce::File databaseDirId{UserDirId.getChildFile("database")};
 static const juce::File logInfoDirId{UserDirId.getChildFile("logInfo")};
 
+//禁止拷贝和移动的宏
+#define DONT_COPY_AND_MOVE(ClassName) \
+ClassName(const ClassName&) = delete; \
+ClassName& operator=(const ClassName&) = delete; \
+ClassName(ClassName&&) = delete; \
+ClassName& operator=(ClassName&&) = delete;
+

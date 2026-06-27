@@ -8,8 +8,7 @@ Serial::Serial(){
 
 }
 void Serial::init(){
-    if(!SerialCacheDirId.exists()) SerialCacheDirId.createDirectory();
-    serialFile = SerialCacheDirId.getChildFile("serial.bin");
+    serialFile = UserDirId.getChildFile("serial.bin");
     if(!serialFile.existsAsFile()){
         serialFile.create();
 

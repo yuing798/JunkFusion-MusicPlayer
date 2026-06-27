@@ -15,7 +15,7 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
-    bool MainComponent::keyPressed(const juce::KeyPress& key) override;
+    bool keyPressed(const juce::KeyPress& key) override;
 
 private:
     //==============================================================================

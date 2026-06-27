@@ -10,6 +10,7 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "popupWindow.hpp"
+#include "serial.hpp"
 #include <memory>
 #include <utility>
 
@@ -30,10 +31,16 @@ allMusicPage::allMusicPage(){
     seqWays.addItem(U("添加时间排列"));
     addAndMakeVisible(seqWays);
 
+    int comboSelectedIndex{0};
+    if(Serial::getInstance().getUIRoot().isValid()){
+        comboSelectedIndex = Serial::getInstance().getUIRoot().getProperty(SERIAL_allMusicSeqWays,0);
+    }
+    seqWays.setSelectedItemIndex(comboSelectedIndex);
+
     seqWays.onItemSelected([this](int value){
         //更新排序方法
         //加入序列化
-        
+        Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
 }
 void allMusicPage::resized(){

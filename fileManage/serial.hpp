@@ -71,13 +71,17 @@ private:
 
 class Serial : public juce::Timer{
 private:
+    
+    juce::File serialFile;
+    std::atomic<bool> isWriting;//是否正在写入文件，防止打断
     juce::ValueTree treeRoot{TreeRootId};
     juce::ValueTree uiRoot{UIRootId};
     juce::ValueTree apvtsRoot{APVTSRootId};
-    juce::File serialFile;
-    std::atomic<bool> isWriting;//是否正在写入文件，防止打断
     
 public:
+    juce::ValueTree& getUIRoot(){return uiRoot;}
+    juce::ValueTree& getApvtsRoot(){return apvtsRoot;}
+    
     static Serial& getInstance() {
         static Serial instance; //首次调用时创建，程序结束时自动析构
         return instance;
@@ -86,25 +90,9 @@ public:
     Serial();
     ~Serial();
 
-    template<typename Ty>
-    void saveUISingleValue2RAM(juce::Identifier& key,Ty value){//保存单一UI变量
-        if constexpr (std::is_arithmetic_v<Ty>){
-            uiRoot.setProperty(key, value, nullptr);
-        }
-    }
-
-    template<typename Ty>
-    Ty loadUISingleValueInRAM(const juce::Identifier& key,Ty defaultValue){
-        if constexpr (std::is_arithmetic_v<Ty>){
-            return uiRoot.getProperty(key,defaultValue);
-        }
-    }
     void save2disk();
     void loadInDisk();
     void timerCallback() override;//自动保存使用的计时器
 
-    Serial(const Serial&) = delete;
-    Serial& operator=(const Serial&) = delete;
-    Serial(Serial&&) = delete;
-    Serial& operator=(Serial&&) = delete;
+    DONT_COPY_AND_MOVE(Serial)
 };
