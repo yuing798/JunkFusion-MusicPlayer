@@ -9,4 +9,5 @@ juce_add_binary_data(JunkFusionBinaryData SOURCES
     x.svg
     ellipsis.svg
     heart.svg
+    loader-circle.svg
     )

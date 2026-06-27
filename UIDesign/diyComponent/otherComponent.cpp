@@ -1,4 +1,6 @@
 #include "BinaryData.h"
+#include "constants.h"
+#include "juce_animation/juce_animation.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "juce_graphics/juce_graphics.h"
@@ -84,3 +86,34 @@ void EllipsisToolTip::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHig
                               1.0f);
 }
 
+loadingAnimator::loadingAnimator(std::function<void(void)> beginState)
+:onBeginCallback(std::move(beginState))
+{
+    
+}
+void loadingAnimator::start(){
+    if(isTimerRunning()) return;
+    currentAngle = 0.0f;
+    if(onBeginCallback) onBeginCallback();
+    startTimerHz(60);
+    repaint();
+}
+void loadingAnimator::end(){
+    if(!isTimerRunning()) return;
+    stopTimer();
+}
+void loadingAnimator::timerCallback(){
+    currentAngle += angleIncrement;
+    if(currentAngle >= two_pi){
+        currentAngle -= two_pi;
+    }
+    repaint();
+}
+void loadingAnimator::paint(juce::Graphics& g){
+    auto local{getLocalBounds().toFloat()};
+    auto reducedWidth{local.getWidth()/4.0f};
+    local = local.reduced(reducedWidth);
+    auto center{local.getCentre()};
+    g.addTransform(juce::AffineTransform::rotation(currentAngle,center.x,center.y));
+    svg->drawWithin(g, local, juce::RectanglePlacement::centred, 1.0f)
+}

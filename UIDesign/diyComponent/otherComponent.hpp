@@ -1,4 +1,5 @@
 #pragma once
+#include "BinaryData.h"
 #include "FontAbout/font.h"
 #include "constants.h"
 #include "juce_animation/juce_animation.h"
@@ -8,6 +9,7 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <JuceHeader.h>
+#include <functional>
 #include <memory>
 
 struct YColor{
@@ -60,5 +62,20 @@ struct EllipsisToolTip : juce::DrawableButton{
     EllipsisToolTip(const juce::String& text);
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     std::unique_ptr<juce::Drawable> svg;
+};
+
+struct loadingAnimator : public juce::Component,public juce::Timer{
+
+    loadingAnimator(std::function<void(void)> beginState = nullptr);
+    std::function<void(void)> onBeginCallback;//开始加载的时候最好传入日志信息
+    std::unique_ptr<juce::Drawable> svg{
+        juce::Drawable::createFromImageData(BinaryData::loadercircle_svg, BinaryData::loadercircle_svgSize)};
+    float currentAngle{0.0f};
+
+    void start();
+    void end();
+    void paint(juce::Graphics&) override;
+    void timerCallback() override;
+    const float angleIncrement = 0.05f;   // 每帧增量（弧度）
 };
 

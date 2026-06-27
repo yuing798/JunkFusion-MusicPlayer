@@ -40,9 +40,6 @@ juce_add_gui_app(JunkFusion
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
 )
 
-# ==============================================================================
-# 3. 添加你的 C++ 源码文件
-# ==============================================================================
 target_sources(JunkFusion
     PRIVATE
         Main.cpp
@@ -53,7 +50,6 @@ add_subdirectory(image)
 add_subdirectory(UIDesign)
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
-# add_subdirectory(logManage)
 
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
@@ -97,12 +93,12 @@ target_link_libraries(JunkFusion
         juce::juce_animation#动画效果模块
         
         # 第三方库
-        ${FFMPEG_LIBRARIES}
-        SQLiteCpp
-        spdlog::spdlog
+        ${FFMPEG_LIBRARIES}#解码层和重采样层
+        SQLiteCpp#数据库系统
+        spdlog::spdlog#日志系统
         unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
-        PkgConfig::ICU
+        PkgConfig::ICU#字符串排序功能
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置
