@@ -111,3 +111,10 @@ void loadingAnimator::paint(juce::Graphics& g){
     g.addTransform(juce::AffineTransform::rotation(currentAngle,center.x,center.y));
     svg->drawWithin(g, local, juce::RectanglePlacement::centred, 1.0f);
 }
+YTextEditor::YTextEditor(){
+    setColour(juce::TextEditor::textColourId, ycolor.black);
+    setColour(juce::TextEditor::backgroundColourId, ycolor.transparent);
+    setColour(juce::TextEditor::highlightColourId, ycolor.transparent);
+    setColour(juce::TextEditor::highlightedTextColourId, ycolor.black);
+
+}

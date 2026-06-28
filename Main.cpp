@@ -85,10 +85,11 @@ public:
             setFullScreen (true);
            #else
             setResizable (true, true);
-            centreWithSize (getWidth(), getHeight());
+            //必须要先 setSize，再 centreWithSize
+            setFullScreen (true);
+            // centreWithSize (getWidth(), getHeight()); 
            #endif
-
-            setVisible (true);
+            setVisible (true); 
         }
 
         void closeButtonPressed() override

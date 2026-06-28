@@ -34,17 +34,13 @@ void PlayStopButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHigh
 
         g.strokePath (triangle, juce::PathStrokeType (lineThickness));
     }
-
-
 }
-
-
-
-yTextButton::yTextButton(juce::String initText)
-{
-    setButtonText(initText);
+yTextButton::yTextButton(){
     setClickingTogglesState(false);
-    
+}
+yTextButton::yTextButton(juce::String initText)
+:yTextButton(){
+    setButtonText(initText);
 }
 
 void yTextButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown){

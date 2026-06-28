@@ -18,6 +18,7 @@ public:
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };
 struct yTextButton : public juce::TextButton{//这个按钮可以点击，但是不会发生状态翻转
+    yTextButton();
     yTextButton(juce::String initText);
     void paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 };

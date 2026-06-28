@@ -77,4 +77,7 @@ public:
     void timerCallback() override;
 
 };
+struct YTextEditor : public juce::TextEditor{
+    YTextEditor();
+};
 

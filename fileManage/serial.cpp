@@ -65,3 +65,6 @@ void Serial::loadInDisk(){
 void Serial::timerCallback(){
     save2disk();
 }
+Serial::~Serial(){
+    
+}

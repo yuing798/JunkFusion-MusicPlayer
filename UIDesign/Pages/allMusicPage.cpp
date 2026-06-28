@@ -12,7 +12,74 @@
 #include "popupWindow.hpp"
 #include "serial.hpp"
 #include <memory>
+#include <string>
 #include <utility>
+
+PageChange::PageChange(){
+    for(auto& button : Buttons){
+        button.setSize(30, 30);
+        button.addListener(this);
+        addAndMakeVisible(button);
+    }
+    popButton.addListener(this);
+    previousButton.addListener(this);
+    nextButton.addListener(this);
+    addAndMakeVisible(popButton);
+    addAndMakeVisible(previousButton);
+    addAndMakeVisible(nextButton);
+
+    mTextEditor.addListener(this);
+    addAndMakeVisible(mTextEditor);
+
+    for(auto& ellipsisLabel :ellipsisLabels){
+        addAndMakeVisible(ellipsisLabel);
+        ellipsisLabel.setSize(30, 30);
+    }
+
+}
+
+void PageChange::buttonClicked (Button* button){
+    
+}
+void PageChange::resized(){
+    auto local{getLocalBounds()};
+    auto height{local.getHeight()};
+    auto row1{local.removeFromTop(height/2.0f).reduced(5)};
+    auto row2{local.reduced(5)};
+    auto  rowHeight{height/2.0f-10};
+    previousButton.setBounds(row1.removeFromLeft(row1.getHeight()).reduced(5));
+    nextButton.setBounds(row1.removeFromRight(row1.getHeight()).reduced(5));
+
+    if(nowPage == 1){
+        previousButton.setEnabled(false);
+    }else if(nowPage == numPages){
+        nextButton.setEnabled(false);
+    }else{
+        previousButton.setEnabled(true);
+        nextButton.setEnabled(true);
+    }
+
+    if(numPages <= 7){
+        for(auto& ellipsisLabel :ellipsisLabels){
+            ellipsisLabel.setVisible(false);
+        }
+    }
+
+}
+void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
+    if(&editor == &mTextEditor){
+        auto targetPage{std::stoi(editor.getText().toStdString())};
+    }
+}
+PageChange::~PageChange(){
+    mTextEditor.removeListener(this);
+    for(auto& button : Buttons){
+        button.removeListener(this);
+    }
+    popButton.removeListener(this);
+    previousButton.removeListener(this);
+    nextButton.removeListener(this);
+}
 
 AllMusicComponent::AllMusicComponent(){
 
@@ -39,6 +106,7 @@ allMusicPage::allMusicPage(){
 
     seqWays.onItemSelected([this](int value){
         //更新排序方法
+        //refreshPage(int page);//传参为当前的页码数
         //加入序列化
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });

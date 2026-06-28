@@ -9,27 +9,34 @@
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <array>
 #include <filesystem>
 #include <memory>
 #include <vector>
 #include "./diyComponent/buttons.hpp"
 #include "./diyComponent/popupWindow.hpp"
 
-class PageChange : public juce::Component{
+class PageChange : public juce::Component, public juce::Button::Listener,public juce::TextEditor::Listener{
 //页码切换的组件
 private:
-    std::vector<std::unique_ptr<yTextButton>> Buttons;
+    std::array<yTextButton,7> Buttons;
     //按钮点击切换
-    yTextButton popButton{U("跳转")};
-    juce::TextEditor mTextEditor;
-    yTextButton previousButton{U("上一页")};
-    yTextButton nextButton{U("下一页")};
-    yTextButton button1{U("1")};//第一页
-    yTextButton button_1;//最后一页
-    YLabel ellipsisLabel{U("...")};
+    yTextButton popButton{U("go")};
+    YTextEditor mTextEditor;
+    yTextButton previousButton{U("<")};
+    yTextButton nextButton{U(">")};
+    // yTextButton button1{U("1")};//第一页
+    // yTextButton button_1{U("最后一页")};//最后一页
+    std::array<YLabel, 2> ellipsisLabels{U("..."),U("...")};
+    int nowPage{1};
+    int numPages{1};
 public:
     void resized() override;
+    void setNumPages();
     PageChange();
+    ~PageChange();
+    void buttonClicked (Button*) override;
+    void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 };

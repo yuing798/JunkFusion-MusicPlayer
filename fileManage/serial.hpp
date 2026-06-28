@@ -61,8 +61,7 @@ public:
     }
 
     // 禁止拷贝
-    ScopedWriteGuard(const ScopedWriteGuard&) = delete;
-    ScopedWriteGuard& operator=(const ScopedWriteGuard&) = delete;
+    DONT_COPY_AND_MOVE(ScopedWriteGuard)
 
 private:
     std::atomic<bool>& flagRef;

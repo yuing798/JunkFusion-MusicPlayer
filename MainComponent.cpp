@@ -35,7 +35,7 @@ MainComponent::MainComponent()
     // 默认显示"所有音乐"
     mAllMusicPage.setVisible(true);
 
-    setSize (1400, 700);
+    setSize (1400, 700); 
 }
 
 //==============================================================================
@@ -117,7 +117,9 @@ bool MainComponent::keyPressed(const juce::KeyPress& key){
         Serial::getInstance().stopTimer();
         Serial::getInstance().save2disk();
         Serial::getInstance().startTimer(60000);
+        return true;
     }
+    return false;
 }
 
 MainComponent::~MainComponent(){
