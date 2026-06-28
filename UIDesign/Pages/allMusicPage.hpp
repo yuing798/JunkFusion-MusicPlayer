@@ -21,15 +21,14 @@ class PageChange : public juce::Component, public juce::Button::Listener,public 
 private:
     std::array<yTextButton,7> Buttons;
     //按钮点击切换
-    yTextButton popButton{U("go")};
+    yTextButton goButton{U("go")};
     YTextEditor mTextEditor;
     yTextButton previousButton{U("<")};
     yTextButton nextButton{U(">")};
-    // yTextButton button1{U("1")};//第一页
-    // yTextButton button_1{U("最后一页")};//最后一页
     std::array<YLabel, 2> ellipsisLabels{U("..."),U("...")};
     int nowPage{1};
     int numPages{1};
+    std::array<juce::Rectangle<int>, 7> pageChangeButtons;//直接显示数字和省略号的那些区域
 public:
     void resized() override;
     void setNumPages();
@@ -37,6 +36,7 @@ public:
     ~PageChange();
     void buttonClicked (Button*) override;
     void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
+    void changePageButtonState();//根据总页数和当前页数放置按钮的位置
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 };

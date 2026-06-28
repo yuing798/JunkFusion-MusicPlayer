@@ -17,24 +17,32 @@
 
 PageChange::PageChange(){
     for(auto& button : Buttons){
-        button.setSize(30, 30);
+        button.setSize(40, 40);
         button.addListener(this);
         addAndMakeVisible(button);
     }
-    popButton.addListener(this);
+    goButton.addListener(this);
+    goButton.setSize(40,40);
+
     previousButton.addListener(this);
+    previousButton.setSize(40,40);
+    
     nextButton.addListener(this);
-    addAndMakeVisible(popButton);
+    nextButton.setSize(40,40);
+    
+    addAndMakeVisible(goButton);
     addAndMakeVisible(previousButton);
     addAndMakeVisible(nextButton);
 
     mTextEditor.addListener(this);
+    mTextEditor.setSize(170,40);
     addAndMakeVisible(mTextEditor);
 
     for(auto& ellipsisLabel :ellipsisLabels){
         addAndMakeVisible(ellipsisLabel);
-        ellipsisLabel.setSize(30, 30);
+        ellipsisLabel.setSize(40, 40);
     }
+    setSize(360,80);
 
 }
 
@@ -43,46 +51,54 @@ void PageChange::buttonClicked (Button* button){
 }
 void PageChange::resized(){
     auto local{getLocalBounds()};
-    auto height{local.getHeight()};
-    auto row1{local.removeFromTop(height/2.0f).reduced(5)};
-    auto row2{local.reduced(5)};
-    auto  rowHeight{height/2.0f-10};
-    previousButton.setBounds(row1.removeFromLeft(row1.getHeight()).reduced(5));
-    nextButton.setBounds(row1.removeFromRight(row1.getHeight()).reduced(5));
-
-    if(nowPage == 1){
-        previousButton.setEnabled(false);
-    }else if(nowPage == numPages){
-        nextButton.setEnabled(false);
-    }else{
-        previousButton.setEnabled(true);
-        nextButton.setEnabled(true);
+    auto row1{local.removeFromTop(40)};
+    auto row2{local};
+    previousButton.setBounds(row1.removeFromLeft(40).reduced(5));//上一页的按钮，位置固定
+    nextButton.setBounds(row1.removeFromRight(40).reduced(5));//下一页的按钮，位置固定
+    row2.removeFromLeft(80);
+    mTextEditor.setBounds(row2.removeFromLeft(160).reduced(5));
+    goButton.setBounds(row2.removeFromLeft(40).reduced(5));
+    for(auto& pageChangeButton : pageChangeButtons){
+        pageChangeButton = row1.removeFromLeft(40).reduced(5);
     }
-
-    if(numPages <= 7){
-        for(auto& ellipsisLabel :ellipsisLabels){
-            ellipsisLabel.setVisible(false);
-        }
-    }
-
 }
 void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
     if(&editor == &mTextEditor){
         auto targetPage{std::stoi(editor.getText().toStdString())};
     }
 }
+void PageChange::changePageButtonState(){
+    if(nowPage == 1){
+        previousButton.setEnabled(false);
+        nextButton.setEnabled(true);
+    }else if(nowPage == numPages){
+        previousButton.setEnabled(true);
+        nextButton.setEnabled(false);
+    }else{
+        previousButton.setEnabled(true);
+        nextButton.setEnabled(true);
+    }
+    if(numPages <= 7){
+        for(auto& ellipsisLabel :ellipsisLabels){
+            ellipsisLabel.setVisible(false);
+        }//小于等于七个的话省略号去掉，只留下按钮
+
+    }
+}
+
 PageChange::~PageChange(){
     mTextEditor.removeListener(this);
     for(auto& button : Buttons){
         button.removeListener(this);
     }
-    popButton.removeListener(this);
+    goButton.removeListener(this);
     previousButton.removeListener(this);
     nextButton.removeListener(this);
 }
 
-AllMusicComponent::AllMusicComponent(){
 
+AllMusicComponent::AllMusicComponent(){
+    
 }
 
 allMusicPage::allMusicPage(){
@@ -122,7 +138,7 @@ void allMusicPage::resized(){
     row2.removeFromLeft(20);
     selectFileButton.setBounds(row2.removeFromLeft(80).reduced(5,10));
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
-    row2.removeFromRight(30);
+    row2.removeFromRight(40);
     mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
     seqWays.setBounds(local.removeFromRight(120).reduced(10));
 

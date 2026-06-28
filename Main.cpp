@@ -85,9 +85,7 @@ public:
             setFullScreen (true);
            #else
             setResizable (true, true);
-            //必须要先 setSize，再 centreWithSize
             setFullScreen (true);
-            // centreWithSize (getWidth(), getHeight()); 
            #endif
             setVisible (true); 
         }
