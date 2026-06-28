@@ -58,8 +58,8 @@ void PageChange::resized(){
     row2.removeFromLeft(80);
     mTextEditor.setBounds(row2.removeFromLeft(160).reduced(5));
     goButton.setBounds(row2.removeFromLeft(40).reduced(5));
-    for(auto& pageChangeButton : pageChangeButtons){
-        pageChangeButton = row1.removeFromLeft(40).reduced(5);
+    for(auto& pageChangeRect : pageChangeRects){
+        pageChangeRect = row1.removeFromLeft(40).reduced(5);
     }
 }
 void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
@@ -82,6 +82,45 @@ void PageChange::changePageButtonState(){
         for(auto& ellipsisLabel :ellipsisLabels){
             ellipsisLabel.setVisible(false);
         }//小于等于七个的话省略号去掉，只留下按钮
+        for(int i=0;i<7;i++){
+            Buttons[i].setBounds(pageChangeRects[i]);
+            Buttons[i].setVisible(false);
+        }
+        switch (numPages) {
+            case 1:
+                Buttons[3].setVisible(true);
+                break;
+            case 2:
+                Buttons[3].setVisible(true);
+                Buttons[4].setVisible(true);
+                break;
+            case 3:
+                Buttons[2].setVisible(true);
+                Buttons[3].setVisible(true);
+                Buttons[4].setVisible(true);
+                break;
+            case 4:
+                Buttons[2].setVisible(true);
+                Buttons[3].setVisible(true);
+                Buttons[4].setVisible(true);
+                Buttons[5].setVisible(true);
+                break;
+            case 5:
+                for(int i=1;i<6;i++){
+                    Buttons[i].setVisible(true);
+                }
+                break;
+            case 6:
+                for(int i=1;i<7;i++){
+                    Buttons[i].setVisible(true);
+                }
+                break;
+            case 7:
+                for(int i=0;i<7;i++){
+                    Buttons[i].setVisible(true);
+                }
+                break;
+        }
 
     }
 }

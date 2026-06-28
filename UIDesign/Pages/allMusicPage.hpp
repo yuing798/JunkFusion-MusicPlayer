@@ -28,7 +28,7 @@ private:
     std::array<YLabel, 2> ellipsisLabels{U("..."),U("...")};
     int nowPage{1};
     int numPages{1};
-    std::array<juce::Rectangle<int>, 7> pageChangeButtons;//直接显示数字和省略号的那些区域
+    std::array<juce::Rectangle<int>, 7> pageChangeRects;//直接显示数字和省略号的那些区域
 public:
     void resized() override;
     void setNumPages();
