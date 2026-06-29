@@ -30,7 +30,10 @@ private:
     std::array<YLabel, 2> ellipsisLabels{U("..."),U("...")};
     int nowPage{1};
     int numPages{1};
-    std::array<juce::Rectangle<int>, 9> pageChangeRects;//直接显示数字和省略号的那些区域
+
+    void doLayout();
+    void setPageButtonColor(yTextButton& button, int pageNum);
+    
 public:
     void resized() override;
     void setNumPages();
@@ -38,10 +41,9 @@ public:
     ~PageChange();
     void buttonClicked (Button*) override;
     void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
-    void numPagesChange();//根据总页数放置按钮的位置
-    void nowPageChange();//当前页面切换时调用
-    void setSelectedButtonColor();//设置当前选中的按钮颜色
-
+    void numPagesChange();
+    void nowPageChange();
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 };
 
