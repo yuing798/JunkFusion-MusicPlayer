@@ -66,19 +66,41 @@ void PageChange::resized(){
 
 void PageChange::buttonClicked (Button* button){
     if(&goButton == button){
-
+        goAndEnterClick();
+    }
+    if(button == &button1 || button == &button_1 ){
+        nowPage = button->getButtonText().getIntValue();
+        nowPageChange();
+    }
+    for(auto& btn:buttons){
+        if(button == & btn){
+            nowPage = button->getButtonText().getIntValue();
+            nowPageChange();
+        }
+    }
+    if(button == &previousButton){
+        nowPage = button->getButtonText().getIntValue()-1;
+        nowPageChange();
+    }
+    if(button == &nextButton){
+        nowPage = button->getButtonText().getIntValue()+1;
+        nowPageChange();
     }
 
 }
 
 void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
     if(&editor == &mTextEditor){
-        auto targetPage{std::stoi(editor.getText().toStdString())};
-        if(nowPage!=targetPage){
-            nowPage = targetPage;
-            //刷新页面
-            //刷新按钮布局
-        }
+        goAndEnterClick();
+    }
+}
+void PageChange::goAndEnterClick(){
+    auto targetPage{std::stoi(mTextEditor.getText().toStdString())};
+    if(nowPage!=targetPage){
+        nowPage = targetPage;
+        //刷新页面
+        //刷新按钮布局
+        nowPageChange();
     }
 }
 void PageChange::numPagesChange()
@@ -100,6 +122,7 @@ void PageChange::nowPageChange()
         if (btn.isVisible())
             setPageButtonColor(btn, btn.getButtonText().getIntValue());
     }
+    if(mPageRefreshCallback) mPageRefreshCallback(nowPage);
 }
 
 void PageChange::doLayout()
@@ -225,7 +248,7 @@ PageChange::~PageChange(){
 }
 
 
-AllMusicComponent::AllMusicComponent(){
+AllMusicViewport::AllMusicViewport(){
     mPageChange.onPageChange([this](int value){
         refreshPage(value);
     });

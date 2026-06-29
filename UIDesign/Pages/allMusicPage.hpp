@@ -46,19 +46,18 @@ public:
     void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
     void numPagesChange();
     void nowPageChange();
+    void goAndEnterClick();//按下跳转按钮或者按下输入框的enter键
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 }; 
-
-
-class AllMusicComponent : public juce::Component{
+class AllMusicViewport : public juce::Component{
 private:
     PageChange mPageChange;
     int numRows{20};//一个页码最多显示多少条音频
 public:
-    AllMusicComponent();
+    AllMusicViewport();
     void refreshPage(int page);
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicViewport)
 };
 
 class allMusicPage : public juce::Component,
@@ -66,7 +65,7 @@ class allMusicPage : public juce::Component,
 {
 private:
 
-    AllMusicComponent mAllMusicComponent;
+    AllMusicViewport mAllMusicViewport;
     yTextButton selectFileButton{U("导入文件")};
     BigLabel allMusicLabel{U("全部音乐")};
     svgButton refreshButton{
