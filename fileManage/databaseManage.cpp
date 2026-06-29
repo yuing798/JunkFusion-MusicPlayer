@@ -45,7 +45,7 @@ void SongsManage::init(){
 void SongsManage::createTables()
 {
     db->exec(createSongsTableSQL);
-    db->exec(createTitleIndexSQL);
+    db->exec(createNameIdIndexSQL);
     //db.exec() 这个函数的全称是 “执行 SQL 语句”，而不是”创建表”
     /*
     SQL命令：
@@ -177,6 +177,9 @@ void SongsManage::insertSong(const SongInfo& info)
             bindSongFields(insertSong);
             insertSong.exec();
         }
+        // ── 插入/更新完成后重建 nameId 排序 ──
+        rebuildNameIds();
+
         // ── 全部成功，提交事务 ──
         transaction.commit();
         return;
@@ -239,6 +242,7 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
         info.isMyLike         = query.getColumn(27).getInt() != 0;
         info.comment          = query.getColumn(28).getString();
         info.hadPlayedNum     = query.getColumn(29).getInt();
+        info.nameId           = query.getColumn(30).getInt();
         result.push_back(std::move(info));
     }
 };
@@ -258,7 +262,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
                         "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
-                        "isMyLike, comment, hadPlayedNum "
+                        "isMyLike, comment, hadPlayedNum, nameId "
                         "FROM songs ORDER BY songId ";
     if(ascending){
         sql +=" ASC ";
@@ -291,77 +295,71 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
         return result;
     }
 
-    // ── 1. 全量取出所有歌曲 ──
-    std::vector<SongInfo> allSongs;
+    std::string sql = "SELECT filePath, fileName, fileSize, lastModifiedTime, "
+                        "isMultiStreamFile, duration, title, artist, album, albumArtist, "
+                        "genre, trackNumber, discNumber, year, composer, imageHash, "
+                        "bitRate, bitDepth, sampleRate, numChannels, codecName, "
+                        "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
+                        "isMyLike, comment, hadPlayedNum, nameId "
+                        "FROM songs ORDER BY nameId ";
+    if (ascending)
+        sql += " ASC ";
+    else
+        sql += " DESC ";
+    sql += " LIMIT ? OFFSET ?";
+    SQLite::Statement query(*db, sql);
+    query.bind(1, limit);
+    query.bind(2, offset);
+
+    dataLookfor(query, result);
+    return result;
+}
+
+void SongsManage::rebuildNameIds()
+{
+    if (!db) return;
+
+    // ── 1. 取出所有 songId 和 title ──
+    struct NameEntry { int64_t songId; std::string title; };
+    std::vector<NameEntry> entries;
     {
-        SQLite::Statement query(*db,
-            "SELECT filePath, fileName, fileSize, lastModifiedTime, "
-            "isMultiStreamFile, duration, title, artist, album, albumArtist, "
-            "genre, trackNumber, discNumber, year, composer, imageHash, "
-            "bitRate, bitDepth, sampleRate, numChannels, codecName, "
-            "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
-            "isMyLike, comment, hadPlayedNum "
-            "FROM songs");
-
-        dataLookfor(query, result);
+        SQLite::Statement query(*db, "SELECT songId, title FROM songs");
+        while (query.executeStep())
+        {
+            entries.push_back({
+                query.getColumn(0).getInt64(),
+                query.getColumn(1).getString()
+            });
+        }
     }
+    if (entries.empty()) return;
 
-    if (allSongs.empty()) return result;
-
-    // ── 2. ICU Collator 排序 ──
+    // ── 2. ICU Collator 按 title 排序 ──
     UErrorCode status = U_ZERO_ERROR;
     std::unique_ptr<icu::Collator> coll(
         icu::Collator::createInstance(icu::Locale::getRoot(), status));
 
     if (U_SUCCESS(status) && coll)
     {
-        if (ascending)
-        {
-            std::sort(allSongs.begin(), allSongs.end(),
-                [&](const SongInfo& a, const SongInfo& b)
-                {
-                    UErrorCode err = U_ZERO_ERROR;
-                    return coll->compareUTF8(
-                        icu::StringPiece(a.title),
-                        icu::StringPiece(b.title), err) == UCOL_LESS;
-                });
-        }
-        else
-        {
-            std::sort(allSongs.begin(), allSongs.end(),
-                [&](const SongInfo& a, const SongInfo& b)
-                {
-                    UErrorCode err = U_ZERO_ERROR;
-                    return coll->compareUTF8(
-                        icu::StringPiece(a.title),
-                        icu::StringPiece(b.title), err) == UCOL_GREATER;
-                });
-        }
+        std::sort(entries.begin(), entries.end(),
+            [&](const NameEntry& a, const NameEntry& b)
+            {
+                UErrorCode err = U_ZERO_ERROR;
+                return coll->compareUTF8(
+                    icu::StringPiece(a.title),
+                    icu::StringPiece(b.title), err) == UCOL_LESS;
+            });
     }
-    else
+
+    // ── 3. 按排序后的顺序更新 nameId ──
+    for (int i = 0; i < static_cast<int>(entries.size()); ++i)
     {
-        // ICU 不可用 → 退化为简单 std::string 比较
-        if (ascending)
-        {
-            std::sort(allSongs.begin(), allSongs.end(),
-                [](const SongInfo& a, const SongInfo& b)
-                    { return a.title < b.title; });
-        }
-        else
-        {
-            std::sort(allSongs.begin(), allSongs.end(),
-                [](const SongInfo& a, const SongInfo& b)
-                    { return a.title > b.title; });
-        }
+        SQLite::Statement update(*db,
+            "UPDATE songs SET nameId = ? WHERE songId = ?");
+        update.bind(1, i + 1);
+        update.bind(2, entries[i].songId);
+        update.exec();
     }
-
-    // ── 3. 分页切片 ──
-    int start = std::min(offset, static_cast<int>(allSongs.size()));
-    int end   = std::min(offset + limit, static_cast<int>(allSongs.size()));
-    for (int i = start; i < end; ++i)
-        result.push_back(std::move(allSongs[i]));
-
-    return result;
 }
 
 SongsManage::~SongsManage(){

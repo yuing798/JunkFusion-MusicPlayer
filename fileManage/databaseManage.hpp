@@ -52,11 +52,12 @@ inline const char* createSongsTableSQL = R"(
         aiProcessed        INTEGER DEFAULT 0,
         isMyLike           INTEGER DEFAULT 0,
         comment            TEXT,
-        hadPlayedNum       INTEGER DEFAULT 0
+        hadPlayedNum       INTEGER DEFAULT 0,
+        nameId            INTEGER DEFAULT 0
     )
 )";
-inline const char* createTitleIndexSQL = R"(
-    CREATE INDEX IF NOT EXISTS idx_songs_title ON songs (title)
+inline const char* createNameIdIndexSQL = R"(
+    CREATE INDEX IF NOT EXISTS idx_songs_nameId ON songs (nameId)
 )";
 
 class SongsManage{
@@ -66,6 +67,8 @@ private:
 
     /** 创建 songs 表，如果已存在则跳过 */
     void createTables();
+    /** 使用 ICU Collator 按 title 排序后为所有歌曲重新分配 nameId */
+    void rebuildNameIds();
     
 public:
 

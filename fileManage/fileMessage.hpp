@@ -78,4 +78,7 @@ struct SongInfo
     std::string comment;                // 备注(用户写进去的)
     int hadPlayedNum{0};//已经播放了多少次
 
+    //6.排序字段
+    int nameId{0};//优先级排序之后的位置，逻辑上是不会变的
+
 };

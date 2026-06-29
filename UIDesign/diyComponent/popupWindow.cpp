@@ -55,8 +55,6 @@ void popupWindow::paint(juce::Graphics& g)
         g.setColour(ycolor.black);
         g.drawText(mTitle, titleBounds, juce::Justification::centred, false);
     }
-
-
 }
 
 void popupWindow::mouseDown(const juce::MouseEvent& e)
@@ -112,8 +110,8 @@ PopupWindowButton::PopupWindowButton(
                         .withValueChangedCallback([this](float progress)
                         {
                             mPopupWindow->setAlpha(progress);
-                            auto cx = static_cast<float>(mPopupWindow->getWidth()) / 2.0f;
-                            auto cy = static_cast<float>(mPopupWindow->getHeight()) / 2.0f;
+                            auto cx = mButton->getX()+mButton->getWidth()/2.0f;
+                            auto cy = mButton->getY()+mButton->getHeight()/2.0f;
                             mPopupWindow->setTransform(
                                 juce::AffineTransform::scale(progress, progress, cx, cy));
                         })
@@ -127,8 +125,8 @@ PopupWindowButton::PopupWindowButton(
                          {
                              float invProgress = 1.0f - progress;
                              mPopupWindow->setAlpha(invProgress);
-                             auto cx = static_cast<float>(mPopupWindow->getWidth()) / 2.0f;
-                             auto cy = static_cast<float>(mPopupWindow->getHeight()) / 2.0f;
+                             auto cx = mButton->getX()+mButton->getWidth()/2.0f;
+                             auto cy = mButton->getY()+mButton->getHeight()/2.0f;
                              mPopupWindow->setTransform(
                                  juce::AffineTransform::scale(invProgress, invProgress, cx, cy));
                          })

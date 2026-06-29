@@ -253,6 +253,9 @@ AllMusicViewport::AllMusicViewport(){
         refreshPage(value);
     });
 }
+void AllMusicViewport::refreshPage(int page){
+    
+}
 
 allMusicPage::allMusicPage(){
     addAndMakeVisible(refreshButton);
