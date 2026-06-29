@@ -40,6 +40,7 @@ public:
     void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
     void numPagesChange();//根据总页数放置按钮的位置
     void nowPageChange();//当前页面切换时调用
+    void setSelectedButtonColor();//设置当前选中的按钮颜色
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 };

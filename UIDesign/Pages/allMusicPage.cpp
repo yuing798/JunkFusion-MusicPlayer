@@ -91,14 +91,14 @@ void PageChange::numPagesChange(){
         button1.setBounds(pageChangeRects[4]);
         nextButton.setBounds(pageChangeRects[5]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
     }else if(numPages == 2){
         previousButton.setBounds(pageChangeRects[3]);
         button1.setBounds(pageChangeRects[4]);
         button_1.setBounds(pageChangeRects[5]);
         nextButton.setBounds(pageChangeRects[6]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
         button_1.setVisible(true);
     }else if(numPages == 3){
         previousButton.setBounds(pageChangeRects[2]);
@@ -108,7 +108,7 @@ void PageChange::numPagesChange(){
         button_1.setBounds(pageChangeRects[5]);
         nextButton.setBounds(pageChangeRects[6]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
         button_1.setVisible(true);
         buttons[0].setVisible(true);
     }else if(numPages == 4){
@@ -121,7 +121,7 @@ void PageChange::numPagesChange(){
         button_1.setBounds(pageChangeRects[6]);
         nextButton.setBounds(pageChangeRects[7]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
         button_1.setVisible(true);
         buttons[0].setVisible(true);
         buttons[1].setVisible(true);
@@ -137,7 +137,7 @@ void PageChange::numPagesChange(){
         button_1.setBounds(pageChangeRects[6]);
         nextButton.setBounds(pageChangeRects[7]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
         button_1.setVisible(true);
         buttons[0].setVisible(true);
         buttons[1].setVisible(true);
@@ -156,7 +156,7 @@ void PageChange::numPagesChange(){
         button_1.setBounds(pageChangeRects[7]);
         nextButton.setBounds(pageChangeRects[8]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
         button_1.setVisible(true);
         buttons[0].setVisible(true);
         buttons[1].setVisible(true);
@@ -178,7 +178,7 @@ void PageChange::numPagesChange(){
         button_1.setBounds(pageChangeRects[7]);
         nextButton.setBounds(pageChangeRects[8]);
 
-        button1.setVisible(true);
+        // button1.setVisible(true);
         button_1.setVisible(true);
         buttons[0].setVisible(true);
         buttons[1].setVisible(true);
@@ -204,6 +204,8 @@ void PageChange::numPagesChange(){
         // buttons[3].setButtonText(juce::String(5));
         buttons[4].setBounds(pageChangeRects[6]);
         // buttons[4].setButtonText(juce::String(6));
+
+        button_1.setVisible(true);
         
     }
 }
@@ -218,10 +220,9 @@ void PageChange::nowPageChange(){
         previousButton.setEnabled(true);
         nextButton.setEnabled(true);
     }
-    
-
     if(numPages == 1){
-        
+        button1.setColour(juce::TextButton::buttonColourId,ycolor.blackGrey);
+        button1.setColour(juce::TextButton::textColourOffId,ycolor.white);
     }else if(numPages == 2){
         
     }else if(numPages == 3){
