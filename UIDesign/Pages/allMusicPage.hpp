@@ -11,6 +11,7 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <array>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <vector>
 #include "./diyComponent/buttons.hpp"
@@ -33,8 +34,10 @@ private:
 
     void doLayout();
     void setPageButtonColor(yTextButton& button, int pageNum);
-    
+    std::function<void(int)> mPageRefreshCallback;//根据选中的页码数刷新页面
+
 public:
+    void onPageChange(std::function<void(int)> callback){mPageRefreshCallback = std::move(callback);};
     void resized() override;
     void setNumPages();
     PageChange();
@@ -43,16 +46,18 @@ public:
     void textEditorReturnKeyPressed(juce::TextEditor& editor) override;
     void numPagesChange();
     void nowPageChange();
-    
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
-};
+}; 
 
 
 class AllMusicComponent : public juce::Component{
 private:
     PageChange mPageChange;
+    int numRows{20};//一个页码最多显示多少条音频
 public:
     AllMusicComponent();
+    void refreshPage(int page);
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicComponent)
 };
 

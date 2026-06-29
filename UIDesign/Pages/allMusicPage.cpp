@@ -54,10 +54,6 @@ PageChange::PageChange(){
     setSize(360,80);
 
 }
-
-void PageChange::buttonClicked (Button* button){
-    
-}
 void PageChange::resized(){
     auto local{getLocalBounds()};
     local.removeFromTop(40);
@@ -67,6 +63,14 @@ void PageChange::resized(){
     mTextEditor.setBounds(row2.removeFromLeft(160).reduced(5));
     goButton.setBounds(row2.removeFromLeft(40).reduced(5));
 }
+
+void PageChange::buttonClicked (Button* button){
+    if(&goButton == button){
+
+    }
+
+}
+
 void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
     if(&editor == &mTextEditor){
         auto targetPage{std::stoi(editor.getText().toStdString())};
@@ -222,7 +226,9 @@ PageChange::~PageChange(){
 
 
 AllMusicComponent::AllMusicComponent(){
-    
+    mPageChange.onPageChange([this](int value){
+        refreshPage(value);
+    });
 }
 
 allMusicPage::allMusicPage(){
