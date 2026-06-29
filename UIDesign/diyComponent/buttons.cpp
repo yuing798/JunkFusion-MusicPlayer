@@ -1,5 +1,6 @@
 #include "./buttons.hpp"
 #include "./otherComponent.hpp"
+#include "juce_events/juce_events.h"
 
 void PlayStopButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) 
 {
@@ -37,6 +38,7 @@ void PlayStopButton::paintButton (juce::Graphics& g, bool shouldDrawButtonAsHigh
 }
 yTextButton::yTextButton(){
     setClickingTogglesState(false);
+    setToggleState(false,juce::dontSendNotification);
 }
 yTextButton::yTextButton(juce::String initText)
 :yTextButton(){

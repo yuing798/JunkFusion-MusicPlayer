@@ -9,6 +9,7 @@
 #include "juce_events/juce_events.h"
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include "otherComponent.hpp"
 #include "popupWindow.hpp"
 #include "serial.hpp"
 #include <memory>
@@ -16,7 +17,7 @@
 #include <utility>
 
 PageChange::PageChange(){
-    for(auto& button : Buttons){
+    for(auto& button : buttons){
         button.setSize(40, 40);
         button.addListener(this);
         addAndMakeVisible(button);
@@ -53,8 +54,10 @@ void PageChange::resized(){
     auto local{getLocalBounds()};
     auto row1{local.removeFromTop(40)};
     auto row2{local};
-    previousButton.setBounds(row1.removeFromLeft(40).reduced(5));//上一页的按钮，位置固定
-    nextButton.setBounds(row1.removeFromRight(40).reduced(5));//下一页的按钮，位置固定
+    // previousButton.setBounds(row1.removeFromLeft(40).reduced(5));//上一页的按钮，位置固定
+    // button1.setBounds(row1.removeFromLeft(40).reduced(5));
+    // nextButton.setBounds(row1.removeFromRight(40).reduced(5));//下一页的按钮，位置固定
+    // button_1.setBounds(row1.removeFromRight(40).reduced(5));
     row2.removeFromLeft(80);
     mTextEditor.setBounds(row2.removeFromLeft(160).reduced(5));
     goButton.setBounds(row2.removeFromLeft(40).reduced(5));
@@ -65,9 +68,146 @@ void PageChange::resized(){
 void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
     if(&editor == &mTextEditor){
         auto targetPage{std::stoi(editor.getText().toStdString())};
+        if(nowPage!=targetPage){
+            nowPage = targetPage;
+            //刷新页面
+        }
     }
 }
-void PageChange::changePageButtonState(){
+void PageChange::numPagesChange(){
+
+    for(auto& button:buttons){
+        button.setVisible(false);
+    }
+    button_1.setVisible(false);
+    for(auto& ellipsisLabel:ellipsisLabels){
+        ellipsisLabel.setVisible(false);
+    }//先把所有按钮设置为不可见再刷新
+    button1.setVisible(true);//第一个按钮一定是可以看见的
+    
+    button_1.setButtonText(juce::String(numPages));
+    if(numPages ==1){
+        previousButton.setBounds(pageChangeRects[3]);
+        button1.setBounds(pageChangeRects[4]);
+        nextButton.setBounds(pageChangeRects[5]);
+
+        button1.setVisible(true);
+    }else if(numPages == 2){
+        previousButton.setBounds(pageChangeRects[3]);
+        button1.setBounds(pageChangeRects[4]);
+        button_1.setBounds(pageChangeRects[5]);
+        nextButton.setBounds(pageChangeRects[6]);
+
+        button1.setVisible(true);
+        button_1.setVisible(true);
+    }else if(numPages == 3){
+        previousButton.setBounds(pageChangeRects[2]);
+        button1.setBounds(pageChangeRects[3]);
+        buttons[0].setBounds(pageChangeRects[4]);
+        buttons[0].setButtonText(juce::String(2));
+        button_1.setBounds(pageChangeRects[5]);
+        nextButton.setBounds(pageChangeRects[6]);
+
+        button1.setVisible(true);
+        button_1.setVisible(true);
+        buttons[0].setVisible(true);
+    }else if(numPages == 4){
+        previousButton.setBounds(pageChangeRects[2]);
+        button1.setBounds(pageChangeRects[3]);
+        buttons[0].setBounds(pageChangeRects[4]);
+        buttons[0].setButtonText(juce::String(2));
+        buttons[1].setBounds(pageChangeRects[5]);
+        buttons[1].setButtonText(juce::String(3));
+        button_1.setBounds(pageChangeRects[6]);
+        nextButton.setBounds(pageChangeRects[7]);
+
+        button1.setVisible(true);
+        button_1.setVisible(true);
+        buttons[0].setVisible(true);
+        buttons[1].setVisible(true);
+    }else if(numPages == 5){
+        previousButton.setBounds(pageChangeRects[1]);
+        button1.setBounds(pageChangeRects[2]);
+        buttons[0].setBounds(pageChangeRects[3]);
+        buttons[0].setButtonText(juce::String(2));
+        buttons[1].setBounds(pageChangeRects[4]);
+        buttons[1].setButtonText(juce::String(3));
+        buttons[2].setBounds(pageChangeRects[5]);
+        buttons[2].setButtonText(juce::String(4));
+        button_1.setBounds(pageChangeRects[6]);
+        nextButton.setBounds(pageChangeRects[7]);
+
+        button1.setVisible(true);
+        button_1.setVisible(true);
+        buttons[0].setVisible(true);
+        buttons[1].setVisible(true);
+        buttons[2].setVisible(true);
+    }else if(numPages == 6){
+        previousButton.setBounds(pageChangeRects[1]);
+        button1.setBounds(pageChangeRects[2]);
+        buttons[0].setBounds(pageChangeRects[3]);
+        buttons[0].setButtonText(juce::String(2));
+        buttons[1].setBounds(pageChangeRects[4]);
+        buttons[1].setButtonText(juce::String(3));
+        buttons[2].setBounds(pageChangeRects[5]);
+        buttons[2].setButtonText(juce::String(4));
+        buttons[3].setBounds(pageChangeRects[6]);
+        buttons[3].setButtonText(juce::String(5));
+        button_1.setBounds(pageChangeRects[7]);
+        nextButton.setBounds(pageChangeRects[8]);
+
+        button1.setVisible(true);
+        button_1.setVisible(true);
+        buttons[0].setVisible(true);
+        buttons[1].setVisible(true);
+        buttons[2].setVisible(true);
+        buttons[3].setVisible(true);
+    }else if(numPages == 7){
+        previousButton.setBounds(pageChangeRects[0]);
+        button1.setBounds(pageChangeRects[1]);
+        buttons[0].setBounds(pageChangeRects[2]);
+        buttons[0].setButtonText(juce::String(2));
+        buttons[1].setBounds(pageChangeRects[3]);
+        buttons[1].setButtonText(juce::String(3));
+        buttons[2].setBounds(pageChangeRects[4]);
+        buttons[2].setButtonText(juce::String(4));
+        buttons[3].setBounds(pageChangeRects[5]);
+        buttons[3].setButtonText(juce::String(5));
+        buttons[4].setBounds(pageChangeRects[6]);
+        buttons[4].setButtonText(juce::String(6));
+        button_1.setBounds(pageChangeRects[7]);
+        nextButton.setBounds(pageChangeRects[8]);
+
+        button1.setVisible(true);
+        button_1.setVisible(true);
+        buttons[0].setVisible(true);
+        buttons[1].setVisible(true);
+        buttons[2].setVisible(true);
+        buttons[3].setVisible(true);
+        buttons[41].setVisible(true);
+
+    }else if(numPages > 7){
+        previousButton.setBounds(pageChangeRects[0]);
+        button1.setBounds(pageChangeRects[1]);
+        button_1.setBounds(pageChangeRects[7]);
+        nextButton.setBounds(pageChangeRects[8]);
+        ellipsisLabels[0].setBounds(pageChangeRects[2]);
+        ellipsisLabels[1].setBounds(pageChangeRects[6]);
+
+        buttons[0].setBounds(pageChangeRects[2]);
+        // buttons[0].setButtonText(juce::String(2));
+        buttons[1].setBounds(pageChangeRects[3]);
+        // buttons[1].setButtonText(juce::String(3));
+        buttons[2].setBounds(pageChangeRects[4]);
+        // buttons[2].setButtonText(juce::String(4));
+        buttons[3].setBounds(pageChangeRects[5]);
+        // buttons[3].setButtonText(juce::String(5));
+        buttons[4].setBounds(pageChangeRects[6]);
+        // buttons[4].setButtonText(juce::String(6));
+        
+    }
+}
+void PageChange::nowPageChange(){
     if(nowPage == 1){
         previousButton.setEnabled(false);
         nextButton.setEnabled(true);
@@ -78,56 +218,21 @@ void PageChange::changePageButtonState(){
         previousButton.setEnabled(true);
         nextButton.setEnabled(true);
     }
-    if(numPages <= 7){
-        for(auto& ellipsisLabel :ellipsisLabels){
-            ellipsisLabel.setVisible(false);
-        }//小于等于七个的话省略号去掉，只留下按钮
-        for(int i=0;i<7;i++){
-            Buttons[i].setBounds(pageChangeRects[i]);
-            Buttons[i].setVisible(false);
-        }
-        switch (numPages) {
-            case 1:
-                Buttons[3].setVisible(true);
-                break;
-            case 2:
-                Buttons[3].setVisible(true);
-                Buttons[4].setVisible(true);
-                break;
-            case 3:
-                Buttons[2].setVisible(true);
-                Buttons[3].setVisible(true);
-                Buttons[4].setVisible(true);
-                break;
-            case 4:
-                Buttons[2].setVisible(true);
-                Buttons[3].setVisible(true);
-                Buttons[4].setVisible(true);
-                Buttons[5].setVisible(true);
-                break;
-            case 5:
-                for(int i=1;i<6;i++){
-                    Buttons[i].setVisible(true);
-                }
-                break;
-            case 6:
-                for(int i=1;i<7;i++){
-                    Buttons[i].setVisible(true);
-                }
-                break;
-            case 7:
-                for(int i=0;i<7;i++){
-                    Buttons[i].setVisible(true);
-                }
-                break;
-        }
+    
+
+    if(numPages == 1){
+        
+    }else if(numPages == 2){
+        
+    }else if(numPages == 3){
 
     }
+    
 }
 
 PageChange::~PageChange(){
     mTextEditor.removeListener(this);
-    for(auto& button : Buttons){
+    for(auto& button : buttons){
         button.removeListener(this);
     }
     goButton.removeListener(this);

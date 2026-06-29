@@ -4,7 +4,7 @@
 
 ## 代码规范
 
-1.所有命名统一采用驼峰式，包括cpp,sqlite,python语句
+1. 所有命名统一采用驼峰式，包括cpp,sqlite,python语句
 
 ### cpp规范
 
