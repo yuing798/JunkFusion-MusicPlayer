@@ -205,6 +205,6 @@ upDownButton::upDownButton()
     juce::Drawable::createFromImageData(BinaryData::up_svg, BinaryData::up_svgSize),
     U("降序"),
     juce::Drawable::createFromImageData(BinaryData::down_svg, BinaryData::down_svgSize)
-){
+){//前一个参数为正态，后一个参数为负态
     
 }

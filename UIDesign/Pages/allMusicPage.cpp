@@ -1,6 +1,7 @@
-#include "allMusicPage.hpp"
+#include "AllMusicPage.hpp"
 #include "BinaryData.h"
 #include "FontAbout/font.h"
+#include "allMusicPage.hpp"
 #include "buttons.hpp"
 #include "databaseManage.hpp"
 #include "fileMessage.hpp"
@@ -247,17 +248,24 @@ PageChange::~PageChange(){
     nextButton.removeListener(this);
 }
 
-
-AllMusicViewport::AllMusicViewport(){
+AllMusicViewport::AllMusicViewport(AllMusicPage& a)
+:mAllMusicPage(a){
     mPageChange.onPageChange([this](int value){
-        refreshPage(value);
-    });
+        refreshPage(value,mAllMusicPage.getSeqWays(),mAllMusicPage.getUpOrDown());
+    });// 这里的代码在构造时不会执行，只是注册回调
 }
-void AllMusicViewport::refreshPage(int page){
-    
+void AllMusicViewport::refreshPage(int page,int seqWayIndex, bool ascending){
+    if(seqWayIndex == 0){
+        //名称排序
+        SongsManage::getInstance().getSongPageByName(page,numRows,ascending);
+    }else if(seqWayIndex == 1){
+        //添加时间排序
+        SongsManage::getInstance().getSongsPageBySongId(page,numRows,ascending);
+    }
 }
 
-allMusicPage::allMusicPage(){
+AllMusicPage::AllMusicPage()
+:mAllMusicViewport(*this){
     addAndMakeVisible(refreshButton);
     addAndMakeVisible(selectFileButton);
     addAndMakeVisible(allMusicLabel);
@@ -283,7 +291,7 @@ allMusicPage::allMusicPage(){
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
 }
-void allMusicPage::resized(){
+void AllMusicPage::resized(){
 
     auto local = getLocalBounds();
     auto height = local.getHeight();
@@ -302,7 +310,7 @@ void allMusicPage::resized(){
     numSongsLabel.setBounds(row1.removeFromLeft(90));
 
 }
-void allMusicPage::buttonClicked(juce::Button* button)
+void AllMusicPage::buttonClicked(juce::Button* button)
 {
     if (button == &selectFileButton)
     {
@@ -327,6 +335,6 @@ void allMusicPage::buttonClicked(juce::Button* button)
         selectFileButton.setClickingTogglesState(true);
     }
 }
-// void allMusicPage::paint(juce::Graphics& g){
+// void AllMusicPage::paint(juce::Graphics& g){
 
 // }

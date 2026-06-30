@@ -4,6 +4,7 @@
 #include "FontAbout/font.h"
 #include "./diyComponent/otherComponent.hpp"
 #include "./diyComponent/YComboBox.hpp"
+#include "databaseManage.hpp"
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
@@ -16,6 +17,7 @@
 #include <vector>
 #include "./diyComponent/buttons.hpp"
 #include "./diyComponent/popupWindow.hpp"
+#include "./diyComponent/cell/eachSong.hpp"
 
 class PageChange : public juce::Component, public juce::Button::Listener,public juce::TextEditor::Listener{
 //页码切换的组件
@@ -50,22 +52,28 @@ public:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 }; 
+
+class AllMusicPage;
+
 class AllMusicViewport : public juce::Component{
 private:
     PageChange mPageChange;
-    int numRows{20};//一个页码最多显示多少条音频
+    static const int numRows{20};
+    std::array<std::unique_ptr<EachSong>,numRows> eachSongRows;
+
+    AllMusicPage& mAllMusicPage;
 public:
-    AllMusicViewport();
-    void refreshPage(int page);
+    explicit AllMusicViewport(AllMusicPage& a);
+    void refreshPage(int page,int seqWayIndex, bool ascending);
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicViewport)
 };
 
-class allMusicPage : public juce::Component,
+class AllMusicPage : public juce::Component,
                      public juce::Button::Listener
 {
 private:
 
-    AllMusicViewport mAllMusicViewport;
+    
     yTextButton selectFileButton{U("导入文件")};
     BigLabel allMusicLabel{U("全部音乐")};
     svgButton refreshButton{
@@ -80,12 +88,15 @@ private:
     juce::Viewport mViewPort;
     upDownButton mUpDownButton;
     yTextButton playAll{U("播放全部")};
+    AllMusicViewport mAllMusicViewport;
 
 public:
 
-    allMusicPage();
+    AllMusicPage();
     void resized() override;
     void buttonClicked(juce::Button*) override;
+    int getSeqWays(){return seqWays.getSelectedItemIndex();}//得到排序方法对应的索引
+    int getUpOrDown(){return mUpDownButton.getToggleState();}//得到升降排序
     // void paint(juce::Graphics& g) override;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(allMusicPage)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };
