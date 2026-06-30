@@ -72,6 +72,21 @@ public:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicViewport)
 };
 
+class LoadingGreyBlock : public juce::Component{
+//当在切换的时候，viewPort全部置为灰色不可点击，并显示一个很大的加载动画
+private:
+    const juce::Colour greyColor{ycolor.midGrey.withAlpha(0.3f)};
+    loadingAnimator mLoadingAnimator;//导入文件,页面切换的时候的刷新动画
+public:
+    LoadingGreyBlock();
+    ~LoadingGreyBlock();
+    void resized() override;
+    void paint(juce::Graphics& g) override;
+    void start();
+    void end();
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LoadingGreyBlock)
+};
+
 class AllMusicPage : public juce::Component,
                      public juce::Button::Listener
 {
@@ -86,13 +101,13 @@ private:
     };
     littleLabel numSongsLabel{U("共 0 首")};
     YComboBox seqWays;//排序方法
-    juce::String selectedSeqWays;//当前选择的排列方法
 
-    //搜索框
-    juce::Viewport mViewPort;
-    upDownButton mUpDownButton;
+    juce::Viewport mViewPort;//里面放置15首歌曲和页面切换组件
+    upDownButton mUpDownButton;//切换升降排序的按钮
     yTextButton playAll{U("播放全部")};
+    loadingAnimator mLoadingAnimator;
     AllMusicViewport mAllMusicViewport;
+    LoadingGreyBlock mLoadingGreyBlock;
 
 public:
 

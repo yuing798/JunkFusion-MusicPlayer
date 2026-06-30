@@ -271,6 +271,21 @@ void AllMusicViewport::resized(){
     mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
 
 }
+void LoadingGreyBlock::resized(){
+    mLoadingAnimator.setBounds(getWidth()*0.4f,getHeight()*0.4,getWidth()*0.2f,getHeight()*0.2f);
+}
+void LoadingGreyBlock::paint(juce::Graphics& g){
+    g.setColour(greyColor);
+    g.fillAll();
+}
+void LoadingGreyBlock::start(){
+    setVisible(true);
+    mLoadingAnimator.start();
+}
+void LoadingGreyBlock::end(){
+    mLoadingAnimator.end();
+    setVisible(false);
+}
 
 AllMusicPage::AllMusicPage()
 :mAllMusicViewport(*this){
@@ -304,7 +319,9 @@ void AllMusicPage::resized(){
 
     auto local = getLocalBounds();
     auto height = local.getHeight();
-    mViewPort.setBounds(local.removeFromBottom(height * 0.8f));
+    auto viewportBounds{local.removeFromBottom(height * 0.8f)};
+    mViewPort.setBounds(viewportBounds);
+    mLoadingAnimator.setBounds(viewportBounds);//当在加载的时候直接把viewport给遮蔽掉
     auto row2 = local.removeFromBottom(height * 0.09f).reduced(5.0f);
     auto row1 = local.reduced(5);
 

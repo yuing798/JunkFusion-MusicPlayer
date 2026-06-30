@@ -1,27 +1,27 @@
 
 //这些内容用来复制粘贴的，因为内容重复,到时候ctrlF替换一下名称就可以了
 
-class eachSongExtraInfo : public juce::Component{
+class LoadingGreyBlock : public juce::Component{
 private:
 
 public:
 
-    eachSongExtraInfo();
-    ~eachSongExtraInfo();
+    LoadingGreyBlock();
+    ~LoadingGreyBlock();
     void resized() override;
     void paint(juce::Graphics& g) override;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(eachSongExtraInfo)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LoadingGreyBlock)
 };
 
-eachSongExtraInfo::eachSongExtraInfo(){
+LoadingGreyBlock::LoadingGreyBlock(){
 
 }
-eachSongExtraInfo::~eachSongExtraInfo(){
+LoadingGreyBlock::~LoadingGreyBlock(){
 
 }
-void eachSongExtraInfo::resized(){
+void LoadingGreyBlock::resized(){
 
 }
-void eachSongExtraInfo::paint(juce::Graphics& g){
+void LoadingGreyBlock::paint(juce::Graphics& g){
     
 }
