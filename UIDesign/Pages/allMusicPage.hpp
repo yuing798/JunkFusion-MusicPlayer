@@ -36,10 +36,10 @@ private:
 
     void doLayout();//设置每一个按钮或者省略号的布局
     void setPageButtonColor(yTextButton& button);//用来强调按下去的按钮的颜色
-    std::function<void(int)> mPageRefreshCallback;//根据选中的页码数刷新页面
+    std::function<void(void)> mPageRefreshCallback;//根据选中的页码数刷新页面
 
 public:
-    void onPageChange(std::function<void(int)> callback){mPageRefreshCallback = std::move(callback);};
+    void onPageChange(std::function<void(void)> callback){mPageRefreshCallback = std::move(callback);};
     void resized() override;
     void setNumPages(int pagesNum){numPages = pagesNum;}//根据数据库里面的总歌曲数目设置总页码数
     PageChange();
@@ -72,7 +72,7 @@ public:
 
     SongSelectViewport();
     void resized() override;
-    void refreshPage(int page,juce::String selectedSortMode, bool ascending);//根据当前页码数，排序方法，升序或者降序来刷新页面
+    void refreshPage();//根据当前页码数，排序方法，升序或者降序来刷新页面
 
     //返回整个viewPort的高度，这里mPageChange已经完成初始化了所以mPageChang.getHeight()能够正常返回
     int getViewportHeight(){return numRows*songRowHeight+mPageChange.getHeight();}
@@ -126,12 +126,11 @@ public:
     AllMusicPage();
     void resized() override;
     void buttonClicked(juce::Button*) override;
-    int getSeqWays(){return seqWays.getSelectedItemIndex();}//得到排序方法对应的索引
-    int getUpOrDown(){return mUpDownButton.getToggleState();}//得到升降排序
     // void paint(juce::Graphics& g) override;
-    void startLoading();
-    void endLoading();
-    void updateSortMode();
+    void startLoading();//开始加载动画
+    void endLoading();//终止加载动画
+    void updateSortMode();//更新排序模式
+    void updateAscending();//更新升序或降序模式
     // void refreshPageWithSameComfig();//使用相同的配置(相同的页码和排序方式来刷新页面)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };

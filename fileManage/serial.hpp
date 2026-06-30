@@ -15,6 +15,7 @@ static constexpr const char* APVTSRootId{"APVTSRoot"};//apvts根
 // static const juce::Identifier& SERIALwindowWidth{"windowWidth"};//窗口宽度，窗口长度
 // static const juce::Identifier& SERIALwindowHeight{"windowHeight"};
 static const juce::Identifier& SERIAL_allMusicSeqWays{"allMusicSeqWays"};//所有歌曲页的排序方式
+static const juce::Identifier& SERIAL_allMusicAscendingWay{"allMusicAscendingWay"};
 // static const juce::Identifier& SERIALwindowWidth{"windowWidth"};
 // static const juce::Identifier& SERIALwindowWidth{"windowWidth"};
 // static const juce::Identifier& SERIALwindowWidth{"windowWidth"};

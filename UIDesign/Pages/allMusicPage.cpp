@@ -123,7 +123,7 @@ void PageChange::nowPageChange()
         if (btn.isVisible())
             setPageButtonColor(btn);
     }
-    if(mPageRefreshCallback) mPageRefreshCallback(nowPage);
+    if(mPageRefreshCallback) mPageRefreshCallback();
 }
 
 void PageChange::doLayout()
@@ -246,19 +246,19 @@ PageChange::~PageChange(){
 }
 
 SongSelectViewport::SongSelectViewport(){
-    mPageChange.onPageChange([this](int value){
-        refreshPage(value,sortMode,ascendingWay);
+    mPageChange.onPageChange([this](){
+        refreshPage();
     });// 这里的代码在构造时不会执行，只是注册回调
 
     mPageChange.setNumPages(SongsManage::getInstance().getTotalSongCount()/numRows);
 }
-void SongSelectViewport::refreshPage(int page,juce::String selectedSortMode, bool ascending){
-    if(selectedSortMode == nameSortId){
+void SongSelectViewport::refreshPage(){
+    if(sortMode == nameSortId){
         //名称排序
-        SongsManage::getInstance().getSongPageByName(page,numRows,ascending);
-    }else if(selectedSortMode == addTimeSortId){
+        SongsManage::getInstance().getSongPageByName(getNowPage(),numRows,ascendingWay);
+    }else if(sortMode == addTimeSortId){
         //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
-        SongsManage::getInstance().getSongsPageBySongId(page,numRows,ascending);
+        SongsManage::getInstance().getSongsPageBySongId(getNowPage(),numRows,ascendingWay);
     }
     
 }
@@ -294,7 +294,16 @@ AllMusicPage::AllMusicPage(){
     addAndMakeVisible(numSongsLabel);
     addAndMakeVisible(mUpDownButton);
 
-    
+    bool upOrDown{false};//升序降序方式
+    if(Serial::getInstance().getUIRoot().isValid()){
+        upOrDown = Serial::getInstance().getUIRoot().getProperty(SERIAL_allMusicAscendingWay,0);
+    }
+    mUpDownButton.setToggleState(upOrDown,juce::dontSendNotification);
+    updateAscending();
+    mUpDownButton.onStateChange = [this,&upOrDown](){
+        updateAscending();
+        Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicAscendingWay,upOrDown,nullptr);
+    };
 
     selectFileButton.addListener(this);
     seqWays.addItem(U("歌曲名称排列"));
@@ -311,7 +320,7 @@ AllMusicPage::AllMusicPage(){
     seqWays.onItemSelected([this](int value){
         //更新排序方法
         //refreshPage(int page);//传参为当前的页码数
-        
+        updateSortMode();
         //加入序列化
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
@@ -319,6 +328,11 @@ AllMusicPage::AllMusicPage(){
 
     addAndMakeVisible(mLoadingGreyBlock);
     mLoadingGreyBlock.setVisible(false);
+}
+void AllMusicPage::updateAscending(){
+
+    mSongSelectViewport.setAscendWay(mUpDownButton.getToggleState());
+    mSongSelectViewport.refreshPage();
 }
 void AllMusicPage::updateSortMode(){
     switch (seqWays.getSelectedItemIndex()) {
@@ -329,11 +343,7 @@ void AllMusicPage::updateSortMode(){
             mSongSelectViewport.setSortMode(mSongSelectViewport.addTimeSortId);
             break;
     }
-    mSongSelectViewport.refreshPage(
-        mSongSelectViewport.getNowPage(),
-        mSongSelectViewport.getNowSortMode(),
-        mSongSelectViewport.getNowAscendingWay()
-    );
+    mSongSelectViewport.refreshPage();
 }
 void AllMusicPage::resized(){
 
@@ -374,11 +384,7 @@ void AllMusicPage::buttonClicked(juce::Button* button)
             },
             this
         );
-        mSongSelectViewport.refreshPage(
-            mSongSelectViewport.getNowPage(),
-            mSongSelectViewport.getNowSortMode(),
-            mSongSelectViewport.getNowAscendingWay()
-        );
+        mSongSelectViewport.refreshPage();
         
         //使用FFmpeg提取元数据
         //推入数据库
