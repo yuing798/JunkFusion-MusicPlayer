@@ -314,6 +314,9 @@ AllMusicPage::AllMusicPage()
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
     mAllMusicViewport.setSize(getWidth(),mAllMusicViewport.getViewportHeight());
+
+    addAndMakeVisible(mLoadingGreyBlock);
+    mLoadingGreyBlock.setVisible(false);
 }
 void AllMusicPage::resized(){
 
@@ -364,3 +367,11 @@ void AllMusicPage::buttonClicked(juce::Button* button)
 // void AllMusicPage::paint(juce::Graphics& g){
 
 // }
+void AllMusicPage::startLoading(){
+    setEnabled(false);
+    mLoadingAnimator.start();
+}
+void AllMusicPage::endLoading(){
+    mLoadingAnimator.end();
+    setEnabled(true);
+}

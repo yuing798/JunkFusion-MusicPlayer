@@ -78,8 +78,8 @@ private:
     const juce::Colour greyColor{ycolor.midGrey.withAlpha(0.3f)};
     loadingAnimator mLoadingAnimator;//导入文件,页面切换的时候的刷新动画
 public:
-    LoadingGreyBlock();
-    ~LoadingGreyBlock();
+    LoadingGreyBlock() = default;
+    // ~LoadingGreyBlock();
     void resized() override;
     void paint(juce::Graphics& g) override;
     void start();
@@ -117,5 +117,7 @@ public:
     int getSeqWays(){return seqWays.getSelectedItemIndex();}//得到排序方法对应的索引
     int getUpOrDown(){return mUpDownButton.getToggleState();}//得到升降排序
     // void paint(juce::Graphics& g) override;
+    void startLoading();
+    void endLoading();
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };
