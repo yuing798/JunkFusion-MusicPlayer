@@ -107,6 +107,7 @@ public:
     void endLoading();//结束加载动画
     void setNumPages(int nb);//设置总页数，这里是要交给导入歌曲按钮来使用
     int getNumSongsEachPage(){return numRows;}//返回一个页码中最多有几条歌曲
+    void init();//因为viewport的页面初始化需要外界的构造函数先执行，所以此处使用延迟执行的方法
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SongSelectViewport)
 };
 class AllMusicPage : public juce::Component,

@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 PageChange::PageChange(){
     for(auto& button : buttons){
@@ -271,21 +272,39 @@ SongSelectViewport::SongSelectViewport(){
         refreshPage();
     });// 这里的代码在构造时不会执行，只是注册回调
 
-    mPageChange.setNumpagesAndChangeLayout(numRows);//这里只是设置页面切换区域的布局
-
+    
+    addAndMakeVisible(mPageChange);
+}
+void SongSelectViewport::init(){
     for(size_t i=0;i<eachSongRows.size();i++){
-        // eachSongRows[i] = std::make_unique<EachSong>(mPageChange.getNowPage()+i+1)
+        refreshPage();
         addAndMakeVisible(*eachSongRows[i]);
     }
-    addAndMakeVisible(mPageChange);
+    mPageChange.setNumpagesAndChangeLayout(numRows);//这里只是设置页面切换区域的布局
 }
 void SongSelectViewport::refreshPage(){
     if(sortMode == nameSortId){
         //名称排序
-        SongsManage::getInstance().getSongPageByName(mPageChange.getNowPage(),numRows,ascendingWay);
+        std::vector<SongInfo> songs = SongsManage::getInstance().getSongPageByName(
+            mPageChange.getNowPage(),
+            numRows,
+            ascendingWay
+        );
+        for(size_t i=0;i<eachSongRows.size();i++){
+            auto No{mPageChange.getNowPage()+i+1};
+            eachSongRows[i] = std::make_unique<EachSong>(No,songs[i]);
+        }
     }else if(sortMode == addTimeSortId){
         //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
-        SongsManage::getInstance().getSongsPageBySongId(mPageChange.getNowPage(),numRows,ascendingWay);
+        std::vector<SongInfo> songs = SongsManage::getInstance().getSongsPageBySongId(
+            mPageChange.getNowPage(),
+            numRows,
+            ascendingWay
+        );
+        for(size_t i=0;i<eachSongRows.size();i++){
+            auto No{mPageChange.getNowPage()+i+1};
+            eachSongRows[i] = std::make_unique<EachSong>(No,songs[i]);
+        }
     }
 }
 
@@ -360,6 +379,7 @@ AllMusicPage::AllMusicPage(){
     });
     mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
     mSongSelectViewport.addLoadingGreyBlock();
+    mSongSelectViewport.init();
 }
 void AllMusicPage::updateAscending(){
 
