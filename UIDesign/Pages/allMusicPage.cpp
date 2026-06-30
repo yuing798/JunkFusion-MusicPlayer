@@ -245,26 +245,25 @@ PageChange::~PageChange(){
     nextButton.removeListener(this);
 }
 
-AllMusicViewport::AllMusicViewport(AllMusicPage& a)
-:mAllMusicPage(a){
+SongSelectViewport::SongSelectViewport(){
     mPageChange.onPageChange([this](int value){
-        refreshPage(value,mAllMusicPage.getSeqWays(),mAllMusicPage.getUpOrDown());
+        refreshPage(value,sortMode,ascendingWay);
     });// 这里的代码在构造时不会执行，只是注册回调
 
     mPageChange.setNumPages(SongsManage::getInstance().getTotalSongCount()/numRows);
 }
-void AllMusicViewport::refreshPage(int page,int seqWayIndex, bool ascending){
-    if(seqWayIndex == 0){
+void SongSelectViewport::refreshPage(int page,juce::String selectedSortMode, bool ascending){
+    if(selectedSortMode == nameSortId){
         //名称排序
         SongsManage::getInstance().getSongPageByName(page,numRows,ascending);
-    }else if(seqWayIndex == 1){
-        //添加时间排序
+    }else if(selectedSortMode == addTimeSortId){
+        //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
         SongsManage::getInstance().getSongsPageBySongId(page,numRows,ascending);
     }
     
 }
 
-void AllMusicViewport::resized(){
+void SongSelectViewport::resized(){
     for(auto& eachSongRow:eachSongRows){
         eachSongRow->setBounds(getLocalBounds().removeFromTop(70));
     }
@@ -287,14 +286,15 @@ void LoadingGreyBlock::end(){
     setVisible(false);
 }
 
-AllMusicPage::AllMusicPage()
-:mAllMusicViewport(*this){
+AllMusicPage::AllMusicPage(){
     addAndMakeVisible(refreshButton);
     addAndMakeVisible(selectFileButton);
     addAndMakeVisible(allMusicLabel);
     addAndMakeVisible(mViewPort);
     addAndMakeVisible(numSongsLabel);
     addAndMakeVisible(mUpDownButton);
+
+    
 
     selectFileButton.addListener(this);
     seqWays.addItem(U("歌曲名称排列"));
@@ -307,16 +307,33 @@ AllMusicPage::AllMusicPage()
     }
     seqWays.setSelectedItemIndex(comboSelectedIndex);
 
+    updateSortMode();
     seqWays.onItemSelected([this](int value){
         //更新排序方法
         //refreshPage(int page);//传参为当前的页码数
+        
         //加入序列化
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
-    mAllMusicViewport.setSize(getWidth(),mAllMusicViewport.getViewportHeight());
+    mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
 
     addAndMakeVisible(mLoadingGreyBlock);
     mLoadingGreyBlock.setVisible(false);
+}
+void AllMusicPage::updateSortMode(){
+    switch (seqWays.getSelectedItemIndex()) {
+        case 0:
+            mSongSelectViewport.setSortMode(mSongSelectViewport.nameSortId);
+            break;
+        case 1:
+            mSongSelectViewport.setSortMode(mSongSelectViewport.addTimeSortId);
+            break;
+    }
+    mSongSelectViewport.refreshPage(
+        mSongSelectViewport.getNowPage(),
+        mSongSelectViewport.getNowSortMode(),
+        mSongSelectViewport.getNowAscendingWay()
+    );
 }
 void AllMusicPage::resized(){
 
@@ -343,6 +360,7 @@ void AllMusicPage::buttonClicked(juce::Button* button)
 {
     if (button == &selectFileButton)
     {
+        startLoading();
         selectFileButton.setClickingTogglesState(false);//在推入数据库的时候先把按钮锁定
         getMultiMediaFileChoose(
             [](const juce::Array<juce::File>& selectedFiles)
@@ -356,22 +374,29 @@ void AllMusicPage::buttonClicked(juce::Button* button)
             },
             this
         );
+        mSongSelectViewport.refreshPage(
+            mSongSelectViewport.getNowPage(),
+            mSongSelectViewport.getNowSortMode(),
+            mSongSelectViewport.getNowAscendingWay()
+        );
         
         //使用FFmpeg提取元数据
         //推入数据库
 
         //推入数据库后就可以清空了，等待下一次推入
         selectFileButton.setClickingTogglesState(true);
+        //因为这个按钮放在viewport外面，所以mAllMusicViewport.setEnabled(false);管不了
+        endLoading();
     }
 }
 // void AllMusicPage::paint(juce::Graphics& g){
 
 // }
 void AllMusicPage::startLoading(){
-    setEnabled(false);
+    mSongSelectViewport.setEnabled(false);
     mLoadingAnimator.start();
 }
 void AllMusicPage::endLoading(){
     mLoadingAnimator.end();
-    setEnabled(true);
+    mSongSelectViewport.setEnabled(true);
 }

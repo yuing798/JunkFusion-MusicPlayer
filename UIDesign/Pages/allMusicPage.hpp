@@ -49,27 +49,40 @@ public:
     void numPagesChange();//总页码数切换时调整页码布局
     void nowPageChange();//当前页码切换时调整按钮布局
     void goAndEnterClick();//按下跳转按钮或者按下输入框的enter键
+    int getNowPage() const {return nowPage;}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 }; 
 
-class AllMusicPage;
-
-class AllMusicViewport : public juce::Component{
+class SongSelectViewport : public juce::Component{
 private:
     PageChange mPageChange;//页面切换组件
     const int numRows{15};//一页有多少首歌曲
     const int songRowHeight{70};//一首歌占用的高度
     std::array<std::unique_ptr<EachSong>,15> eachSongRows;
 
-    AllMusicPage& mAllMusicPage;//因为要使用父组件的升序降序方法，排序方法，所以这里需要持有父组件的引用
+    juce::String sortMode{""};
+    bool ascendingWay{true};//升序或者降序，true为升序
+
 public:
-    explicit AllMusicViewport(AllMusicPage& a);
+
+    const juce::String nameSortId = U("name-sort");
+    const juce::String addTimeSortId = U("add-time-sort");
+    const juce::String playTimeSortId = U("play-time-sort");//排序方案
+
+    SongSelectViewport();
     void resized() override;
-    void refreshPage(int page,int seqWayIndex, bool ascending);//根据当前页码数，排序方法，升序或者降序来刷新页面
-    int getViewportHeight(){return numRows*songRowHeight+mPageChange.getHeight();}//返回整个viewPort的高度，这里mPageChange已经完成初始化了
-    //所以mPageChang.getHeight()能够正常返回
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicViewport)
+    void refreshPage(int page,juce::String selectedSortMode, bool ascending);//根据当前页码数，排序方法，升序或者降序来刷新页面
+
+    //返回整个viewPort的高度，这里mPageChange已经完成初始化了所以mPageChang.getHeight()能够正常返回
+    int getViewportHeight(){return numRows*songRowHeight+mPageChange.getHeight();}
+    
+    int getNowPage(){return mPageChange.getNowPage();}
+    juce::String getNowSortMode(){return sortMode;}
+    bool getNowAscendingWay(){return ascendingWay;}
+    void setSortMode(juce::String mode);
+    void setAscendWay(bool upOrDown);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SongSelectViewport)
 };
 
 class LoadingGreyBlock : public juce::Component{
@@ -92,7 +105,6 @@ class AllMusicPage : public juce::Component,
 {
 private:
 
-    
     yTextButton selectFileButton{U("导入文件")};
     BigLabel allMusicLabel{U("全部音乐")};
     svgButton refreshButton{
@@ -106,7 +118,7 @@ private:
     upDownButton mUpDownButton;//切换升降排序的按钮
     yTextButton playAll{U("播放全部")};
     loadingAnimator mLoadingAnimator;
-    AllMusicViewport mAllMusicViewport;
+    SongSelectViewport mSongSelectViewport;
     LoadingGreyBlock mLoadingGreyBlock;
 
 public:
@@ -119,5 +131,7 @@ public:
     // void paint(juce::Graphics& g) override;
     void startLoading();
     void endLoading();
+    void updateSortMode();
+    // void refreshPageWithSameComfig();//使用相同的配置(相同的页码和排序方式来刷新页面)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };
