@@ -13,6 +13,7 @@
 #include "otherComponent.hpp"
 #include "popupWindow.hpp"
 #include "serial.hpp"
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -270,9 +271,11 @@ SongSelectViewport::SongSelectViewport(){
         refreshPage();
     });// 这里的代码在构造时不会执行，只是注册回调
 
-    mPageChange.setNumpagesAndChangeLayout(numRows);
-    for(auto& eachSongRow:eachSongRows){
-        addAndMakeVisible(*eachSongRow);
+    mPageChange.setNumpagesAndChangeLayout(numRows);//这里只是设置页面切换区域的布局
+
+    for(size_t i=0;i<eachSongRows.size();i++){
+        // eachSongRows[i] = std::make_unique<EachSong>(mPageChange.getNowPage()+i+1)
+        addAndMakeVisible(*eachSongRows[i]);
     }
     addAndMakeVisible(mPageChange);
 }
@@ -316,6 +319,11 @@ AllMusicPage::AllMusicPage(){
     addAndMakeVisible(refreshButton);
     addAndMakeVisible(selectFileButton);
     addAndMakeVisible(allMusicLabel);
+
+    mViewPort.setViewedComponent(&mSongSelectViewport,false);
+
+    // 参数：显示垂直滚动条，隐藏水平滚动条
+    mViewPort.setScrollBarsShown(true, false, true, false);
     addAndMakeVisible(mViewPort);
     addAndMakeVisible(numSongsLabel);
     addAndMakeVisible(mUpDownButton);
@@ -351,7 +359,6 @@ AllMusicPage::AllMusicPage(){
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
     mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
-    addAndMakeVisible(mSongSelectViewport);
     mSongSelectViewport.addLoadingGreyBlock();
 }
 void AllMusicPage::updateAscending(){
