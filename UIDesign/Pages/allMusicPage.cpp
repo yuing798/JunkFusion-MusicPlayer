@@ -272,7 +272,6 @@ SongSelectViewport::SongSelectViewport(){
         refreshPage();
     });// 这里的代码在构造时不会执行，只是注册回调
 
-    
     addAndMakeVisible(mPageChange);
 }
 void SongSelectViewport::init(){
@@ -352,9 +351,10 @@ AllMusicPage::AllMusicPage(){
         upOrDown = Serial::getInstance().getUIRoot().getProperty(SERIAL_allMusicAscendingWay,0);
     }
     mUpDownButton.setToggleState(upOrDown,juce::dontSendNotification);
-    updateAscending();
+    mSongSelectViewport.setAscendWay(mUpDownButton.getToggleState());
     mUpDownButton.onStateChange = [this,&upOrDown](){
-        updateAscending();
+        mSongSelectViewport.setAscendWay(mUpDownButton.getToggleState());
+        mSongSelectViewport.refreshPage();
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicAscendingWay,upOrDown,nullptr);
     };
 
@@ -369,24 +369,6 @@ AllMusicPage::AllMusicPage(){
     }
     seqWays.setSelectedItemIndex(comboSelectedIndex);
 
-    updateSortMode();
-    seqWays.onItemSelected([this](int value){
-        //更新排序方法
-        //refreshPage(int page);//传参为当前的页码数
-        updateSortMode();
-        //加入序列化
-        Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
-    });
-    mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
-    mSongSelectViewport.addLoadingGreyBlock();
-    mSongSelectViewport.init();
-}
-void AllMusicPage::updateAscending(){
-
-    mSongSelectViewport.setAscendWay(mUpDownButton.getToggleState());
-    mSongSelectViewport.refreshPage();
-}
-void AllMusicPage::updateSortMode(){
     switch (seqWays.getSelectedItemIndex()) {
         case 0:
             mSongSelectViewport.setSortMode(mSongSelectViewport.nameSortId);
@@ -395,7 +377,25 @@ void AllMusicPage::updateSortMode(){
             mSongSelectViewport.setSortMode(mSongSelectViewport.addTimeSortId);
             break;
     }
-    mSongSelectViewport.refreshPage();
+    seqWays.onItemSelected([this](int value){
+        //更新排序方法
+        //refreshPage(int page);//传参为当前的页码数
+        switch (seqWays.getSelectedItemIndex()) {
+            case 0:
+                mSongSelectViewport.setSortMode(mSongSelectViewport.nameSortId);
+                break;
+            case 1:
+                mSongSelectViewport.setSortMode(mSongSelectViewport.addTimeSortId);
+                break;
+        }
+        mSongSelectViewport.refreshPage();
+        //加入序列化
+        Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
+    });
+
+    mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
+    mSongSelectViewport.init();
+    mSongSelectViewport.addLoadingGreyBlock();
 }
 void AllMusicPage::resized(){
 
@@ -403,7 +403,6 @@ void AllMusicPage::resized(){
     auto height = local.getHeight();
     auto viewportBounds{local.removeFromBottom(height * 0.8f)};
     mViewPort.setBounds(viewportBounds);
-    mLoadingAnimator.setBounds(viewportBounds);//当在加载的时候直接把viewport给遮蔽掉
     auto row2 = local.removeFromBottom(height * 0.09f).reduced(5.0f);
     auto row1 = local.reduced(5);
 

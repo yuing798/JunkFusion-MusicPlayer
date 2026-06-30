@@ -127,7 +127,6 @@ private:
     juce::Viewport mViewPort;//里面放置15首歌曲和页面切换组件
     upDownButton mUpDownButton;//切换升降排序的按钮
     yTextButton playAll{U("播放全部")};
-    loadingAnimator mLoadingAnimator;
     SongSelectViewport mSongSelectViewport;
 
 public:
@@ -136,8 +135,6 @@ public:
     void resized() override;
     void buttonClicked(juce::Button*) override;
     // void paint(juce::Graphics& g) override;
-    void updateSortMode();//更新排序模式
-    void updateAscending();//更新升序或降序模式
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };
