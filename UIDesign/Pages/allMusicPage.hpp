@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "./diyComponent/buttons.hpp"
 #include "./diyComponent/popupWindow.hpp"
@@ -37,19 +38,22 @@ private:
     void doLayout();//设置每一个按钮或者省略号的布局
     void setPageButtonColor(yTextButton& button);//用来强调按下去的按钮的颜色
     std::function<void(void)> mPageRefreshCallback;//根据选中的页码数刷新页面
+    void setNumPages(int pagesNum);//根据数据库里面的总歌曲数目设置总页码数
+    void numPagesLayoutChange();//总页码数切换时调整页码布局
 
 public:
     void onPageChange(std::function<void(void)> callback){mPageRefreshCallback = std::move(callback);};
     void resized() override;
-    void setNumPages(int pagesNum){numPages = pagesNum;}//根据数据库里面的总歌曲数目设置总页码数
+    
     PageChange();
-    ~PageChange();
+    ~PageChange();//移除所有的监听
     void buttonClicked (Button*) override;
     void textEditorReturnKeyPressed(juce::TextEditor& editor) override;//按下输入框回车键时的操作
-    void numPagesChange();//总页码数切换时调整页码布局
+    
     void nowPageChange();//当前页码切换时调整按钮布局
     void goAndEnterClick();//按下跳转按钮或者按下输入框的enter键
     int getNowPage() const {return nowPage;}
+    void setNumpagesAndChangeLayout(int);//设置总页面数一定是和改变按钮区域的布局一定是同步发生的,传参为一页中有几首歌曲
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 }; 
@@ -81,6 +85,7 @@ private:
     LoadingGreyBlock mLoadingGreyBlock;
 
 public:
+    PageChange& getMPageChange(){return mPageChange;}
 
     const juce::String nameSortId = U("name-sort");
     const juce::String addTimeSortId = U("add-time-sort");
@@ -93,14 +98,15 @@ public:
     //返回整个viewPort的高度，这里mPageChange已经完成初始化了所以mPageChang.getHeight()能够正常返回
     int getViewportHeight(){return numRows*songRowHeight+mPageChange.getHeight();}
     
-    int getNowPage(){return mPageChange.getNowPage();}
     juce::String getNowSortMode(){return sortMode;}
     bool getNowAscendingWay(){return ascendingWay;}
-    void setSortMode(juce::String mode);
-    void setAscendWay(bool upOrDown);
+    void setSortMode(juce::String mode){sortMode = mode;}
+    void setAscendWay(bool upOrDown){ascendingWay = upOrDown;}
     void addLoadingGreyBlock();//LoadingGreyBlock应该为父类的子组件，和SongSelectViewport平级，所以需要一个单独的函数来让父类看到
     void startLoading();//开始加载动画
     void endLoading();//结束加载动画
+    void setNumPages(int nb);//设置总页数，这里是要交给导入歌曲按钮来使用
+    int getNumSongsEachPage(){return numRows;}//返回一个页码中最多有几条歌曲
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SongSelectViewport)
 };
 class AllMusicPage : public juce::Component,
@@ -131,5 +137,6 @@ public:
     // void paint(juce::Graphics& g) override;
     void updateSortMode();//更新排序模式
     void updateAscending();//更新升序或降序模式
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };

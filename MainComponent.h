@@ -26,7 +26,7 @@ private:
 
     // ── 页面组件 ──
     // 0: 所有音乐
-    allMusicPage mAllMusicPage;
+    AllMusicPage mAllMusicPage;
     // 1: 我喜欢
     juce::Component mMyLikePage;
     // 2: 最近播放

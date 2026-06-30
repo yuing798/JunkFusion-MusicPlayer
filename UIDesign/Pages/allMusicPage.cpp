@@ -97,14 +97,14 @@ void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
 }
 void PageChange::goAndEnterClick(){
     auto targetPage{std::stoi(mTextEditor.getText().toStdString())};
-    if(nowPage!=targetPage){
+    if(nowPage!=targetPage && targetPage <= numPages){
         nowPage = targetPage;
         //刷新页面
         //刷新按钮布局
-        nowPageChange();
+        numPagesLayoutChange();
     }
 }
-void PageChange::numPagesChange()
+void PageChange::numPagesLayoutChange()
 {
     doLayout();
     nowPageChange();
@@ -234,6 +234,10 @@ void PageChange::setPageButtonColor(yTextButton& button)
         button.setColour(juce::TextButton::textColourOffId, ycolor.black);
     }
 }
+void PageChange::setNumpagesAndChangeLayout(int numRows){
+    numPages = static_cast<int>(SongsManage::getInstance().getTotalSongCount()/numRows) + 1;//因为还有多出来的几首歌不能占满一页,需要向上取整
+    numPagesLayoutChange();
+}
 
 PageChange::~PageChange(){
     mTextEditor.removeListener(this);
@@ -266,7 +270,7 @@ SongSelectViewport::SongSelectViewport(){
         refreshPage();
     });// 这里的代码在构造时不会执行，只是注册回调
 
-    mPageChange.setNumPages(SongsManage::getInstance().getTotalSongCount()/numRows);
+    mPageChange.setNumpagesAndChangeLayout(numRows);
     for(auto& eachSongRow:eachSongRows){
         addAndMakeVisible(*eachSongRow);
     }
@@ -275,10 +279,10 @@ SongSelectViewport::SongSelectViewport(){
 void SongSelectViewport::refreshPage(){
     if(sortMode == nameSortId){
         //名称排序
-        SongsManage::getInstance().getSongPageByName(getNowPage(),numRows,ascendingWay);
+        SongsManage::getInstance().getSongPageByName(mPageChange.getNowPage(),numRows,ascendingWay);
     }else if(sortMode == addTimeSortId){
         //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
-        SongsManage::getInstance().getSongsPageBySongId(getNowPage(),numRows,ascendingWay);
+        SongsManage::getInstance().getSongsPageBySongId(mPageChange.getNowPage(),numRows,ascendingWay);
     }
 }
 
@@ -391,6 +395,7 @@ void AllMusicPage::buttonClicked(juce::Button* button)
 {
     if (button == &selectFileButton)
     {
+        mSongSelectViewport.startLoading();
         selectFileButton.setClickingTogglesState(false);//在推入数据库的时候先把按钮锁定
         getMultiMediaFileChoose(
             [](const juce::Array<juce::File>& selectedFiles)
@@ -405,6 +410,7 @@ void AllMusicPage::buttonClicked(juce::Button* button)
             this
         );
         mSongSelectViewport.refreshPage();
+        mSongSelectViewport.getMPageChange().setNumpagesAndChangeLayout(mSongSelectViewport.getNumSongsEachPage());
         
         //使用FFmpeg提取元数据
         //推入数据库
@@ -412,6 +418,7 @@ void AllMusicPage::buttonClicked(juce::Button* button)
         //推入数据库后就可以清空了，等待下一次推入
         selectFileButton.setClickingTogglesState(true);
         //因为这个按钮放在viewport外面，所以mAllMusicViewport.setEnabled(false);管不了
+        mSongSelectViewport.endLoading();
     }
 }
 // void AllMusicPage::paint(juce::Graphics& g){
