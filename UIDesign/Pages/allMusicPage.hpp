@@ -54,6 +54,21 @@ public:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PageChange)
 }; 
 
+class LoadingGreyBlock : public juce::Component{
+//当在切换的时候，viewPort全部置为灰色不可点击，并显示一个很大的加载动画
+private:
+    const juce::Colour greyColor{ycolor.midGrey.withAlpha(0.3f)};
+    loadingAnimator mLoadingAnimator;//导入文件,页面切换的时候的刷新动画
+public:
+    LoadingGreyBlock() = default;
+    // ~LoadingGreyBlock();
+    void resized() override;
+    void paint(juce::Graphics& g) override;
+    void start();
+    void end();
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LoadingGreyBlock)
+};
+
 class SongSelectViewport : public juce::Component{
 private:
     PageChange mPageChange;//页面切换组件
@@ -63,6 +78,7 @@ private:
 
     juce::String sortMode{""};
     bool ascendingWay{true};//升序或者降序，true为升序
+    LoadingGreyBlock mLoadingGreyBlock;
 
 public:
 
@@ -82,24 +98,11 @@ public:
     bool getNowAscendingWay(){return ascendingWay;}
     void setSortMode(juce::String mode);
     void setAscendWay(bool upOrDown);
+    void addLoadingGreyBlock();//LoadingGreyBlock应该为父类的子组件，和SongSelectViewport平级，所以需要一个单独的函数来让父类看到
+    void startLoading();//开始加载动画
+    void endLoading();//结束加载动画
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SongSelectViewport)
 };
-
-class LoadingGreyBlock : public juce::Component{
-//当在切换的时候，viewPort全部置为灰色不可点击，并显示一个很大的加载动画
-private:
-    const juce::Colour greyColor{ycolor.midGrey.withAlpha(0.3f)};
-    loadingAnimator mLoadingAnimator;//导入文件,页面切换的时候的刷新动画
-public:
-    LoadingGreyBlock() = default;
-    // ~LoadingGreyBlock();
-    void resized() override;
-    void paint(juce::Graphics& g) override;
-    void start();
-    void end();
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LoadingGreyBlock)
-};
-
 class AllMusicPage : public juce::Component,
                      public juce::Button::Listener
 {
@@ -119,7 +122,6 @@ private:
     yTextButton playAll{U("播放全部")};
     loadingAnimator mLoadingAnimator;
     SongSelectViewport mSongSelectViewport;
-    LoadingGreyBlock mLoadingGreyBlock;
 
 public:
 
@@ -127,10 +129,7 @@ public:
     void resized() override;
     void buttonClicked(juce::Button*) override;
     // void paint(juce::Graphics& g) override;
-    void startLoading();//开始加载动画
-    void endLoading();//终止加载动画
     void updateSortMode();//更新排序模式
     void updateAscending();//更新升序或降序模式
-    // void refreshPageWithSameComfig();//使用相同的配置(相同的页码和排序方式来刷新页面)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AllMusicPage)
 };

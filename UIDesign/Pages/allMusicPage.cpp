@@ -245,31 +245,6 @@ PageChange::~PageChange(){
     nextButton.removeListener(this);
 }
 
-SongSelectViewport::SongSelectViewport(){
-    mPageChange.onPageChange([this](){
-        refreshPage();
-    });// 这里的代码在构造时不会执行，只是注册回调
-
-    mPageChange.setNumPages(SongsManage::getInstance().getTotalSongCount()/numRows);
-}
-void SongSelectViewport::refreshPage(){
-    if(sortMode == nameSortId){
-        //名称排序
-        SongsManage::getInstance().getSongPageByName(getNowPage(),numRows,ascendingWay);
-    }else if(sortMode == addTimeSortId){
-        //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
-        SongsManage::getInstance().getSongsPageBySongId(getNowPage(),numRows,ascendingWay);
-    }
-    
-}
-
-void SongSelectViewport::resized(){
-    for(auto& eachSongRow:eachSongRows){
-        eachSongRow->setBounds(getLocalBounds().removeFromTop(70));
-    }
-    mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
-
-}
 void LoadingGreyBlock::resized(){
     mLoadingAnimator.setBounds(getWidth()*0.4f,getHeight()*0.4,getWidth()*0.2f,getHeight()*0.2f);
 }
@@ -284,6 +259,53 @@ void LoadingGreyBlock::start(){
 void LoadingGreyBlock::end(){
     mLoadingAnimator.end();
     setVisible(false);
+}
+
+SongSelectViewport::SongSelectViewport(){
+    mPageChange.onPageChange([this](){
+        refreshPage();
+    });// 这里的代码在构造时不会执行，只是注册回调
+
+    mPageChange.setNumPages(SongsManage::getInstance().getTotalSongCount()/numRows);
+    for(auto& eachSongRow:eachSongRows){
+        addAndMakeVisible(*eachSongRow);
+    }
+    addAndMakeVisible(mPageChange);
+}
+void SongSelectViewport::refreshPage(){
+    if(sortMode == nameSortId){
+        //名称排序
+        SongsManage::getInstance().getSongPageByName(getNowPage(),numRows,ascendingWay);
+    }else if(sortMode == addTimeSortId){
+        //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
+        SongsManage::getInstance().getSongsPageBySongId(getNowPage(),numRows,ascendingWay);
+    }
+}
+
+void SongSelectViewport::resized(){
+    for(auto& eachSongRow:eachSongRows){
+        eachSongRow->setBounds(getLocalBounds().removeFromTop(70));
+    }
+    mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
+    mLoadingGreyBlock.setBounds(getLocalBounds());
+
+}
+void SongSelectViewport::addLoadingGreyBlock(){
+    if(auto* ptr =  getParentComponent()){
+        ptr->addChildComponent(mLoadingGreyBlock); 
+        mLoadingGreyBlock.setVisible(false);
+    }
+}
+void SongSelectViewport::startLoading(){
+
+    mLoadingGreyBlock.start();
+    setEnabled(false);
+    mLoadingGreyBlock.setVisible(true);
+}
+void SongSelectViewport::endLoading(){
+    mLoadingGreyBlock.end();
+    mLoadingGreyBlock.setVisible(false);
+    setEnabled(false);
 }
 
 AllMusicPage::AllMusicPage(){
@@ -325,9 +347,8 @@ AllMusicPage::AllMusicPage(){
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
     mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
-
-    addAndMakeVisible(mLoadingGreyBlock);
-    mLoadingGreyBlock.setVisible(false);
+    addAndMakeVisible(mSongSelectViewport);
+    mSongSelectViewport.addLoadingGreyBlock();
 }
 void AllMusicPage::updateAscending(){
 
@@ -360,7 +381,7 @@ void AllMusicPage::resized(){
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
     row2.removeFromRight(40);
     mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
-    seqWays.setBounds(local.removeFromRight(120).reduced(10));
+    seqWays.setBounds(row2.removeFromRight(150).reduced(10));
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));
@@ -370,7 +391,6 @@ void AllMusicPage::buttonClicked(juce::Button* button)
 {
     if (button == &selectFileButton)
     {
-        startLoading();
         selectFileButton.setClickingTogglesState(false);//在推入数据库的时候先把按钮锁定
         getMultiMediaFileChoose(
             [](const juce::Array<juce::File>& selectedFiles)
@@ -392,17 +412,8 @@ void AllMusicPage::buttonClicked(juce::Button* button)
         //推入数据库后就可以清空了，等待下一次推入
         selectFileButton.setClickingTogglesState(true);
         //因为这个按钮放在viewport外面，所以mAllMusicViewport.setEnabled(false);管不了
-        endLoading();
     }
 }
 // void AllMusicPage::paint(juce::Graphics& g){
 
 // }
-void AllMusicPage::startLoading(){
-    mSongSelectViewport.setEnabled(false);
-    mLoadingAnimator.start();
-}
-void AllMusicPage::endLoading(){
-    mLoadingAnimator.end();
-    mSongSelectViewport.setEnabled(true);
-}
