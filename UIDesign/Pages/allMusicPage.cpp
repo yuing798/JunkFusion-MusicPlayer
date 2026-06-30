@@ -116,12 +116,12 @@ void PageChange::nowPageChange()
     nextButton.setEnabled(nowPage < numPages);
 
     // 用按钮文本与当前页码比较来高亮
-    setPageButtonColor(button1, 1);
-    setPageButtonColor(button_1, numPages);
+    setPageButtonColor(button1);
+    setPageButtonColor(button_1);
     for (auto& btn : buttons)
     {
         if (btn.isVisible())
-            setPageButtonColor(btn, btn.getButtonText().getIntValue());
+            setPageButtonColor(btn);
     }
     if(mPageRefreshCallback) mPageRefreshCallback(nowPage);
 }
@@ -219,12 +219,9 @@ void PageChange::doLayout()
     }
 }
 
-void PageChange::setPageButtonColor(yTextButton& button, int pageNum)
+void PageChange::setPageButtonColor(yTextButton& button)
 {
     bool isCurrent = (button.getButtonText().getIntValue() == nowPage);
-    // 对于 buttons[0..4]，文本在 doLayout 中设置，用 getButtonText 比较
-    // if (&button != &button1 && &button != &button_1)
-    //     isCurrent = (button.getButtonText().getIntValue() == nowPage);
 
     if (isCurrent)
     {
@@ -253,6 +250,8 @@ AllMusicViewport::AllMusicViewport(AllMusicPage& a)
     mPageChange.onPageChange([this](int value){
         refreshPage(value,mAllMusicPage.getSeqWays(),mAllMusicPage.getUpOrDown());
     });// 这里的代码在构造时不会执行，只是注册回调
+
+    mPageChange.setNumPages(SongsManage::getInstance().getTotalSongCount()/numRows);
 }
 void AllMusicViewport::refreshPage(int page,int seqWayIndex, bool ascending){
     if(seqWayIndex == 0){
@@ -262,6 +261,15 @@ void AllMusicViewport::refreshPage(int page,int seqWayIndex, bool ascending){
         //添加时间排序
         SongsManage::getInstance().getSongsPageBySongId(page,numRows,ascending);
     }
+    
+}
+
+void AllMusicViewport::resized(){
+    for(auto& eachSongRow:eachSongRows){
+        eachSongRow->setBounds(getLocalBounds().removeFromTop(70));
+    }
+    mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
+
 }
 
 AllMusicPage::AllMusicPage()
@@ -290,6 +298,7 @@ AllMusicPage::AllMusicPage()
         //加入序列化
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
+    mAllMusicViewport.setSize(getWidth(),mAllMusicViewport.getViewportHeight());
 }
 void AllMusicPage::resized(){
 
