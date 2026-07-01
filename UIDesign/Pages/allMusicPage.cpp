@@ -73,25 +73,23 @@ void PageChange::buttonClicked (Button* button){
     }
     if(button == &button1 || button == &button_1 ){
         nowPage = button->getButtonText().getIntValue();
-        nowPageChange();
+        numPagesLayoutChange();
     }
     for(auto& btn:buttons){
         if(button == & btn){
             nowPage = button->getButtonText().getIntValue();
-            nowPageChange();
+            numPagesLayoutChange();
         }
     }
     if(button == &previousButton){
         nowPage = button->getButtonText().getIntValue()-1;
-        nowPageChange();
+        numPagesLayoutChange();
     }
     if(button == &nextButton){
         nowPage = button->getButtonText().getIntValue()+1;
-        nowPageChange();
+        numPagesLayoutChange();
     }
-
 }
-
 void PageChange::textEditorReturnKeyPressed(juce::TextEditor& editor){
     if(&editor == &mTextEditor){
         goAndEnterClick();
@@ -112,7 +110,7 @@ void PageChange::numPagesLayoutChange()
     nowPageChange();
 }
 
-void PageChange::nowPageChange()
+void PageChange::nowPageChange()//这里只是设置按钮的状态，但是不会改变每个按钮的位置
 {
     previousButton.setEnabled(nowPage > 1);
     nextButton.setEnabled(nowPage < numPages);
@@ -278,14 +276,17 @@ void SongSelectViewport::init(){
 
     refreshPage();
 
-    mPageChange.setNumpagesAndChangeLayout(numRows);//这里只是设置页面切换区域的布局
+    //切换页面按钮布局初始化
+    mPageChange.setNumpagesAndChangeLayout(static_cast<int>(SongsManage::getInstance().getTotalSongCount()/numRows)+1);
 
+    //加载动画初始化
     if(auto* ptr =  getParentComponent()){
         ptr->addChildComponent(mLoadingGreyBlock); 
         mLoadingGreyBlock.setVisible(false);
     }
 }
 void SongSelectViewport::refreshPage(){
+    startLoading();
     // 先清理旧组件
     for (auto& row : eachSongRows)
     {
@@ -311,6 +312,11 @@ void SongSelectViewport::refreshPage(){
     }
 
     resized();
+    repaint();//resized后必须要调用repaint才能重新刷新页面
+
+    if(!SongsManage::getInstance().getTotalSongCount()) mPageChange.setVisible(false);
+    //如果数据库中没有歌曲就不要显示切换页面按钮区域了
+    endLoading();
 }
 
 void SongSelectViewport::resized(){
@@ -404,7 +410,7 @@ void AllMusicPage::resized(){
     refreshButton.setBounds(row2.removeFromLeft(row2.getHeight()).reduced(10));
     row2.removeFromRight(40);
     mUpDownButton.setBounds(row2.removeFromRight(row2.getHeight()).reduced(10));
-    seqWays.setBounds(row2.removeFromRight(150).reduced(10));
+    seqWays.setBounds(row2.removeFromRight(200).reduced(10));
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));

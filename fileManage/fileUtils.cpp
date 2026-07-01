@@ -64,25 +64,6 @@ SongInfo getStreamMetaData(const juce::File& file){
         catch (...) { return 0; }
     };
 
-    auto getStdKeys = [](){
-        return std::set<std::string> {
-            "title","artist","album","album_artist","genre","track","disc","date","composer"};
-    };
-
-    auto buildExtraMetadata = [getStdKeys](AVDictionary* dict)->std::string{
-        if(!dict) return {};
-        std::string result;
-        AVDictionaryEntry* entry{nullptr};
-        while((entry=av_dict_get(dict, "", entry, AV_DICT_IGNORE_SUFFIX))){//最后一个参数是匹配标志，表示忽略键的后缀
-            if(getStdKeys().count(entry->key)==0){//只有不在标准字典中的键才会处理
-                if(!result.empty()) result+="\n";
-                result += std::string(entry->key)+"="+std::string(entry->value);
-
-            }
-        }
-        return result;
-    };
-
     SongInfo info{};
     info.filePath = file.getFullPathName().toStdString();
     info.fileName = file.getFileName().toStdString();
