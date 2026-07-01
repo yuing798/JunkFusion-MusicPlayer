@@ -275,7 +275,9 @@ SongSelectViewport::SongSelectViewport(){
     addAndMakeVisible(mPageChange);
 }
 void SongSelectViewport::init(){
+
     refreshPage();
+
     mPageChange.setNumpagesAndChangeLayout(numRows);//这里只是设置页面切换区域的布局
 
     if(auto* ptr =  getParentComponent()){
@@ -295,7 +297,7 @@ void SongSelectViewport::refreshPage(){
     }
 
     std::vector<SongInfo> songs = SongsManage::getInstance().getSongPage(
-        mPageChange.getNowPage() * numRows,
+        (mPageChange.getNowPage() - 1) * numRows,
         numRows,
         ascendingWay,
         sortMode
@@ -303,7 +305,7 @@ void SongSelectViewport::refreshPage(){
 
     for (size_t i = 0; i < songs.size(); ++i)
     {
-        auto No{mPageChange.getNowPage() * numRows + static_cast<int>(i) + 1};
+        auto No{(mPageChange.getNowPage()-1) * numRows + static_cast<int>(i) + 1};
         eachSongRows[i] = std::make_unique<EachSong>(No, songs[i]);
         addAndMakeVisible(*eachSongRows[i]);
     }
@@ -313,7 +315,8 @@ void SongSelectViewport::refreshPage(){
 
 void SongSelectViewport::resized(){
     for(auto& eachSongRow:eachSongRows){
-        eachSongRow->setBounds(getLocalBounds().removeFromTop(songRowHeight));
+        if (eachSongRow)
+            eachSongRow->setBounds(getLocalBounds().removeFromTop(songRowHeight));
     }
     mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
     mLoadingGreyBlock.setBounds(getLocalBounds());
