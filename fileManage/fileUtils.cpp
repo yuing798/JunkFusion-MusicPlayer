@@ -66,7 +66,6 @@ SongInfo getStreamMetaData(const juce::File& file){
 
     SongInfo info{};
     info.filePath = file.getFullPathName().toStdString();
-    info.fileName = file.getFileName().toStdString();
     info.fileSize = file.getSize();
     info.lastModifiedTime = file.getLastModificationTime().toString(true, true).toStdString();
 
