@@ -275,51 +275,49 @@ SongSelectViewport::SongSelectViewport(){
     addAndMakeVisible(mPageChange);
 }
 void SongSelectViewport::init(){
-    for(size_t i=0;i<eachSongRows.size();i++){
-        refreshPage();
-        addAndMakeVisible(*eachSongRows[i]);
-    }
+    refreshPage();
     mPageChange.setNumpagesAndChangeLayout(numRows);//这里只是设置页面切换区域的布局
-}
-void SongSelectViewport::refreshPage(){
-    if(sortMode == nameSortId){
-        //名称排序
-        std::vector<SongInfo> songs = SongsManage::getInstance().getSongPageByName(
-            mPageChange.getNowPage(),
-            numRows,
-            ascendingWay
-        );
-        for(size_t i=0;i<eachSongRows.size();i++){
-            auto No{mPageChange.getNowPage()+i+1};
-            eachSongRows[i] = std::make_unique<EachSong>(No,songs[i]);
-        }
-    }else if(sortMode == addTimeSortId){
-        //添加时间排序,因为songId是自动生成和递增的，所以和addTime严格正相关
-        std::vector<SongInfo> songs = SongsManage::getInstance().getSongsPageBySongId(
-            mPageChange.getNowPage(),
-            numRows,
-            ascendingWay
-        );
-        for(size_t i=0;i<eachSongRows.size();i++){
-            auto No{mPageChange.getNowPage()+i+1};
-            eachSongRows[i] = std::make_unique<EachSong>(No,songs[i]);
-        }
-    }
-}
 
-void SongSelectViewport::resized(){
-    for(auto& eachSongRow:eachSongRows){
-        eachSongRow->setBounds(getLocalBounds().removeFromTop(70));
-    }
-    mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
-    mLoadingGreyBlock.setBounds(getLocalBounds());
-
-}
-void SongSelectViewport::addLoadingGreyBlock(){
     if(auto* ptr =  getParentComponent()){
         ptr->addChildComponent(mLoadingGreyBlock); 
         mLoadingGreyBlock.setVisible(false);
     }
+}
+void SongSelectViewport::refreshPage(){
+    // 先清理旧组件
+    for (auto& row : eachSongRows)
+    {
+        if (row)
+        {
+            removeChildComponent(row.get());
+            row.reset();
+        }
+    }
+
+    std::vector<SongInfo> songs = SongsManage::getInstance().getSongPage(
+        mPageChange.getNowPage() * numRows,
+        numRows,
+        ascendingWay,
+        sortMode
+    );
+
+    for (size_t i = 0; i < songs.size(); ++i)
+    {
+        auto No{mPageChange.getNowPage() * numRows + static_cast<int>(i) + 1};
+        eachSongRows[i] = std::make_unique<EachSong>(No, songs[i]);
+        addAndMakeVisible(*eachSongRows[i]);
+    }
+
+    resized();
+}
+
+void SongSelectViewport::resized(){
+    for(auto& eachSongRow:eachSongRows){
+        eachSongRow->setBounds(getLocalBounds().removeFromTop(songRowHeight));
+    }
+    mPageChange.setTopLeftPosition((getWidth()-mPageChange.getWidth())/2.0f,0);
+    mLoadingGreyBlock.setBounds(getLocalBounds());
+
 }
 void SongSelectViewport::startLoading(){
 
@@ -361,6 +359,7 @@ AllMusicPage::AllMusicPage(){
     selectFileButton.addListener(this);
     seqWays.addItem(U("歌曲名称排列"));
     seqWays.addItem(U("添加时间排列"));
+    seqWays.addItem(U("播放次数排列"));
     addAndMakeVisible(seqWays);
 
     int comboSelectedIndex{0};
@@ -369,33 +368,24 @@ AllMusicPage::AllMusicPage(){
     }
     seqWays.setSelectedItemIndex(comboSelectedIndex);
 
-    switch (seqWays.getSelectedItemIndex()) {
-        case 0:
-            mSongSelectViewport.setSortMode(mSongSelectViewport.nameSortId);
-            break;
-        case 1:
-            mSongSelectViewport.setSortMode(mSongSelectViewport.addTimeSortId);
-            break;
-    }
-    seqWays.onItemSelected([this](int value){
-        //更新排序方法
-        //refreshPage(int page);//传参为当前的页码数
-        switch (seqWays.getSelectedItemIndex()) {
-            case 0:
-                mSongSelectViewport.setSortMode(mSongSelectViewport.nameSortId);
-                break;
-            case 1:
-                mSongSelectViewport.setSortMode(mSongSelectViewport.addTimeSortId);
-                break;
+    // combo index → SortMode 的映射（与 addItem 顺序一致）
+    auto indexToSortMode = [](int idx) -> SongsManage::SortMode {
+        switch (idx) {
+            case 0:  return SongsManage::SortMode::ByName;
+            case 1:  return SongsManage::SortMode::ByAddTime;
+            case 2:  return SongsManage::SortMode::ByPlayTimes;
+            default: return SongsManage::SortMode::ByName;
         }
+    };
+    mSongSelectViewport.setSortMode(indexToSortMode(comboSelectedIndex));
+
+    seqWays.onItemSelected([this, indexToSortMode](int value){
+        mSongSelectViewport.setSortMode(indexToSortMode(value));
         mSongSelectViewport.refreshPage();
         //加入序列化
         Serial::getInstance().getUIRoot().setProperty(SERIAL_allMusicSeqWays, value, nullptr);
     });
-
-    mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
     mSongSelectViewport.init();
-    mSongSelectViewport.addLoadingGreyBlock();
 }
 void AllMusicPage::resized(){
 
@@ -415,6 +405,8 @@ void AllMusicPage::resized(){
 
     allMusicLabel.setBounds(row1.removeFromLeft(90));
     numSongsLabel.setBounds(row1.removeFromLeft(90));
+
+    mSongSelectViewport.setSize(getWidth(),mSongSelectViewport.getViewportHeight());
 
 }
 void AllMusicPage::buttonClicked(juce::Button* button)

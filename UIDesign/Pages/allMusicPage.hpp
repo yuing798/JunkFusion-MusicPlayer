@@ -80,16 +80,12 @@ private:
     const int songRowHeight{70};//一首歌占用的高度
     std::array<std::unique_ptr<EachSong>,15> eachSongRows;
 
-    juce::String sortMode{""};
+    SongsManage::SortMode sortMode{SongsManage::SortMode::ByName};
     bool ascendingWay{true};//升序或者降序，true为升序
     LoadingGreyBlock mLoadingGreyBlock;
 
 public:
     PageChange& getMPageChange(){return mPageChange;}
-
-    const juce::String nameSortId = U("name-sort");
-    const juce::String addTimeSortId = U("add-time-sort");
-    const juce::String playTimeSortId = U("play-time-sort");//排序方案
 
     SongSelectViewport();
     void resized() override;
@@ -98,11 +94,10 @@ public:
     //返回整个viewPort的高度，这里mPageChange已经完成初始化了所以mPageChang.getHeight()能够正常返回
     int getViewportHeight(){return numRows*songRowHeight+mPageChange.getHeight();}
     
-    juce::String getNowSortMode(){return sortMode;}
+    SongsManage::SortMode getNowSortMode(){return sortMode;}
     bool getNowAscendingWay(){return ascendingWay;}
-    void setSortMode(juce::String mode){sortMode = mode;}
+    void setSortMode(SongsManage::SortMode mode){sortMode = mode;}
     void setAscendWay(bool upOrDown){ascendingWay = upOrDown;}
-    void addLoadingGreyBlock();//LoadingGreyBlock应该为父类的子组件，和SongSelectViewport平级，所以需要一个单独的函数来让父类看到
     void startLoading();//开始加载动画
     void endLoading();//结束加载动画
     void setNumPages(int nb);//设置总页数，这里是要交给导入歌曲按钮来使用

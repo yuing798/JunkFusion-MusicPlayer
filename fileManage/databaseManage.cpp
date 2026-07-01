@@ -1,6 +1,7 @@
 #include "databaseManage.hpp"
 #include "FontAbout/font.h"
 #include "constants.h"
+#include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Database.h>
@@ -11,6 +12,7 @@
 #include <unicode/coll.h>
 #include <unicode/locid.h>
 #include <unicode/stringpiece.h>
+#include <vector>
 
 SongsManage::SongsManage()
 :db(nullptr){
@@ -285,6 +287,37 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
     
     return result;
 }
+std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,bool ascending)
+{
+    std::vector<SongInfo> result;
+    if (!db) {
+        auto logger = spdlog::get(LogAllID);
+        logger->debug("按播放次数排序查询歌曲阶段发生空指针问题");
+        return result;
+    };
+    std::string sql = "SELECT filePath, fileName, fileSize, lastModifiedTime, "
+                        "isMultiStreamFile, duration, title, artist, album, albumArtist, "
+                        "genre, trackNumber, discNumber, year, composer, imageHash, "
+                        "bitRate, bitDepth, sampleRate, numChannels, codecName, "
+                        "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
+                        "isMyLike, comment, hadPlayedNum, nameId "
+                        "FROM songs ORDER BY hadPlayedNum ";
+    if(ascending){
+        sql +=" ASC ";
+    }else{
+        sql +=" DESC ";
+    }
+    sql += " LIMIT ? OFFSET ?";
+    SQLite::Statement query(*db,sql);
+
+    query.bind(1, limit);
+    query.bind(2, offset);
+
+    
+    dataLookfor(query,result);
+    
+    return result;
+}
 std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool ascending)
 {
     std::vector<SongInfo> result;
@@ -313,6 +346,17 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
 
     dataLookfor(query, result);
     return result;
+}
+
+std::vector<SongInfo> SongsManage::getSongPage(int offset, int limit, bool ascending, SortMode mode)
+{
+    switch (mode)
+    {
+        case SortMode::ByName:     return getSongPageByName(offset, limit, ascending);
+        case SortMode::ByAddTime:  return getSongsPageBySongId(offset, limit, ascending);
+        case SortMode::ByPlayTimes: return getSongPageByPlayTimes(offset, limit, ascending);
+    }
+    return {};
 }
 
 void SongsManage::rebuildNameIds()

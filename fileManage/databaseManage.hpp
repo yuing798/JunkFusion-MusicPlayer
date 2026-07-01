@@ -94,9 +94,20 @@ public:
     /** 获取歌曲总数 */
     int getTotalSongCount();
 
-    /** 分页获取歌曲，offset 从 0 开始，返回 limit 条记录 根据添加时间排序获得歌曲*/
-    std::vector<SongInfo> getSongsPageBySongId(int offset, int limit,bool ascending);
-    std::vector<SongInfo> getSongPageByName(int offset,int limit,bool ascending);
+    enum class SortMode {
+        ByName,
+        ByAddTime,
+        ByPlayTimes
+    };
+
+    /** 分页获取歌曲，offset 从 0 开始，返回 limit 条记录，根据添加时间排序 */
+    std::vector<SongInfo> getSongsPageBySongId(int offset, int limit, bool ascending);
+    /** 分页获取歌曲，使用预先计算好的 nameId 进行 ICU 排序 */
+    std::vector<SongInfo> getSongPageByName(int offset, int limit, bool ascending);
+
+    std::vector<SongInfo> getSongPageByPlayTimes(int offset, int limit, bool ascending);
+    /** 统一分页入口，根据 SortMode 选择排序方式 */
+    std::vector<SongInfo> getSongPage(int offset, int limit, bool ascending, SortMode mode);
 
     static SongsManage& getInstance() {
         static SongsManage instance; //首次调用时创建，程序结束时自动析构
