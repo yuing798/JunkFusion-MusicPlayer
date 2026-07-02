@@ -2,8 +2,8 @@
 #include "UIDesign/LeftColumn.hpp"
 #include "UIDesign/Pages/allMusicPage.hpp"
 #include <juce_gui_extra/juce_gui_extra.h>
+#include <memory>
 #include "UIDesign/diyComponent/lookandfeel.hpp"
-#include "UIDesign/diyComponent/otherComponent.hpp"
 
 class MainComponent final : public juce::Component
 {
@@ -53,6 +53,8 @@ private:
     void switchPage(int id);
 
     juce::TooltipWindow tooltipWindow;//悬停说明
+
+    std::unique_ptr<juce::WebBrowserComponent> web;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

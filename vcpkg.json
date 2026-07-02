@@ -8,6 +8,7 @@
     "spdlog",
     "sqlitecpp",
     "hash-library",
-    "icu"
+    "icu",
+    "webview2"
   ]
 }

@@ -19,6 +19,7 @@ find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(unofficial-webview2 CONFIG REQUIRED)
 
 # 使用 pkg-config 查找 ICU（i18n 依赖 uc，但 pkg_check_modules 不会传递 Requires.private，
 # 所以显式列出两个模块确保链接正确的 .lib）
@@ -38,7 +39,14 @@ juce_add_gui_app(JunkFusion
     PRODUCT_NAME "JunkFusion"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
+    NEEDS_WEB_BROWSER TRUE
 )
+
+if (WIN32)
+    # 指定使用 WebView2 后端，并设置 NEEDS_WEBVIEW2 选项[reference:6][reference:7]
+    target_compile_definitions(JunkFusion PRIVATE JUCE_USE_WIN_WEBVIEW2=1)
+    set(NEEDS_WEBVIEW2 TRUE)
+endif()
 
 target_sources(JunkFusion
     PRIVATE
@@ -56,7 +64,7 @@ add_subdirectory(fileManage)
 # ==============================================================================
 target_compile_definitions(JunkFusion
     PRIVATE
-        JUCE_WEB_BROWSER=0
+        JUCE_WEB_BROWSER=1
         JUCE_USE_CURL=0
         
         # --- VST 宿主核心开关 (必须打开，否则无法加载第三方 VST 插件) ---
@@ -99,6 +107,7 @@ target_link_libraries(JunkFusion
         unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
         PkgConfig::ICU#字符串排序功能
+        unofficial::webview2::webview2
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置
