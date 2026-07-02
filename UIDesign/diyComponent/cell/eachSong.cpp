@@ -191,7 +191,6 @@ EachSong::EachSong(int songNo,SongInfo info)
         isInfoEmpty("\n发行年份: ",info.year),
         isInfoEmpty("\n作曲者: ",info.composer),
         "\n文件路径: ",info.filePath,
-        "\n文件名称: ",info.fileName,
         "\n文件大小: ",info.fileSize,
         "\n最后修改时间: ",info.lastModifiedTime
     )};

@@ -95,7 +95,7 @@ SongInfo getStreamMetaData(const juce::File& file){
     if (inputContext->duration != AV_NOPTS_VALUE)
     {
         info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
-    }
+    }//每条流的时长都一样
 
     //这里进行封面提取
     AVPacket coverPacket;
@@ -117,7 +117,11 @@ SongInfo getStreamMetaData(const juce::File& file){
             std::string fileName{hashHex + ".jpg"};
             juce::File filePath{imageDirId.getChildFile(fileName)};
             info.imageHash = hashHex;
-            if(filePath.existsAsFile()) break;//如果这个文件已经存在，直接退出，避免保存两个相同图片
+            if(filePath.existsAsFile()){
+                break;
+            }else{
+                filePath.create();
+            }//如果这个文件已经存在，直接退出，避免保存两个相同图片
             juce::FileOutputStream outputStream(filePath);
             if(outputStream.openedOk()){
                 outputStream.write(coverPacket.data, coverPacket.size);
@@ -127,20 +131,28 @@ SongInfo getStreamMetaData(const juce::File& file){
         }while(0);
     }
     int streamCount{0};
+    info.isMultiStreamFile = 0;
     for(size_t i = 0; i < inputContext->nb_streams; i++){
         if(inputContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
             streamCount++;
             if(streamCount > 1){
-                info.isMultiStreamFile = 1;
+                info.isMultiStreamFile = 1;//多音频流文件
                 break;
             }
         }
     }
 
-    auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0) >= 0};
+    auto currentIndex{av_find_best_stream(
+        inputContext, 
+        AVMEDIA_TYPE_AUDIO, 
+        -1, 
+        -1, 
+        nullptr, 
+        0
+    )};
 
-    AVStream*           pAudioStream = inputContext->streams[currentIndex];
-    AVCodecParameters*  decoderPar      = pAudioStream->codecpar;
+    auto*           pAudioStream = inputContext->streams[currentIndex];
+    auto*  decoderPar      = pAudioStream->codecpar;
     info.codecName = avcodec_get_name(decoderPar->codec_id);
     
     // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算

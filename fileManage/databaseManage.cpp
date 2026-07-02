@@ -148,7 +148,7 @@ void SongsManage::insertSong(const SongInfo& info)
         {
             // ── 文件已变更：更新 songs 记录 ──
             SQLite::Statement updateSong(*db,
-                "UPDATE songs SET filePath = ?, fileName = ?, fileSize = ?, "
+                "UPDATE songs SET filePath = ?, fileSize = ?, "
                 "lastModifiedTime = ?, isMultiStreamFile = ?, "
                 "duration = ?, title = ?, artist = ?, album = ?, albumArtist = ?, "
                 "genre = ?, trackNumber = ?, discNumber = ?, year = ?, composer = ?, "
@@ -168,7 +168,7 @@ void SongsManage::insertSong(const SongInfo& info)
         {
             // ── 新文件：插入 songs 记录 ──
             SQLite::Statement insertSong(*db,
-                "INSERT INTO songs (filePath, fileName, fileSize, lastModifiedTime, "
+                "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                 "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                 "genre, trackNumber, discNumber, year, composer, imageHash, bitRate, bitDepth, sampleRate, numChannels, codecName) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -241,7 +241,7 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
         info.isMyLike         = query.getColumn(26).getInt() != 0;
         info.comment          = query.getColumn(27).getString();
         info.hadPlayedNum     = query.getColumn(28).getInt();
-        info.nameId           = query.getColumn(39).getInt();
+        info.nameId           = query.getColumn(29).getInt();
         result.push_back(std::move(info));
     }
 };
@@ -255,8 +255,8 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
         auto logger = spdlog::get(LogAllID);
         logger->debug("更新歌曲页码阶段发生空指针问题");
         return result;
-    };
-    std::string sql = "SELECT filePath, fileName, fileSize, lastModifiedTime, "
+    }
+    std::string sql = "SELECT filePath, fileSize, lastModifiedTime, "
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
@@ -292,7 +292,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
         logger->debug("按播放次数排序查询歌曲阶段发生空指针问题");
         return result;
     };
-    std::string sql = "SELECT filePath, fileName, fileSize, lastModifiedTime, "
+    std::string sql = "SELECT filePath, fileSize, lastModifiedTime, "
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
@@ -325,7 +325,7 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
         return result;
     }
 
-    std::string sql = "SELECT filePath, fileName, fileSize, lastModifiedTime, "
+    std::string sql = "SELECT filePath, fileSize, lastModifiedTime, "
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
