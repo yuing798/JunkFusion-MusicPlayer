@@ -53,8 +53,7 @@ private:
     void switchPage(int id);
 
     juce::TooltipWindow tooltipWindow;//悬停说明
-
-    std::unique_ptr<juce::WebBrowserComponent> web;
+    // webView mWebView;//网页浏览器组件
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
