@@ -102,44 +102,39 @@ function isSelected(id: number): boolean {
         对应 C++ 中 labelArray 和 buttons 的布局
       -->
       <div
-        v-for="(section, sectionIndex) in sections"
-        :key="sectionIndex"
-        class="nav-section"
+      v-for="section in sections"
+      :key="section.label"
+      class="navSection"
       >
-        <!-- 因为这些按钮是硬编码的，不会增减，所以直接使用index就行了，不用分配id -->
-        <!-- 根据 sections 数组，动态生成多个 <div>，每个 <div> 对应数组中的一个元素 -->
-        <!-- 对于数组：v-for="(item, index) in items"
-        // item = 当前元素（类型取决于数组元素）
-        // index = 数字索引（0, 1, 2...）
-        对于对象(遍历键值对)：v-for="(value, key, index) in object"
-        // value = 属性值
-        // key = 属性名（字符串）
-        // index = 数字索引（0, 1, 2...） -->
-        <!--
-          分组标签：对应 YLabel
-          上下各有一条 5px 的分隔线，对应 C++ 中 paths[] 绘制的线条
-        -->
-        <div class="section-label">{{ section.label }}</div>
-        <!-- {{ }}（双花括号插值）：用于标签的内容区域（即开始标签和结束标签之间的文字部分）且只能动态渲染文本内容。
-        :（冒号，即 v-bind）：用于标签的属性区域（即开始标签内部的 key="value" 部分）。 -->
+        <div class="groupLabel">{{ section.label }}</div>
 
-        <!-- 分组内的按钮列表 -->
-        <div class="button-list">
-          <button
-            v-for="button in section.buttons"
-            :key="button.id"
-            :class="['nav-button', { selected: isSelected(button.id) }]"
-            @click="handleSelect(button.id)"
-          >
-            {{ button.text }}
-          </button>
-        </div>
+        <!-- 内层循环：遍历当下分组里面的按钮 -->
+        <button 
+        v-for="button in section.buttons"
+        :key="button.id"
+        class="navButton"
+        :class="{active:isSelected(button.id)}"
+        @click="handleSelect(button.id)"
+        >{{ button.text }}</button>
+      <!-- { active: ... }：这是一个 JavaScript 对象字面量。键（active）是你要添加的类名，
+      值（selectedId === button.id）是一个布尔表达式。
+      当 selectedId === button.id 为 true 时，这个按钮的 class 属性里会多出一个 active；
+      为 false 时，没有 active。 
+
+      @click="selectButton(button.id)" —— 事件绑定
+      含义：当用户点击这个按钮时，执行 selectButton 方法，并把当前按钮的 id 作为参数传进去。
+
+      :class 是“根据状态改变外观”的渲染逻辑（相当于 paint 中的 if 分支）。
+
+      @click 是“改变状态的输入事件”（相当于 mouseDown 回调）。
+      -->
       </div>
     </div>
   </nav>
 </template>
 
 <style scoped>
+/* 当 <style> 标签带有 scoped attribute 的时候，它的 CSS 只会影响当前组件的元素 */
 
 /* ================================================================
    LeftColumn — 对应 C++ LeftColumn 类
@@ -186,32 +181,26 @@ function isSelected(id: number): boolean {
   cover图片等比缩放，直到完全覆盖容器，不留空白。图片超出容器的部分会被裁剪掉。 */
 }
 
-/* ================================================================
-   分组标签 — 对应 C++ YLabel
-   上下分隔线对应 C++ paths[] 中绘制的线条
-   ================================================================ */
-
-.section-label {
+/* 标签区域 */
+.groupLabel {
   height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
 
   /* 上下分隔线：对应 C++ 中 paths[] 的 strokePath */
-  border-top: var(--divider-width) solid var(--color-hover);
-  border-bottom: var(--divider-width) solid var(--color-hover);
+  border-top: 5px solid var(--colorEdge);
+  border-bottom: 5px solid var(--colorEdge);
+  /* border-top: var(--divider-width) solid var(--color-hover); 
+  是 border-width（粗细）、border-style（样式）、border-color（颜色） */
 
-  font-size: 18px;
-  color: var(--color-text);
+  font-size: var(--bigFont);
+  font-weight: bold;
+  color: var(--colorTextMain);
   user-select: none;
-}
-
-/* ================================================================
-   分组内的按钮间距区域
-   ================================================================ */
-
-.button-list {
-  padding: 10px 0;
+  /* user-select: none; 的意思是：禁止用户用鼠标选中该元素上的文本。
+  在你正在开发的左侧导航栏（LeftColumn）中，如果用户在按钮文字上快速双击或拖拽鼠标，
+  浏览器默认会高亮选中的文字（背景变蓝）。 */
 }
 
 /* ================================================================
@@ -219,39 +208,85 @@ function isSelected(id: number): boolean {
    宽度: 按钮区域宽 - 3px*2 的 reduced
    ================================================================ */
 
-.nav-button {
+.navButton {
   display: block;
+  /* display 决定了这个元素在页面布局中以什么身份参与“流式布局”。
+
+  display: block;：让元素独占一整行，宽度默认填满父容器。
+
+  display: inline;：元素不换行，宽度由内容撑开（类似 <span>）。
+
+  display: inline-block;：结合两者，不换行但可以设置宽高。 */
   width: calc(100% - 6px);
   height: 40px;
-  margin: 0 3px;
+  margin: 4px 4px;
+  /* 问题三：为什么 margin 有两个参数？
+  这是 CSS 的简写语法（Shorthand）。
+
+  1 个参数：margin: 10px; → 上下左右都是 10px。
+
+  2 个参数：margin: 0 3px; → 第一个是上下（0），第二个是左右（3px）。
+
+  4 个参数：margin: 0 3px 5px 10px; → 上、右、下、左（顺时针）。 */
 
   border: none;
-  border-radius: var(--button-radius);
-  background-color: transparent;
+  border-radius: var(--borderRadius);
+  /* border: none;：去掉边框线（视觉上没有任何描边）。
 
-  font-size: 18px;
-  color: var(--color-text);
+  border-radius: var(--button-radius);：把按钮的四个角切成圆角。 */
+  background-color: transparent;
+  /* background-color：元素的背景色（填充色），相当于 JUCE 里的 g.fillAll() 填充的颜色。
+
+  color：元素内部文字的颜色，相当于 JUCE 里 g.setColour() 后 g.drawText() 用的颜色。 */
+
+  font-size: var(--midFont);
+  color: var(--colorTextMain);
   text-align: center;
   line-height: 40px;
+  /* 一行的高度 */
 
   cursor: pointer;
+  /* cursor 控制鼠标指针悬停在这个元素上时显示的形状。
+
+  cursor: pointer; → 手形（👆），通常用于按钮和链接。
+
+  cursor: default; → 默认箭头（➡️）。
+
+  cursor: text; → 文本光标（I 形）。 */
   user-select: none;
+
+  /* user-select: none; 就是禁止用户通过鼠标拖拽或双击选中该元素内的文字。
+
+  没有这行：在按钮上双击，文字会变成蓝底白字（高亮）。
+
+  有这行：双击时没有任何反应，就像在桌面原生应用里点按钮一样。 */
 
   /*
    过渡动画：让悬停和选中的颜色切换更平滑
    C++ 中没有这个过渡，但前端这样做体验更好
   */
-  transition: background-color 0.15s ease;
+  transition: background-color var(--easeTime) ease, transform var(--easeTime) ease, box-shadow var(--easeTime) ease;
+
+  /* transition: background-color 0.15s ease; 拆解为：
+
+  background-color：监听背景色的变化。
+
+  0.15s：变化过程持续 150 毫秒。
+
+  ease：缓动函数，先快后慢，让动画更自然 */
 }
 
 /* 悬停态 — 对应 C++ selectedButton::paintButton 中的 shouldDrawButtonAsHighlighted */
-.nav-button:hover:not(.selected) {
-  background-color: var(--color-hover);
+.navButton:hover:not(.active) {
+  background-color: var(--colorHover);
+  transform: translateY(1px);
+  box-shadow: var(--shadow);
+  /* box-shadow: [水平偏移] [垂直偏移] [模糊半径] [扩散半径] [颜色] */
 }
 
 /* 选中态 — 对应 C++ selectedButton::paintButton 中 getToggleState() == true */
-.nav-button.selected {
-  background-color: var(--color-selected);
+.navButton.active {
+  background-color: var(--colorStress);
   /* 选中时文字仍然保持黑色，与 C++ 行为一致 */
 }
 </style>

@@ -1,13 +1,14 @@
 :root,
 .theme-light {
     --colorMain: #f0f0f0;/*主要颜色*/
-    --colorNav:#c8f2f9;/*导航窗颜色*/
+    --colorNav:#e5eff0;/*导航窗颜色*/
     --colorHover: #d0d0d0;/*悬浮颜色*/
     --colorClicked: #b0c4de;/*鼠标按下去时的颜色颜色*/
-    --colorEdge: #cccccc;/*边框的颜色*/
+    --colorEdge: #979797;/*边框的颜色*/
     --colorTextMain: #222222;/*主要文本的颜色*/
     --colorTextSecond: #555555;/*次级文本的颜色*/
     --colorStress:#55c9dd;/*强调色，比如现在在导航窗的哪个位置*/
+    --shadow:0 2px 8px rgba(0, 0, 0, 0.15);
     /* --color-accent: #4CAF50; */
     /*主要颜色*/
     /* --color-accent-hover: #45a049; */
@@ -15,4 +16,12 @@
     /* 可扩展其他变量，如背景渐变、阴影等 */
 }
 
-/* 2. 黑金主题（暗色 + 金色点缀） */
+/* 2. 黑金主题（暗色 + 金色点缀）以后再写 */
+
+:root{
+    --bigFont:22px;
+    --midFont:18px;
+    --littleFont:15px;
+    --borderRadius:6px;
+    --easeTime:0.15s;
+}
