@@ -1,8 +1,8 @@
 {
-  "semi": false,           // 句尾不加分号（前端现代风格流行不加分号，喜欢分号可以设为 true）
-  "singleQuote": true,     // 强行使用单引号 '' 代替双引号 ""
-  "tabWidth": 2,           // 坚定不移的 2 空格缩进
-  "useTabs": false,        // 使用空格代替真 Tab
-  "trailingComma": "all",  // 在多行对象或数组的最后一项后面自动加上逗号（方便 Git 差异对比）
-  "printWidth": 100        // 单行代码超过 100 个字符后自动换行
+  "semi": false,           
+  "singleQuote": true,     
+  "tabWidth": 2,           
+  "useTabs": false,        
+  "trailingComma": "all",  
+  "printWidth": 100        
 }

@@ -21,19 +21,22 @@ const songCount = ref(0)
 //   seqWays.addItem(U("添加时间排列"));
 //   seqWays.addItem(U("播放次数排列"));
 const sortOptions = [
-     
-  { value: 1, label: '添加时间排列' },  // SortMode::ByAddTime
-  { value: 0, label: '歌曲名称排列' },   // SortMode::ByName
-  { value: 2, label: '播放次数排列' },   // SortMode::ByPlayTimes
+  { value: 1, label: '添加时间排列' }, // SortMode::ByAddTime
+  { value: 0, label: '歌曲名称排列' }, // SortMode::ByName
+  { value: 2, label: '播放次数排列' }, // SortMode::ByPlayTimes
 ]
 const selectedSort = ref(0)
 // 映射到 SortMode 枚举：与 C++ indexToSortMode lambda 一致
 function indexToSortMode(idx: number): string {
   switch (idx) {
-    case 0:  return 'ByAddTime'
-    case 1:  return 'ByName'
-    case 2:  return 'ByPlayTimes'
-    default: return 'ByAddTime'
+    case 0:
+      return 'ByAddTime'
+    case 1:
+      return 'ByName'
+    case 2:
+      return 'ByPlayTimes'
+    default:
+      return 'ByAddTime'
   }
 }
 
@@ -41,7 +44,7 @@ function indexToSortMode(idx: number): string {
 // 对应 C++: upDownButton mUpDownButton
 //   bool upOrDown{false};  // false=升序, true=降序
 //   mUpDownButton.setToggleState(upOrDown, ...);
-const isAscending = ref(true)  // true = 升序，与 C++ ascendingWay 默认值一致
+const isAscending = ref(true) // true = 升序，与 C++ ascendingWay 默认值一致
 
 function toggleSortDirection(): void {
   isAscending.value = !isAscending.value
@@ -52,37 +55,16 @@ function toggleSortDirection(): void {
 // 在 web 环境中使用 <input type="file"> 替代 JUCE 的 FileChooser
 // 注意：当前只做 UI 层，文件导入的后端逻辑后续对接
 
-const isImporting = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
-  //和cpp一样：<>代表模板，<HTMLInputElement | null> 告诉 TypeScript 编译器：
-  // “这个响应式数据的 .value 类型，要么是 HTMLInputElement，要么是 null。”
+const isImporting = ref(false) // 控制按钮禁用状态和加载动画
 
-function handleImportClick(): void {
-  // 触发隐藏的 file input
-  fileInput.value?.click()
-}
-
-async function handleFilesSelected(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  if (!input.files || input.files.length === 0) return
-
+async function handleFilesSelected(): Promise<void> {
+  if (isImporting.value) return
   isImporting.value = true
 
   try {
-    // 对应 C++:
-    //   selectFileButton.setClickingTogglesState(false);
-    //   getMultiMediaFileChoose(callback, this);
-    // 实际文件导入逻辑留待后续与后端对接
-    // await ......
-    const files = Array.from(input.files)
-    console.log(`[AllMusic] 选中 ${files.length} 个文件待导入:`, files.map(f => f.name))
-
-    // 模拟导入完成 → 刷新
-    // 后续接入 real API 后，这里替换为实际的元数据提取 + 数据库写入
   } finally {
     isImporting.value = false
     // 重置 input，以便再次选择相同文件时也能触发 change 事件
-    if (input) input.value = ''
   }
 }
 
@@ -121,23 +103,9 @@ function handleRefresh(): void {
         "导入文件" 按钮 — 对应 C++ yTextButton selectFileButton
         宽度 80px，与 C++ row2.removeFromLeft(80) 一致
       -->
-      <button
-        class="btn-import"
-        :disabled="isImporting"
-        @click="handleImportClick"
-      >
-        {{ isImporting ? '导入中…' : '导入文件' }}
+      <button class="btn-import" :disabled="isImporting" @click="handleFilesSelected">
+        导入文件
       </button>
-
-      <!-- 隐藏的 file input，替代 JUCE FileChooser -->
-      <input
-        ref="fileInput"
-        type="file"
-        multiple
-        accept="audio/*"
-        style="display: none"
-        @change="handleFilesSelected"
-      />
 
       <!--
         刷新按钮 — 对应 C++ svgButton refreshButton
@@ -155,15 +123,8 @@ function handleRefresh(): void {
         右侧留 margin 40px（参考 C++ row2.removeFromRight(40)）
         宽度 200px，与 C++ row2.removeFromRight(200) 一致
       -->
-      <select
-        v-model="selectedSort"
-        class="combo-sort"
-      >
-        <option
-          v-for="opt in sortOptions"
-          :key="opt.value"
-          :value="opt.value"
-        >
+      <select v-model="selectedSort" class="combo-sort">
+        <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
         </option>
       </select>
@@ -231,14 +192,14 @@ function handleRefresh(): void {
   font-size: 30px;
   font-weight: bold;
   color: var(--colorTextMain);
-  min-width: 90px;  /* 对应 row1.removeFromLeft(90) */
+  min-width: 90px; /* 对应 row1.removeFromLeft(90) */
 }
 
 /* littleLabel: "共 0 首" — fontSize 15（与 C++ littleLabel 一致） */
 .song-count {
   font-size: var(--littleFont);
   color: var(--colorTextSecond);
-  min-width: 90px;  /* 对应 row1.removeFromLeft(90) */
+  min-width: 90px; /* 对应 row1.removeFromLeft(90) */
 }
 
 /* ================================================================
@@ -252,15 +213,15 @@ function handleRefresh(): void {
   align-items: center;
   gap: 6px;
   padding: 5px;
-  padding-left: 20px;  /* 对应 row2.removeFromLeft(20) */
+  padding-left: 20px; /* 对应 row2.removeFromLeft(20) */
   padding-right: 40px; /* 对应 row2.removeFromRight(40) */
   flex-shrink: 0;
 }
 
 /* ── "导入文件" 按钮：对应 yTextButton selectFileButton ── */
 .btn-import {
-  min-width: 80px;          /* 对应 row2.removeFromLeft(80) */
-  height: 30px;             /* 对应 reduced(5,10)：40 - 10 = 30 */
+  min-width: 80px; /* 对应 row2.removeFromLeft(80) */
+  height: 30px; /* 对应 reduced(5,10)：40 - 10 = 30 */
   padding: 0 12px;
 
   border: none;
@@ -269,7 +230,9 @@ function handleRefresh(): void {
   color: var(--colorTextMain);
   font-size: var(--midFont);
   cursor: pointer;
-  transition: background-color var(--easeTime) ease, opacity var(--easeTime) ease;
+  transition:
+    background-color var(--easeTime) ease,
+    opacity var(--easeTime) ease;
 }
 
 .btn-import:hover {
@@ -290,7 +253,7 @@ function handleRefresh(): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;   /* 方形按钮，边长 = toolbar 行高 - 10 */
+  width: 30px; /* 方形按钮，边长 = toolbar 行高 - 10 */
   height: 30px;
 
   border: none;
@@ -307,7 +270,7 @@ function handleRefresh(): void {
 .icon-svg {
   width: 20px;
   height: 20px;
-  pointer-events: none;  /* 点击事件由父级 button 处理 */
+  pointer-events: none; /* 点击事件由父级 button 处理 */
 }
 
 /* ── 弹性空间：将排序控件推到右侧 ── */
@@ -317,15 +280,15 @@ function handleRefresh(): void {
 
 /* ── 排序下拉框：对应 YComboBox seqWays ── */
 .combo-sort {
-  width: 200px;          /* 对应 row2.removeFromRight(200) */
+  width: 200px; /* 对应 row2.removeFromRight(200) */
   height: 30px;
   padding: 0 8px;
 
-  border: 3px solid var(--colorEdge);  /* 与 YComboBox kOutlineWidth = 3 一致 */
-  border-radius: var(--borderRadius);  /* 与 YComboBox kCornerRadius = 6 一致 */
+  border: 3px solid var(--colorEdge); /* 与 YComboBox kOutlineWidth = 3 一致 */
+  border-radius: var(--borderRadius); /* 与 YComboBox kCornerRadius = 6 一致 */
   background-color: transparent;
   color: var(--colorTextMain);
-  font-size: 17px;       /* 与 YComboBox kFontSize = 17 一致 */
+  font-size: 17px; /* 与 YComboBox kFontSize = 17 一致 */
   cursor: pointer;
   outline: none;
 
