@@ -3,13 +3,13 @@ import { ref } from 'vue'
 
 // 使用 @ 别名引用 assets 中的 logo 图片
 // 对应 C++ 中 BinaryData::junkfusion_png
-import logoImage from '@/assets/junk-fusion.png'
+import logoImage from '@/assets/image/junk-fusion.png'
 
 // ── 侧边栏分组数据 ──
 // 与 C++ 中 UIDesign/FontAbout/language.h 的定义一一对应
 // 所有按钮按顺序编号 0-11，用于单选逻辑
 
-interface NavButton {
+interface NavButton {//interface相当于cpp的struct，NavButton就是结构体名称，是一个编译期结构体定义工具
   id: number
   text: string
 }
@@ -87,11 +87,14 @@ function isSelected(id: number): boolean {
     <div class="scroll-content">
       <!-- Logo 区域：对应 LeftSelectedComponent 中的 logo ImageComponent -->
       <div class="logo-area">
-        <img
-          :src="logoImage"
-          alt="Junk Fusion Logo"
-          class="logo-image"
-        />
+        <img :src="logoImage" alt="" class="logo-image"/>
+        <!-- src前面的冒号：这是 Vue 的 v-bind 指令的简写。它的作用是：把引号里的内容当作 JavaScript 
+        表达式来执行，而不是当作普通的字符串。
+        加冒号（动态绑定）：:src="logoImage"
+        Vue 会解析 logoImage 这个变量，获取它的值（比如 /assets/logo.png），然后传给 src 属性。
+        结果：成功加载你导入的图片。
+        alt代表图片加载失败时：比如网络断了、路径写错了，浏览器会显示这个 alt 里的文字，让用户知道这里本该有一张什么图。
+         -->
       </div>
 
       <!--
@@ -103,11 +106,22 @@ function isSelected(id: number): boolean {
         :key="sectionIndex"
         class="nav-section"
       >
+        <!-- 因为这些按钮是硬编码的，不会增减，所以直接使用index就行了，不用分配id -->
+        <!-- 根据 sections 数组，动态生成多个 <div>，每个 <div> 对应数组中的一个元素 -->
+        <!-- 对于数组：v-for="(item, index) in items"
+        // item = 当前元素（类型取决于数组元素）
+        // index = 数字索引（0, 1, 2...）
+        对于对象(遍历键值对)：v-for="(value, key, index) in object"
+        // value = 属性值
+        // key = 属性名（字符串）
+        // index = 数字索引（0, 1, 2...） -->
         <!--
           分组标签：对应 YLabel
           上下各有一条 5px 的分隔线，对应 C++ 中 paths[] 绘制的线条
         -->
         <div class="section-label">{{ section.label }}</div>
+        <!-- {{ }}（双花括号插值）：用于标签的内容区域（即开始标签和结束标签之间的文字部分）且只能动态渲染文本内容。
+        :（冒号，即 v-bind）：用于标签的属性区域（即开始标签内部的 key="value" 部分）。 -->
 
         <!-- 分组内的按钮列表 -->
         <div class="button-list">
@@ -126,24 +140,6 @@ function isSelected(id: number): boolean {
 </template>
 
 <style scoped>
-/* ================================================================
-   颜色变量 — 与 C++ YColor 结构体中的颜色值一一对应
-   ================================================================ */
-
-/* YColor::shallowGrey — 侧边栏背景色 */
-:root {
-  --color-bg: #d8d6d6;
-  /* YColor::midGrey — 悬停态背景、分隔线颜色 */
-  --color-hover: #c5c3c3;
-  /* YColor::greyBlue — 选中态背景 */
-  --color-selected: #6e75dd;
-  /* 文字颜色（YColor::black） */
-  --color-text: #000000;
-  /* 按钮圆角（C++ 中 fillRoundedRectangle 的 6.0f） */
-  --button-radius: 6px;
-  /* 分隔线粗细（C++ 中 PathStrokeType(5.0f)） */
-  --divider-width: 5px;
-}
 
 /* ================================================================
    LeftColumn — 对应 C++ LeftColumn 类
@@ -153,12 +149,18 @@ function isSelected(id: number): boolean {
 .left-column {
   width: 220px;
   height: 100vh;
-  background-color: var(--color-bg);
+  /* vh 是“视口高度（Viewport Height）”单位。
+  1vh = 当前浏览器窗口可见高度 的 1%。 */
+  background-color: var(--colorNav);
   overflow-y: auto;
+  /* overflow控制溢出内容如何处理 */
+  /* overflow的属性值：hidden溢出的内容被裁剪掉，看不见,scroll：强制显示滚动条 */
+  /* auto智能显示：内容多了自动出滚动条，少了隐藏 */
   overflow-x: hidden;
   /* 隐藏滚动条但保持滚动功能（可选，保留默认滚动条也 OK） */
   scrollbar-width: thin;
-  scrollbar-color: var(--color-hover) transparent;
+  scrollbar-color: var(--colorStress) transparent;
+  /* scrollbar-color 接受 两个颜色值，语法是 scrollbar-color: [滑块颜色] [轨道颜色]; */
 }
 
 .scroll-content {
@@ -166,15 +168,10 @@ function isSelected(id: number): boolean {
   padding-bottom: 60px;
 }
 
-/* ================================================================
-   Logo 区域
-   对应 C++:
-     logo.setBounds(local.removeFromTop(60).reduced(5));
-   ================================================================ */
-
 .logo-area {
   height: 60px;
   padding: 5px;
+  /* padding是内边距的意思 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,6 +181,9 @@ function isSelected(id: number): boolean {
   max-height: 100%;
   max-width: 100%;
   object-fit: contain;
+  /* object的几个参数：fill拉伸图片强行填满容器，不管宽高比
+  contain图片等比缩放，直到完整地、不加裁剪地放进容器里。容器可能会有空白边
+  cover图片等比缩放，直到完全覆盖容器，不留空白。图片超出容器的部分会被裁剪掉。 */
 }
 
 /* ================================================================

@@ -1,26 +1,18 @@
 :root,
 .theme-light {
-    --color-bg-main: #f0f0f0;
-    --color-bg-hover: #d0d0d0;
-    --color-bg-active: #b0c4de;
-    --color-border: #cccccc;
-    --color-text-primary: #222222;
-    --color-text-secondary: #555555;
-    --color-transparent: transparent;
-    --color-accent: #4CAF50;
-    --color-accent-hover: #45a049;
+    --colorMain: #f0f0f0;/*主要颜色*/
+    --colorNav:#c8f2f9;/*导航窗颜色*/
+    --colorHover: #d0d0d0;/*悬浮颜色*/
+    --colorClicked: #b0c4de;/*鼠标按下去时的颜色颜色*/
+    --colorEdge: #cccccc;/*边框的颜色*/
+    --colorTextMain: #222222;/*主要文本的颜色*/
+    --colorTextSecond: #555555;/*次级文本的颜色*/
+    --colorStress:#55c9dd;/*强调色，比如现在在导航窗的哪个位置*/
+    /* --color-accent: #4CAF50; */
+    /*主要颜色*/
+    /* --color-accent-hover: #45a049; */
+    /*主要颜色*/
     /* 可扩展其他变量，如背景渐变、阴影等 */
 }
 
 /* 2. 黑金主题（暗色 + 金色点缀） */
-.theme-dark-gold {
-    --color-bg-main: #1a1a1a;          /* 深灰近黑 */
-    --color-bg-hover: #2a2a2a;          /* 稍亮一些 */
-    --color-bg-active: #c9a84c;         /* 金色高亮 */
-    --color-border: #444444;
-    --color-text-primary: #e6e6e6;      /* 浅白 */
-    --color-text-secondary: #aaaaaa;
-    --color-transparent: transparent;
-    --color-accent: #d4af37;            /* 金属金 */
-    --color-accent-hover: #b8962e;
-}
