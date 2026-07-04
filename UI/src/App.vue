@@ -5,8 +5,9 @@
  * 当前阶段只展示左侧导航栏（LeftColumn），不涉及与 JUCE 的通信。
  * 主内容区域留空，后续逐步添加。
  */
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, type Component } from 'vue'
 import LeftColumn from './components/LeftColumn.vue'
+import AllMusic from './components/pages/AllMusic.vue'
 
 const currentTheme = ref(localStorage.getItem('theme') || 'theme-light')
 
@@ -30,27 +31,60 @@ watch(currentTheme, (newTheme) => {
 // 回调里把新值 newTheme 存进 localStorage。
 //immediate: true表示函数在创建的时候立刻执行一次回调
 
+// ── 页面切换逻辑 ──
+// 对应 C++ MainComponent 中管理页面切换的部分
+// leftColumn 通过 onSelectionChanged 回调通知主组件当前选中了哪个页面
+// 按钮 id 与页面的映射关系：
+//   0 → AllMusic    1 → MyLike       2 → RecentPlay
+//   3 → Artist      4 → Album       5 → Playlist
+//   6 → Genre       7 → AIAssistant  8 → Effects
+//   9 → Equalizer   10 → SpeakerArray 11 → Settings
+const pageIdToComponent: Record<number, Component | null> = {
+  0: AllMusic,   // 所有音乐
+  // 其他页面尚未开发，留 null
+}
+
+const currentPageId = ref<number | null>(null)  // null = 默认，显示占位
+
+/** 监听左侧导航栏的选中事件，切换主区域显示的页面 */
+function handlePageChange(id: number): void {
+  currentPageId.value = id
+}
+
+/** 根据选中的 id 解析要渲染的组件，未开发的页面返回 null */
+function resolvedComponent(id: number | null): Component | null {
+  if (id === null) return null
+  return pageIdToComponent[id] ?? null
+}
+
 </script>
 
 <template>
   <div class="app-layout">
-    <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件 -->
-     <nav>
-        <LeftColumn />
-     </nav>
-    
+    <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件
+         @selection-changed 接收子组件传上来的页面 id -->
+    <LeftColumn @selection-changed="handlePageChange" />
 
     <!--
-      主内容区域（占位）
-      后续会添加播放器主体、右侧面板等内容
+      主内容区域（动态组件）
+      根据 LeftColumn 的选中状态，切换显示不同的页面组件
+      对应 C++ 中 MainComponent 的页面管理逻辑
+
+      <component :is="..."> 是 Vue 的动态组件语法：
+      - 传入一个组件对象 → 渲染该组件
+      - 传入 null → 什么都不渲染（显示占位内容）
     -->
     <main class="main-content">
+      <component
+        v-if="resolvedComponent(currentPageId)"
+        :is="resolvedComponent(currentPageId)"
+      />
+      <!-- 默认占位：没有任何侧边栏按钮被选中，或页面尚未开发 -->
+      <div v-else class="placeholder">
         <p>主内容区域</p>
-        <p class="hint">（后续逐步添加）</p>
+        <p class="hint">（选择左侧导航以查看页面）</p>
+      </div>
     </main>
-    <footer>
-        <!--这里放置歌曲切换与选择部分-->
-    </footer>
   </div>
 </template>
 
@@ -101,6 +135,20 @@ html, body {
   align-items: center;
   justify-content: center;
   /* 水平和垂直居中 */
-  background-color: var(--colorMain); 
+  background-color: var(--colorMain);
+}
+
+/* 默认占位内容 */
+.placeholder {
+  text-align: center;
+  color: var(--colorTextSecond);
+  font-size: var(--bigFont);
+  user-select: none;
+}
+
+.placeholder .hint {
+  margin-top: 8px;
+  font-size: var(--littleFont);
+  color: var(--colorEdge);
 }
 </style>

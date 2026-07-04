@@ -5,6 +5,12 @@ import { ref } from 'vue'
 // 对应 C++ 中 BinaryData::junkfusion_png
 import logoImage from '@/assets/image/junk-fusion.png'
 
+// ── 向父组件发送事件 ──
+// 对应 C++ 中 LeftSelectedComponent::onSelectionChanged 回调
+const emit = defineEmits<{
+  (e: 'selection-changed', id: number): void
+}>()
+
 // ── 侧边栏分组数据 ──
 // 与 C++ 中 UIDesign/FontAbout/language.h 的定义一一对应
 // 所有按钮按顺序编号 0-11，用于单选逻辑
@@ -65,6 +71,9 @@ const selectedId = ref(0)
 function handleSelect(id: number): void {
   if (selectedId.value !== id) {
     selectedId.value = id
+    // 通知父组件：选中页面已改变
+    // 对应 C++: if (onSelectionChanged) onSelectionChanged(selectID);
+    emit('selection-changed', id)
   }
 }
 
