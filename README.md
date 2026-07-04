@@ -1,0 +1,2 @@
+webView2 安装:运行 Register-PackageSource -provider NuGet -name nugetRepository -location https://www.nuget.org/api/v2
+Install-Package Microsoft.Web.WebView2 -Scope CurrentUser -RequiredVersion 1.0.3485.44 -Source nugetRepository

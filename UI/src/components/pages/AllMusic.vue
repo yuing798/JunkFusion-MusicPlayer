@@ -62,6 +62,7 @@ async function handleFilesSelected(): Promise<void> {
   isImporting.value = true
 
   try {
+    // await window.__juce__.
   } finally {
     isImporting.value = false
     // 重置 input，以便再次选择相同文件时也能触发 change 事件

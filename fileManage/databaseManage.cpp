@@ -1,5 +1,5 @@
 #include "databaseManage.hpp"
-#include "FontAbout/font.h"
+// #include "FontAbout/font.h"
 #include "constants.h"
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
@@ -349,8 +349,8 @@ std::vector<SongInfo> SongsManage::getSongPage(int offset, int limit, bool ascen
 {
     switch (mode)
     {
-        case SortMode::ByName:     return getSongPageByName(offset, limit, ascending);
         case SortMode::ByAddTime:  return getSongsPageBySongId(offset, limit, ascending);
+        case SortMode::ByName:     return getSongPageByName(offset, limit, ascending);
         case SortMode::ByPlayTimes: return getSongPageByPlayTimes(offset, limit, ascending);
     }
     return {};

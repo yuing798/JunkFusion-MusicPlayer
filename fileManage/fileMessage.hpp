@@ -1,35 +1,10 @@
 #pragma once
 
-#include "FontAbout/font.h"
+// #include "FontAbout/font.h"
+#include "juce_core/juce_core.h"
 #include <cstdint>
 #include <vector>
 #include <string>
-
-const std::vector<std::string> fileTypeArray{
-    "All Supported Media","*",
-    "*.wav *.mp3 *.flac *.aiff *.aac *.m4a *.ogg *.wma *.opus *.mp4 *.mkv *.mov *.avi *.wmv *.flv *.webm",
-
-    // ====== 🎵 常见音频格式 ======
-    "MP3 Audio","*", "*.mp3",
-    "WAV Audio","*", "*.wav",
-    "FLAC (Lossless)","*", "*.flac",
-    "M4A Audio","*", "*.m4a",
-    "AAC Audio","*", "*.aac",
-    "OGG Audio","*", "*.ogg",
-    "WMA Audio","*", "*.wma",
-    "AIFF Audio","*", "*.aiff",
-    "OPUS Audio","*", "*.opus",
-
-    // ====== 🎬 常见视频格式 (用于提取音频) ======
-    "MP4 Video","*", "*.mp4",
-    "MKV Video","*", "*.mkv",
-    "MOV (Apple)","*", "*.mov",
-    "AVI Video","*", "*.avi",
-    "WMV Video","*", "*.wmv",
-    "FLV (Flash)","*", "*.flv",
-    "WEBM Video","*", "*.webm",
-    "all file","*","*"
-};
 
 struct SongInfo
 {
@@ -79,5 +54,53 @@ struct SongInfo
 
     //6.排序字段
     int nameId{0};//优先级排序之后的位置，逻辑上是不会变的
+
+    static juce::var toVar(const SongInfo& song){
+        auto obj{new juce::DynamicObject()};
+
+        // ── 1. 文件信息 ──
+        obj->setProperty("filePath",         juce::String(song.filePath));
+        obj->setProperty("fileSize",         song.fileSize);
+        obj->setProperty("lastModifiedTime", juce::String(song.lastModifiedTime));
+        obj->setProperty("duration",         song.duration);
+
+        // ── 2. 标签信息 ──
+        obj->setProperty("title",       juce::String(song.title));
+        obj->setProperty("artist",      juce::String(song.artist));
+        obj->setProperty("album",       juce::String(song.album));
+        obj->setProperty("albumArtist", juce::String(song.albumArtist));
+        obj->setProperty("genre",       juce::String(song.genre));
+        obj->setProperty("trackNumber", song.trackNumber);
+        obj->setProperty("discNumber",  song.discNumber);
+        obj->setProperty("year",        song.year);
+        obj->setProperty("composer",    juce::String(song.composer));
+        obj->setProperty("imageHash",   juce::String(song.imageHash));
+
+        // ── 3. FFmpeg 解码层 ──
+        obj->setProperty("isMultiStreamFile", song.isMultiStreamFile);
+        obj->setProperty("bitRate",           song.bitRate);
+        obj->setProperty("sampleRate",        song.sampleRate);
+        obj->setProperty("numChannels",       song.numChannels);
+        obj->setProperty("bitDepth",          song.bitDepth);
+        obj->setProperty("codecName",         juce::String(song.codecName));
+
+        // ── 4. AI 分析 ──
+        obj->setProperty("isMusic",     song.isMusic);
+        obj->setProperty("aiGenre",     juce::String(song.aiGenre));
+        obj->setProperty("aiMood",      juce::String(song.aiMood));
+        obj->setProperty("bpm",         song.bpm);
+        obj->setProperty("key",         juce::String(song.key));
+        obj->setProperty("aiProcessed", song.aiProcessed);
+
+        // ── 5. 用户信息 ──
+        obj->setProperty("isMyLike",     song.isMyLike);
+        obj->setProperty("comment",      juce::String(song.comment));
+        obj->setProperty("hadPlayedNum", song.hadPlayedNum);
+
+        // ── 6. 排序 ──
+        obj->setProperty("nameId", song.nameId);
+
+        return juce::var(obj);
+    }//将songInfo转化为var，才能推送给js端
 
 };

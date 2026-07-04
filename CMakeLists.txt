@@ -19,7 +19,7 @@ find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
-find_package(unofficial-webview2 CONFIG REQUIRED)
+# find_package(unofficial-webview2 CONFIG REQUIRED)
 
 # 使用 pkg-config 查找 ICU（i18n 依赖 uc，但 pkg_check_modules 不会传递 Requires.private，
 # 所以显式列出两个模块确保链接正确的 .lib）
@@ -55,7 +55,7 @@ target_sources(JunkFusion
         MainComponent.cpp
 )
 add_subdirectory(image)
-add_subdirectory(UIDesign)
+# add_subdirectory(UIDesign)
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
 
@@ -107,7 +107,7 @@ target_link_libraries(JunkFusion
         unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
         PkgConfig::ICU#字符串排序功能
-        unofficial::webview2::webview2
+        # unofficial::webview2::webview2
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置

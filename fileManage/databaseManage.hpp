@@ -95,8 +95,8 @@ public:
     int getTotalSongCount();
 
     enum class SortMode {
-        ByName,
         ByAddTime,
+        ByName,
         ByPlayTimes
     };
 
