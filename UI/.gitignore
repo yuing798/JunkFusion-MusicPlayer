@@ -37,3 +37,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+#字符串跨端传输自动生成文件
+src/bridge.generates.ts

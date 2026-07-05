@@ -2,3 +2,4 @@ build/
 .vs/
 .vscode/
 .opencode/
+Utils/BridgeNames.h

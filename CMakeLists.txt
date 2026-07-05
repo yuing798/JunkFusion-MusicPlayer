@@ -59,6 +59,14 @@ add_subdirectory(image)
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
 
+# add_custom_command 是 CMake 中用来在构建过程中插入自定义操作的核心指令
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/BridgeNames.h  # 输出文件,这条流水线生产出来的东西是什么
+    COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/UI/generateBridge.cjs  # 执行的命令:具体执行什么操作
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/UI/bridgeDefs.json ${CMAKE_CURRENT_SOURCE_DIR}/UI/generateBridge.cjs#:生产这个东西依赖什么输入
+    COMMENT "Generating BridgeNames.h from bridgeDefs.json..."
+)#在build之前自动执行
+
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
 # ==============================================================================
