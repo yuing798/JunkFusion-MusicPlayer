@@ -10,6 +10,7 @@ public:
     ~MainComponent();
 
     void resized() override;
+    void paint(juce::Graphics& g) override;
 
 private:
 

@@ -74,20 +74,20 @@ public:
     public:
         explicit MainWindow (juce::String name)
             : DocumentWindow (name,
-                              juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                                          .findColour (backgroundColourId),
+                              juce::Colour(0xfff0f0f0),  // 与 web UI --colorMain 一致，避免 WebView2 加载前的黑屏闪烁
                               allButtons)
         {
             setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
 
-           #if JUCE_IOS || JUCE_ANDROID
+            // 先全屏，再创建内容组件。
+            // 否则 WebView2 会先以默认窗口大小初始化，setFullScreen 放大后
+            // WebView2 来不及跟上，产生"黑屏 + 左上角白块"的闪烁。
             setFullScreen (true);
-           #else
             setResizable (true, true);
-            setFullScreen (true);
-           #endif
-            setVisible (true); 
+
+            // resizeToContent = false，因为窗口已经是全屏，不需要再根据内容调整大小
+            setContentOwned (new MainComponent(), false);
+            setVisible (true);
         }
 
         void closeButtonPressed() override

@@ -55,6 +55,7 @@ struct SongInfo
     //6.排序字段
     int nameId{0};//优先级排序之后的位置，逻辑上是不会变的
 
+    //将songInfo转化为var，才能推送给js端
     static juce::var toVar(const SongInfo& song){
         auto obj{new juce::DynamicObject()};
 

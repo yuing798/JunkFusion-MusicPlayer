@@ -85,7 +85,7 @@ MainComponent::MainComponent(){
     web = std::make_unique<juce::WebBrowserComponent>(options);
     addAndMakeVisible(*web);
     #ifdef JUCE_DEBUG
-    web->goToURL("http://127.0.0.1:5173");
+    web->goToURL("http://localhost:5173/");
     #else
         //这里到时候放置release版本的goToURL，因为http://127.0.0.1:5173是开发者专用的
     #endif
@@ -94,6 +94,12 @@ MainComponent::MainComponent(){
 void MainComponent::resized()
 {
     web->setBounds(getLocalBounds());
+}
+
+void MainComponent::paint(juce::Graphics& g)
+{
+    // WebView2 初始化完成前，先用 UI 背景色填充，避免黑屏闪烁
+    g.fillAll(juce::Colour(0xfff0f0f0));
 }
 
 MainComponent::~MainComponent(){
