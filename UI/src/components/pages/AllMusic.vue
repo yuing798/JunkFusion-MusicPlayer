@@ -5,6 +5,7 @@ import { ref } from 'vue'
 import refreshSvg from '@/assets/image/refresh.svg'
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
+import { BRIDGE_KEYS } from '@/bridge.generated'
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
@@ -62,17 +63,14 @@ async function handleFilesSelected(): Promise<void> {
   isImporting.value = true
 
   try {
+    const func = window.__JUCE__.backend[BRIDGE_KEYS.inputFiles]
+    if (typeof func == 'function') {
+      const results = await func()
+    }
   } finally {
     isImporting.value = false
     // 重置 input，以便再次选择相同文件时也能触发 change 事件
   }
-}
-
-// ── 刷新按钮 ──
-// 对应 C++: svgButton refreshButton{U("刷新"), ...};
-function handleRefresh(): void {
-  // 对应 C++ 中刷新逻辑 — 后续与 SongSelectViewport 对接
-  console.log('[AllMusic] refresh triggered')
 }
 </script>
 
@@ -104,16 +102,16 @@ function handleRefresh(): void {
         宽度 80px，与 C++ row2.removeFromLeft(80) 一致
       -->
       <button class="btn-import" :disabled="isImporting" @click="handleFilesSelected">
-        导入文件
+        导入音频文件
       </button>
 
       <!--
         刷新按钮 — 对应 C++ svgButton refreshButton
         svgButton 使用 refresh.svg 图标
       -->
-      <button class="btn-icon" title="刷新" @click="handleRefresh">
+      <!-- <button class="btn-icon" title="刷新" @click="handleRefresh">
         <img :src="refreshSvg" alt="刷新" class="icon-svg" />
-      </button>
+      </button> -->
 
       <!-- 弹性空间，将右侧的排序控件推到行尾 -->
       <div class="toolbar-spacer"></div>

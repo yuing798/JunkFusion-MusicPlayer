@@ -99,3 +99,4 @@ cmake --build build
 > ⚠️ **注意**：如果编译报错，可能是 JUCE 依赖的音频/图形库路径不同，请参考 [JUCE 官方 Linux/macOS 编译指南](https://juce.com/learn/tutorials)。
 
 juce 8 不适合windows10以下的版本
+到时候没有私自测试过的环境不要写进readme里面
