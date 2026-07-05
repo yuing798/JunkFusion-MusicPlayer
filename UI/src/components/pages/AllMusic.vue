@@ -5,7 +5,8 @@ import { ref } from 'vue'
 import refreshSvg from '@/assets/image/refresh.svg'
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
-import { BRIDGE_KEYS } from '@/bridge.generated'
+import { BRIDGE_KEYS } from '@/UtilsScripts/bridge.generated'
+import { callNativeFunction } from '@/UtilsScripts/initBridge'
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
@@ -51,52 +52,7 @@ function toggleSortDirection(): void {
   isAscending.value = !isAscending.value
 }
 
-// ── 文件导入 ──
-// 对应 C++: yTextButton selectFileButton{U("导入文件")};
-// 在 web 环境中，通过 JUCE 原生桥接触发 C++ 端的 FileChooser
-
 const isImporting = ref(false) // 控制按钮禁用状态和加载动画
-
-/**
- * JUCE 原生函数桥接 — 与 juce-framework-frontend 的 getNativeFunction 等价
- *
- * 调用方式来自 JUCE 源码 modules/juce_gui_extra/native/javascript/index.js：
- *   emitEvent("__juce__invoke", {name, params, resultId})
- * 然后监听 "__juce__complete" 拿到返回值并 resolve Promise
- */
-let lastPromiseId = 0
-const pendingPromises = new Map<
-  number,
-  { resolve: (v: unknown) => void; reject: (e: unknown) => void }
->()
-
-// 注册 __juce__complete 监听器（只需一次）
-window.__JUCE__.backend.addEventListener(
-  '__juce__complete',
-  (payload: { promiseId: number; result: unknown }) => {
-    const { promiseId, result } = payload
-    const pending = pendingPromises.get(promiseId)
-    if (pending) {
-      pending.resolve(result)
-      pendingPromises.delete(promiseId)
-    }
-  },
-)
-
-function callNativeFunction(name: string, ...args: unknown[]): Promise<unknown> {
-  const promiseId = lastPromiseId++
-  const promise = new Promise<unknown>((resolve, reject) => {
-    pendingPromises.set(promiseId, { resolve, reject })
-  })
-
-  window.__JUCE__.backend.emitEvent('__juce__invoke', {
-    name,
-    params: args,
-    resultId: promiseId,
-  })
-
-  return promise
-}
 
 async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return

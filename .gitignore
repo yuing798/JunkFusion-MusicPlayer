@@ -3,3 +3,4 @@ build/
 .vscode/
 .opencode/
 Utils/BridgeNames.h
+vcpkg_installed/

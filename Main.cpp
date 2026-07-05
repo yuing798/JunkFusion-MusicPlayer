@@ -29,7 +29,10 @@ public:
         juce::ignoreUnused (commandLine);
         // std::cout << juce::String(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getFullPathName()).toStdString();
 
-        _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--auto-open-devtools-for-tabs");
+        #ifdef JUCE_DEBUG
+        _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--auto-open-devtools-for-tabs");//这一行的作用是打开webview2的控制台
+        #endif
+
         if(!UserDirId.exists()) UserDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();
         if(!databaseDirId.exists()) databaseDirId.createDirectory();
