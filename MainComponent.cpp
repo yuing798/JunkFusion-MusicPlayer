@@ -23,8 +23,11 @@ MainComponent::MainComponent(){
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
             ){
+                DBG(">>> inputFiles native function called, args=" << args.size());
+                juce::MessageManager::callAsync([this, complete, args](){
+                DBG(">>> inputFiles on message thread, opening file chooser");
                 getMultiMediaFileChoose([complete,args](const juce::Array<juce::File>& files){
-                    
+
                     juce::MessageManager::callAsync(
                         [complete, files, args](){
                             if(files.isEmpty()){
@@ -50,6 +53,7 @@ MainComponent::MainComponent(){
                 },
                     web.get()
                 );
+                });
             }
         );
     

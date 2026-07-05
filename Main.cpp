@@ -5,6 +5,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_data_structures/juce_data_structures.h"
 #include "otherUtils.hpp"
+#include <stdlib.h>
 #include <string>
 
 //==============================================================================
@@ -28,6 +29,7 @@ public:
         juce::ignoreUnused (commandLine);
         // std::cout << juce::String(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getFullPathName()).toStdString();
 
+        _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--auto-open-devtools-for-tabs");
         if(!UserDirId.exists()) UserDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();
         if(!databaseDirId.exists()) databaseDirId.createDirectory();

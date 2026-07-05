@@ -53,23 +53,62 @@ function toggleSortDirection(): void {
 
 // ── 文件导入 ──
 // 对应 C++: yTextButton selectFileButton{U("导入文件")};
-// 在 web 环境中使用 <input type="file"> 替代 JUCE 的 FileChooser
-// 注意：当前只做 UI 层，文件导入的后端逻辑后续对接
+// 在 web 环境中，通过 JUCE 原生桥接触发 C++ 端的 FileChooser
 
 const isImporting = ref(false) // 控制按钮禁用状态和加载动画
+
+/**
+ * JUCE 原生函数桥接 — 与 juce-framework-frontend 的 getNativeFunction 等价
+ *
+ * 调用方式来自 JUCE 源码 modules/juce_gui_extra/native/javascript/index.js：
+ *   emitEvent("__juce__invoke", {name, params, resultId})
+ * 然后监听 "__juce__complete" 拿到返回值并 resolve Promise
+ */
+let lastPromiseId = 0
+const pendingPromises = new Map<
+  number,
+  { resolve: (v: unknown) => void; reject: (e: unknown) => void }
+>()
+
+// 注册 __juce__complete 监听器（只需一次）
+window.__JUCE__.backend.addEventListener(
+  '__juce__complete',
+  (payload: { promiseId: number; result: unknown }) => {
+    const { promiseId, result } = payload
+    const pending = pendingPromises.get(promiseId)
+    if (pending) {
+      pending.resolve(result)
+      pendingPromises.delete(promiseId)
+    }
+  },
+)
+
+function callNativeFunction(name: string, ...args: unknown[]): Promise<unknown> {
+  const promiseId = lastPromiseId++
+  const promise = new Promise<unknown>((resolve, reject) => {
+    pendingPromises.set(promiseId, { resolve, reject })
+  })
+
+  window.__JUCE__.backend.emitEvent('__juce__invoke', {
+    name,
+    params: args,
+    resultId: promiseId,
+  })
+
+  return promise
+}
 
 async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return
   isImporting.value = true
 
   try {
-    const func = window.__JUCE__.backend[BRIDGE_KEYS.inputFiles]
-    if (typeof func == 'function') {
-      const results = await func()
-    }
+    const results = await callNativeFunction(BRIDGE_KEYS.inputFiles)
+    console.log('[AllMusic] 导入完成:', results)
+  } catch (err) {
+    console.error('[AllMusic] 导入失败:', err)
   } finally {
     isImporting.value = false
-    // 重置 input，以便再次选择相同文件时也能触发 change 事件
   }
 }
 </script>
