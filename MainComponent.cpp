@@ -1,4 +1,5 @@
 #include "MainComponent.h"
+#include "Utils/BridgeNames.h"
 #include "databaseManage.hpp"
 #include "fileManage/fileUtils.hpp"
 #include "fileMessage.hpp"
@@ -9,10 +10,6 @@
 #include <memory>
 #include <vector>
 
-//这里定义所有的桥接函数ID
-static constexpr const char* fileInputId{"fileInput"};//音频文件导入应用
-static constexpr const char* dirScanId{"dirScan"};//文件夹扫描
-
 //==============================================================================
 MainComponent::MainComponent(){
 
@@ -21,8 +18,7 @@ MainComponent::MainComponent(){
     options = options
         .withBackend(juce::WebBrowserComponent::Options::Backend::webview2)
         .withNativeIntegrationEnabled(true)
-        .withNativeFunction(
-            fileInputId,
+        .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
             [this](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
@@ -41,31 +37,6 @@ MainComponent::MainComponent(){
                                 auto song{getStreamMetaData(file)};
                                 if(!song.filePath.empty()) SongsManage::getInstance().insertSong(song);
                             }
-                            int page{0};
-                            bool ascending{true};
-                            SongsManage::SortMode mode{SongsManage::SortMode::ByAddTime};
-                            if(args.size()>=3){//边界检查
-                                page = (int)args[0];
-                                ascending = (bool)args[1];
-                                switch ((int)args[2]){
-                                    case 0:
-                                        mode = SongsManage::SortMode::ByAddTime;
-                                        break;
-                                    case 1:
-                                        mode = SongsManage::SortMode::ByName;
-                                        break;
-                                    case 2:
-                                        mode = SongsManage::SortMode::ByPlayTimes;
-                                        break;
-                                }
-                            }
-
-                            songList = SongsManage::getInstance().getSongPage(
-                                page,
-                                20,//每一页20首歌曲，这是不变的
-                                ascending,
-                                mode
-                            );//导入文件的时候直接做全量取出重排即可
 
                             //返回给js的结果
                             juce::Array<juce::var> results;
