@@ -10,12 +10,15 @@ import logoImage from '@/assets/image/junk-fusion.png'
 const emit = defineEmits<{
   (e: 'selection-changed', id: number): void
 }>()
+//defineEmits	Vue 3 的编译器宏（Compiler Macro）。它不需要手动 import，
+// 在 <script setup> 中直接可用。作用是注册当前组件允许向外触发的事件。
 
 // ── 侧边栏分组数据 ──
 // 与 C++ 中 UIDesign/FontAbout/language.h 的定义一一对应
 // 所有按钮按顺序编号 0-11，用于单选逻辑
 
-interface NavButton {//interface相当于cpp的struct，NavButton就是结构体名称，是一个编译期结构体定义工具
+interface NavButton {
+  //interface相当于cpp的struct，NavButton就是结构体名称，是一个编译期结构体定义工具
   id: number
   text: string
 }
@@ -30,30 +33,30 @@ const sections: NavSection[] = [
     // 对应 language.h: musicLibraryBrowseID = "曲库浏览"
     label: '曲库浏览',
     buttons: [
-      { id: 0, text: '所有音乐' },   // allMusicID
-      { id: 1, text: '我喜欢' },     // myLikeID
-      { id: 2, text: '最近播放' },   // recentPlayID
+      { id: 0, text: '所有音乐' }, // allMusicID
+      { id: 1, text: '我喜欢' }, // myLikeID
+      { id: 2, text: '最近播放' }, // recentPlayID
     ],
   },
   {
     // 对应 language.h: categoryBrowseID = "分类浏览"
     label: '分类浏览',
     buttons: [
-      { id: 3, text: '作者' },       // artistID
-      { id: 4, text: '专辑' },       // albumID
-      { id: 5, text: '歌单' },       // playlistID
-      { id: 6, text: '风格' },       // genreID
+      { id: 3, text: '作者' }, // artistID
+      { id: 4, text: '专辑' }, // albumID
+      { id: 5, text: '歌单' }, // playlistID
+      { id: 6, text: '风格' }, // genreID
     ],
   },
   {
     // 对应 language.h: featureSectionID = "功能板块"
     label: '功能板块',
     buttons: [
-      { id: 7, text: 'AI助手' },     // aiAssistantID
-      { id: 8, text: '效果器' },     // effectsID
-      { id: 9, text: '均衡器' },     // equalizerID
-      { id: 10, text: '音箱阵列' },  // speakerArrayID
-      { id: 11, text: '设置' },      // settingsID
+      { id: 7, text: 'AI助手' }, // aiAssistantID
+      { id: 8, text: '效果器' }, // effectsID
+      { id: 9, text: '均衡器' }, // equalizerID
+      { id: 10, text: '音箱阵列' }, // speakerArrayID
+      { id: 11, text: '设置' }, // settingsID
     ],
   },
 ]
@@ -96,7 +99,7 @@ function isSelected(id: number): boolean {
     <div class="scroll-content">
       <!-- Logo 区域：对应 LeftSelectedComponent 中的 logo ImageComponent -->
       <div class="logo-area">
-        <img :src="logoImage" alt="" class="logo-image"/>
+        <img :src="logoImage" alt="" class="logo-image" />
         <!-- src前面的冒号：这是 Vue 的 v-bind 指令的简写。它的作用是：把引号里的内容当作 JavaScript 
         表达式来执行，而不是当作普通的字符串。
         加冒号（动态绑定）：:src="logoImage"
@@ -110,22 +113,20 @@ function isSelected(id: number): boolean {
         遍历三个分组，渲染标签 + 按钮
         对应 C++ 中 labelArray 和 buttons 的布局
       -->
-      <div
-      v-for="section in sections"
-      :key="section.label"
-      class="navSection"
-      >
+      <div v-for="section in sections" :key="section.label" class="navSection">
         <div class="groupLabel">{{ section.label }}</div>
 
         <!-- 内层循环：遍历当下分组里面的按钮 -->
-        <button 
-        v-for="button in section.buttons"
-        :key="button.id"
-        class="navButton"
-        :class="{active:isSelected(button.id)}"
-        @click="handleSelect(button.id)"
-        >{{ button.text }}</button>
-      <!-- { active: ... }：这是一个 JavaScript 对象字面量。键（active）是你要添加的类名，
+        <button
+          v-for="button in section.buttons"
+          :key="button.id"
+          class="navButton"
+          :class="{ active: isSelected(button.id) }"
+          @click="handleSelect(button.id)"
+        >
+          {{ button.text }}
+        </button>
+        <!-- { active: ... }：这是一个 JavaScript 对象字面量。键（active）是你要添加的类名，
       值（selectedId === button.id）是一个布尔表达式。
       当 selectedId === button.id 为 true 时，这个按钮的 class 属性里会多出一个 active；
       为 false 时，没有 active。 
@@ -136,8 +137,7 @@ function isSelected(id: number): boolean {
       :class 是“根据状态改变外观”的渲染逻辑（相当于 paint 中的 if 分支）。
 
       @click 是“改变状态的输入事件”（相当于 mouseDown 回调）。
-      -->
-      </div>
+      --></div>
     </div>
   </nav>
 </template>
@@ -274,7 +274,10 @@ function isSelected(id: number): boolean {
    过渡动画：让悬停和选中的颜色切换更平滑
    C++ 中没有这个过渡，但前端这样做体验更好
   */
-  transition: background-color var(--easeTime) ease, transform var(--easeTime) ease, box-shadow var(--easeTime) ease;
+  transition:
+    background-color var(--easeTime) ease,
+    transform var(--easeTime) ease,
+    box-shadow var(--easeTime) ease;
 
   /* transition: background-color 0.15s ease; 拆解为：
 

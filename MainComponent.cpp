@@ -23,34 +23,23 @@ MainComponent::MainComponent(){
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
             ){
-                juce::MessageManager::callAsync([this, complete, args](){
-                getMultiMediaFileChoose([complete,args](const juce::Array<juce::File>& files){
+                juce::MessageManager::callAsync([this,complete](){
+                    getMultiMediaFileChoose([complete](const juce::Array<juce::File>& files){
 
-                    juce::MessageManager::callAsync(
-                        [complete, files, args](){
-                            if(files.isEmpty()){
-                                complete(juce::var());
-                                return;
-                            }//用户取消选择
+                        if(files.isEmpty()){
+                            complete(juce::var());//就算不需要cpp到js的通信也必须发送完成信号
+                            return;
+                        }//用户取消选择
 
-                            std::vector<SongInfo> songList;
-                            for(auto& file:files){
-                                auto song{getStreamMetaData(file)};
-                                if(!song.filePath.empty()) SongsManage::getInstance().insertSong(song);
-                            }
-
-                            //返回给js的结果
-                            juce::Array<juce::var> results;
-                            for(auto& song:songList){
-                                results.add(SongInfo::toVar(song));
-                            }
-                            complete(juce::var(results));
-                            
+                        for(auto& file:files){
+                            auto song{getStreamMetaData(file)};
+                            if(!song.filePath.empty()) SongsManage::getInstance().insertSong(song);
                         }
+                        complete(juce::var());
+                                
+                    },
+                        web.get()
                     );
-                },
-                    web.get()
-                );
                 });
             }
         );
@@ -60,7 +49,7 @@ MainComponent::MainComponent(){
     #ifdef JUCE_DEBUG
     web->goToURL("http://localhost:5173/");
     #else
-        //这里到时候放置release版本的goToURL，因为http://127.0.0.1:5173是开发者专用的
+        //这里到时候放置release版本的二进制资源打包，因为http://127.0.0.1:5173是开发者专用的
     #endif
 }
 
