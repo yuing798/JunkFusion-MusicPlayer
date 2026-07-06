@@ -217,19 +217,6 @@ EachSong::EachSong(int songNo,SongInfo info)
 }
 void EachSong::resized(){
 
-    auto local{getLocalBounds()};
-    auto height{local.getHeight()};
-    auto noBounds = local.removeFromLeft(height).reduced(height/2.0f);
-    mPlayPauseButton.setBounds(noBounds);
-    No_.setBounds(noBounds);
-    auto nameBounds{local.removeFromLeft(200)};
-    mName.setBounds(nameBounds.removeFromTop(height/2.0f));
-    mArtist.setBounds(nameBounds);
-    mAlbum.setBounds(local.removeFromLeft(150));
-    aiLabel.setBounds(local.removeFromLeft(100));
-    hadPlayedNumLabel.setBounds(local.removeFromRight(60));
-    myLikeButton.setBounds(local.removeFromRight(height).reduced(height * 0.15f));
-
 }
 void EachSong::paint(juce::Graphics& g){
     auto local{getLocalBounds().toFloat()};

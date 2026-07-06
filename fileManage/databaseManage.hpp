@@ -46,7 +46,6 @@ inline const char* createSongsTableSQL = R"(
         codecName          TEXT,
         isMusic            INTEGER DEFAULT 0,
         aiGenre            TEXT,
-        aiMood             TEXT,
         bpm                INTEGER DEFAULT 0,
         key                TEXT,
         aiProcessed        INTEGER DEFAULT 0,

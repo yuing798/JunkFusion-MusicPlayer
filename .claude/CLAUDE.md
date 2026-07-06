@@ -81,5 +81,22 @@ struct classA : classB{
 9. 我没叫你做的事情决定禁止做，你可以向我提议，但是禁止亲自做
 10. 不要把我写的注释给删了，就算那段注释看起来没有用
 11. 对我的问题有任何疑问请直接告诉我，不要自我猜测和不说出来就直接写代码
+12. 数据库增删查改的字符串(如bind函数)不要直接写数字，改成:字符串的形式,如
+```cpp
+stmt.bind(1,  info.filePath);
+//改成命名参数，如
+std::string sql = 
+    "INSERT INTO songs (filePath, fileSize, lastModifiedTime, isMultiStreamFile, duration) "
+    "VALUES (:filePath, :fileSize, :lastModifiedTime, :isMultiStreamFile, :duration);";
+
+stmt.bind(":filePath", info.filePath);
+stmt.bind(":fileSize", info.fileSize);
+stmt.bind(":lastModifiedTime", info.lastModifiedTime);
+stmt.bind(":isMultiStreamFile", info.isMultiStreamFile);
+stmt.bind(":duration", info.duration);
+
+info.filePath = query.getColumn("filePath").getString();
+info.fileSize = query.getColumn("fileSize").getInt64();
+```
 
 

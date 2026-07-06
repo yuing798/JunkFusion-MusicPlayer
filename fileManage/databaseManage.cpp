@@ -67,19 +67,19 @@ bool SongsManage::isSongExists(const std::string& filePath)
     //SQLite::Database:存储数据库连接句柄（一个指向 .db 文件的指针）、连接状态、是否开启事务等管理信息。它是你操作数据库的“总入口”。
     //SQLite::Statement存储预编译好的 SQL 语句模板（比如 SELECT * FROM songs WHERE id = ?）、
     // 绑定的参数值（你填入的 filePath）、以及当前正在读取的那一行数据（执行查询后的结果缓冲区）。
-    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs WHERE filePath = ?");
-    //告诉数据库“我要数一下，songs 表里有多少行的 file_path 等于后面那个问号”。
-    //这个 ? 是一个“空位”，专门留给后面的 C++ 变量来填的
-    //目的：防止 SQL 注入攻击
-    //SQLite 会先把带 ? 的 SQL 编译成“执行计划”，然后只替换 ? 的值。如果你要循环插入一万首歌，这种写法比拼字符串快得多。
-    query.bind(1, filePath);
-    //把函数传进来的 filePath（比如 "C:\Music\Adele.mp3"）塞到刚才那个 ? 的位置上
-    //参数绑定看“问号的位置”，列读取看“SELECT 写的顺序”
-    //而在SQLite 中，? 占位符的索引从 1 开始，所以bind函数这里填1
+    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs WHERE filePath = :filePath");
+    //告诉数据库”我要数一下，songs 表里有多少行的 filePath 等于后面那个参数”。
+    //:filePath 是一个”命名占位符”，专门留给后面的 C++ 变量来填的
+    //目的：防止 SQL 注入攻击，同时命名参数比 ? 可读性更好
+    //SQLite 会先把带占位符的 SQL 编译成”执行计划”，然后只替换占位符的值。
+    //如果你要循环插入一万首歌，这种写法比拼字符串快得多。
+    query.bind(":filePath", filePath);
+    //把函数传进来的 filePath（比如 “C:\Music\Adele.mp3”）塞到刚才那个 :filePath 的位置上
+    //命名参数绑定看占位符的名字（含冒号前缀），列读取看”SELECT 写的顺序”
     query.executeStep();
     //执行查询：数据库跑去找数据。
     return query.getColumn(0).getInt() > 0;
-    //getColumn 数 SELECT 的列（从 0 开始）
+    //COUNT(*) 没有列名，所以仍然用数字索引（从 0 开始）
 }
 
 // ============================================================
@@ -90,26 +90,26 @@ void SongsManage::insertSong(const SongInfo& info)
     if (!db) return;
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
-        stmt.bind(1,  info.filePath);
-        stmt.bind(2,  info.fileSize);
-        stmt.bind(3,  info.lastModifiedTime);
-        stmt.bind(4,  info.isMultiStreamFile);
-        stmt.bind(5,  info.duration);
-        stmt.bind(6,  info.title);
-        stmt.bind(7,  info.artist);
-        stmt.bind(8, info.album);
-        stmt.bind(9, info.albumArtist);
-        stmt.bind(10, info.genre);
-        stmt.bind(11, info.trackNumber);
-        stmt.bind(12, info.discNumber);
-        stmt.bind(13, info.year);
-        stmt.bind(14, info.composer);
-        stmt.bind(15, info.imageHash);
-        stmt.bind(16,info.bitRate);
-        stmt.bind(17,info.bitDepth);
-        stmt.bind(18,info.sampleRate);
-        stmt.bind(19,info.numChannels);
-        stmt.bind(20,info.codecName);
+        stmt.bind(":filePath",         info.filePath);
+        stmt.bind(":fileSize",         static_cast<int64_t>(info.fileSize));
+        stmt.bind(":lastModifiedTime", info.lastModifiedTime);
+        stmt.bind(":isMultiStreamFile",info.isMultiStreamFile);
+        stmt.bind(":duration",         info.duration);
+        stmt.bind(":title",            info.title);
+        stmt.bind(":artist",           info.artist);
+        stmt.bind(":album",            info.album);
+        stmt.bind(":albumArtist",      info.albumArtist);
+        stmt.bind(":genre",            info.genre);
+        stmt.bind(":trackNumber",      info.trackNumber);
+        stmt.bind(":discNumber",       info.discNumber);
+        stmt.bind(":year",             info.year);
+        stmt.bind(":composer",         info.composer);
+        stmt.bind(":imageHash",        info.imageHash);
+        stmt.bind(":bitRate",          info.bitRate);
+        stmt.bind(":bitDepth",         info.bitDepth);
+        stmt.bind(":sampleRate",       info.sampleRate);
+        stmt.bind(":numChannels",      info.numChannels);
+        stmt.bind(":codecName",        info.codecName);
     };
 
     try
@@ -119,18 +119,17 @@ void SongsManage::insertSong(const SongInfo& info)
 
         {
             SQLite::Statement checkQuery(*db,
-                "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = ?");
-            //WHRER:只对满足后面“条件”的那些行进行操作（查询、更新或删除）。如果不写 WHERE，SQL 就会把这个操作施加到整个表的所有行上
-            checkQuery.bind(1, info.filePath);
+                "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath");
+            //WHERE:只对满足后面”条件”的那些行进行操作（查询、更新或删除）。如果不写 WHERE，SQL 就会把这个操作施加到整个表的所有行上
+            checkQuery.bind(":filePath", info.filePath);
             //.bind的作用是和占位符做绑定
 
             if (checkQuery.executeStep())//getColumn() 有一个铁律：在调用 getColumn() 之前，必须确保 executeStep() 返回了 true
             {
-                existingId = checkQuery.getColumn(0).getInt64();
-                int64_t existingSize = checkQuery.getColumn(1).getInt64();
-                std::string existingTime = checkQuery.getColumn(2).getString();
-                //这里的aIndex是相对于上面写的SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = ?
-                //而不是表中的顺序
+                existingId = checkQuery.getColumn("songId").getInt64();
+                int64_t existingSize = checkQuery.getColumn("fileSize").getInt64();
+                std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
+                //这里是按 SELECT 中写明的列名读取
 
                 // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
                 if (static_cast<int64_t>(info.fileSize) == existingSize
@@ -148,19 +147,19 @@ void SongsManage::insertSong(const SongInfo& info)
         {
             // ── 文件已变更：更新 songs 记录 ──
             SQLite::Statement updateSong(*db,
-                "UPDATE songs SET filePath = ?, fileSize = ?, "
-                "lastModifiedTime = ?, isMultiStreamFile = ?, "
-                "duration = ?, title = ?, artist = ?, album = ?, albumArtist = ?, "
-                "genre = ?, trackNumber = ?, discNumber = ?, year = ?, composer = ?, "
-                "imageHash = ?, bitRate = ?, bitDepth = ?,sampleRate = ?,numChannels = ?, codecName = ? "
-                "WHERE songId = ?"
+                "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
+                "lastModifiedTime = :lastModifiedTime, isMultiStreamFile = :isMultiStreamFile, "
+                "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
+                "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = :year, composer = :composer, "
+                "imageHash = :imageHash, bitRate = :bitRate, bitDepth = :bitDepth, sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
+                "WHERE songId = :songId"
             );
             //UPDATE songs 表示要对 songs 表进行更新操作。
-            //SET 后面跟着一系列 字段 = ?，表示要把这些字段的值替换成绑定的新值。
+            //SET 后面跟着一系列 字段 = :命名参数，表示要把这些字段的值替换成绑定的新值。
             //WHERE 限定只更新那些 songId 等于绑定值的行
 
             bindSongFields(updateSong);
-            updateSong.bind(22, existingId);//这里把id绑在最后一位
+            updateSong.bind(":songId", existingId);
             updateSong.exec();
 
         }
@@ -171,7 +170,8 @@ void SongsManage::insertSong(const SongInfo& info)
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                 "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                 "genre, trackNumber, discNumber, year, composer, imageHash, bitRate, bitDepth, sampleRate, numChannels, codecName) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "VALUES (:filePath, :fileSize, :lastModifiedTime, :isMultiStreamFile, :duration, :title, :artist, :album, :albumArtist, "
+                ":genre, :trackNumber, :discNumber, :year, :composer, :imageHash, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName)"
             );
 
             bindSongFields(insertSong);
@@ -212,36 +212,35 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
     while (query.executeStep())
     {
         SongInfo info;
-        info.filePath         = query.getColumn(0).getString();
-        info.fileSize         = query.getColumn(1).getInt64();
-        info.lastModifiedTime = query.getColumn(2).getString();
-        info.isMultiStreamFile = query.getColumn(3).getInt() != 0;
-        info.duration         = query.getColumn(4).getDouble();
-        info.title            = query.getColumn(5).getString();
-        info.artist           = query.getColumn(6).getString();
-        info.album            = query.getColumn(7).getString();
-        info.albumArtist      = query.getColumn(8).getString();
-        info.genre            = query.getColumn(9).getString();
-        info.trackNumber      = query.getColumn(10).getInt();
-        info.discNumber       = query.getColumn(11).getInt();
-        info.year             = query.getColumn(12).getInt();
-        info.composer         = query.getColumn(13).getString();
-        info.imageHash        = query.getColumn(14).getString();
-        info.bitRate          = query.getColumn(15).getInt64();
-        info.bitDepth         = query.getColumn(16).getInt();
-        info.sampleRate       = query.getColumn(17).getInt();
-        info.numChannels      = query.getColumn(18).getInt();
-        info.codecName        = query.getColumn(19).getString();
-        info.isMusic          = query.getColumn(20).getInt() != 0;
-        info.aiGenre          = query.getColumn(21).getString();
-        info.aiMood           = query.getColumn(22).getString();
-        info.bpm              = query.getColumn(23).getInt();
-        info.key              = query.getColumn(24).getString();
-        info.aiProcessed      = query.getColumn(25).getInt() != 0;
-        info.isMyLike         = query.getColumn(26).getInt() != 0;
-        info.comment          = query.getColumn(27).getString();
-        info.hadPlayedNum     = query.getColumn(28).getInt();
-        info.nameId           = query.getColumn(29).getInt();
+        info.filePath         = query.getColumn("filePath").getString();
+        info.fileSize         = query.getColumn("fileSize").getInt64();
+        info.lastModifiedTime = query.getColumn("lastModifiedTime").getString();
+        info.isMultiStreamFile = query.getColumn("isMultiStreamFile").getInt() != 0;
+        info.duration         = query.getColumn("duration").getDouble();
+        info.title            = query.getColumn("title").getString();
+        info.artist           = query.getColumn("artist").getString();
+        info.album            = query.getColumn("album").getString();
+        info.albumArtist      = query.getColumn("albumArtist").getString();
+        info.genre            = query.getColumn("genre").getString();
+        info.trackNumber      = query.getColumn("trackNumber").getInt();
+        info.discNumber       = query.getColumn("discNumber").getInt();
+        info.year             = query.getColumn("year").getInt();
+        info.composer         = query.getColumn("composer").getString();
+        info.imageHash        = query.getColumn("imageHash").getString();
+        info.bitRate          = query.getColumn("bitRate").getInt64();
+        info.bitDepth         = query.getColumn("bitDepth").getInt();
+        info.sampleRate       = query.getColumn("sampleRate").getInt();
+        info.numChannels      = query.getColumn("numChannels").getInt();
+        info.codecName        = query.getColumn("codecName").getString();
+        info.isMusic          = query.getColumn("isMusic").getInt() != 0;
+        info.aiGenre          = query.getColumn("aiGenre").getString();
+        info.bpm              = query.getColumn("bpm").getInt();
+        info.key              = query.getColumn("key").getString();
+        info.aiProcessed      = query.getColumn("aiProcessed").getInt() != 0;
+        info.isMyLike         = query.getColumn("isMyLike").getInt() != 0;
+        info.comment          = query.getColumn("comment").getString();
+        info.hadPlayedNum     = query.getColumn("hadPlayedNum").getInt();
+        info.nameId           = query.getColumn("nameId").getInt();
         result.push_back(std::move(info));
     }
 };
@@ -260,7 +259,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
-                        "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
+                        "isMusic, aiGenre, bpm, key, aiProcessed, "
                         "isMyLike, comment, hadPlayedNum, nameId "
                         "FROM songs ORDER BY songId ";
     if(ascending){
@@ -268,20 +267,20 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
     }else{
         sql +=" DESC ";
     }
-    sql += " LIMIT ? OFFSET ?";
+    sql += " LIMIT :limit OFFSET :offset";
     SQLite::Statement query(*db,sql);
 
     //OFFSET 的起始行从 0 开始计数
     //DESC：降序排列（Descending）。即时间越大的（越新的）排在最前面。如果写成 ASC，则是升序
-    //LIMIT ?：限制返回的行数。即这一页最多取多少条记录。这里的 ? 占位符通常绑定每页的大小
-    //OFFSET ?：偏移量（跳过多少行）。即从第几条数据开始取。这里的 ? 绑定跳过的行数
+    //LIMIT :limit：限制返回的行数。即这一页最多取多少条记录。
+    //OFFSET :offset：偏移量（跳过多少行）。即从第几条数据开始取。
     //注意OFFSET这里是行数，也就是单条目数据量，不是偏移的页码数
-    query.bind(1, limit);
-    query.bind(2, offset);
+    query.bind(":limit", limit);
+    query.bind(":offset", offset);
 
-    
+
     dataLookfor(query, result);
-    
+
     return result;
 }
 std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,bool ascending)
@@ -296,7 +295,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
-                        "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
+                        "isMusic, aiGenre, bpm, key, aiProcessed, "
                         "isMyLike, comment, hadPlayedNum, nameId "
                         "FROM songs ORDER BY hadPlayedNum ";
     if(ascending){
@@ -304,11 +303,11 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
     }else{
         sql +=" DESC ";
     }
-    sql += " LIMIT ? OFFSET ?";
+    sql += " LIMIT :limit OFFSET :offset";
     SQLite::Statement query(*db,sql);
 
-    query.bind(1, limit);
-    query.bind(2, offset);
+    query.bind(":limit", limit);
+    query.bind(":offset", offset);
 
     
     dataLookfor(query,result);
@@ -329,17 +328,17 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
-                        "isMusic, aiGenre, aiMood, bpm, key, aiProcessed, "
+                        "isMusic, aiGenre, bpm, key, aiProcessed, "
                         "isMyLike, comment, hadPlayedNum, nameId "
                         "FROM songs ORDER BY nameId ";
     if (ascending)
         sql += " ASC ";
     else
         sql += " DESC ";
-    sql += " LIMIT ? OFFSET ?";
+    sql += " LIMIT :limit OFFSET :offset";
     SQLite::Statement query(*db, sql);
-    query.bind(1, limit);
-    query.bind(2, offset);
+    query.bind(":limit", limit);
+    query.bind(":offset", offset);
 
     dataLookfor(query, result);
     return result;
@@ -368,8 +367,8 @@ void SongsManage::rebuildNameIds()
         while (query.executeStep())
         {
             entries.push_back({
-                query.getColumn(0).getInt64(),
-                query.getColumn(1).getString()
+                query.getColumn("songId").getInt64(),
+                query.getColumn("title").getString()
             });
         }
     }
@@ -396,9 +395,9 @@ void SongsManage::rebuildNameIds()
     for (int i = 0; i < static_cast<int>(entries.size()); ++i)
     {
         SQLite::Statement update(*db,
-            "UPDATE songs SET nameId = ? WHERE songId = ?");
-        update.bind(1, i + 1);
-        update.bind(2, entries[i].songId);
+            "UPDATE songs SET nameId = :nameId WHERE songId = :songId");
+        update.bind(":nameId", i + 1);
+        update.bind(":songId", entries[i].songId);
         update.exec();
     }
 }
