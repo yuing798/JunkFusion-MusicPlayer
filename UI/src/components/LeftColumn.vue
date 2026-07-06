@@ -287,11 +287,25 @@ function isSelected(id: number): boolean {
 
   /* 多重渐变：135度高光掠影 + 底部逆向暗面 + 音乐软件常用的电音蓝紫主色调 */
   background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%),
-    linear-gradient(315deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 40%),
-    linear-gradient(180deg, #00f2fe 0%, #4facfe 100%);
+    linear-gradient(
+      135deg,
+      var(--colorClicked) 0%,
+      color-mix(in srgb, var(--colorClicked), var(--colorStress)) 50%
+    ),
+    linear-gradient(
+      315deg,
+      var(--colorNav) 0%,
+      color-mix(in srgb, var(--colorNav), var(--colorStress)) 50%
+    ),
+    linear-gradient(
+      180deg,
+      var(--colorStress) 0%,
+      color-mix(in srgb, var(--colorStress), var(--colorTextMain)) 50%
+    );
   /* line-gradient函数的三个参数:方向、起始颜色（含位置）、结束颜色（含位置） */
   /* background-image 支持多层叠加，写在越前面的层级越高（覆盖在上面）。 */
+
+  /* 我也不知道怎么配色，瞎鸡巴交配出来的 */
 }
 
 /* 激活态下的内棱角光泽（使用 :before 伪元素） */
@@ -320,6 +334,9 @@ function isSelected(id: number): boolean {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%);
   mix-blend-mode: overlay;
 }
+/* ::before 相当于在 “蓝色的玻璃板” 上面，放了一张 “缩小的磨砂贴膜”，只在最上层折射光线，底下的蓝色玻璃依然透亮。
+
+直接塞进父元素 相当于你把 “蓝色的颜料” 和 “白色的高光颜料” 在调色盘里预先搅匀了再涂上去——结果就是浑浊的浅蓝色，失去了“玻璃+高光”的层次感。 */
 
 /* ==================== 3. 完美的八角外发光方案 ==================== */
 /* 核心技巧：利用 :after 伪元素作为背景，超出 button 裁剪范围的部分通过 blur 变为发光 */
@@ -331,7 +348,7 @@ function isSelected(id: number): boolean {
   width: 100%;
   height: 100%;
   z-index: -2; /* 放在最底层 */
-  background: linear-gradient(180deg, #00f2fe, #4facfe);
+  background: linear-gradient(180deg, var(--colorStress), var(--colorSuperStress));
 
   /* 同样进行八角裁切，确保发光形状也是八角宝石状 */
   clip-path: polygon(

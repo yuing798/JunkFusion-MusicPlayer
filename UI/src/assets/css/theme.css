@@ -7,8 +7,9 @@
     --colorEdge: #979797;/*边框的颜色*/
     --colorTextMain: #222222;/*主要文本的颜色*/
     --colorTextSecond: #555555;/*次级文本的颜色*/
-    --colorStress:#55c9dd;/*强调色，比如现在在导航窗的哪个位置*/
-    --shadow:0 2px 8px rgba(0, 0, 0, 0.15);
+    --colorStress:#00f2fe;/*强调色，比如现在在导航窗的哪个位置*/
+    --colorSuperStress:#4facfe;
+    /* 超级强调(给 渐变 调用的) */
     /* --color-accent: #4CAF50; */
     /*主要颜色*/
     /* --color-accent-hover: #45a049; */
