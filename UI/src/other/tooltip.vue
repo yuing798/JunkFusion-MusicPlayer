@@ -95,6 +95,19 @@ function show(): void {
     })
   })
 }
+// visible.value = true：修改 Vue 的响应式数据，触发 DOM 更新（元素将要出现）。
+
+// void nextTick(...)：
+// nextTick 是 Vue 提供的 API，它会把回调函数推到一个微任务队列中，等待当前 DOM 更新完成后再执行。
+// 前面的 void 是一个运算符，在这里的作用是抑制 nextTick 返回的 Promise 被未捕获处理（因为通常我们不需要 await 它，只是把回调丢进去）。
+
+// requestAnimationFrame(() => { ... })：
+// 这是浏览器自带的 API。它会在浏览器下一次重绘（刷新屏幕）之前执行回调。
+// 虽然 nextTick 保证了 Vue 的 DOM 更新了，但浏览器可能还没有重新计算元素的几何尺寸（重排 Reflow）。
+// requestAnimationFrame 确保在浏览器即将绘制新帧时，所有的尺寸都已经计算好了。
+
+// computePosition()：此时，元素已经在 DOM 里了，宽高也确定了，
+// 调用这个函数去读取元素的 offsetWidth 或 getBoundingClientRect()，计算出的位置才是准确的。
 
 function hide(): void {
   cancelTimer()
@@ -114,8 +127,10 @@ function onMouseEnter(e: MouseEvent): void {
   mouseX = e.clientX
   mouseY = e.clientY
   cancelTimer()
-  showTimer = setTimeout(show, 300)
+  showTimer = setTimeout(show, popupTime)
 }
+// setTimeout 是一个“定时炸弹”——你设定一个延迟时间（毫秒），
+// 时间一到，它就把你指定的“炸药包”（回调函数）丢进 JS 的任务队列里，等待主线程空闲时执行。
 
 function onMouseMove(e: MouseEvent): void {
   mouseX = e.clientX
@@ -156,6 +171,7 @@ onUnmounted(() => {
     @mouseleave="onMouseLeave"
   >
     <slot />
+    <!-- <slot /> 是 Vue 的“占位符”——它相当于在子组件里“挖了一个坑”，让父组件可以“填东西”进去。 -->
   </div>
 
   <!--
@@ -175,6 +191,18 @@ onUnmounted(() => {
       }"
     >
       {{ text }}
+      <!-- ref="popupRef"：这是 Vue 的模板引用。
+      你在 JS 里可以声明 const popupRef = ref<HTMLElement | null>(null);，然后 Vue 会把这个真实的 DOM 元素绑定到这个变量上。
+      :style="{ left: popupX + 'px', top: popupY + 'px' }"（坐标定位）
+      :style 是 v-bind:style 的简写，用于绑定动态的内联样式。
+
+      { left: popupX + 'px', top: popupY + 'px' }：这是一个 JS 对象。
+      Vue 会把它转换成 style="left: 100px; top: 200px;" 这样的行内样式。
+      <Teleport>：这是 Vue 3 内置的一个组件，它的名字很形象——“传送”。
+
+      to="body"：它告诉 Vue：“不要把这个 div 渲染在当前组件的位置，而是把它传送到 <body> 标签内部的最后面
+      
+      在 Vue 3 的 <template> 模板中，ref 会自动“解包（unwrap），所以不需要写v-if="visible.value" -->
     </div>
   </Teleport>
 </template>
@@ -200,7 +228,7 @@ onUnmounted(() => {
    ├────────────────────┼────────────────────────────────────────────────────────────┤
    │ 跟随鼠标           │ mousemove 时实时更新坐标，requestAnimationFrame 防抖       │
    ├────────────────────┼────────────────────────────────────────────────────────────┤
-   │ 屏幕边界避让       │ 右溢出翻转到左侧，下溢出翻转到上方，坐标不低于 0           │
+   │ 屏幕边界避让       │ 优先放在右下方，右溢出翻转到左侧，下溢出翻转到上方，坐标不低于 0           │
    ├────────────────────┼────────────────────────────────────────────────────────────┤
    │ 不限制在应用窗口内 │ <Teleport to="body"> + position: fixed，相对于屏幕视口     │
    ├────────────────────┼────────────────────────────────────────────────────────────┤
@@ -214,6 +242,7 @@ onUnmounted(() => {
 .tooltip-popup {
   position: fixed;
   z-index: 9999;
+  /* position: fixed; 是“相对于浏览器窗口（视口）固定位置，滚动页面它不动”；z-index: 9999; 是“强行把自己提到最高层，盖住页面上所有其他元素”。 */
 
   /* 外观 */
   background-color: var(--colorHover);
@@ -225,12 +254,14 @@ onUnmounted(() => {
   padding: 6px 12px;
 
   /* 文本 */
-  font-size: var(--littleFont);
+  font-size: var(--midFont);
   line-height: 1.4;
   white-space: nowrap;
-  user-select: none;
+  /* 1.4 是相对于字体大小的倍数 */
+  /* line-height: 1.4; 控制“行与行之间的距离”（行高），white-space: nowrap; 控制“文本不换行”（强制一行显示）。 */
 
   /* 确保提示窗本身不拦截鼠标事件（否则会触发父元素的 mouseleave） */
   pointer-events: none;
+  /* pointer-events: none; 就是让元素变成“隐形人”——鼠标事件（点击、悬停、拖动）会直接穿透它，仿佛它根本不存在。 */
 }
 </style>

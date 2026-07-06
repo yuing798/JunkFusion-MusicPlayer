@@ -9,6 +9,7 @@
 #include "juce_gui_extra/juce_gui_extra.h"
 #include "serial.hpp"
 #include <memory>
+#include <optional>
 #include <vector>
 
 //==============================================================================
@@ -22,29 +23,35 @@ MainComponent::MainComponent(){
         .withWinWebView2Options(juce::WebBrowserComponent::Options::WinWebView2{}
             .withUserDataFolder(LocalDirId.getChildFile("UICache"))
         )//windows需要有专门的存储路径，放置应用
+        //withNativeFunction这个逼函数默认运行在Message Thread
+        .withResourceProvider([this](const juce::String& path)->std::optional<juce::WebBrowserComponent::Resource>{
+            return juce::WebBrowserComponent::Resource{};
+        })
         .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
             [this](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
             ){
-                juce::MessageManager::callAsync([this,complete](){
-                    getMultiMediaFileChoose([complete](const juce::Array<juce::File>& files){
 
-                        if(files.isEmpty()){
-                            complete(juce::var());//就算不需要cpp到js的通信也必须发送完成信号
-                            return;
-                        }//用户取消选择
+                getMultiMediaFileChoose([complete](const juce::Array<juce::File>& files){
 
+                    if(files.isEmpty()){
+                        complete(juce::var());//就算不需要cpp到js的通信也必须发送完成信号
+                        return;
+                    }//用户取消选择
+
+                    juce::Thread::launch([files,complete](){
                         for(auto& file:files){
                             auto song{getStreamMetaData(file)};
                             if(!song.filePath.empty()) SongsManage::getInstance().insertSong(song);
                         }
                         complete(juce::var());
-                                
-                    },
-                        web.get()
-                    );
-                });
+                    });
+                            
+                },
+                    web.get()
+                );
+
             }
         );
     

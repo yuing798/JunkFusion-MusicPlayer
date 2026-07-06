@@ -386,3 +386,7 @@ web = std::make_unique<juce::WebBrowserComponent>(options);
 ## 环境声明
 
 `UI/env.d.ts` 定义了 `window.__JUCE__` 的类型，让 TypeScript 不报 `ts-plugin(2722)` 错误。当发现新的事件或方法时，在此文件中补充类型声明。
+
+## 额外声明
+
+如果该文档没有你需要的内容，可以直接前往juce源码：build/debug/_deps/juce-src/examples/Plugins 来查看juce的webview实现

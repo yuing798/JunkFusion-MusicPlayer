@@ -39,8 +39,9 @@ void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>
     // 3. 异步启动对话框
     chooser->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::canSelectMultipleItems, // 支持多选
-        [chooser, onFileSelected](const juce::FileChooser&)//回调函数的传参只有在回调实际触发时才能知道
+        [chooser, onFileSelected](const juce::FileChooser&)
             {
+                //回调函数的传参只有在回调实际触发时才能知道
                 // std::function：这是一个通用的函数包装器，意味着你可以传入任何可调用的对象：
                 // 普通函数、函数指针、Lambda 表达式、std::bind 生成的对象等。
 
