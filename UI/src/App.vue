@@ -62,8 +62,10 @@ const pageIdToComponent: Record<number, Component | null> = {
   0: AllMusic, // 所有音乐
   // 其他页面尚未开发，留 null
 }
+// Record<number, Component | null> 是一个 TypeScript 类型，
+// 它表示“一个对象”，这个对象的键（Key）必须是数字（number），值（Value）必须是 Component 类型或者 null
 
-const currentPageId = ref<number | null>(null) // null = 默认，显示占位
+const currentPageId = ref<number | null>(0) //默认在所有歌曲这一页
 
 /** 监听左侧导航栏的选中事件，切换主区域显示的页面 */
 function handlePageChange(id: number): void {
@@ -75,6 +77,13 @@ function resolvedComponent(id: number | null): Component | null {
   if (id === null) return null
   return pageIdToComponent[id] ?? null
 }
+// ?? 是 JavaScript/TypeScript 的“空值合并运算符（Nullish Coalescing Operator）”，
+// 它的作用是：如果左边的值是 null 或 undefined，就取右边的值；否则就取左边的值。
+
+//应用初始化的时候执行一次
+onMounted(() => {
+  resolvedComponent(currentPageId.value)
+})
 </script>
 
 <template>
@@ -82,6 +91,8 @@ function resolvedComponent(id: number | null): Component | null {
     <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件
          @selection-changed 接收子组件传上来的页面 id -->
     <LeftColumn @selection-changed="handlePageChange" />
+    <!-- @ 是 Vue 的 v-on 指令的语法糖（简写），它的作用是“监听事件”。具体到你这行代码，
+     就是“监听 LeftColumn 子组件触发的 selection-changed 事件，当它发生时，执行父组件里的 handlePageChange 方法” -->
 
     <!--
       主内容区域（动态组件）
@@ -95,6 +106,20 @@ function resolvedComponent(id: number | null): Component | null {
     <main class="main-content">
       <component v-if="resolvedComponent(currentPageId)" :is="resolvedComponent(currentPageId)" />
       <!-- 默认占位：没有任何侧边栏按钮被选中，或页面尚未开发 -->
+      <!-- v-if="resolvedComponent(currentPageId)"：
+       这是条件表达式。Vue 会执行 resolvedComponent(currentPageId)，如果它返回一个真值（有效的 Component），这个 <component> 标签就被渲染出来；如果返回假值（null 或 undefined），这个标签就完全不会出现在 DOM 里（不是隐藏，是直接销毁/不创建）。
+
+       v-else（紧跟在 div 上）：
+       它是 v-if 的“否则”分支。不需要写条件，它的逻辑自动和紧挨着它的 v-if 相反——只要上面的 v-if 为假，这个 <div> 就会被渲染出来。
+        :is（动态组件的核心魔法）
+        <component>：是 Vue 内置的一个特殊占位符元素。它本身不渲染成任何具体的 HTML 标签，而是根据 :is 属性来决定最终渲染成哪个组件。
+
+        :is="resolvedComponent(currentPageId)"：
+        : 是 v-bind 的简写，表示后面跟的是 JavaScript 表达式（而不是普通字符串）。
+        Vue 会执行 resolvedComponent(currentPageId)，拿到返回的组件定义（比如 AudioPanel 或 MidiPanel），然后把这个组件渲染在 <component> 的位置上。
+        v-if 只需要真假（Truthy / Falsy）来判断显不显示。它拿到 Component 对象后，只看一眼“哦，不是 null”，就直接把它丢弃了（只记住“是真的”）。
+
+        :is 需要拿到那个真实的 Component 对象，把它挂载到 DOM 上。 -->
       <div v-else class="placeholder">
         <p>主内容区域</p>
         <p class="hint">（选择左侧导航以查看页面）</p>

@@ -1,5 +1,6 @@
 #include "MainComponent.h"
 #include "Utils/BridgeNames.h"
+#include "constants.h"
 #include "databaseManage.hpp"
 #include "fileManage/fileUtils.hpp"
 #include "fileMessage.hpp"
@@ -18,6 +19,9 @@ MainComponent::MainComponent(){
     options = options
         .withBackend(juce::WebBrowserComponent::Options::Backend::webview2)
         .withNativeIntegrationEnabled(true)
+        .withWinWebView2Options(juce::WebBrowserComponent::Options::WinWebView2{}
+            .withUserDataFolder(UserDirId.getChildFile("UICache"))
+        )//windows需要有专门的存储路径，放置应用
         .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
             [this](
                 const juce::Array<juce::var>& args,

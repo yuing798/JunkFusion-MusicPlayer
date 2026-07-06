@@ -135,9 +135,20 @@ function isSelected(id: number): boolean {
       含义：当用户点击这个按钮时，执行 selectButton 方法，并把当前按钮的 id 作为参数传进去。
 
       :class 是“根据状态改变外观”的渲染逻辑（相当于 paint 中的 if 分支）。
+      :class 是 v-bind:class 的语法糖，意思是 “动态绑定 class”。
+      等号右边不再是一个普通字符串，而是一个 JavaScript 表达式（可以是对象、数组或三目运算符）。
+      Vue 会实时计算这个表达式的值，并把它“合并”到元素的 class 属性中。
 
-      @click 是“改变状态的输入事件”（相当于 mouseDown 回调）。
-      --></div>
+      class="navButton active"：这是静态的。active 这个类永远存在，不管 isSelected 返回 true 还是 false，按钮永远高亮。
+      :class="{ active: isSelected(button.id) }"：这是动态的。active 类跟随状态变化。
+      当 isSelected 返回 true 时，按钮高亮；返回 false 时，高亮消失。
+
+      :class="{isSelected(button.id) }"
+      这是 Vue 模板中的语法错误！
+      在 :class 的对象语法中，必须是 { 类名: 条件 } 的键值对结构。你漏写了键（active），直接放了一个表达式进去。
+
+      @click 是“改变状态的输入事件”（相当于 mouseDown 回调）。-->
+      </div>
     </div>
   </nav>
 </template>
@@ -219,86 +230,144 @@ function isSelected(id: number): boolean {
 
 .navButton {
   display: block;
-  /* display 决定了这个元素在页面布局中以什么身份参与“流式布局”。
-
-  display: block;：让元素独占一整行，宽度默认填满父容器。
-
-  display: inline;：元素不换行，宽度由内容撑开（类似 <span>）。
-
-  display: inline-block;：结合两者，不换行但可以设置宽高。 */
-  width: calc(100% - 6px);
+  /* 保持你原本的尺寸和基础定位 */
+  width: calc(100% - 10px);
   height: 40px;
   margin: 4px 4px;
-  /* 问题三：为什么 margin 有两个参数？
-  这是 CSS 的简写语法（Shorthand）。
-
-  1 个参数：margin: 10px; → 上下左右都是 10px。
-
-  2 个参数：margin: 0 3px; → 第一个是上下（0），第二个是左右（3px）。
-
-  4 个参数：margin: 0 3px 5px 10px; → 上、右、下、左（顺时针）。 */
+  position: relative; /* 必须加这句，用于伪元素绝对定位 */
 
   border: none;
-  border-radius: var(--borderRadius);
-  /* border: none;：去掉边框线（视觉上没有任何描边）。
-
-  border-radius: var(--button-radius);：把按钮的四个角切成圆角。 */
   background-color: transparent;
-  /* background-color：元素的背景色（填充色），相当于 JUCE 里的 g.fillAll() 填充的颜色。
-
-  color：元素内部文字的颜色，相当于 JUCE 里 g.setColour() 后 g.drawText() 用的颜色。 */
 
   font-size: var(--midFont);
   color: var(--colorTextMain);
   text-align: center;
   line-height: 40px;
-  /* 一行的高度 */
+  /* 行距 */
 
   cursor: pointer;
-  /* cursor 控制鼠标指针悬停在这个元素上时显示的形状。
-
-  cursor: pointer; → 手形（👆），通常用于按钮和链接。
-
-  cursor: default; → 默认箭头（➡️）。
-
-  cursor: text; → 文本光标（I 形）。 */
   user-select: none;
+  /* 用来控制用户能否用鼠标或手指选中页面上的文本 */
 
-  /* user-select: none; 就是禁止用户通过鼠标拖拽或双击选中该元素内的文字。
-
-  没有这行：在按钮上双击，文字会变成蓝底白字（高亮）。
-
-  有这行：双击时没有任何反应，就像在桌面原生应用里点按钮一样。 */
-
-  /*
-   过渡动画：让悬停和选中的颜色切换更平滑
-   C++ 中没有这个过渡，但前端这样做体验更好
-  */
+  /* 优化过渡属性，加入 clip-path 和 color 的平滑过渡 */
   transition:
     background-color var(--easeTime) ease,
     transform var(--easeTime) ease,
-    box-shadow var(--easeTime) ease;
-
-  /* transition: background-color 0.15s ease; 拆解为：
-
-  background-color：监听背景色的变化。
-
-  0.15s：变化过程持续 150 毫秒。
-
-  ease：缓动函数，先快后慢，让动画更自然 */
+    clip-path var(--easeTime) ease,
+    color var(--easeTime) ease,
+    font-weight var(--easeTime) ease;
 }
 
 /* 悬停态 — 对应 C++ selectedButton::paintButton 中的 shouldDrawButtonAsHighlighted */
 .navButton:hover:not(.active) {
-  background-color: var(--colorHover);
-  transform: translateY(1px);
-  box-shadow: var(--shadow);
-  /* box-shadow: [水平偏移] [垂直偏移] [模糊半径] [扩散半径] [颜色] */
+  /* 保持你原本的悬浮位移 */
+  transform: translateY(-3px);
+  color: var(--colorTextMain); /* 悬浮时文字微亮 */
+
+  /* 悬浮时赋予微弱的八角形轮廓和半透明背景 */
+  background-color: rgba(255, 255, 255, 0.08);
+
+  /* 八角矩形裁切 (四周切掉 8px 契合 40px 高度) */
+  clip-path: polygon(
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px
+  );
 }
 
-/* 选中态 — 对应 C++ selectedButton::paintButton 中 getToggleState() == true */
 .navButton.active {
-  background-color: var(--colorStress);
-  /* 选中时文字仍然保持黑色，与 C++ 行为一致 */
+  color: #ffffff;
+  font-weight: 600;
+  background-color: transparent; /* 把基底留给渐变 */
+
+  /* 激活时的八角形裁切 */
+  clip-path: polygon(
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px
+  );
+
+  /* 多重渐变：135度高光掠影 + 底部逆向暗面 + 音乐软件常用的电音蓝紫主色调 */
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(315deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 40%),
+    linear-gradient(180deg, #00f2fe 0%, #4facfe 100%);
+}
+
+/* 激活态下的内棱角光泽（使用 :before 伪元素） */
+.navButton.active::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px; /* 往内缩 1px 形成晶莹边缘 */
+  z-index: -1;
+
+  /* 内部缩进版的八角裁切 */
+  clip-path: polygon(
+    7px 0,
+    calc(100% - 7px) 0,
+    100% 7px,
+    100% calc(100% - 7px),
+    calc(100% - 7px) 100%,
+    7px 100%,
+    0 calc(100% - 7px),
+    0 7px
+  );
+
+  /* 上亮下暗的微弱渐变，模拟宝石上边缘的锐利折射 */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%);
+  mix-blend-mode: overlay;
+}
+
+/* ==================== 3. 完美的八角外发光方案 ==================== */
+/* 核心技巧：利用 :after 伪元素作为背景，超出 button 裁剪范围的部分通过 blur 变为发光 */
+.navButton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2; /* 放在最底层 */
+  background: linear-gradient(180deg, #00f2fe, #4facfe);
+
+  /* 同样进行八角裁切，确保发光形状也是八角宝石状 */
+  clip-path: polygon(
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px
+  );
+
+  /* 关键：使用高斯模糊打散成霓虹外发光 */
+  filter: blur(8px);
+  opacity: 0; /* 默认未激活、未悬浮时完全透明 */
+  transition: opacity var(--easeTime) ease;
+}
+
+/* 激活状态下，让外发光显现 */
+.navButton.active::after {
+  opacity: 0.6; /* 强弱可以通过透明度控制 */
+}
+
+/* 激活状态下再悬浮，让发光额外变强一点 */
+.navButton.active:hover::after {
+  opacity: 0.8;
 }
 </style>
