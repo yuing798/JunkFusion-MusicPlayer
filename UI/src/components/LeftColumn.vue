@@ -262,39 +262,27 @@ function isSelected(id: number): boolean {
 .navButton:hover:not(.active) {
   /* 保持你原本的悬浮位移 */
   transform: translateY(-3px);
-  color: var(--colorTextMain); /* 悬浮时文字微亮 */
-
-  /* 悬浮时赋予微弱的八角形轮廓和半透明背景 */
-  background-color: rgba(255, 255, 255, 0.08);
-
-  /* 八角矩形裁切 (四周切掉 8px 契合 40px 高度) */
-  clip-path: polygon(
-    8px 0,
-    calc(100% - 8px) 0,
-    100% 8px,
-    100% calc(100% - 8px),
-    calc(100% - 8px) 100%,
-    8px 100%,
-    0 calc(100% - 8px),
-    0 8px
-  );
+  /* 向下为正 */
+  color: var(--colorTextMain);
 }
 
 .navButton.active {
-  color: #ffffff;
-  font-weight: 600;
+  color: var(--colorTextMain);
+  font-weight: bold;
   background-color: transparent; /* 把基底留给渐变 */
 
-  /* 激活时的八角形裁切 */
+  --xClip: 10px;
+  --yClip: 10px;
+
   clip-path: polygon(
-    8px 0,
-    calc(100% - 8px) 0,
-    100% 8px,
-    100% calc(100% - 8px),
-    calc(100% - 8px) 100%,
-    8px 100%,
-    0 calc(100% - 8px),
-    0 8px
+    var(--xClip) 0,
+    calc(100% - var(--xClip)) 0,
+    100% var(--yClip),
+    100% calc(100% - var(--yClip)),
+    calc(100% - var(--xClip)) 100%,
+    var(--xClip) 100%,
+    0 calc(100% - var(--yClip)),
+    0 var(--yClip)
   );
 
   /* 多重渐变：135度高光掠影 + 底部逆向暗面 + 音乐软件常用的电音蓝紫主色调 */
@@ -302,6 +290,8 @@ function isSelected(id: number): boolean {
     linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%),
     linear-gradient(315deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 40%),
     linear-gradient(180deg, #00f2fe 0%, #4facfe 100%);
+  /* line-gradient函数的三个参数:方向、起始颜色（含位置）、结束颜色（含位置） */
+  /* background-image 支持多层叠加，写在越前面的层级越高（覆盖在上面）。 */
 }
 
 /* 激活态下的内棱角光泽（使用 :before 伪元素） */

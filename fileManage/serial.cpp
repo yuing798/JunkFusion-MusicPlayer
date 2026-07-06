@@ -8,7 +8,7 @@ Serial::Serial(){
 
 }
 void Serial::init(){
-    serialFile = UserDirId.getChildFile("serial.bin");
+    serialFile = LocalDirId.getChildFile("serial.bin");
     if(!serialFile.existsAsFile()){
         serialFile.create();
 

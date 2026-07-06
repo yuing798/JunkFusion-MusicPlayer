@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
-static const juce::File SerialCacheDirId{UserDirId.getChildFile("SerialCache")};
+static const juce::File SerialCacheDirId{LocalDirId.getChildFile("SerialCache")};
 //用来序列化的ID
 static constexpr const char* TreeRootId{"TreeRoot"};//树根
 static constexpr const char* UIRootId{"UIRoot"};//UI缓存的根

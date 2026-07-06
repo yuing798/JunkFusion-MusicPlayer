@@ -33,7 +33,7 @@ public:
         _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--auto-open-devtools-for-tabs");//这一行的作用是打开webview2的控制台
         #endif
 
-        if(!UserDirId.exists()) UserDirId.createDirectory();
+        if(!LocalDirId.exists()) LocalDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();
         if(!databaseDirId.exists()) databaseDirId.createDirectory();
         if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//创建对应的用户数据保存文件夹

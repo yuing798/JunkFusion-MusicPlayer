@@ -20,7 +20,7 @@ MainComponent::MainComponent(){
         .withBackend(juce::WebBrowserComponent::Options::Backend::webview2)
         .withNativeIntegrationEnabled(true)
         .withWinWebView2Options(juce::WebBrowserComponent::Options::WinWebView2{}
-            .withUserDataFolder(UserDirId.getChildFile("UICache"))
+            .withUserDataFolder(LocalDirId.getChildFile("UICache"))
         )//windows需要有专门的存储路径，放置应用
         .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
             [this](

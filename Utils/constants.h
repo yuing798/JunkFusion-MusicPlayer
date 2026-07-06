@@ -26,12 +26,18 @@ static constexpr const char* LogAllID{"all"};
 
 //文件路径操作
 
-static const juce::File UserDirId{
-    juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory)
+static const juce::File LocalDirId{
+    juce::File::getSpecialLocation(
+        #ifdef WIN32
+        juce::File::SpecialLocationType::windowsLocalAppData
+        #else
+        juce::File::SpecialLocationType::userApplicationDataDirectory
+        #endif
+    ).getChildFile("JunkFusion")
 };
-static const juce::File imageDirId{UserDirId.getChildFile("image")};
-static const juce::File databaseDirId{UserDirId.getChildFile("database")};
-static const juce::File logInfoDirId{UserDirId.getChildFile("logInfo")};
+static const juce::File imageDirId{LocalDirId.getChildFile("image")};
+static const juce::File databaseDirId{LocalDirId.getChildFile("database")};
+static const juce::File logInfoDirId{LocalDirId.getChildFile("logInfo")};
 
 //禁止拷贝和移动的宏
 #define DONT_COPY_AND_MOVE(ClassName) \
