@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import EachSong from '@/cell/eachSong.vue'
-import PageChange from '@/other/pageChange.vue'
-import { PlaybackState } from '@/UtilsScripts/playState'
-import type { SongInfo } from '@/cell/SongInfo'
+import EachSong from '@/components/cell/eachSong.vue'
+import PageChange from '@/components/other/pageChange.vue'
+import { PlaybackState } from '@/macro/playState'
+import type { SongInfo } from '@/store/SongInfo'
 
 // ════════════════════════════════════════════════════════════════
 // SongSelectViewport — 歌曲列表滚动容器
@@ -46,6 +46,7 @@ const props = defineProps<{
   /** 当前播放状态 */
   activePlaybackState: PlaybackState
 }>()
+// props中的数据只能是只读的
 
 const emit = defineEmits<{
   (e: 'page-change', page: number): void
@@ -111,6 +112,7 @@ function onPageChange(page: number): void {
         @show-more-info="onShowMoreInfo"
         @request-playback-change="onRequestPlaybackChange"
       />
+      <!-- templete用短横线、JS 用驼峰 ,妈的死了妈的双重标准-->
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════

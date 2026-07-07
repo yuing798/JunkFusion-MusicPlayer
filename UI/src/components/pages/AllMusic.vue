@@ -5,8 +5,8 @@ import { ref } from 'vue'
 import refreshSvg from '@/assets/image/refresh.svg'
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
-import { BRIDGE_KEYS } from '@/UtilsScripts/bridge.generated'
-import { callNativeFunction } from '@/UtilsScripts/initBridge'
+import { BRIDGE_KEYS } from '@/bridge/bridge.generated'
+import { callNativeFunction } from '@/bridge/initBridge'
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};

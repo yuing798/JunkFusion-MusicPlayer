@@ -26,3 +26,4 @@ description: This document explains how to use Vue for UI design.
 //   - 通过 Teleport 渲染到 body，不受应用窗口裁剪
 // ════════════════════════════════════════════════════════════════
 ```
+4. templete统一使用短横线-,js统一使用驼峰式

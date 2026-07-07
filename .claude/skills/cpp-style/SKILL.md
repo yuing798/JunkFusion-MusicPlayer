@@ -89,3 +89,4 @@ stmt.bind(":duration", info.duration);
 info.filePath = query.getColumn("filePath").getString();
 info.fileSize = query.getColumn("fileSize").getInt64();
 ```
+7. 所有命名统一采用驼峰式，包括cpp,sqlite,python,vue语句

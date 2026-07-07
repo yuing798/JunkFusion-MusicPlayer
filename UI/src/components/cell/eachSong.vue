@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onUnmounted } from 'vue'
-import Tooltip from '@/other/tooltip.vue'
-import { PlaybackState } from '@/UtilsScripts/playState'
-import type { SongInfo } from '@/cell/SongInfo'
+import Tooltip from '@/components/other/tooltip.vue'
+import { PlaybackState } from '@/macro/playState'
+import type { SongInfo } from '@/store/SongInfo'
 
 // ── SVG 资源 ──
 import playSvg from '@/assets/image/play.svg'
@@ -32,6 +32,8 @@ const emit = defineEmits<{
   /** 请求改变播放状态：Stopped → Playing, Playing → Paused, Paused → Playing */
   (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
 }>()
+// Props 必须是驼峰（songIndex），因为它是“JavaScript 变量名（标识符）”；
+// Emit 事件名用短横线（'toggle-like'），因为它是一个“字符串字面量（值）”
 
 /** 多流音频悬停提示文本 */
 const MULTI_STREAM_TOOLTIP_TEXT =
