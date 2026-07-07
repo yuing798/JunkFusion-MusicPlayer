@@ -8,6 +8,7 @@
 import { ref, watch, onMounted, type Component } from 'vue'
 import LeftColumn from './components/LeftColumn.vue'
 import AllMusic from './components/pages/AllMusic.vue'
+import Tooltip from './other/tooltip.vue'
 
 //应用初始化的时候执行一次,不需要放到scripts的末尾
 onMounted(() => {
@@ -121,7 +122,10 @@ function resolvedComponent(id: number | null): Component | null {
 
         :is 需要拿到那个真实的 Component 对象，把它挂载到 DOM 上。 -->
       <div v-else class="placeholder">
-        <p>主内容区域</p>
+        <Tooltip text="bfdubqiwfbqiowfbqoiwfbqowifbqwwifqfoivvvvvvvvvvvvvvvvvvvvv">
+          <!-- 测试专用 -->
+          <p>主内容区域</p>
+        </Tooltip>
         <p class="hint">（选择左侧导航以查看页面）</p>
       </div>
     </main>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+//指定ts语言检查
 import { ref, computed, nextTick, onUnmounted } from 'vue'
 import Tooltip from '@/other/tooltip.vue'
 import { PlaybackState } from '@/UtilsScripts/playState'
@@ -17,6 +18,7 @@ import xSvg from '@/assets/image/x.svg'
 // ════════════════════════════════════════════════════════════════
 
 const props = defineProps<{
+  //父到子
   /** 歌曲全局序号 */
   songIndex: number
   /** 歌曲完整信息 */
@@ -47,10 +49,12 @@ const popupRef = ref<HTMLElement | null>(null)
 const popupVisible = ref(false)
 const popupClosing = ref(false)
 const popupPosition = ref({ left: '0px', top: '0px' })
-const popupPositionStyle = computed(() => ({
-  left: popupPosition.value.left,
-  top: popupPosition.value.top,
-}))
+// computed 是 Vue 的计算属性，它的核心作用是：基于现有的响应式数据（如 ref 或 reactive），
+// 派生出一个新的响应式数据，并且会缓存结果，只有依赖的数据变化时才会重新计算。
+// 缓存（核心优势）：computed 会缓存计算结果，只有依赖变了才重新求值。
+// 而普通函数（比如 function getStyle() { ... }）在模板里每次渲染都会重新执行一遍。
+// 只读性：默认 computed 是只读的（你修改它会报错），适合把“源数据”加工成“展示数据”。
+// 依赖追踪：它会自动追踪内部用到的所有响应式变量，保持同步。
 
 // ── 拖动状态 ──
 const isDragging = ref(false)
@@ -68,11 +72,11 @@ function handleMoreClick(): void {
     const rect = moreButtonRef.value.getBoundingClientRect()
     document.documentElement.style.setProperty(
       '--popup-origin-x',
-      (rect.left + rect.width / 2) + 'px',
+      rect.left + rect.width / 2 + 'px',
     )
     document.documentElement.style.setProperty(
       '--popup-origin-y',
-      (rect.top + rect.height / 2) + 'px',
+      rect.top + rect.height / 2 + 'px',
     )
   }
 
@@ -81,8 +85,8 @@ function handleMoreClick(): void {
 
   // 初始居中
   popupPosition.value = {
-    left: ((window.innerWidth - 400) / 2) + 'px',
-    top: ((window.innerHeight - 350) / 2) + 'px',
+    left: (window.innerWidth - 400) / 2 + 'px',
+    top: (window.innerHeight - 350) / 2 + 'px',
   }
 
   // 用实际尺寸重新居中
@@ -90,8 +94,8 @@ function handleMoreClick(): void {
     if (popupRef.value) {
       const r = popupRef.value.getBoundingClientRect()
       popupPosition.value = {
-        left: ((window.innerWidth - r.width) / 2) + 'px',
-        top: ((window.innerHeight - r.height) / 2) + 'px',
+        left: (window.innerWidth - r.width) / 2 + 'px',
+        top: (window.innerHeight - r.height) / 2 + 'px',
       }
     }
   })
@@ -124,8 +128,8 @@ function startDrag(e: MouseEvent): void {
 function onDragMove(e: MouseEvent): void {
   if (!isDragging.value) return
   popupPosition.value = {
-    left: (e.clientX - dragOffset.value.x) + 'px',
-    top: (e.clientY - dragOffset.value.y) + 'px',
+    left: e.clientX - dragOffset.value.x + 'px',
+    top: e.clientY - dragOffset.value.y + 'px',
   }
 }
 
@@ -216,12 +220,7 @@ onUnmounted(() => {
         class="state-icon"
         alt=""
       />
-      <img
-        v-else
-        :src="pauseSvg"
-        class="state-icon"
-        alt=""
-      />
+      <img v-else :src="pauseSvg" class="state-icon" alt="" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -234,9 +233,7 @@ onUnmounted(() => {
           <span class="song-name">{{ songInfo.title || '未知' }}</span>
         </Tooltip>
         <Tooltip :text="MULTI_STREAM_TOOLTIP_TEXT">
-          <span v-if="songInfo.isMultiStreamFile" class="multi-stream-badge">
-            多流音频
-          </span>
+          <span v-if="songInfo.isMultiStreamFile" class="multi-stream-badge"> 多流音频 </span>
         </Tooltip>
       </div>
       <div class="artist-row">
@@ -273,11 +270,7 @@ onUnmounted(() => {
          isMyLike=false → heart.svg（空心）
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-like" @click.stop="handleLikeClick">
-      <img
-        :src="songInfo.isMyLike ? heartFillSvg : heartSvg"
-        class="icon-btn"
-        alt="like"
-      />
+      <img :src="songInfo.isMyLike ? heartFillSvg : heartSvg" class="icon-btn" alt="like" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -316,11 +309,7 @@ onUnmounted(() => {
           </div>
 
           <div class="popup-metadata">
-            <p
-              v-for="(line, i) in metadataLines"
-              :key="i"
-              class="metadata-line"
-            >
+            <p v-for="(line, i) in metadataLines" :key="i" class="metadata-line">
               {{ line }}
             </p>
           </div>
