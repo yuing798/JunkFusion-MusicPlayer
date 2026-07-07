@@ -64,18 +64,8 @@ void SongsManage::createTables()
 bool SongsManage::isSongExists(const std::string& filePath)
 {
     if (!db) return false;
-    //SQLite::Database:存储数据库连接句柄（一个指向 .db 文件的指针）、连接状态、是否开启事务等管理信息。它是你操作数据库的“总入口”。
-    //SQLite::Statement存储预编译好的 SQL 语句模板（比如 SELECT * FROM songs WHERE id = ?）、
-    // 绑定的参数值（你填入的 filePath）、以及当前正在读取的那一行数据（执行查询后的结果缓冲区）。
     SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs WHERE filePath = :filePath");
-    //告诉数据库”我要数一下，songs 表里有多少行的 filePath 等于后面那个参数”。
-    //:filePath 是一个”命名占位符”，专门留给后面的 C++ 变量来填的
-    //目的：防止 SQL 注入攻击，同时命名参数比 ? 可读性更好
-    //SQLite 会先把带占位符的 SQL 编译成”执行计划”，然后只替换占位符的值。
-    //如果你要循环插入一万首歌，这种写法比拼字符串快得多。
     query.bind(":filePath", filePath);
-    //把函数传进来的 filePath（比如 “C:\Music\Adele.mp3”）塞到刚才那个 :filePath 的位置上
-    //命名参数绑定看占位符的名字（含冒号前缀），列读取看”SELECT 写的顺序”
     query.executeStep();
     //执行查询：数据库跑去找数据。
     return query.getColumn(0).getInt() > 0;
@@ -120,9 +110,7 @@ void SongsManage::insertSong(const SongInfo& info)
         {
             SQLite::Statement checkQuery(*db,
                 "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath");
-            //WHERE:只对满足后面”条件”的那些行进行操作（查询、更新或删除）。如果不写 WHERE，SQL 就会把这个操作施加到整个表的所有行上
             checkQuery.bind(":filePath", info.filePath);
-            //.bind的作用是和占位符做绑定
 
             if (checkQuery.executeStep())//getColumn() 有一个铁律：在调用 getColumn() 之前，必须确保 executeStep() 返回了 true
             {
@@ -151,7 +139,8 @@ void SongsManage::insertSong(const SongInfo& info)
                 "lastModifiedTime = :lastModifiedTime, isMultiStreamFile = :isMultiStreamFile, "
                 "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
                 "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = :year, composer = :composer, "
-                "imageHash = :imageHash, bitRate = :bitRate, bitDepth = :bitDepth, sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
+                "imageHash = :imageHash, bitRate = :bitRate, bitDepth = :bitDepth, "
+                "sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
                 "WHERE songId = :songId"
             );
             //UPDATE songs 表示要对 songs 表进行更新操作。
@@ -212,6 +201,7 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
     while (query.executeStep())
     {
         SongInfo info;
+        info.songId           = query.getColumn("songId").getInt64();
         info.filePath         = query.getColumn("filePath").getString();
         info.fileSize         = query.getColumn("fileSize").getInt64();
         info.lastModifiedTime = query.getColumn("lastModifiedTime").getString();
@@ -255,7 +245,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
         logger->debug("更新歌曲页码阶段发生空指针问题");
         return result;
     }
-    std::string sql = "SELECT filePath, fileSize, lastModifiedTime, "
+    std::string sql = "SELECT songId, filePath, fileSize, lastModifiedTime, "
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
@@ -291,7 +281,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
         logger->debug("按播放次数排序查询歌曲阶段发生空指针问题");
         return result;
     };
-    std::string sql = "SELECT filePath, fileSize, lastModifiedTime, "
+    std::string sql = "SELECT songId, filePath, fileSize, lastModifiedTime, "
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "
@@ -324,7 +314,7 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
         return result;
     }
 
-    std::string sql = "SELECT filePath, fileSize, lastModifiedTime, "
+    std::string sql = "SELECT songId, filePath, fileSize, lastModifiedTime, "
                         "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                         "genre, trackNumber, discNumber, year, composer, imageHash, "
                         "bitRate, bitDepth, sampleRate, numChannels, codecName, "

@@ -35,7 +35,6 @@ public:
 
         if(!LocalDirId.exists()) LocalDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();
-        if(!databaseDirId.exists()) databaseDirId.createDirectory();
         if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//创建对应的用户数据保存文件夹
 
         SongsManage::getInstance().init();

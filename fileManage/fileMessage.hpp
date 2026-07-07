@@ -8,6 +8,7 @@
 
 struct SongInfo
 {
+    int64_t songId{0};
     // ── 1. 文件信息 ──
     std::string filePath;               // 文件完整路径
     int64_t      fileSize    = 0;        // 文件大小（字节）
@@ -57,6 +58,9 @@ struct SongInfo
     //将songInfo转化为var，才能推送给js端
     static juce::var toVar(const SongInfo& song){
         auto obj{new juce::DynamicObject()};
+
+        // ── 0. 主键 ──
+        obj->setProperty("songId", song.songId);
 
         // ── 1. 文件信息 ──
         obj->setProperty("filePath",         juce::String(song.filePath));
