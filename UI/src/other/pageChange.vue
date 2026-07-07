@@ -38,13 +38,16 @@ const emit = defineEmits<{
 const jumpInput = ref('')
 
 // 当 totalPages 或 currentPage 变化时清空输入框
-watch(() => [props.totalPages, props.currentPage], () => {
-  jumpInput.value = ''
-})
+watch(
+  () => [props.totalPages, props.currentPage],
+  () => {
+    jumpInput.value = ''
+  },
+)
 
 /** 点击 go 按钮或按下回车 */
 function goAndEnterClick(): void {
-  const targetPage = parseInt(jumpInput.value, 10)
+  const targetPage = parseInt(jumpInput.value, 10) //将输入框的输入解析为10进制
   if (isNaN(targetPage)) return
   if (targetPage >= 1 && targetPage <= props.totalPages && targetPage !== props.currentPage) {
     jumpInput.value = ''
@@ -69,7 +72,7 @@ function onJumpKeydown(e: KeyboardEvent): void {
 
 interface PageItem {
   type: 'page' | 'ellipsis'
-  page?: number
+  page?: number //? 表示这个字段是可选的
 }
 
 const pageItems = computed<PageItem[]>(() => {
@@ -80,6 +83,8 @@ const pageItems = computed<PageItem[]>(() => {
 
   if (n <= 7) {
     // 全部显示
+    //生成了一个长度为 n 的数组，每个元素都是一个带有 type 和 page 属性的对象，分别表示“页码类型”和“页码数值”。
+    //(_, i) => ({ type: 'page' as const, page: i + 1 })（映射函数）
     return Array.from({ length: n }, (_, i) => ({ type: 'page' as const, page: i + 1 }))
   }
 
@@ -175,7 +180,7 @@ function isCurrent(page: number): boolean {
         :disabled="isPrevDisabled"
         @click="goPrev"
       >
-        &lt;
+        <
       </button>
 
       <!-- 页码 / 省略号，对应 C++ buttons / ellipsisLabels -->
@@ -188,9 +193,7 @@ function isCurrent(page: number): boolean {
         >
           {{ item.page }}
         </button>
-        <span v-else class="ellipsis">
-          ...
-        </span>
+        <span v-else class="ellipsis"> ... </span>
       </template>
 
       <!-- > 下一页，对应 C++ nextButton -->
@@ -200,7 +203,7 @@ function isCurrent(page: number): boolean {
         :disabled="isNextDisabled"
         @click="goNext"
       >
-        &gt;
+        >
       </button>
     </div>
 
@@ -217,9 +220,7 @@ function isCurrent(page: number): boolean {
         placeholder="跳转到..."
         @keydown="onJumpKeydown"
       />
-      <button class="page-btn go-btn" @click="goAndEnterClick">
-        go
-      </button>
+      <button class="page-btn go-btn" @click="goAndEnterClick">go</button>
     </div>
   </div>
 </template>

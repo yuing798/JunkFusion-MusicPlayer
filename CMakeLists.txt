@@ -37,8 +37,8 @@ juce_add_gui_app(JunkFusion
     VERSION ${PROJECT_VERSION}
     COMPANY_NAME "YusekX"
     PRODUCT_NAME "JunkFusion"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
-    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/jf2-Photoroom.png"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/jf2-Photoroom.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/jf2-Photoroom.png"
     NEEDS_WEB_BROWSER TRUE
     NEEDS_WEBVIEW2 TRUE
 )
@@ -96,7 +96,7 @@ target_link_directories(JunkFusion
 target_link_libraries(JunkFusion
     PRIVATE
         # --- 项目内部库 ---
-        JunkFusionBinaryData
+        # JunkFusionBinaryData
 
         # --- JUCE 官方音频与 UI 模块 ---
         juce::juce_audio_utils       # 包含底层声卡设备管理
