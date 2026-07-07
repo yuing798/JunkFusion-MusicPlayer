@@ -54,8 +54,6 @@ target_sources(JunkFusion
         MainComponent.h
         MainComponent.cpp
 )
-add_subdirectory(image)
-# add_subdirectory(UIDesign)
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
 
@@ -106,7 +104,7 @@ target_link_libraries(JunkFusion
         juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
         juce::juce_gui_extra         # 包含高级 UI 组件
         juce::juce_gui_basics#基础UI组件
-        juce::juce_animation#动画效果模块
+        # juce::juce_animation#动画效果模块
         
         # 第三方库
         ${FFMPEG_LIBRARIES}#解码层和重采样层
@@ -115,7 +113,6 @@ target_link_libraries(JunkFusion
         unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
         PkgConfig::ICU#字符串排序功能
-        # unofficial::webview2::webview2
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置

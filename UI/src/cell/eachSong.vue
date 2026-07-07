@@ -1,5 +1,4 @@
 <script setup lang="ts">
-//指定ts语言检查
 import { ref, computed, nextTick, onUnmounted } from 'vue'
 import Tooltip from '@/other/tooltip.vue'
 import { PlaybackState } from '@/UtilsScripts/playState'
@@ -30,13 +29,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-like', info: SongInfo): void
   (e: 'show-more-info', info: SongInfo): void
+  /** 请求改变播放状态：Stopped → Playing, Playing → Paused, Paused → Playing */
+  (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
 }>()
 
-// ════════════════════════════════════════════════════════════════
-// 常量
-// ════════════════════════════════════════════════════════════════
-
-/** 多流音频悬停提示文本（与 C++ MultiStreamToolTip 一致） */
+/** 多流音频悬停提示文本 */
 const MULTI_STREAM_TOOLTIP_TEXT =
   '该文件包含多路音频流（如多语言、多声道）。当前播放器将自动为您选择质量最佳的默认音轨。如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序'
 
@@ -49,12 +46,6 @@ const popupRef = ref<HTMLElement | null>(null)
 const popupVisible = ref(false)
 const popupClosing = ref(false)
 const popupPosition = ref({ left: '0px', top: '0px' })
-// computed 是 Vue 的计算属性，它的核心作用是：基于现有的响应式数据（如 ref 或 reactive），
-// 派生出一个新的响应式数据，并且会缓存结果，只有依赖的数据变化时才会重新计算。
-// 缓存（核心优势）：computed 会缓存计算结果，只有依赖变了才重新求值。
-// 而普通函数（比如 function getStyle() { ... }）在模板里每次渲染都会重新执行一遍。
-// 只读性：默认 computed 是只读的（你修改它会报错），适合把“源数据”加工成“展示数据”。
-// 依赖追踪：它会自动追踪内部用到的所有响应式变量，保持同步。
 
 // ── 拖动状态 ──
 const isDragging = ref(false)
@@ -78,7 +69,7 @@ function handleMoreClick(): void {
       '--popup-origin-y',
       rect.top + rect.height / 2 + 'px',
     )
-  }
+  } //动态改变css属性
 
   popupVisible.value = true
   popupClosing.value = false
@@ -120,9 +111,10 @@ function startDrag(e: MouseEvent): void {
   isDragging.value = true
   const rect = popupRef.value!.getBoundingClientRect()
   dragOffset.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  // 计算鼠标在弹窗内部的位置
 
-  window.addEventListener('mousemove', onDragMove)
-  window.addEventListener('mouseup', onDragEnd)
+  window.addEventListener('mousemove', onDragMove) //'mousemove'是浏览器提供的API方法
+  window.addEventListener('mouseup', onDragEnd) //用户在任意位置松开鼠标左键（或触控板左键）的那一刻
 }
 
 function onDragMove(e: MouseEvent): void {
@@ -185,6 +177,28 @@ function handleLikeClick(): void {
   emit('toggle-like', props.songInfo)
 }
 
+/**
+ * 点击序号/播放状态列的切换逻辑：
+ *   Stopped → 请求进入 Playing
+ *   Playing → 请求进入 Paused
+ *   Paused  → 请求进入 Playing
+ */
+function handleOrdinalClick(): void {
+  let nextState: PlaybackState
+  switch (props.playbackState) {
+    case PlaybackState.Stopped:
+      nextState = PlaybackState.Playing
+      break
+    case PlaybackState.Playing:
+      nextState = PlaybackState.Paused
+      break
+    case PlaybackState.Paused:
+      nextState = PlaybackState.Playing
+      break
+  }
+  emit('request-playback-change', props.songInfo, nextState)
+}
+
 // ════════════════════════════════════════════════════════════════
 // 清理
 // ════════════════════════════════════════════════════════════════
@@ -206,11 +220,11 @@ onUnmounted(() => {
   <div class="each-song-row">
     <!-- ═══════════════════════════════════════════════════════════
          第 1 列：序号 / 播放状态 (50px)
-         Stopped → 显示序号数字
-         Playing → play.svg
-         Paused → pause.svg
+         Stopped → 显示序号数字 ->@click.stop:进入playing状态
+         Playing → play.svg ->@click.stop:进入paused状态
+         Paused → pause.svg ->@click.stop:进入playing状态
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-ordinal">
+    <div class="cell cell-ordinal" @click.stop="handleOrdinalClick">
       <span v-if="playbackState === PlaybackState.Stopped" class="ordinal-number">
         {{ songIndex }}
       </span>
@@ -229,8 +243,9 @@ onUnmounted(() => {
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-name-artist">
       <div class="name-row">
-        <Tooltip :text="songInfo.title || '未知'">
-          <span class="song-name">{{ songInfo.title || '未知' }}</span>
+        <Tooltip :text="songInfo.title">
+          <span class="song-name">{{ songInfo.title }}</span>
+          <!-- 歌曲是一定有标题的 -->
         </Tooltip>
         <Tooltip :text="MULTI_STREAM_TOOLTIP_TEXT">
           <span v-if="songInfo.isMultiStreamFile" class="multi-stream-badge"> 多流音频 </span>
@@ -254,7 +269,7 @@ onUnmounted(() => {
          第 4 列：AI 分类标签 (120px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-genre">
-      <span class="ellipsis-text">{{ songInfo.aiGenre }}</span>
+      <span class="ellipsis-text">{{ songInfo.aiGenre || '' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -271,6 +286,7 @@ onUnmounted(() => {
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-like" @click.stop="handleLikeClick">
       <img :src="songInfo.isMyLike ? heartFillSvg : heartSvg" class="icon-btn" alt="like" />
+      <!-- @click.stop用来阻止向父组件冒泡 -->
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -291,7 +307,7 @@ onUnmounted(() => {
         ref="popupRef"
         class="popup-window"
         :class="{ 'popup-closing': popupClosing }"
-        :style="popupPositionStyle"
+        :style="popupPosition"
       >
         <!-- 可拖动标题栏 -->
         <div class="popup-titlebar" @mousedown="startDrag">
@@ -320,24 +336,17 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ════════════════════════════════════════════════════════════════
-   行容器
-   对应 C++ EachSong::paint()：
-   - 背景 ycolor.shallowGrey → var(--colorMain)
-   - 圆角 reduced(5.0f) → margin 2px 5px
-   - 圆角半径 10.0f → border-radius: 10px
-   ════════════════════════════════════════════════════════════════ */
-
 .each-song-row {
   display: grid;
+  /* display: grid; 是 CSS 的网格布局（Grid Layout）属性，它把一个容器变成了“网格化”的二维布局系统——你可以像画表格一样，把子元素按行和列整齐排列 */
   grid-template-columns: 50px 1fr 150px 120px 80px 40px 40px;
   height: 70px;
   align-items: center;
   gap: 4px;
   padding: 0 5px;
   margin: 2px 5px;
-  background-color: var(--colorMain);
-  border-radius: 10px;
+  background-color: var(--colorCell);
+  border-radius: var(--borderRadius);
   transition: background-color var(--easeTime) ease;
   user-select: none;
 }
@@ -363,6 +372,7 @@ onUnmounted(() => {
 .cell-ordinal {
   justify-content: center;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .ordinal-number {
@@ -437,7 +447,7 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: var(--littleFont);
+  font-size: var(--midFont);
   color: var(--colorTextSecond);
 }
 

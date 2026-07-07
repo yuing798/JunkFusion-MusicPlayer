@@ -47,7 +47,7 @@ const popupRef = ref<HTMLElement | null>(null)
 // ── 定位常量 ──
 const GAP = 12 // 提示窗与鼠标指针之间的间距（px）
 const popupTime = 400 //鼠标悬浮在组件上直到出现的时间
-const removeTime = 150 //鼠标移除后悬浮窗多久消失
+// const removeTime = 150 //鼠标移除后悬浮窗多久消失
 
 /**
  * 根据当前鼠标位置和 tooltip 尺寸计算最终坐标，
