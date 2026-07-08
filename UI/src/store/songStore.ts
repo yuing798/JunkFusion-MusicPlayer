@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
 import type { SongInfo } from './SongInfo'
-import { PlaybackState } from '@/macro/playState'
 
-const songPage : string = 'songPage'
 // “对象字面量”就是用一对花括号 {} 包裹起来，里面写 键: 值 键值对（Key-Value Pair）的结构，用来直接在代码里“凭空”创建一个 JavaScript 对象。
-export const songStore = defineStore(songPage,{//这一页的15首歌曲
+export const songStore = defineStore('songPage',{//这一页的15首歌曲
   state:()=>({
     //箭头后面跟着圆括号的原因：state 必须是一个“函数”，而箭头函数 () => 后面如果直接跟 {}，
     // 会被 JavaScript 解析为“函数体（代码块）”，而不是“对象字面量”。为了让 JS 知道你想返回一个对象，必须用 () 把对象字面量包起来。
@@ -14,7 +12,17 @@ export const songStore = defineStore(songPage,{//这一页的15首歌曲
 
   actions:{//里面放置会修改数据的操作
     async toggleMyLike(songId:number){
-      
+      const index = this.songs.findIndex(s=>s.songId === songId)//遍历数组，找到第一个满足条件的元素，并返回它的位置（索引）。
+      if(index === -1) return//找不到就滚蛋
+      const originSong = this.songs[index]!//保存原始数据，方便回滚，感叹号表示该数据一定不是undefined
+      this.songs[index] = {
+        ...originSong,
+        isMyLike:!originSong.isMyLike,
+        // ? 是 可选链（Optional Chaining） 操作符。它的作用是：在访问 isMyLike 属性之前，
+        // 先检查 originSong 是否存在（不是 null 或 undefined）。如果存在，就正常读取；
+        // 如果不存在，整个表达式直接返回 undefined，而不是抛出错误。
+      }//乐观更新
+
     }
   }
 }

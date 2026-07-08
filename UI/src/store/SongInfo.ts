@@ -33,45 +33,51 @@ export interface SongInfo {
   duration: number
 
   // ════════════════════════════════════════════════════════════════
-  // 2. 标签信息（来自文件容器元数据）
+  // 2. 标签信息（来自文件容器元数据）—— 可能缺失
   // ════════════════════════════════════════════════════════════════
 
-  /** 歌曲标题（来自文件元数据，非文件名） */
+  /**
+   * 歌曲标题
+   *
+   * 在 FFmpeg 提取阶段已做兜底：
+   * 如果文件中无 title 标签，则使用文件 stem 名称（无扩展名）。
+   * 因此该字段一定存在，不需要 optional。
+   */
   title: string
 
-  /** 艺术家名称 */
-  artist: string
+  /** 艺术家名称，C++ 端为 std::optional */
+  artist?: string
 
-  /** 专辑名称 */
-  album: string
+  /** 专辑名称，C++ 端为 std::optional */
+  album?: string
 
-  /** 专辑艺术家 */
-  albumArtist: string
+  /** 专辑艺术家，C++ 端为 std::optional */
+  albumArtist?: string
 
-  /** 体裁 */
-  genre: string
+  /** 体裁，C++ 端为 std::optional */
+  genre?: string
 
-  /** 轨道号，-1 表示不存在 */
-  trackNumber: number
+  /** 轨道号，C++ 端为 std::optional（undefined 表示不存在） */
+  trackNumber?: number
 
-  /** 碟片号 */
-  discNumber: number
+  /** 碟片号，C++ 端为 std::optional（undefined 表示不存在） */
+  discNumber?: number
 
-  /** 发行年份 */
-  year: number
+  /** 发行年份，C++ 端为 std::optional（undefined 表示不存在） */
+  year?: number
 
-  /** 作曲者 */
-  composer: string
+  /** 作曲者，C++ 端为 std::optional */
+  composer?: string
 
   /**
-   * 专辑封面图片的哈希值
+   * 专辑封面图片的哈希值，C++ 端为 std::optional
    *
    * 图片文件命名规则：{imageHash}.jpg
    * 存储在 C++ 端 imageDirId 目录下。
    * 获取封面时，通过桥接函数将 imageHash 发送给 C++ 端，
    * 由 C++ 拼接完整路径后返回。
    */
-  imageHash: string
+  imageHash?: string
 
   // ════════════════════════════════════════════════════════════════
   // 3. FFmpeg 解码层信息
@@ -92,24 +98,24 @@ export interface SongInfo {
   /** 位深 */
   bitDepth: number
 
-  /** 编码器名称 */
-  codecName: string
+  /** 编码器名称，C++ 端为 std::optional */
+  codecName?: string
 
   // ════════════════════════════════════════════════════════════════
-  // 4. AI 分析信息
+  // 4. AI 分析信息 —— 未分析时字段为 undefined
   // ════════════════════════════════════════════════════════════════
 
   /** 是否被检测为音乐资源 */
   isMusic: boolean
 
-  /** AI 分析体裁 */
-  aiGenre: string
+  /** AI 分析体裁，C++ 端为 std::optional */
+  aiGenre?: string
 
-  /** 节拍数（BPM） */
-  bpm: number
+  /** 节拍数（BPM），C++ 端为 std::optional（undefined 表示未知） */
+  bpm?: number
 
-  /** 调性（如 "C major", "A minor"） */
-  key: string
+  /** 调性（如 "C major", "A minor"），C++ 端为 std::optional */
+  key?: string
 
   /** 是否已经进行过 AI 处理 */
   aiProcessed: boolean
@@ -121,8 +127,8 @@ export interface SongInfo {
   /** 是否添加到"我喜欢"列表 */
   isMyLike: boolean
 
-  /** 用户备注 */
-  comment: string
+  /** 用户备注，C++ 端为 std::optional */
+  comment?: string
 
   /** 已经播放了多少次 */
   hadPlayedNum: number

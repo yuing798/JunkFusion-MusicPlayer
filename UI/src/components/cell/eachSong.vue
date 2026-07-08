@@ -141,7 +141,9 @@ const metadataLines = computed(() => {
   const info = props.songInfo
   const lines: string[] = []
 
-  const addIf = (label: string, value: string | number): void => {
+  // 先检查 undefined（C++ std::nullopt），再检查值的有效性
+  const addIf = (label: string, value: string | number | undefined): void => {
+    if (value === undefined) return
     const sv = String(value)
     if (sv !== '' && sv !== '0' && sv !== '-1') {
       lines.push(`${label}: ${sv}`)
@@ -160,8 +162,8 @@ const metadataLines = computed(() => {
   lines.push(`是否为音乐资源: ${info.isMusic ? '是' : '否'}`)
   addIf('专辑艺术家', info.albumArtist)
   addIf('体裁', info.genre)
-  if (info.trackNumber >= 0) addIf('轨道号', info.trackNumber)
-  if (info.discNumber > 0) addIf('碟片号', info.discNumber)
+  if (info.trackNumber !== undefined && info.trackNumber >= 0) addIf('轨道号', info.trackNumber)
+  if (info.discNumber !== undefined && info.discNumber > 0) addIf('碟片号', info.discNumber)
   addIf('发行年份', info.year)
   addIf('作曲者', info.composer)
   addIf('文件路径', info.filePath)
@@ -254,8 +256,8 @@ onUnmounted(() => {
         </Tooltip>
       </div>
       <div class="artist-row">
-        <Tooltip :text="songInfo.artist || '未知'">
-          <span class="artist-name">{{ songInfo.artist || '未知' }}</span>
+        <Tooltip :text="songInfo.artist ?? '未知'">
+          <span class="artist-name">{{ songInfo.artist ?? '未知' }}</span>
         </Tooltip>
       </div>
     </div>
@@ -264,14 +266,14 @@ onUnmounted(() => {
          第 3 列：专辑名称 (150px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-album">
-      <span class="ellipsis-text">{{ songInfo.album || '未知' }}</span>
+      <span class="ellipsis-text">{{ songInfo.album ?? '未知' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 4 列：AI 分类标签 (120px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-genre">
-      <span class="ellipsis-text">{{ songInfo.aiGenre || '' }}</span>
+      <span class="ellipsis-text">{{ songInfo.aiGenre ?? '' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════

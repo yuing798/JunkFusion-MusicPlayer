@@ -48,14 +48,6 @@ void SongsManage::createTables()
 {
     db->exec(createSongsTableSQL);
     db->exec(createNameIdIndexSQL);
-    //db.exec() 这个函数的全称是 “执行 SQL 语句”，而不是”创建表”
-    /*
-    SQL命令：
-    CREATE TABLE ...	在硬盘里划分一块区域，建一栋楼（表）存放数据。
-    CREATE INDEX ...	在硬盘里划分另一块区域，建一部直达电梯（索引）。
-    INSERT INTO ...	往楼里搬家具（插入数据行）。
-    DROP TABLE ...	把整栋楼爆破拆除（删除表）
-    */
 }
 
 // ============================================================
@@ -80,26 +72,41 @@ void SongsManage::insertSong(const SongInfo& info)
     if (!db) return;
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
+        // ── 必选字段 ──
         stmt.bind(":filePath",         info.filePath);
         stmt.bind(":fileSize",         static_cast<int64_t>(info.fileSize));
         stmt.bind(":lastModifiedTime", info.lastModifiedTime);
         stmt.bind(":isMultiStreamFile",info.isMultiStreamFile);
         stmt.bind(":duration",         info.duration);
         stmt.bind(":title",            info.title);
-        stmt.bind(":artist",           info.artist);
-        stmt.bind(":album",            info.album);
-        stmt.bind(":albumArtist",      info.albumArtist);
-        stmt.bind(":genre",            info.genre);
-        stmt.bind(":trackNumber",      info.trackNumber);
-        stmt.bind(":discNumber",       info.discNumber);
-        stmt.bind(":year",             info.year);
-        stmt.bind(":composer",         info.composer);
-        stmt.bind(":imageHash",        info.imageHash);
-        stmt.bind(":bitRate",          info.bitRate);
-        stmt.bind(":bitDepth",         info.bitDepth);
-        stmt.bind(":sampleRate",       info.sampleRate);
-        stmt.bind(":numChannels",      info.numChannels);
-        stmt.bind(":codecName",        info.codecName);
+
+        // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
+        auto bindOptStr = [&](const char* name, const std::optional<std::string>& v) {
+            if (v.has_value()) stmt.bind(name, v.value());
+            else               stmt.bind(name);  // 无第二个参数 → SQL NULL
+        };
+        // ── 可选 int 字段 ──
+        auto bindOptInt = [&](const char* name, const std::optional<int>& v) {
+            if (v.has_value()) stmt.bind(name, v.value());
+            else               stmt.bind(name);
+        };
+
+        bindOptStr(":artist",      info.artist);
+        bindOptStr(":album",       info.album);
+        bindOptStr(":albumArtist", info.albumArtist);
+        bindOptStr(":genre",       info.genre);
+        bindOptInt(":trackNumber", info.trackNumber);
+        bindOptInt(":discNumber",  info.discNumber);
+        bindOptInt(":year",        info.year);
+        bindOptStr(":composer",    info.composer);
+        bindOptStr(":imageHash",   info.imageHash);
+        bindOptStr(":codecName",   info.codecName);
+
+        // ── FFmpeg 必选 int 字段 ──
+        stmt.bind(":bitRate",     info.bitRate);
+        stmt.bind(":bitDepth",    info.bitDepth);
+        stmt.bind(":sampleRate",  info.sampleRate);
+        stmt.bind(":numChannels", info.numChannels);
     };
 
     try
@@ -198,6 +205,19 @@ int SongsManage::getTotalSongCount()
     return 0;
 }
 auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
+    // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
+    auto optStrCol = [&](const char* colName) -> std::optional<std::string> {
+        auto col = query.getColumn(colName);
+        if (col.isNull()) return std::nullopt;
+        std::string s = col.getString();
+        return s.empty() ? std::nullopt : s;
+    };
+    // ── 辅助：读取可能为 NULL 的 int 列 → std::optional<int> ──
+    auto optIntCol = [&](const char* colName) -> std::optional<int> {
+        if (query.getColumn(colName).isNull()) return std::nullopt;
+        return query.getColumn(colName).getInt();
+    };
+
     while (query.executeStep())
     {
         SongInfo info;
@@ -207,30 +227,39 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
         info.lastModifiedTime = query.getColumn("lastModifiedTime").getString();
         info.isMultiStreamFile = query.getColumn("isMultiStreamFile").getInt() != 0;
         info.duration         = query.getColumn("duration").getDouble();
+
+        // ── 标签 ──
         info.title            = query.getColumn("title").getString();
-        info.artist           = query.getColumn("artist").getString();
-        info.album            = query.getColumn("album").getString();
-        info.albumArtist      = query.getColumn("albumArtist").getString();
-        info.genre            = query.getColumn("genre").getString();
-        info.trackNumber      = query.getColumn("trackNumber").getInt();
-        info.discNumber       = query.getColumn("discNumber").getInt();
-        info.year             = query.getColumn("year").getInt();
-        info.composer         = query.getColumn("composer").getString();
-        info.imageHash        = query.getColumn("imageHash").getString();
+        info.artist           = optStrCol("artist");
+        info.album            = optStrCol("album");
+        info.albumArtist      = optStrCol("albumArtist");
+        info.genre            = optStrCol("genre");
+        info.trackNumber      = optIntCol("trackNumber");
+        info.discNumber       = optIntCol("discNumber");
+        info.year             = optIntCol("year");
+        info.composer         = optStrCol("composer");
+        info.imageHash        = optStrCol("imageHash");
+
+        // ── FFmpeg 解码层 ──
         info.bitRate          = query.getColumn("bitRate").getInt64();
         info.bitDepth         = query.getColumn("bitDepth").getInt();
         info.sampleRate       = query.getColumn("sampleRate").getInt();
         info.numChannels      = query.getColumn("numChannels").getInt();
-        info.codecName        = query.getColumn("codecName").getString();
+        info.codecName        = optStrCol("codecName");
+
+        // ── AI 分析 ──
         info.isMusic          = query.getColumn("isMusic").getInt() != 0;
-        info.aiGenre          = query.getColumn("aiGenre").getString();
-        info.bpm              = query.getColumn("bpm").getInt();
-        info.key              = query.getColumn("key").getString();
+        info.aiGenre          = optStrCol("aiGenre");
+        info.bpm              = optIntCol("bpm");
+        info.key              = optStrCol("key");
         info.aiProcessed      = query.getColumn("aiProcessed").getInt() != 0;
+
+        // ── 用户信息 ──
         info.isMyLike         = query.getColumn("isMyLike").getInt() != 0;
-        info.comment          = query.getColumn("comment").getString();
+        info.comment          = optStrCol("comment");
         info.hadPlayedNum     = query.getColumn("hadPlayedNum").getInt();
         info.nameId           = query.getColumn("nameId").getInt();
+
         result.push_back(std::move(info));
     }
 };

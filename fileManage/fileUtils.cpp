@@ -154,6 +154,7 @@ SongInfo getStreamMetaData(const juce::File& file){
 
     auto*           pAudioStream = inputContext->streams[currentIndex];
     auto*  decoderPar      = pAudioStream->codecpar;
+    info.codecID = decoderPar->codec_id;
     info.codecName = avcodec_get_name(decoderPar->codec_id);
     
     // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算

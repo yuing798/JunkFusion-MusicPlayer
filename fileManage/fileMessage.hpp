@@ -3,8 +3,9 @@
 // #include "FontAbout/font.h"
 #include "juce_core/juce_core.h"
 #include <cstdint>
-#include <vector>
+#include <optional>
 #include <string>
+#include <vector>
 
 struct SongInfo
 {
@@ -18,17 +19,19 @@ struct SongInfo
 
     // ── 3. 标签信息 ──
     std::string title;           //名称，因为有的音乐文件有自带的标题(不是文件名!!!)
-    std::string artist;                 // 艺术家名称
-    std::string album;                  // 专辑
-    std::string albumArtist;            // 专辑艺术家
-    std::string genre;                  // 体裁
-    int         trackNumber = -1;        // 轨道号
-    int         discNumber  = 0;        // 碟片号
-    int         year        = 0;        // 发行年份
-    std::string composer;               // 作曲者
+    //这个标题不需要std::optional保底，因为我在FFmpeg提取元数据函数中已经写好了如果没有title直接把文件stem名称赋值给title
+
+    std::optional<std::string> artist;          // 艺术家名称
+    std::optional<std::string> album;           // 专辑
+    std::optional<std::string> albumArtist;     // 专辑艺术家
+    std::optional<std::string> genre;           // 体裁
+    std::optional<int>         trackNumber;     // 轨道号（std::nullopt 表示不存在）
+    std::optional<int>         discNumber;      // 碟片号（std::nullopt 表示不存在）
+    std::optional<int>         year;            // 发行年份（std::nullopt 表示不存在）
+    std::optional<std::string> composer;        // 作曲者
     //这些基础数据都是文件容器层面的
-    
-    std::string imageHash;             //图片所对应的哈希值索引
+
+    std::optional<std::string> imageHash;       //图片所对应的哈希值索引
 
     // ── 2. FFmpeg 解码层信息 ──
     bool isMultiStreamFile{0};
@@ -38,18 +41,20 @@ struct SongInfo
     // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
     int    numChannels  = 0;            // 通道数
     int    bitDepth     = 0;            // 位深
-    std::string codecName;              // 编码器名称
+    std::optional<std::string> codecName; // 编码器名称
+    int codecID{0};//编码器ID，因为编码器名称不一定有，但是编码器ID一定有
+    //这个ID号我不打算发给前端，但是codecName一定要发给前端
 
     // ── 4. AI 分析信息 ──，ai分析是和具体音频流相关的，所以没有必要放在文件层
     bool isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
-    std::string aiGenre;                // AI 分析体裁
-    int      bpm         {0};      // 节拍数
-    std::string key;                    // 调性（如 C major, A minor）        
+    std::optional<std::string> aiGenre;     // AI 分析体裁
+    std::optional<int>         bpm;         // 节拍数（std::nullopt 表示未知）
+    std::optional<std::string> key;         // 调性（如 C major, A minor）
     bool        aiProcessed = false;    // 是否已经进行过 AI 处理
 
     //5.用户信息
     bool isMyLike{0};//是否添加到了我喜欢列表
-    std::string comment;                // 备注(用户写进去的)
+    std::optional<std::string> comment;     // 备注(用户写进去的)
     int hadPlayedNum{0};//已经播放了多少次
 
     //6.排序字段
@@ -58,6 +63,15 @@ struct SongInfo
     //将songInfo转化为var，才能推送给js端
     static juce::var toVar(const SongInfo& song){
         auto obj{new juce::DynamicObject()};
+
+        // ── 辅助：optional<string> → juce::var ──
+        // has_value → juce::String, nullopt → juce::var() (JS 端为 undefined)
+        auto optStr = [](const std::optional<std::string>& v) -> juce::var {
+            return v.has_value() ? juce::var(juce::String(v.value())) : juce::var();
+        };
+        auto optInt = [](const std::optional<int>& v) -> juce::var {
+            return v.has_value() ? juce::var(v.value()) : juce::var();
+        };
 
         // ── 0. 主键 ──
         obj->setProperty("songId", song.songId);
@@ -70,15 +84,15 @@ struct SongInfo
 
         // ── 2. 标签信息 ──
         obj->setProperty("title",       juce::String(song.title));
-        obj->setProperty("artist",      juce::String(song.artist));
-        obj->setProperty("album",       juce::String(song.album));
-        obj->setProperty("albumArtist", juce::String(song.albumArtist));
-        obj->setProperty("genre",       juce::String(song.genre));
-        obj->setProperty("trackNumber", song.trackNumber);
-        obj->setProperty("discNumber",  song.discNumber);
-        obj->setProperty("year",        song.year);
-        obj->setProperty("composer",    juce::String(song.composer));
-        obj->setProperty("imageHash",   juce::String(song.imageHash));
+        obj->setProperty("artist",      optStr(song.artist));
+        obj->setProperty("album",       optStr(song.album));
+        obj->setProperty("albumArtist", optStr(song.albumArtist));
+        obj->setProperty("genre",       optStr(song.genre));
+        obj->setProperty("trackNumber", optInt(song.trackNumber));
+        obj->setProperty("discNumber",  optInt(song.discNumber));
+        obj->setProperty("year",        optInt(song.year));
+        obj->setProperty("composer",    optStr(song.composer));
+        obj->setProperty("imageHash",   optStr(song.imageHash));
 
         // ── 3. FFmpeg 解码层 ──
         obj->setProperty("isMultiStreamFile", song.isMultiStreamFile);
@@ -86,18 +100,18 @@ struct SongInfo
         obj->setProperty("sampleRate",        song.sampleRate);
         obj->setProperty("numChannels",       song.numChannels);
         obj->setProperty("bitDepth",          song.bitDepth);
-        obj->setProperty("codecName",         juce::String(song.codecName));
+        obj->setProperty("codecName",         optStr(song.codecName));
 
         // ── 4. AI 分析 ──
         obj->setProperty("isMusic",     song.isMusic);
-        obj->setProperty("aiGenre",     juce::String(song.aiGenre));
-        obj->setProperty("bpm",         song.bpm);
-        obj->setProperty("key",         juce::String(song.key));
+        obj->setProperty("aiGenre",     optStr(song.aiGenre));
+        obj->setProperty("bpm",         optInt(song.bpm));
+        obj->setProperty("key",         optStr(song.key));
         obj->setProperty("aiProcessed", song.aiProcessed);
 
         // ── 5. 用户信息 ──
         obj->setProperty("isMyLike",     song.isMyLike);
-        obj->setProperty("comment",      juce::String(song.comment));
+        obj->setProperty("comment",      optStr(song.comment));
         obj->setProperty("hadPlayedNum", song.hadPlayedNum);
 
         // ── 6. 排序 ──
