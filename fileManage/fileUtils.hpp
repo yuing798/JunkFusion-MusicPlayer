@@ -16,4 +16,3 @@ void getMultiMediaFileDir();
 //获取文件的标签信息和解码信息
 SongInfo getStreamMetaData(const juce::File&);//因为原本的文件信息中已经包含流路径，所以不需要把路径再传进来
 
-

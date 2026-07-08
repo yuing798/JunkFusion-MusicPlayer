@@ -1,5 +1,6 @@
 #pragma once
 #include "juce_core/juce_core.h"
+#include <SQLiteCpp/Exception.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -29,6 +30,7 @@ private:
     std::shared_ptr<spdlog::logger> allLogger;
 public:
     logSystem();
+    // void sqlError(SQLite::Exception&);
 
     void init();
 };

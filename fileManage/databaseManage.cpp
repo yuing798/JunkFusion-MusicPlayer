@@ -6,7 +6,9 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <unicode/coll.h>
@@ -210,7 +212,11 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
         auto col = query.getColumn(colName);
         if (col.isNull()) return std::nullopt;
         std::string s = col.getString();
-        return s.empty() ? std::nullopt : s;
+        if(s.empty()){
+            return std::nullopt;
+        }else{
+            return s;
+        }
     };
     // ── 辅助：读取可能为 NULL 的 int 列 → std::optional<int> ──
     auto optIntCol = [&](const char* colName) -> std::optional<int> {
@@ -418,6 +424,22 @@ void SongsManage::rebuildNameIds()
         update.bind(":nameId", i + 1);
         update.bind(":songId", entries[i].songId);
         update.exec();
+    }
+}
+
+bool SongsManage::reverseMyLike(int64_t id){
+    
+    try{
+        SQLite::Statement sql(*db,
+            "UPDATE songs SET isMyLike = 1 - isMyLike WHERE songId = :songId");
+        sql.bind(":songId",id);
+
+        int rowAffected = sql.exec();//（数据变更语句）：返回受影响的行数
+        if(rowAffected > 0) return true;
+    }catch(SQLite::Exception& e){
+        auto logger{spdlog::get(LogSchedulerID)};
+        logger->critical("[我喜欢]状态更新失败，请重试");
+        return false;
     }
 }
 

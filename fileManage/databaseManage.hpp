@@ -3,6 +3,7 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <SQLiteCpp/Transaction.h>
+#include <cstdint>
 #include <memory>
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
@@ -113,6 +114,8 @@ public:
         return instance;
     }
     void init();
+
+    bool reverseMyLike(int64_t id);
 
     SongsManage(const SongsManage&) = delete;
     SongsManage& operator=(const SongsManage&) = delete;

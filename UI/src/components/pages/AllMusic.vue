@@ -6,7 +6,7 @@ import refreshSvg from '@/assets/image/refresh.svg'
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
 import { BRIDGE_KEYS } from '@/bridge/bridge.generated'
-import { callNativeFunction } from '@/bridge/initBridge'
+import { callJuceFunc } from '@/bridge/initBridge'
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
@@ -51,7 +51,7 @@ async function handleFilesSelected(): Promise<void> {
   isImporting.value = true
 
   try {
-    const results = await callNativeFunction(BRIDGE_KEYS.inputFiles)
+    const results = await callJuceFunc(BRIDGE_KEYS.inputFiles)
     console.log('[AllMusic] 导入完成:', results)
   } catch (err) {
     console.error('[AllMusic] 导入失败:', err)

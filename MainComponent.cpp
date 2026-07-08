@@ -9,6 +9,7 @@
 #include "juce_gui_extra/juce_gui_extra.h"
 #include "serial.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -24,8 +25,9 @@ MainComponent::MainComponent(){
         .withWinWebView2Options(juce::WebBrowserComponent::Options::WinWebView2{}
             .withUserDataFolder(LocalDirId.getChildFile("UICache"))
         )//windows需要有专门的存储路径，放置应用
-        //withNativeFunction这个逼函数默认运行在Message Thread
-        .withResourceProvider([](const juce::String& path)->std::optional<juce::WebBrowserComponent::Resource>{
+        
+        .withResourceProvider([](const juce::String& path) ->std::optional<juce::WebBrowserComponent::Resource> {
+
             if(path.startsWith("/albumImage/")){//传输歌曲封面到专辑和歌单页
                 juce::String hash = path.substring(12);
                 juce::String fileName{hash + ".jpg"};
@@ -38,12 +40,12 @@ MainComponent::MainComponent(){
                     auto* bytePtr = static_cast<const std::byte*> (buffer.getData());
                     std::vector<std::byte> vecData (bytePtr, bytePtr + buffer.getSize());
 
-                    // 3. 传入 Resource
                     return juce::WebBrowserComponent::Resource { std::move(vecData), "image/jpeg" };
                 }
             }
             return std::nullopt;
         })
+        //withNativeFunction这个逼函数默认运行在Message Thread
         .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
             [this](
                 const juce::Array<juce::var>& args,
@@ -69,6 +71,21 @@ MainComponent::MainComponent(){
                     web.get()
                 );
 
+            }
+        ).withNativeFunction(BridgeKeys::toggleMyLike,//将我喜欢的歌曲状态翻转
+            [](
+                const juce::Array<juce::var>& args,
+                juce::WebBrowserComponent::NativeFunctionCompletion complete
+            ){
+                int64_t id{0};
+                if(args.size()>=1) id = args[0];
+                if(SongsManage::getInstance().reverseMyLike(id)){
+                    complete(juce::var());
+                    return;
+                }else{
+                    // complete(juce::var::)
+                    return;
+                }
             }
         );
     

@@ -1,6 +1,7 @@
 #include "otherUtils.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
+#include <SQLiteCpp/Exception.h>
 #include <cstddef>
 #include <iostream>
 #include <string>
