@@ -39,7 +39,7 @@ public:
 
         SongsManage::getInstance().init();
         mLogSystem.init();//spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
-        Serial::getInstance().init();
+        // Serial::getInstance().init();
 
         mainWindow.reset (new MainWindow (getApplicationName()));
     }
@@ -66,7 +66,6 @@ public:
         // the other instance's command-line arguments were.
         juce::ignoreUnused (commandLine);
     }
-    juce::ValueTree treeRoot{TreeRootId};
 
     //==============================================================================
     /*

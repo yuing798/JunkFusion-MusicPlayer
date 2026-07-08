@@ -8,6 +8,7 @@
 #include "juce_events/juce_events.h"
 #include "juce_gui_extra/juce_gui_extra.h"
 #include "serial.hpp"
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -24,8 +25,24 @@ MainComponent::MainComponent(){
             .withUserDataFolder(LocalDirId.getChildFile("UICache"))
         )//windows需要有专门的存储路径，放置应用
         //withNativeFunction这个逼函数默认运行在Message Thread
-        .withResourceProvider([this](const juce::String& path)->std::optional<juce::WebBrowserComponent::Resource>{
-            return juce::WebBrowserComponent::Resource{};
+        .withResourceProvider([](const juce::String& path)->std::optional<juce::WebBrowserComponent::Resource>{
+            if(path.startsWith("/albumImage/")){//传输歌曲封面到专辑和歌单页
+                juce::String hash = path.substring(12);
+                juce::String fileName{hash + ".jpg"};
+                juce::File imageFile{imageDirId.getChildFile(fileName)};
+                if (imageFile.existsAsFile()) {
+                    juce::MemoryBlock buffer;
+                    imageFile.loadFileAsData(buffer);
+
+                    //将 void* 强转为 std::byte* 指针
+                    auto* bytePtr = static_cast<const std::byte*> (buffer.getData());
+                    std::vector<std::byte> vecData (bytePtr, bytePtr + buffer.getSize());
+
+                    // 3. 传入 Resource
+                    return juce::WebBrowserComponent::Resource { std::move(vecData), "image/jpeg" };
+                }
+            }
+            return std::nullopt;
         })
         .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
             [this](
