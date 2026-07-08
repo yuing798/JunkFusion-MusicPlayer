@@ -12,7 +12,7 @@ const defs = JSON.parse(fs.readFileSync(defsPath, 'utf-8'));
 //把那个 JSON 文件的内容读出来，并转换成 JS 对象。
 
 // 2. 生成 TypeScript 文件 (src/types/bridge.generated.ts)
-const tsOutputPath = path.resolve(__dirname, 'src/UtilsScripts/bridge.generated.ts');//vue端的桥接函数名称
+const tsOutputPath = path.resolve(__dirname, 'src/bridge/bridge.generated.ts');//vue端的桥接函数名称
 // ./ 表示“当前目录”，../ 表示“上一级目录（父目录）”
 const tsLines = []
 tsLines.push(`// ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.`);

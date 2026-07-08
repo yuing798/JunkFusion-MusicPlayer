@@ -39,5 +39,5 @@ __screenshots__/
 *.timestamp-*-*.mjs
 
 #字符串跨端传输自动生成文件
-src/UtilsScripts/bridge.generated.ts
+src/bridge/bridge.generated.ts
 bridge.md

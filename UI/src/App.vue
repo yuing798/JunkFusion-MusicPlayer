@@ -8,7 +8,7 @@
 import { ref, watch, onMounted, type Component } from 'vue'
 import LeftColumn from './components/LeftColumn.vue'
 import AllMusic from './components/pages/AllMusic.vue'
-import Tooltip from './other/tooltip.vue'
+import Tooltip from './components/other/tooltip.vue'
 
 //应用初始化的时候执行一次,不需要放到scripts的末尾
 onMounted(() => {
