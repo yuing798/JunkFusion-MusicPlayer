@@ -21,9 +21,6 @@ const currentTheme = ref(localStorage.getItem('theme') || 'theme-light')
 function toggleTheme() {
   currentTheme.value = currentTheme.value === 'theme-light' ? 'theme-dark-gold' : 'theme-light'
 }
-//两个等号==:宽松相等运算符,相当于 C++ 的 ==，但会偷偷做类型转换（比如 1 == '1' 结果为 true）。
-//三个等号===:严格相等运算符,相当于 C++ 的 == + 编译期类型检查（禁止类型转换）
-//判断相等优先级高于赋值
 
 // 监听主题变化，持久化到 localStorage
 watch(

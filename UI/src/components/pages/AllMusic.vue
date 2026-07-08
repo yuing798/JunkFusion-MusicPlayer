@@ -12,16 +12,8 @@ import { callNativeFunction } from '@/bridge/initBridge'
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
 const pageTitle = '全部音乐'
 
-// ── 歌曲数量标签 ──
-// 对应 C++: littleLabel numSongsLabel{U("共 0 首")};
-// 后续与 SongSelectViewport 对接时会被动态更新
 const songCount = ref(0)
 
-// ── 排序方式下拉框 ──
-// 对应 C++: YComboBox seqWays
-//   seqWays.addItem(U("歌曲名称排列"));
-//   seqWays.addItem(U("添加时间排列"));
-//   seqWays.addItem(U("播放次数排列"));
 const sortOptions = [
   { value: 1, label: '添加时间排列' }, // SortMode::ByAddTime
   { value: 0, label: '歌曲名称排列' }, // SortMode::ByName

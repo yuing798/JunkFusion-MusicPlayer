@@ -40,4 +40,3 @@ __screenshots__/
 
 #字符串跨端传输自动生成文件
 src/bridge/bridge.generated.ts
-bridge.md

@@ -61,11 +61,15 @@ const pendingPromises = new Map<
 if (isInsideJUCE) {
   window.__JUCE__.backend.addEventListener(
     JUCE_KEYS.__juce__complete,
-    (payload: { promiseId: number; result: unknown }) => {
-      const { promiseId, result } = payload
+    (payload: { promiseId: number; result: unknown ; error:string}) => {
+      const { promiseId, result ,error} = payload
       const pending = pendingPromises.get(promiseId)//根据 ID 查找待办事项
       if (pending) {
-        pending.resolve(result)//唤醒 Promise（成功）
+        if(error){
+          pending.reject(new Error(error))
+        }else{
+          pending.resolve(result)//唤醒 Promise（成功）
+        }
         pendingPromises.delete(promiseId)//清理”待办事项”（防止内存泄漏）
         //这一步极其重要！如果不删除，这个条目会永远留在 pendingPromises 里。
         // 随着用户操作越来越多，Map 会无限膨胀，最终导致前端内存泄漏（页面卡顿崩溃）
@@ -75,20 +79,6 @@ if (isInsideJUCE) {
 }
 // 这段代码里的 addEventListener 并不是在“定义函数”，而是在“调用函数”。
 // 它的“函数体”不在你的 JS/TS 代码里，而是存在于 C++（JUCE 原生代码）中。
-
-// 当你调用 window.__JUCE__.backend.addEventListener(...) 时，
-// 你实际上是在跨语言边界（从 JS 调用 C++ 的代码）。JS 引擎通过 WebView 的绑定机制（如 CEF 或 Juce 的 NativeMessageQueue）
-// 把参数传给 C++，C++ 接收到后执行它的 addEventListener 函数体，把你的回调函数存起来。
-
-// __juce__complete 是你这套桥接方案中，用于实现异步调用的关键事件。它的作用，
-// 就是把 C++ 端处理完的结果，异步地“送回”给正在等待的 JavaScript 代码。
-// 它的完整工作流程是这样的：
-// 前端发起请求：你的 Vue 应用通过 callNativeFunction 调用 C++ 功能时，
-// 会生成一个唯一的 promiseId，并通过 __juce__invoke 事件将这个 ID 和参数一起发送给 C++ 端。
-// C++ 处理任务：C++ 端接收到 __juce__invoke 事件后，开始执行相应的任务（比如读写文件、处理音频等）。
-// C++ 返回结果：任务完成后，C++ 端会主动触发 __juce__complete 事件，并把之前收到的 promiseId 和处理结果（result）或错误信息一起传回来。
-// 前端唤醒等待：前端一直通过 addEventListener 监听着 __juce__complete 事件。
-// 一旦收到，就会根据 promiseId 找到之前挂起的 Promise 对象，并调用 resolve(result) 或 reject(error)，从而唤醒正在等待的 JavaScript 代码。
 
 // .get() 是 JavaScript 中 Map 对象的内置方法，
 // 作用是根据键（Key）去 Map 里查找并返回对应的值（Value）。pendingPromises 里存的不是属性名
@@ -100,22 +90,9 @@ if (isInsideJUCE) {
 // window.__JUCE__.backend：由 C++（JUCE）在 WebView 启动时注入到浏览器中的全局对象。它是 JS 与 C++ 通信的“总入口”。
 // '__juce__complete'：事件名称。这是一个协议约定，你和 C++ 端必须都用这个字符串。C++ 端完成任务后，会主动触发（emit）这个名称的事件。
 
-//delete
-// JS 确实有垃圾回收机制，不需要像 C++ 那样手动 delete 释放内存。
-// 但是，垃圾回收器只回收“再也用不到”的内存，它无法回收“你认为没用、但 Map 认为还有用”的内存。
-// 垃圾回收器（GC）的工作原理是 “可达性（Reachability）”。
-// 只要一个对象还能通过全局变量、当前执行的函数、或者闭包被访问到，GC 就认为它“还活着”，不会回收它。
-// 你的 pendingPromises 是一个 Map 对象，它被 const pendingPromises 引用着。只要这个常量还在（只要你的页面没关闭），这个 Map 就永远可达。
-// GC 的逻辑：“因为这个 Map 还活着，所以 Map 里的所有键和值，都算‘活着’。”
-
 export function callNativeFunction(name: BridgeFunctionName, ...args: unknown[]): Promise<unknown> {
   const promiseId = lastPromiseId++
   const promise = new Promise<unknown>((resolve, reject) => {
-    //当你要创建“类（Class）”的实例时，就用 new；
-    // 当你要创建“字面量（Literal）”或“纯数据对象”时，不用 new。
-    //js的new:不分配内存，只是“造一个对象"，内存由JS引擎自动管理。
-    // 返回一个对象引用。
-    // 不需要手动释放内存。GC自动回收(前提是你切断了引用，比如你写的Map.delete).
     pendingPromises.set(promiseId, { resolve, reject })
   })
 
