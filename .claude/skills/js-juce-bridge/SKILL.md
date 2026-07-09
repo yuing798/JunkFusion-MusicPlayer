@@ -17,10 +17,10 @@ JUCE 8 的 WebView 双向通信基于 `window.__JUCE__` 全局对象。C++ 端�
 ┌─────────────────────────────────────────────────────────────┐
 │                     Vue 前端 (JS/TS)                         │
 │  ┌─────────────────────┐    ┌──────────────────────────────┐ │
-│  │  initBridge.ts       │    │  juce-framework-frontend    │ │
+│  │  bridgeSupport.ts       │    │  juce-framework-frontend    │ │
 │  │  (项目自定义封装)      │    │  (JUCE 官方 JS 库)           │ │
 │  │  callJuceFunc()      │    │  getNativeFunction()         │ │
-│  │                      │    │  getSliderState()            │ │
+│  │  等待未来继续添加                    │    │  getSliderState()            │ │
 │  └──────────┬───────────┘    │  getToggleState()            │ │
 │             │                │  getComboBoxState()          │ │
 │             │                │  getBackendResourceAddress() │ │
@@ -105,7 +105,7 @@ JUCE 8 的 `NativeFunction` 通过两个内部事件实现 Promise 式的异步�
 | `__juce__invoke` | JS → C++ | 前端发起调用，携带 `{ name, params, resultId }` |
 | `__juce__complete` | C++ → JS | 后端返回结果，携带 `{ promiseId, result }` |
 
-### 3.2 使用 JUCE 官方 API（推荐用于新组件）
+### 3.2 使用 JUCE 官方 API
 
 ```javascript
 import { getNativeFunction } from "juce-framework-frontend";
@@ -118,29 +118,27 @@ const result = await myBackendFunction(1, 2, "some string");
 
 ### 3.3 项目自定义封装（当前使用）
 
-本项目在 `UI/src/bridge/initBridge.ts` 中实现了自己的 Promise 管理层，相比官方的 `getNativeFunction` 多了**错误处理支持**：
+本项目在 `UI/src/bridge/bridgeSupport.ts` 中实现了自己的桥接辅助函数，相比官方的 `getNativeFunction` 多了**错误处理支持**：
 
 ```typescript
-import { callJuceFunc } from "./bridge/initBridge.ts"
+import { callJuceFunc } from "./bridge/bridgeSupport.ts"
 import { BRIDGE_KEYS } from "./bridge/bridge.generated.ts"
 
 // 调用 C++ 函数，返回 Promise
-const result = await callJuceFunc(BRIDGE_KEYS.inputFiles)
+const result = await callJuceFunc<返回值类型>(BRIDGE_KEYS.inputFiles,传参列表)
 ```
-
-**错误处理机制：** C++ 端返回带有 `error` 属性的对象时，`initBridge.ts` 会自动 `reject` 该 Promise：
 
 ```cpp
 // C++ 端：返回错误
 auto error = new juce::DynamicObject();
-error->setProperty("error", "文件插入失败");
+error->setProperty("__error", "文件插入失败");
 complete(juce::var(error));
 ```
 
 ```typescript
 // JS 端：通过 try/catch 捕获错误
 try {
-  await callJuceFunc(BRIDGE_KEYS.inputFiles)
+  await callJuceFunc<返回值类型>(BRIDGE_KEYS.inputFiles)
 } catch (e) {
   console.error(e.message) // "文件插入失败"
 }
@@ -498,7 +496,7 @@ UI/
 └── src/bridge/
     ├── bridge.generated.ts       # 自动生成: BRIDGE_KEYS 常量和类型
     ├── juceMacro.ts              # JUCE 内部事件 key 常量
-    └── initBridge.ts             # 自定义 Promise 桥接层（带错误处理）
+    └── bridgeSupport.ts             # 自定义 Promise 桥接层（辅助函数）
 ```
 
 ### 9.2 添加新的桥接函数

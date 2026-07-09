@@ -26,7 +26,7 @@ import { showErrorPopup } from "@/components/other/errorPopupWindow.vue"
   } catch (__error) {
     const err = __error instanceof Error ? __error : new Error(String(__error))
     showErrorPopup(err)
-    console.error(err)
+    console.error(err.message)
     throw err
   }
 }

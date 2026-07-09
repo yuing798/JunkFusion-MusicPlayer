@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SongInfo } from './SongInfo'
-import { callJuceFunc } from '@/bridge/initBridge'
+import { callJuceFunc } from '@/bridge/bridgeSupport'
 import { BRIDGE_KEYS } from '@/bridge/bridge.generated'
 import { showErrorPopup } from '@/components/other/errorPopupWindow.vue'
 
@@ -23,10 +23,9 @@ export const songStore = defineStore('songPage',{//这一页的15首歌曲
         isMyLike:!originSong.isMyLike,
       }//乐观更新
       try{
-        await callJuceFunc(BRIDGE_KEYS.toggleMyLike,songId)
+        await callJuceFunc<void>(BRIDGE_KEYS.toggleMyLike,songId)
       }catch(error){
         console.error('点赞失败，回滚状态')
-        showErrorPopup(error)
         this.songs[index] = originSong
       }
     }

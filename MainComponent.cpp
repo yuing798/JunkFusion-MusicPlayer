@@ -62,21 +62,35 @@ MainComponent::MainComponent(){
 
                     juce::Thread::launch([files,complete](){
                         juce::String errorStr{""};
+                        const int numAll{files.size()};
+                        int num4ErrorFile{0};
                         for(auto& file:files){
                             auto song{getStreamMetaData(file)};
                             if(!song.filePath.empty()){
                                 if(!SongsManage::getInstance().insertSong(song)){
-                                    errorStr += utf8("文件") + (file.getFileName()) + utf8("插入失败\n"); 
+                                    errorStr += (file.getFileName()) + utf8("\n"); 
+                                    num4ErrorFile++;
                                 }
                             }
                         }
                         if(errorStr.isNotEmpty()){
                             auto obj{new juce::DynamicObject()};
-                            obj->setProperty("error",errorStr);
+                            obj->setProperty(
+                                "error",
+                                utf8("导入完成\n成功 ") + 
+                                juce::String(numAll - num4ErrorFile) 
+                                + utf8("首 失败") 
+                                + juce::String(num4ErrorFile) 
+                                + utf8("首:\n")
+                                + errorStr 
+                            );
+                            //这个不使用__error的原因是__error报错是全部推倒重来
                             complete(juce::var(obj));
                             return;
                         }else{
-                            complete(juce::var());
+                            auto obj{new juce::DynamicObject()};
+                            obj->setProperty("success","导入成功");
+                            complete(juce::var(obj));
                             return;
                         }
                     });
@@ -98,7 +112,7 @@ MainComponent::MainComponent(){
                     return;
                 }else{
                     auto error{new juce::DynamicObject()};
-                    error->setProperty("error",utf8("[我喜欢]状态更新失败，请重试"));
+                    error->setProperty("__error",utf8("[我喜欢]状态更新失败，请重试"));
                     complete(juce::var(error));
                     return;
                 }

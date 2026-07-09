@@ -5,6 +5,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "otherUtils.hpp"
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <cstddef>
 #include <chrono>
@@ -58,7 +59,7 @@ void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>
             }
     );
 }
-SongInfo getStreamMetaData(const juce::File& file){
+std::optional<SongInfo> getStreamMetaData(const juce::File& file){
 
     auto safeToInt = [](const char* str) -> int{
         try { return std::stoi(str); }
@@ -81,14 +82,14 @@ SongInfo getStreamMetaData(const juce::File& file){
         //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
         if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
-        return {};  // 无法打开直接返回空
+        return std::nullopt;  // 无法打开直接返回空
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if(result<0){
         //SPDLOG:无法找到流信息
         if(logger) logger->error("无法找到该文件的流信息:",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
-        return {};
+        return std::nullopt;
     }
     // av_find_best_stream(AVFormatContext *ic, enum AVMediaType type, int wanted_stream_nb, int related_stream, const struct AVCodec **decoder_ret, int flags)
 
