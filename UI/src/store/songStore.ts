@@ -25,7 +25,7 @@ export const songStore = defineStore('songPage',{//这一页的15首歌曲
       try{
         await callJuceFunc(BRIDGE_KEYS.toggleMyLike,songId)
       }catch(error){
-        console.error('点赞失败，回滚状态',error)
+        console.error('点赞失败，回滚状态')
         showErrorPopup(error)
         this.songs[index] = originSong
       }

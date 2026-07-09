@@ -37,3 +37,8 @@ public:
 
 //输出错误码
 std::string ffmpegErrorOutput(int result);
+
+//转化字符串为UTF8
+inline juce::String utf8(const char* name){
+    return juce::String::fromUTF8(name);
+};

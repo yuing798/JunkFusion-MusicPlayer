@@ -1,5 +1,6 @@
 #include "MainComponent.h"
 #include "Utils/BridgeNames.h"
+#include "Utils/otherUtils.hpp"
 #include "constants.h"
 #include "databaseManage.hpp"
 #include "fileManage/fileUtils.hpp"
@@ -24,9 +25,9 @@ MainComponent::MainComponent(){
         .withNativeIntegrationEnabled(true)
         .withWinWebView2Options(juce::WebBrowserComponent::Options::WinWebView2{}
             .withUserDataFolder(LocalDirId.getChildFile("UICache"))
-        )//windows需要有专门的存储路径，放置应用
+        )//windows需要有专门的存储路径，放置应用web缓存
         
-        .withResourceProvider([](const juce::String& path) ->std::optional<juce::WebBrowserComponent::Resource> {
+        .withResourceProvider([](const juce::String& path) -> std::optional<juce::WebBrowserComponent::Resource> {
 
             if(path.startsWith("/albumImage/")){//传输歌曲封面到专辑和歌单页
                 juce::String hash = path.substring(12);
@@ -60,11 +61,24 @@ MainComponent::MainComponent(){
                     }//用户取消选择
 
                     juce::Thread::launch([files,complete](){
+                        juce::String errorStr{""};
                         for(auto& file:files){
                             auto song{getStreamMetaData(file)};
-                            if(!song.filePath.empty()) SongsManage::getInstance().insertSong(song);
+                            if(!song.filePath.empty()){
+                                if(!SongsManage::getInstance().insertSong(song)){
+                                    errorStr += utf8("文件") + (file.getFileName()) + utf8("插入失败\n"); 
+                                }
+                            }
                         }
-                        complete(juce::var());
+                        if(errorStr.isNotEmpty()){
+                            auto obj{new juce::DynamicObject()};
+                            obj->setProperty("error",errorStr);
+                            complete(juce::var(obj));
+                            return;
+                        }else{
+                            complete(juce::var());
+                            return;
+                        }
                     });
                             
                 },
@@ -83,9 +97,8 @@ MainComponent::MainComponent(){
                     complete(juce::var());
                     return;
                 }else{
-                    // complete(juce::var::)
                     auto error{new juce::DynamicObject()};
-                    error->setProperty("error","[我喜欢]状态更新失败，请重试");
+                    error->setProperty("error",utf8("[我喜欢]状态更新失败，请重试"));
                     complete(juce::var(error));
                     return;
                 }

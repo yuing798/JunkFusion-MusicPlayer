@@ -8,6 +8,7 @@
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
 #include <spdlog/spdlog.h>
+#include <string>
 #include <vector>
 
 // ============================================================
@@ -89,7 +90,7 @@ public:
      *
      * @param info     歌曲信息
      */
-    void insertSong(const SongInfo& info);
+    bool insertSong(const SongInfo& info);
 
     /** 获取歌曲总数 */
     int getTotalSongCount();
