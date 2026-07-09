@@ -3,8 +3,9 @@ import { ref } from 'vue'
 
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
-import { BRIDGE_KEYS } from '@/bridge/bridge.generated'
-import { callJuceFunc } from '@/bridge/initBridge'
+import { BRIDGE_KEYS, type BridgeFunctionName } from '@/bridge/bridge.generated'
+import { getNativeFunction } from 'juce-framework-frontend-mirror'
+import ErrorPopupWindow, { showErrorPopup } from '../other/errorPopupWindow.vue'
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
@@ -42,6 +43,35 @@ function toggleSortDirection(): void {
   isAscending.value = !isAscending.value
 }
 
+//调用示例：
+// const fetchSongs = async () => {
+//   loading.value = true;
+//   try {
+//     // 2. 必须加 await，并指定返回类型
+//     const data = await callJuceFunc<SongInfo[]>('getSongList', { page: 1 });
+//     songs.value = data; // data 是真实的 SongInfo[] 数据
+//   } catch (error) {
+//     // 3. 捕获错误（虽然 callJuceFunc 内部已弹窗，但这里用于重置状态）
+//     console.log('请求失败，已由全局弹窗提示');
+//   } finally {
+//     loading.value = false;
+//   }
+// };
+async function callJuceFunc<T = unknown>(name: BridgeFunctionName, ...args: unknown[]): Promise<T> {
+  try {
+    const results = await getNativeFunction(name)(args)
+    if (results && typeof results === 'object' && '__error' in results) {
+      throw new Error(String(results.__error)) //如果throw了会直接跳转到catch块中，throw也有返回的属性
+    }
+    return results as T
+  } catch (__error) {
+    const err = __error instanceof Error ? __error : new Error(String(__error))
+    showErrorPopup(err)
+    console.error(err)
+    throw err
+  }
+}
+
 const isImporting = ref(false) // 控制按钮禁用状态和加载动画
 
 async function handleFilesSelected(): Promise<void> {
@@ -49,7 +79,7 @@ async function handleFilesSelected(): Promise<void> {
   isImporting.value = true
 
   try {
-    const results = await callJuceFunc(BRIDGE_KEYS.inputFiles)
+    const results = await getNativeFunction(BRIDGE_KEYS.inputFiles)()
     console.log('[AllMusic] 导入完成:', results)
   } catch (err) {
     console.error('[AllMusic] 导入失败:', err)

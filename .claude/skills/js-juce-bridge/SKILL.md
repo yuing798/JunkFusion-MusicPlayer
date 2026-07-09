@@ -44,7 +44,7 @@ JUCE 8 的 WebView 双向通信基于 `window.__JUCE__` 全局对象。C++ 端�
 .withResourceProvider(provider)//设置一个资源供应拦截器。当网页加载静态文件（如图片、CSS、JS）时，不走网络，而是直接去读取 C++ 的内存        │    │
 │  │  .withOptionsFrom(relay) //把一个参数中继器（Relay，如 WebSliderRelay、WebToggleRelay）内部自带的配置批量融合进当前options中，                             │    │
 │  │  .withUserScript(script)    //向 WebView 强行注入一段你自定义的 JavaScript 文本脚本，改脚本拥有最高特权                          │    │
-│  │  .withInitialisationData(name, value)                 │    │
+│  │  .withInitialisationData(name, value) //往前端挂载一些在网页启动时就必须立马同步拿到的静态初始化数据                │    │
 │  └──────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  emitEventIfBrowserIsVisible(eventId, object)                   │
