@@ -13,6 +13,7 @@
     "generate": "node generateBridge.cjs"
   },
   "dependencies": {
+    "juce-framework-frontend-mirror": "^8.0.10",
     "pinia": "^3.0.4",
     "vue": "^3.5.38"
   },

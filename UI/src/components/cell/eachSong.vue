@@ -11,6 +11,7 @@ import heartSvg from '@/assets/image/heart.svg'
 import heartFillSvg from '@/assets/image/heart-fill.svg'
 import whatsMoreSvg from '@/assets/image/whatsMore.svg'
 import xSvg from '@/assets/image/x.svg'
+import { songStore } from '@/store/songStore'
 
 // ════════════════════════════════════════════════════════════════
 // Props & Emits
@@ -27,7 +28,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'toggle-like', info: SongInfo): void
   (e: 'show-more-info', info: SongInfo): void
   /** 请求改变播放状态：Stopped → Playing, Playing → Paused, Paused → Playing */
   (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
@@ -177,10 +177,6 @@ const metadataLines = computed(() => {
 // 事件处理
 // ════════════════════════════════════════════════════════════════
 
-function handleLikeClick(): void {
-  emit('toggle-like', props.songInfo)
-}
-
 /**
  * 点击序号/播放状态列的切换逻辑：
  *   Stopped → 请求进入 Playing
@@ -202,6 +198,8 @@ function handleOrdinalClick(): void {
   }
   emit('request-playback-change', props.songInfo, nextState)
 }
+
+const mySongStore = songStore()
 
 // ════════════════════════════════════════════════════════════════
 // 清理
@@ -288,9 +286,8 @@ onUnmounted(() => {
          isMyLike=true → heart-fill.svg（红心）
          isMyLike=false → heart.svg（空心）
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-like" @click.stop="handleLikeClick">
-      <img :src="songInfo.isMyLike ? heartFillSvg : heartSvg" class="icon-btn" alt="like" />
-      <!-- @click.stop用来阻止向父组件冒泡 -->
+    <div class="cell cell-like" @click.stop="mySongStore.toggleMyLike(songInfo.songId)">
+      <img :src="songInfo.isMyLike ? heartFillSvg : heartSvg" class="icon-btn" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════

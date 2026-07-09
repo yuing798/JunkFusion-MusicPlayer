@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-// SVG 图标资源 — 对应 C++ BinaryData 中的 SVG 资源
-import refreshSvg from '@/assets/image/refresh.svg'
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
 import { BRIDGE_KEYS } from '@/bridge/bridge.generated'

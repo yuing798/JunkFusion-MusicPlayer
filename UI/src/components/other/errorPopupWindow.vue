@@ -107,7 +107,7 @@ export function showErrorPopup(msg: unknown): void {
   width: 360px;
 
   /* 外观 */
-  background-color: color-mix(in srgb, var(--colorHover), transparent 50%);
+  background-color: color-mix(in srgb, var(--colorHover), transparent 30%);
   border-radius: var(--borderRadius);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 
