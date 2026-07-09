@@ -29,7 +29,7 @@ const pendingPromises = new Map<
   number,
   {
     resolve: (v: unknown) => void;
-    reject: (e: unknown) => void;
+    reject: (e: Error) => void;
   }
 >();
 

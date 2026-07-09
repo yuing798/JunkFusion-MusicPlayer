@@ -37,13 +37,30 @@ let hideTimer: ReturnType<typeof setTimeout> | null = null
  * - 300ms 淡出后消失
  * - 连续调用时重置计时器，始终展示最新一条错误
  */
-export function showErrorPopup(msg: string): void {
+export function showErrorPopup(msg: unknown): void {
   if (hideTimer !== null) {
     clearTimeout(hideTimer)
     hideTimer = null
+  } //清理已有的定时器，防止重合
+
+  const extractError = (error: unknown): string => {
+    if (error instanceof Error) {
+      return error.message
+    }
+    if (typeof error === 'string') {
+      return error
+    }
+    if (error !== null && error != undefined) {
+      try {
+        return JSON.stringify(error)
+      } catch {
+        return String(error)
+      }
+    }
+    return ''
   }
 
-  message.value = msg
+  message.value = extractError(msg)
   visible.value = true
 
   // 300ms 淡入 + 3000ms 保持 = 3300ms 后开始淡出

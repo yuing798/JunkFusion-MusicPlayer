@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import type { SongInfo } from './SongInfo'
-import { callNativeFunction } from '@/bridge/initBridge'
+import { callJuceFunc } from '@/bridge/initBridge'
 import { BRIDGE_KEYS } from '@/bridge/bridge.generated'
+import { showErrorPopup } from '@/components/other/errorPopupWindow.vue'
 
 // “对象字面量”就是用一对花括号 {} 包裹起来，里面写 键: 值 键值对（Key-Value Pair）的结构，用来直接在代码里“凭空”创建一个 JavaScript 对象。
 export const songStore = defineStore('songPage',{//这一页的15首歌曲
@@ -20,14 +21,12 @@ export const songStore = defineStore('songPage',{//这一页的15首歌曲
       this.songs[index] = {
         ...originSong,
         isMyLike:!originSong.isMyLike,
-        // ? 是 可选链（Optional Chaining） 操作符。它的作用是：在访问 isMyLike 属性之前，
-        // 先检查 originSong 是否存在（不是 null 或 undefined）。如果存在，就正常读取；
-        // 如果不存在，整个表达式直接返回 undefined，而不是抛出错误。
       }//乐观更新
       try{
-        await callNativeFunction(BRIDGE_KEYS.toggleMyLike,songId)
+        await callJuceFunc(BRIDGE_KEYS.toggleMyLike,songId)
       }catch(error){
         console.error('点赞失败，回滚状态',error)
+        showErrorPopup(error)
         this.songs[index] = originSong
       }
     }

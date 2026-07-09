@@ -84,6 +84,9 @@ MainComponent::MainComponent(){
                     return;
                 }else{
                     // complete(juce::var::)
+                    auto error{new juce::DynamicObject()};
+                    error->setProperty("error","[我喜欢]状态更新失败，请重试");
+                    complete(juce::var(error));
                     return;
                 }
             }

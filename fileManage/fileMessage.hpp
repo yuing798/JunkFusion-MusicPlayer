@@ -118,6 +118,7 @@ struct SongInfo
         obj->setProperty("nameId", song.nameId);
 
         return juce::var(obj);
+        //这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     }//将songInfo转化为var，才能推送给js端
 
 };
