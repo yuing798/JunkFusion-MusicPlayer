@@ -66,8 +66,12 @@ MainComponent::MainComponent(){
                         int num4ErrorFile{0};
                         for(auto& file:files){
                             auto song{getStreamMetaData(file)};
-                            if(!song.filePath.empty()){
-                                if(!SongsManage::getInstance().insertSong(song)){
+                            if(!song){
+                                errorStr += (file.getFileName()) + utf8("\n"); 
+                                num4ErrorFile++;
+                            }
+                            if(!song->filePath.empty()){
+                                if(!SongsManage::getInstance().insertSong(*song)){
                                     errorStr += (file.getFileName()) + utf8("\n"); 
                                     num4ErrorFile++;
                                 }

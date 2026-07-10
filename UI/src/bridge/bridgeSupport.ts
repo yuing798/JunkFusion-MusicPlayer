@@ -10,7 +10,7 @@ import { showErrorPopup } from "@/components/other/errorPopupWindow.vue"
 //     const data = await callJuceFunc<SongInfo[]>('getSongList', { page: 1 });
 //     songs.value = data; // data 是真实的 SongInfo[] 数据
 //   } catch (error) {
-//     // 3. 捕获错误（虽然 callJuceFunc 内部已弹窗，但这里用于重置状态）
+//     // 3. 捕获错误（虽然 callJuceFunc 内部已弹窗，但这里用于重置状态,防止继续向上冒泡）
 //     console.log('请求失败，已由全局弹窗提示');
 //   } finally {
 //     loading.value = false;
