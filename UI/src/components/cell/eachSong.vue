@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import Tooltip from '@/components/other/tooltip.vue'
 import PopupWindow from '@/components/other/popupWindow.vue'
 import { PlaybackState } from '@/macro/playState'
-import type { SongInfo } from '@/store/SongInfo'
 import { songStore, getSongMetadataLines } from '@/store/songStore'
 
 // ── Tabler 图标 ──
@@ -17,21 +16,43 @@ import {
 
 // ════════════════════════════════════════════════════════════════
 // Props & Emits
+//
+// 数据流向设计：
+//   - songId 是唯一"定位器"（告诉我我是谁）
+//   - SongInfo 完整对象、展示序号均从 store 按 songId 推导
+//   - 这样避免了"父传 SongInfo 给子 → 子 emit SongInfo 回父"的冗余握手
 // ════════════════════════════════════════════════════════════════
 
 const props = defineProps<{
-  /** 歌曲全局序号 */
-  songIndex: number
-  /** 歌曲完整信息 */
-  songInfo: SongInfo
+  /** 歌曲数据库主键，用于从 store 查找完整 SongInfo 和计算序号 */
+  songId: number
   /** 当前播放状态 */
   playbackState: PlaybackState
 }>()
 
 const emit = defineEmits<{
-  /** 请求改变播放状态：Stopped → Playing, Playing → Paused, Paused → Playing */
-  (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
+  /**
+   * 请求改变播放状态。
+   * 只传 songId + 目标状态，父组件自行从 store 获取 SongInfo。
+   */
+  (e: 'request-playback-change', songId: number, nextState: PlaybackState): void
 }>()
+
+// ════════════════════════════════════════════════════════════════
+// Store — 通过 songId 查找当前行的歌曲数据
+// ════════════════════════════════════════════════════════════════
+
+const mySongStore = songStore()
+
+/** 从 store 中按 songId 查找 SongInfo，找不到返回 undefined */
+const songInfo = computed(() => mySongStore.getSongById(props.songId))
+
+/** 从 store 中按 songId 计算全局展示序号 */
+const songIndex = computed(() => mySongStore.getSongIndexById(props.songId))
+
+// ════════════════════════════════════════════════════════════════
+// 常量
+// ════════════════════════════════════════════════════════════════
 
 /** 多流音频悬停提示文本 */
 const MULTI_STREAM_TOOLTIP_TEXT =
@@ -39,10 +60,15 @@ const MULTI_STREAM_TOOLTIP_TEXT =
 
 // ════════════════════════════════════════════════════════════════
 // 歌曲元数据（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
-// 逻辑统一收敛在 songStore.getSongMetadataLines 中
 // ════════════════════════════════════════════════════════════════
 
-const metadataLines = computed(() => getSongMetadataLines(props.songInfo))
+const metadataLines = computed(() => {
+  if (!songInfo.value) return []
+  return getSongMetadataLines(songInfo.value)
+})
+
+/** 弹出窗标题（songInfo 不存在时兜底） */
+const popupTitle = computed(() => songInfo.value?.title || '未知')
 
 // ════════════════════════════════════════════════════════════════
 // 事件处理
@@ -67,10 +93,9 @@ function handleOrdinalClick(): void {
       nextState = PlaybackState.Playing
       break
   }
-  emit('request-playback-change', props.songInfo, nextState)
+  // 只传 songId，不再传 SongInfo 对象
+  emit('request-playback-change', props.songId, nextState)
 }
-
-const mySongStore = songStore()
 </script>
 
 <template>
@@ -104,17 +129,16 @@ const mySongStore = songStore()
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-name-artist">
       <div class="name-row">
-        <Tooltip :text="songInfo.title">
-          <span class="song-name">{{ songInfo.title }}</span>
-          <!-- 歌曲是一定有标题的 -->
+        <Tooltip :text="songInfo?.title ?? ''">
+          <span class="song-name">{{ songInfo?.title ?? '' }}</span>
         </Tooltip>
         <Tooltip :text="MULTI_STREAM_TOOLTIP_TEXT">
-          <span v-if="songInfo.isMultiStreamFile" class="multi-stream-badge"> 多流音频 </span>
+          <span v-if="songInfo?.isMultiStreamFile" class="multi-stream-badge"> 多流音频 </span>
         </Tooltip>
       </div>
       <div class="artist-row">
-        <Tooltip :text="songInfo.artist ?? '未知'">
-          <span class="artist-name">{{ songInfo.artist ?? '未知' }}</span>
+        <Tooltip :text="songInfo?.artist ?? '未知'">
+          <span class="artist-name">{{ songInfo?.artist ?? '未知' }}</span>
         </Tooltip>
       </div>
     </div>
@@ -123,35 +147,31 @@ const mySongStore = songStore()
          第 3 列：专辑名称 (150px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-album">
-      <span class="ellipsis-text">{{ songInfo.album ?? '未知' }}</span>
+      <span class="ellipsis-text">{{ songInfo?.album ?? '未知' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 4 列：AI 分类标签 (120px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-genre">
-      <span class="ellipsis-text">{{ songInfo.aiGenre ?? '' }}</span>
+      <span class="ellipsis-text">{{ songInfo?.aiGenre ?? '' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 5 列：播放次数 (80px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-play-count">
-      <span class="play-count-text">{{ songInfo.hadPlayedNum }}</span>
+      <span class="play-count-text">{{ songInfo?.hadPlayedNum ?? 0 }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 6 列：我喜欢按钮 (40px)
          isMyLike=true → IconHeartFilled（红心）
          isMyLike=false → IconHeart（空心）
+         toggle 动作直接调用 store，不 emit
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-like" @click.stop="mySongStore.toggleMyLike(songInfo.songId)">
-      <IconHeartFilled
-        v-if="songInfo.isMyLike"
-        :size="20"
-        color="#dd6572"
-        class="svg-icon"
-      />
+    <div class="cell cell-like" @click.stop="mySongStore.toggleMyLike(songId)">
+      <IconHeartFilled v-if="songInfo?.isMyLike" :size="20" color="#dd6572" class="svg-icon" />
       <IconHeart v-else :size="20" class="svg-icon" />
     </div>
 
@@ -159,7 +179,7 @@ const mySongStore = songStore()
          第 7 列：更多信息按钮 (40px)
          点击触发 PopupWindow，仿 C++ PopupWindowButton 的缩放动画
          ═══════════════════════════════════════════════════════════ -->
-    <PopupWindow :title="songInfo.title || '未知'">
+    <PopupWindow :title="popupTitle">
       <template #trigger>
         <div class="cell cell-more">
           <IconMessageCircleQuestion :size="20" class="svg-icon" />
@@ -174,11 +194,7 @@ const mySongStore = songStore()
           </div>
 
           <div class="song-detail__metadata">
-            <p
-              v-for="(line, i) in metadataLines"
-              :key="i"
-              class="song-detail__metadata-line"
-            >
+            <p v-for="(line, i) in metadataLines" :key="i" class="song-detail__metadata-line">
               {{ line }}
             </p>
           </div>
@@ -199,7 +215,6 @@ const mySongStore = songStore()
   padding: 0 5px;
   margin: 2px 5px;
   background-color: var(--colorCell);
-  border-radius: var(--borderRadius);
   transition: background-color var(--easeTime) ease;
   user-select: none;
 }

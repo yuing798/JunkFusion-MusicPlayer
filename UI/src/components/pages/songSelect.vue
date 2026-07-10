@@ -1,11 +1,21 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import EachSong from '@/components/cell/eachSong.vue'
 import PageChange from '@/components/other/pageChange.vue'
 import { PlaybackState } from '@/macro/playState'
 import type { SongInfo } from '@/store/SongInfo'
+import { songStore } from '@/store/songStore'
 
 // ════════════════════════════════════════════════════════════════
 // SongSelectViewport — 歌曲列表滚动容器
+//
+// 数据流向：
+//   1. 父组件传入 songInfos（当前页歌曲数据）
+//   2. songSelect 调用 songStore.setPageData() 写入 store
+//   3. eachSong 通过 songId 从 store 查找完整 SongInfo —— 无 props 传递
+//   4. toggle-like 直接在 store 内完成（乐观更新），不 emit
+//   5. 更多信息弹窗在 eachSong 内部（PopupWindow 包裹），不 emit
+//   6. 只有 request-playback-change 需要冒泡到上层
 //
 // 使用方式：
 //   <SongSelectViewport
@@ -15,23 +25,8 @@ import type { SongInfo } from '@/store/SongInfo'
 //     :activeSongId="playingSongId"
 //     :activePlaybackState="currentPlaybackState"
 //     @page-change="handlePageChange"
-//     @toggle-like="handleToggleLike"
-//     @show-more-info="handleShowMoreInfo"
 //     @request-playback-change="handlePlaybackChange"
 //   />
-//
-// Props：
-//   totalPages          — 总页码数
-//   currentPage         — 当前选中的页码（1 起步）
-//   songInfos           — 当前页的歌曲信息数组（最多 15 首）
-//   activeSongId        — 当前正在播放的歌曲 ID，null 表示无歌曲播放
-//   activePlaybackState — 当前播放状态（Playing/Paused/Stopped）
-//
-// Emits：
-//   page-change            — 用户点击了某个页码
-//   toggle-like            — 用户切换喜欢状态（从 eachSong 冒泡）
-//   show-more-info         — 用户点击更多信息（从 eachSong 冒泡）
-//   request-playback-change — 用户点击序号/播放图标（从 eachSong 冒泡）
 // ════════════════════════════════════════════════════════════════
 
 const props = defineProps<{
@@ -46,14 +41,27 @@ const props = defineProps<{
   /** 当前播放状态 */
   activePlaybackState: PlaybackState
 }>()
-// props中的数据只能是只读的
 
 const emit = defineEmits<{
   (e: 'page-change', page: number): void
-  (e: 'toggle-like', info: SongInfo): void
-  (e: 'show-more-info', info: SongInfo): void
-  (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
+  /** 请求改变播放状态 — 只传 songId，不传 SongInfo 对象 */
+  (e: 'request-playback-change', songId: number, nextState: PlaybackState): void
 }>()
+
+// ════════════════════════════════════════════════════════════════
+// 将父组件传入的歌曲数据写入 store
+// 这样 eachSong 就不需要 songInfo prop，直接从 store 按 songId 查找
+// ════════════════════════════════════════════════════════════════
+
+const mySongStore = songStore()
+
+watch(
+  () => props.songInfos,
+  (infos) => {
+    mySongStore.setPageData(infos, (props.currentPage - 1) * 15)
+  },
+  { immediate: true },
+)
 
 // ════════════════════════════════════════════════════════════════
 // 每首歌曲的播放状态
@@ -69,19 +77,15 @@ function getSongPlaybackState(song: SongInfo): PlaybackState {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 事件冒泡：将 eachSong 和 pageChange 的事件向上传递
+// 事件冒泡
+//
+// toggle-like / show-more-info 不再冒泡：
+//   - toggle 在 store 中完成（乐观更新 + 回滚）
+//   - 更多信息弹窗在 eachSong 内部（PopupWindow），不需要外部参与
 // ════════════════════════════════════════════════════════════════
 
-function onToggleLike(info: SongInfo): void {
-  emit('toggle-like', info)
-}
-
-function onShowMoreInfo(info: SongInfo): void {
-  emit('show-more-info', info)
-}
-
-function onRequestPlaybackChange(info: SongInfo, nextState: PlaybackState): void {
-  emit('request-playback-change', info, nextState)
+function onRequestPlaybackChange(songId: number, nextState: PlaybackState): void {
+  emit('request-playback-change', songId, nextState)
 }
 
 function onPageChange(page: number): void {
@@ -100,19 +104,18 @@ function onPageChange(page: number): void {
     <!-- ═══════════════════════════════════════════════════════════
          歌曲行列表
          每行 70px，最多 15 行
+         只传 songId + playbackState：
+           - songId     → eachSong 从 store 查找 SongInfo 和计算序号
+           - playbackState → 控制播放/暂停图标
          ═══════════════════════════════════════════════════════════ -->
     <div class="song-list">
       <EachSong
-        v-for="(song, index) in songInfos"
+        v-for="song in mySongStore.songs"
         :key="song.songId"
-        :song-index="(currentPage - 1) * 15 + index + 1"
-        :song-info="song"
+        :song-id="song.songId"
         :playback-state="getSongPlaybackState(song)"
-        @toggle-like="onToggleLike"
-        @show-more-info="onShowMoreInfo"
         @request-playback-change="onRequestPlaybackChange"
       />
-      <!-- templete用短横线、JS 用驼峰 ,妈的死了妈的双重标准-->
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
