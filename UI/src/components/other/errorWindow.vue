@@ -52,7 +52,7 @@ export function closeErrorWindow(): void {
  *
  * 使用方式（任意 .ts / .vue 文件）：
  * ```ts
- * import { showErrorWindow } from '@/components/other/errorPopupWindow.vue'
+ * import { showErrorWindow } from '@/components/other/errorWindow.vue'
  *
  * try {
  *   // ...

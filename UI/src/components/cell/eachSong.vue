@@ -1,24 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import Tooltip from '@/components/other/tooltip.vue'
+import PopupWindow from '@/components/other/popupWindow.vue'
 import { PlaybackState } from '@/macro/playState'
 import type { SongInfo } from '@/store/SongInfo'
+import { songStore, getSongMetadataLines } from '@/store/songStore'
 
-// ── SVG 资源 ──
-import playSvg from '@/assets/image/play.svg'
-import pauseSvg from '@/assets/image/pause.svg'
-import heartSvg from '@/assets/image/heart.svg'
-import heartFillSvg from '@/assets/image/heart-fill.svg'
-import whatsMoreSvg from '@/assets/image/whatsMore.svg'
-import xSvg from '@/assets/image/x.svg'
-import { songStore } from '@/store/songStore'
+// ── Tabler 图标 ──
+import {
+  IconPlayerPlayFilled,
+  IconPlayerPause,
+  IconHeart,
+  IconHeartFilled,
+  IconMessageCircleQuestion,
+} from '@tabler/icons-vue'
 
 // ════════════════════════════════════════════════════════════════
 // Props & Emits
 // ════════════════════════════════════════════════════════════════
 
 const props = defineProps<{
-  //父到子
   /** 歌曲全局序号 */
   songIndex: number
   /** 歌曲完整信息 */
@@ -31,144 +32,17 @@ const emit = defineEmits<{
   /** 请求改变播放状态：Stopped → Playing, Playing → Paused, Paused → Playing */
   (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
 }>()
-// Props 必须是驼峰（songIndex），因为它是“JavaScript 变量名（标识符）”；
-// Emit 事件名用短横线（'toggle-like'），因为它是一个“字符串字面量（值）”
 
 /** 多流音频悬停提示文本 */
 const MULTI_STREAM_TOOLTIP_TEXT =
   '该文件包含多路音频流（如多语言、多声道）。当前播放器将自动为您选择质量最佳的默认音轨。如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序'
 
 // ════════════════════════════════════════════════════════════════
-// 弹出窗状态
+// 歌曲元数据（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
+// 逻辑统一收敛在 songStore.getSongMetadataLines 中
 // ════════════════════════════════════════════════════════════════
 
-const moreButtonRef = ref<HTMLElement | null>(null)
-const popupRef = ref<HTMLElement | null>(null)
-const popupVisible = ref(false)
-const popupClosing = ref(false)
-const popupPosition = ref({ left: '0px', top: '0px' })
-
-// ── 拖动状态 ──
-const isDragging = ref(false)
-const dragOffset = ref({ x: 0, y: 0 })
-
-/** 弹出窗更多信息按钮点击 */
-function handleMoreClick(): void {
-  if (popupVisible.value) {
-    closePopup()
-    return
-  }
-
-  // 捕获按钮中心坐标（viewport 坐标系），作为动画变换原点
-  if (moreButtonRef.value) {
-    const rect = moreButtonRef.value.getBoundingClientRect()
-    document.documentElement.style.setProperty(
-      '--popup-origin-x',
-      rect.left + rect.width / 2 + 'px',
-    )
-    document.documentElement.style.setProperty(
-      '--popup-origin-y',
-      rect.top + rect.height / 2 + 'px',
-    )
-  } //动态改变css属性
-
-  popupVisible.value = true
-  popupClosing.value = false
-
-  // 初始居中
-  popupPosition.value = {
-    left: (window.innerWidth - 400) / 2 + 'px',
-    top: (window.innerHeight - 350) / 2 + 'px',
-  }
-
-  // 用实际尺寸重新居中
-  void nextTick(() => {
-    if (popupRef.value) {
-      const r = popupRef.value.getBoundingClientRect()
-      popupPosition.value = {
-        left: (window.innerWidth - r.width) / 2 + 'px',
-        top: (window.innerHeight - r.height) / 2 + 'px',
-      }
-    }
-  })
-}
-
-function closePopup(): void {
-  popupClosing.value = true
-  setTimeout(() => {
-    popupVisible.value = false
-    popupClosing.value = false
-  }, 200) // 匹配动画时长
-}
-
-// ── 拖动 ──
-
-function startDrag(e: MouseEvent): void {
-  // 点击关闭按钮时不触发拖动
-  if ((e.target as HTMLElement).closest('.popup-close-btn')) return
-
-  isDragging.value = true
-  const rect = popupRef.value!.getBoundingClientRect()
-  dragOffset.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  // 计算鼠标在弹窗内部的位置
-
-  window.addEventListener('mousemove', onDragMove) //'mousemove'是浏览器提供的API方法
-  window.addEventListener('mouseup', onDragEnd) //用户在任意位置松开鼠标左键（或触控板左键）的那一刻
-}
-
-function onDragMove(e: MouseEvent): void {
-  if (!isDragging.value) return
-  popupPosition.value = {
-    left: e.clientX - dragOffset.value.x + 'px',
-    top: e.clientY - dragOffset.value.y + 'px',
-  }
-}
-
-function onDragEnd(): void {
-  isDragging.value = false
-  window.removeEventListener('mousemove', onDragMove)
-  window.removeEventListener('mouseup', onDragEnd)
-}
-
-// ════════════════════════════════════════════════════════════════
-// 元数据文本构建（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
-// ════════════════════════════════════════════════════════════════
-
-const metadataLines = computed(() => {
-  const info = props.songInfo
-  const lines: string[] = []
-
-  // 先检查 undefined（C++ std::nullopt），再检查值的有效性
-  const addIf = (label: string, value: string | number | undefined): void => {
-    if (value === undefined) return
-    const sv = String(value)
-    if (sv !== '' && sv !== '0' && sv !== '-1') {
-      lines.push(`${label}: ${sv}`)
-    }
-  }
-
-  addIf('BPM', info.bpm)
-  addIf('调性', info.key)
-  if (info.sampleRate > 0) addIf('采样率', `${info.sampleRate} Hz`)
-  if (info.bitRate > 0) addIf('比特率', `${info.bitRate} kbps`)
-  addIf('通道数', info.numChannels)
-  addIf('位深', info.bitDepth)
-  addIf('解码器名称', info.codecName)
-  lines.push(`是否已经进行过AI分析: ${info.aiProcessed ? '是' : '否'}`)
-  addIf('AI分析体裁', info.aiGenre)
-  lines.push(`是否为音乐资源: ${info.isMusic ? '是' : '否'}`)
-  addIf('专辑艺术家', info.albumArtist)
-  addIf('体裁', info.genre)
-  if (info.trackNumber !== undefined && info.trackNumber >= 0) addIf('轨道号', info.trackNumber)
-  if (info.discNumber !== undefined && info.discNumber > 0) addIf('碟片号', info.discNumber)
-  addIf('发行年份', info.year)
-  addIf('作曲者', info.composer)
-  addIf('文件路径', info.filePath)
-  addIf('文件大小', info.fileSize)
-  addIf('最后修改时间', info.lastModifiedTime)
-
-  return lines
-})
+const metadataLines = computed(() => getSongMetadataLines(props.songInfo))
 
 // ════════════════════════════════════════════════════════════════
 // 事件处理
@@ -197,17 +71,6 @@ function handleOrdinalClick(): void {
 }
 
 const mySongStore = songStore()
-
-// ════════════════════════════════════════════════════════════════
-// 清理
-// ════════════════════════════════════════════════════════════════
-
-onUnmounted(() => {
-  document.documentElement.style.removeProperty('--popup-origin-x')
-  document.documentElement.style.removeProperty('--popup-origin-y')
-  window.removeEventListener('mousemove', onDragMove)
-  window.removeEventListener('mouseup', onDragEnd)
-})
 </script>
 
 <template>
@@ -227,13 +90,12 @@ onUnmounted(() => {
       <span v-if="playbackState === PlaybackState.Stopped" class="ordinal-number">
         {{ songIndex }}
       </span>
-      <img
+      <IconPlayerPlayFilled
         v-else-if="playbackState === PlaybackState.Playing"
-        :src="playSvg"
-        class="state-icon"
-        alt=""
+        :size="24"
+        class="svg-icon"
       />
-      <img v-else :src="pauseSvg" class="state-icon" alt="" />
+      <IconPlayerPause v-else :size="24" class="svg-icon" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -280,63 +142,56 @@ onUnmounted(() => {
 
     <!-- ═══════════════════════════════════════════════════════════
          第 6 列：我喜欢按钮 (40px)
-         isMyLike=true → heart-fill.svg（红心）
-         isMyLike=false → heart.svg（空心）
+         isMyLike=true → IconHeartFilled（红心）
+         isMyLike=false → IconHeart（空心）
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-like" @click.stop="mySongStore.toggleMyLike(songInfo.songId)">
-      <img :src="songInfo.isMyLike ? heartFillSvg : heartSvg" class="icon-btn" />
+      <IconHeartFilled
+        v-if="songInfo.isMyLike"
+        :size="20"
+        color="#dd6572"
+        class="svg-icon"
+      />
+      <IconHeart v-else :size="20" class="svg-icon" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 7 列：更多信息按钮 (40px)
-         点击触发弹出窗，仿 C++ PopupWindowButton 的缩放动画
+         点击触发 PopupWindow，仿 C++ PopupWindowButton 的缩放动画
          ═══════════════════════════════════════════════════════════ -->
-    <div ref="moreButtonRef" class="cell cell-more" @click.stop="handleMoreClick">
-      <img :src="whatsMoreSvg" class="icon-btn" alt="更多信息" />
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         弹出窗 — Teleport to body
-         仿 C++ popupWindow 的缩放仿射变换动画
-         ═══════════════════════════════════════════════════════════ -->
-    <Teleport to="body">
-      <div
-        v-if="popupVisible"
-        ref="popupRef"
-        class="popup-window"
-        :class="{ 'popup-closing': popupClosing }"
-        :style="popupPosition"
-      >
-        <!-- 可拖动标题栏 -->
-        <div class="popup-titlebar" @mousedown="startDrag">
-          <span class="popup-title">{{ songInfo.title || '未知' }}</span>
-          <button class="popup-close-btn" @click="closePopup">
-            <img :src="xSvg" alt="关闭" />
-          </button>
+    <PopupWindow :title="songInfo.title || '未知'">
+      <template #trigger>
+        <div class="cell cell-more">
+          <IconMessageCircleQuestion :size="20" class="svg-icon" />
         </div>
+      </template>
 
-        <!-- 内容区域：专辑封面 + 元数据文本 -->
-        <div class="popup-content">
+      <template #default>
+        <div class="song-detail">
           <!-- 专辑封面：后续通过 imageHash 桥接获取 -->
-          <div class="popup-album-art-placeholder">
-            <span class="album-art-hint">专辑封面</span>
+          <div class="song-detail__album-art">
+            <span class="song-detail__album-art-hint">专辑封面</span>
           </div>
 
-          <div class="popup-metadata">
-            <p v-for="(line, i) in metadataLines" :key="i" class="metadata-line">
+          <div class="song-detail__metadata">
+            <p
+              v-for="(line, i) in metadataLines"
+              :key="i"
+              class="song-detail__metadata-line"
+            >
               {{ line }}
             </p>
           </div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+    </PopupWindow>
   </div>
 </template>
 
 <style scoped>
 .each-song-row {
   display: grid;
-  /* display: grid; 是 CSS 的网格布局（Grid Layout）属性，它把一个容器变成了“网格化”的二维布局系统——你可以像画表格一样，把子元素按行和列整齐排列 */
+  /* display: grid; 是 CSS 的网格布局（Grid Layout）属性，它把一个容器变成了"网格化"的二维布局系统——你可以像画表格一样，把子元素按行和列整齐排列 */
   grid-template-columns: 50px 1fr 150px 120px 80px 40px 40px;
   height: 70px;
   align-items: center;
@@ -364,6 +219,14 @@ onUnmounted(() => {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   SVG 图标：不拦截鼠标事件（由父按钮处理）
+   ════════════════════════════════════════════════════════════════ */
+
+.svg-icon {
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
    第 1 列：序号 / 播放状态
    ════════════════════════════════════════════════════════════════ */
 
@@ -376,11 +239,6 @@ onUnmounted(() => {
 .ordinal-number {
   font-size: var(--midFont);
   color: var(--colorTextSecond);
-}
-
-.state-icon {
-  width: 24px;
-  height: 24px;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -488,120 +346,13 @@ onUnmounted(() => {
   background-color: var(--colorHover);
 }
 
-.icon-btn {
-  width: 20px;
-  height: 20px;
-  pointer-events: none;
-}
-
 /* ════════════════════════════════════════════════════════════════
-   弹出窗 — Teleported to body
-   仿 C++ popupWindow + PopupWindowButton 动画
+   弹出窗内容区域 — 歌曲详情
+   由 PopupWindow 的 #default 插槽投射
    ════════════════════════════════════════════════════════════════ */
 
-.popup-window {
-  position: fixed;
-  z-index: 10000;
-  width: 400px;
-  min-height: 350px;
-  background-color: var(--colorMain);
-  border-radius: 7px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
-
-  /*
-    变换原点通过 JS 动态设置（按钮中心在 viewport 中的坐标），
-    模拟 C++ AffineTransform::scale(progress, progress, cx, cy)
-  */
-  transform-origin: var(--popup-origin-x, center) var(--popup-origin-y, center);
-
-  /* v-if 挂载时自动触发打开动画 */
-  animation: popup-open 200ms ease-out forwards;
-}
-
-.popup-window.popup-closing {
-  animation: popup-close 200ms ease-in forwards;
-}
-
-@keyframes popup-open {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes popup-close {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0);
-    opacity: 0;
-  }
-}
-
-/* ── 标题栏 ── */
-
-.popup-titlebar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  padding: 0 8px;
-  position: relative;
-  cursor: move;
-  user-select: none;
-}
-
-.popup-title {
-  font-size: var(--midFont);
-  font-weight: bold;
-  color: var(--colorTextMain);
-  max-width: calc(100% - 32px);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.popup-close-btn {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--borderRadius);
-  padding: 2px;
-  transition: background-color var(--easeTime) ease;
-}
-
-.popup-close-btn:hover {
-  background-color: var(--colorHover);
-}
-
-.popup-close-btn img {
-  width: 100%;
-  height: 100%;
-}
-
-/* ── 内容区域 ── */
-
-.popup-content {
-  padding: 10px;
-}
-
 /* 专辑封面占位（后续通过 imageHash 桥接获取） */
-.popup-album-art-placeholder {
+.song-detail__album-art {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -612,13 +363,13 @@ onUnmounted(() => {
   background-color: var(--colorHover);
 }
 
-.album-art-hint {
+.song-detail__album-art-hint {
   font-size: var(--littleFont);
   color: var(--colorTextSecond);
 }
 
 /* 元数据文本 */
-.popup-metadata {
+.song-detail__metadata {
   font-size: var(--littleFont);
   color: var(--colorTextMain);
   line-height: 1.7;
@@ -626,7 +377,7 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-.metadata-line {
+.song-detail__metadata-line {
   margin: 2px 0;
   word-break: break-all;
 }
