@@ -1,52 +1,58 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue';
 
-import upSvg from '@/assets/image/up.svg'
-import downSvg from '@/assets/image/down.svg'
-import { callJuceFunc } from '@/bridge/bridgeSupport.ts'
-import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts'
+import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
+import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts';
+import { IconChevronDown, IconChevronsUp } from '@tabler/icons-vue';
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
-const pageTitle = '全部音乐'
+const pageTitle = '全部音乐';
 
-const songCount = ref(0)
+const songCount = ref(0);
 
 const sortOptions = [
   { value: 1, label: '添加时间排列' }, // SortMode::ByAddTime
   { value: 0, label: '歌曲名称排列' }, // SortMode::ByName
   { value: 2, label: '播放次数排列' }, // SortMode::ByPlayTimes
-]
-const selectedSort = ref(0)
+];
+const selectedSort = ref(0);
 // 映射到 SortMode 枚举：与 C++ indexToSortMode lambda 一致
 function indexToSortMode(idx: number): string {
   switch (idx) {
     case 0:
-      return 'ByAddTime'
+      return 'ByAddTime';
     case 1:
-      return 'ByName'
+      return 'ByName';
     case 2:
-      return 'ByPlayTimes'
+      return 'ByPlayTimes';
     default:
-      return 'ByAddTime'
+      return 'ByAddTime';
   }
 }
 
-const isAscending = ref(true) // true = 升序，与 C++ ascendingWay 默认值一致
+const isAscending = ref(true); // true = 升序，与 C++ ascendingWay 默认值一致
 
-function toggleSortDirection(): void {
-  isAscending.value = !isAscending.value
-}
-
-const isImporting = ref(false) // 控制按钮禁用状态和加载动画
+const isImporting = ref(false); // 控制按钮禁用状态和加载动画
 
 async function handleFilesSelected(): Promise<void> {
-  if (isImporting.value) return
-  isImporting.value = true
+  if (isImporting.value) return;
+  isImporting.value = true;
   try {
-    const results = await callJuceFunc(BRIDGE_inputFiles.name)
-  } catch {}
+    const results = await callJuceFunc(BRIDGE_inputFiles.name);
+  } catch (error) {
+    console.error(error);
+  }
 }
+
+function toggleMyLike() {
+  isAscending.value = !isAscending.value;
+  localStorage.setItem('AllMusic_isascending', String(isAscending.value));
+}
+
+onMounted(() => {
+  isAscending.value = localStorage.getItem('AllMusic_isascending') !== 'false'; //默认为升序(true)
+});
 </script>
 
 <template>
@@ -57,7 +63,7 @@ async function handleFilesSelected(): Promise<void> {
          ================================================================ -->
     <div class="header-row">
       <!-- BigLabel: "全部音乐" — fontSize 30，与 C++ BigLabel 一致 -->
-      <span class="page-title">{{ pageTitle }}</span>
+      <span class="page-title">全部音乐</span>
 
       <!-- littleLabel: "共 0 首" — fontSize 15，与 C++ littleLabel 一致 -->
       <span class="song-count">共 {{ songCount }} 首</span>
@@ -84,16 +90,9 @@ async function handleFilesSelected(): Promise<void> {
         </option>
       </select>
 
-      <!--
-        升降序切换 — 对应 C++ upDownButton mUpDownButton
-        点击切换 ↑/↓ 图标，与 upDownButton 的 toggle 行为一致
-      -->
-      <button class="btn-icon" title="切换升降序" @click="toggleSortDirection">
-        <img
-          :src="isAscending ? upSvg : downSvg"
-          :alt="isAscending ? '升序' : '降序'"
-          class="icon-svg"
-        />
+      <button class="btn-icon" @click="toggleMyLike()">
+        <IconChevronsUp v-if="isAscending" class="icon-svg"></IconChevronsUp>
+        <IconChevronDown v-else class="icon-svg"></IconChevronDown>
       </button>
     </div>
 
@@ -213,12 +212,6 @@ async function handleFilesSelected(): Promise<void> {
 
 .btn-icon:hover {
   background-color: var(--colorHover);
-}
-
-.icon-svg {
-  width: 20px;
-  height: 20px;
-  pointer-events: none; /* 点击事件由父级 button 处理 */
 }
 
 /* ── 弹性空间：将排序控件推到右侧 ── */

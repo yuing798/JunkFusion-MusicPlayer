@@ -24,16 +24,14 @@ import { showErrorWindow } from "@/components/other/errorWindow.vue"
       if(EVENT_BRIDGE_KEYS.fullError in results){
         throw new Error(String(results[EVENT_BRIDGE_KEYS.fullError])) 
       }else if(EVENT_BRIDGE_KEYS.partError in results){
-        showErrorWindow(results[EVENT_BRIDGE_KEYS.partError],10000)
+        showErrorWindow(results[EVENT_BRIDGE_KEYS.partError],10000)//如果有部分错误的弹窗显示10秒
       }else if(EVENT_BRIDGE_KEYS.fullSuccess in results){
-        showErrorWindow(results[EVENT_BRIDGE_KEYS.fullSuccess],5000)
+        showErrorWindow(results[EVENT_BRIDGE_KEYS.fullSuccess],2000)//如果有完全成功的弹窗显示2秒
       }
     }
     return results as T
   } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error))
-    showErrorWindow(err)
-    console.error(err.message)
-    throw err
+    showErrorWindow(error)
+    throw error
   }
 }

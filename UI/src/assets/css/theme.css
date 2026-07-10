@@ -1,5 +1,4 @@
-:root,
-.theme-light {
+:root,.theme-light {
     --colorMain: #f0f0f0;/*主要颜色*/
     --colorNav:#e5eff0;/*导航窗颜色*/
     --colorHover: #d0d0d0;/*悬浮颜色*/
@@ -23,4 +22,11 @@
     --littleFont:15px;
     --borderRadius:6px;
     --easeTime:0.15s;
+}
+
+.icon-svg{
+    color: var(--colorTextMain);
+    width: 25px;
+    height: 25px;
+    pointer-events: none;
 }
