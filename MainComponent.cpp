@@ -80,7 +80,7 @@ MainComponent::MainComponent(){
                         if(errorStr.isNotEmpty()){
                             auto obj{new juce::DynamicObject()};
                             obj->setProperty(
-                                "error",
+                                EVENT_BRIDGE_KEYS::partError,
                                 utf8("导入完成\n成功 ") + 
                                 juce::String(numAll - num4ErrorFile) 
                                 + utf8("首 失败") 
@@ -93,7 +93,7 @@ MainComponent::MainComponent(){
                             return;
                         }else{
                             auto obj{new juce::DynamicObject()};
-                            obj->setProperty("success","导入成功");
+                            obj->setProperty(EVENT_BRIDGE_KEYS::fullSuccess,utf8("导入成功\n共导入") + juce::String(numAll) + utf8("首"));
                             complete(juce::var(obj));
                             return;
                         }

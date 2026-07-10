@@ -3,8 +3,6 @@ import { ref } from 'vue'
 
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
-// import { BRIDGE_KEYS, type BridgeFunctionName } from '@/bridge/bridge.generated'
-import { getNativeFunction } from 'juce-framework-frontend-mirror'
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts'
 import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts'
 
@@ -45,23 +43,16 @@ const isImporting = ref(false) // 控制按钮禁用状态和加载动画
 async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return
   isImporting.value = true
-  const results = await getNativeFunction(BRIDGE_inputFiles.name)()
-  if (results && typeof results === 'object') {
-    if ('success' in results) {
-    } else if ('error' in results) {
-    }
-  }
+  try {
+    const results = await callJuceFunc(BRIDGE_inputFiles.name)
+  } catch {}
 }
 </script>
 
 <template>
-  <!--
-    AllMusicPage — "所有音乐" 页面
-    对应 C++ 中的 AllMusicPage 类（仅重构该类，不包含 SongSelectViewport / PageChange）
-  -->
   <div class="all-music-page">
     <!-- ================================================================
-         第 1 行：标题行（对应 C++ resized() 中的 row1）
+         第 1 行：
          allMusicLabel + numSongsLabel
          ================================================================ -->
     <div class="header-row">
@@ -85,22 +76,8 @@ async function handleFilesSelected(): Promise<void> {
         导入音频文件
       </button>
 
-      <!--
-        刷新按钮 — 对应 C++ svgButton refreshButton
-        svgButton 使用 refresh.svg 图标
-      -->
-      <!-- <button class="btn-icon" title="刷新" @click="handleRefresh">
-        <img :src="refreshSvg" alt="刷新" class="icon-svg" />
-      </button> -->
-
-      <!-- 弹性空间，将右侧的排序控件推到行尾 -->
       <div class="toolbar-spacer"></div>
 
-      <!--
-        排序方式下拉框 — 对应 C++ YComboBox seqWays
-        右侧留 margin 40px（参考 C++ row2.removeFromRight(40)）
-        宽度 200px，与 C++ row2.removeFromRight(200) 一致
-      -->
       <select v-model="selectedSort" class="combo-sort">
         <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
@@ -138,13 +115,6 @@ async function handleFilesSelected(): Promise<void> {
 </template>
 
 <style scoped>
-/* ================================================================
-   AllMusicPage 容器
-   布局与 C++ AllMusicPage::resized() 一致：
-   - 顶部标题行 + 工具栏行共占约 20% 高度
-   - 底部 viewport 占 80% 高度
-   ================================================================ */
-
 .all-music-page {
   display: flex;
   flex-direction: column;
