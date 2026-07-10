@@ -5,7 +5,6 @@ import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
 // import { BRIDGE_KEYS, type BridgeFunctionName } from '@/bridge/bridge.generated'
 import { getNativeFunction } from 'juce-framework-frontend-mirror'
-import ErrorPopupWindow, { showErrorPopup } from '../other/errorPopupWindow.vue'
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts'
 import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts'
 

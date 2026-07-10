@@ -5,7 +5,7 @@ import { ref } from 'vue'
 // 模块级单例状态
 //
 // 所有导入此模块的 .ts/.vue 文件共享同一份 message/visible 实例，
-// 因此任意位置的 try/catch 调用 showErrorPopup() 都能驱动同一个弹窗。
+// 因此任意位置的 try/catch 调用 showErrorWindow() 都能驱动同一个弹窗。
 // ════════════════════════════════════════════════════════════════
 
 /** 弹窗显示的文本内容 */
@@ -39,7 +39,7 @@ function extractError(error: unknown): string {
  * 立刻关闭弹窗（被用户点击 X 按钮或是手动调用时触发）。
  * 不经过定时器，直接触发 300ms 淡出动画。
  */
-export function closeErrorPopup(): void {
+export function closeErrorWindow(): void {
   if (hideTimer !== null) {
     clearTimeout(hideTimer)
     hideTimer = null
@@ -52,17 +52,17 @@ export function closeErrorPopup(): void {
  *
  * 使用方式（任意 .ts / .vue 文件）：
  * ```ts
- * import { showErrorPopup } from '@/components/other/errorPopupWindow.vue'
+ * import { showErrorWindow } from '@/components/other/errorPopupWindow.vue'
  *
  * try {
  *   // ...
  * } catch (error) {
- *   showErrorPopup(error)
+ *   showErrorWindow(error)
  * }
  *
  * // 自定义保持时间：
- * showErrorPopup('操作成功', 2000)
- * showErrorPopup(new Error('失败'), 5000)
+ * showErrorWindow('操作成功', 2000)
+ * showErrorWindow(new Error('失败'), 5000)
  * ```
  *
  * @param msg  - 错误信息。支持 Error / string / 任意对象（自动 JSON.stringify）
@@ -75,7 +75,7 @@ export function closeErrorPopup(): void {
  * - 用户可点击右上角 X 按钮提前关闭
  * - 连续调用时重置计时器，始终展示最新一条错误
  */
-export function showErrorPopup(msg: unknown, holdTime: number = 3000): void {
+export function showErrorWindow(msg: unknown, holdTime: number = 3000): void {
   if (hideTimer !== null) {
     clearTimeout(hideTimer)
     hideTimer = null
@@ -104,8 +104,8 @@ import { IconX } from '@tabler/icons-vue'
       <div class="error-popup__content">
         {{ message }}
       </div>
-      <button class="error-popup__close" @click="closeErrorPopup">
-        <IconX :size="18" />
+      <button class="error-popup__close" @click="closeErrorWindow">
+        <IconX class="svg-button" />
       </button>
     </div>
   </Teleport>
@@ -120,6 +120,10 @@ import { IconX } from '@tabler/icons-vue'
      - 300ms   → 300+hold   opacity 1（保持）
      - 然后               opacity 1 → 0（淡出，300ms）
    ════════════════════════════════════════════════════════════════ */
+.svg-button {
+  size: 20px;
+  color: var(--colorTextMain);
+}
 
 .error-popup {
   position: fixed;

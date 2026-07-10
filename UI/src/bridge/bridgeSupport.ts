@@ -1,7 +1,7 @@
 import { getNativeFunction } from "juce-framework-frontend-mirror"
 
-import { showErrorPopup } from "@/components/other/errorPopupWindow.vue"
 import { EVENT_BRIDGE_KEYS } from "./bridge.generated"
+import { showErrorWindow } from "@/components/other/errorWindow.vue"
 
 //调用示例：
 // const fetchSongs = async () => {
@@ -32,7 +32,7 @@ import { EVENT_BRIDGE_KEYS } from "./bridge.generated"
     return results as T
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
-    showErrorPopup(err)
+    showErrorWindow(err)
     console.error(err.message)
     throw err
   }

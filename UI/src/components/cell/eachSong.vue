@@ -28,7 +28,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'show-more-info', info: SongInfo): void
   /** 请求改变播放状态：Stopped → Playing, Playing → Paused, Paused → Playing */
   (e: 'request-playback-change', info: SongInfo, nextState: PlaybackState): void
 }>()
@@ -92,8 +91,6 @@ function handleMoreClick(): void {
       }
     }
   })
-
-  emit('show-more-info', props.songInfo)
 }
 
 function closePopup(): void {
