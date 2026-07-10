@@ -6,6 +6,8 @@ import { PlaybackState } from '@/macro/playState'
 import type { SongInfo } from '@/store/SongInfo'
 import { songStore } from '@/store/songStore'
 
+//该处为分页加载
+
 // ════════════════════════════════════════════════════════════════
 // SongSelectViewport — 歌曲列表滚动容器
 //

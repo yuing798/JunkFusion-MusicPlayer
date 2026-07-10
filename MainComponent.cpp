@@ -139,7 +139,6 @@ void MainComponent::resized()
 
 void MainComponent::paint(juce::Graphics& g)
 {
-    // WebView2 初始化完成前，先用 UI 背景色填充，避免黑屏闪烁
     g.fillAll(juce::Colour(0xfff0f0f0));
 }
 

@@ -437,7 +437,7 @@ bool SongsManage::reverseMyLike(int64_t id){
 
         int rowAffected = sql.exec();//（数据变更语句）：返回受影响的行数
         if(rowAffected > 0) return true;
-    }catch(SQLite::Exception& e){
+    }catch(...){
         auto logger{spdlog::get(LogSchedulerID)};
         logger->critical("[我喜欢]状态更新失败，请重试");
         return false;

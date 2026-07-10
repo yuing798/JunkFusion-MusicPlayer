@@ -34,10 +34,6 @@ function indexToSortMode(idx: number): string {
   }
 }
 
-// ── 升降序切换按钮 ──
-// 对应 C++: upDownButton mUpDownButton
-//   bool upOrDown{false};  // false=升序, true=降序
-//   mUpDownButton.setToggleState(upOrDown, ...);
 const isAscending = ref(true) // true = 升序，与 C++ ascendingWay 默认值一致
 
 function toggleSortDirection(): void {

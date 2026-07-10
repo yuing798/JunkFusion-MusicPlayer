@@ -24,9 +24,9 @@ import { showErrorWindow } from "@/components/other/errorWindow.vue"
       if(EVENT_BRIDGE_KEYS.fullError in results){
         throw new Error(String(results[EVENT_BRIDGE_KEYS.fullError])) 
       }else if(EVENT_BRIDGE_KEYS.partError in results){
-        
+        showErrorWindow(results[EVENT_BRIDGE_KEYS.partError])
       }else if(EVENT_BRIDGE_KEYS.fullSuccess in results){
-
+        showErrorWindow(results[EVENT_BRIDGE_KEYS.fullSuccess])
       }
     }
     return results as T
