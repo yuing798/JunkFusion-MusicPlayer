@@ -42,8 +42,8 @@ fs.writeFileSync(tsOutputPath, tsContent);
 //    注意：这个文件最终需要被你的 C++ 项目包含。
 const hppOutputPath = path.resolve(__dirname, '../Utils/BridgeNames.h');
 const hppLines = []
-hppLines.push('namespace Bridge {');
-hppLines.push('');
+hppLines.push('//warning:this file will be generated auto,dont modify it by yourself\n');
+hppLines.push('#pragma once')
 
 // 遍历 function，为每个函数生成一个 struct
 for (const funcName of Object.keys(defs.function)) {
@@ -63,8 +63,6 @@ for (const eventName of Object.keys(defs.event)) {
     hppLines.push(`    static constexpr const char* ${eventName} = "${eventName}";`);
 }
 hppLines.push('};');
-hppLines.push('');
-hppLines.push('} // namespace Bridge');
 const hppContent = hppLines.join('\n')
 fs.writeFileSync(hppOutputPath, hppContent);
 

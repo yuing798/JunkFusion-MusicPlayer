@@ -47,7 +47,7 @@ MainComponent::MainComponent(){
             return std::nullopt;
         })
         //withNativeFunction这个逼函数默认运行在Message Thread
-        .withNativeFunction(BridgeKeys::inputFiles,//导入文件函数
+        .withNativeFunction(BRIDGE_inputFiles::name,//导入文件函数
             [this](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
@@ -104,7 +104,7 @@ MainComponent::MainComponent(){
                 );
 
             }
-        ).withNativeFunction(BridgeKeys::toggleMyLike,//将我喜欢的歌曲状态翻转
+        ).withNativeFunction(BRIDGE_toggleMyLike::name,//将我喜欢的歌曲状态翻转
             [](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete

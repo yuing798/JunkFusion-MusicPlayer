@@ -3,10 +3,11 @@ import { ref } from 'vue'
 
 import upSvg from '@/assets/image/up.svg'
 import downSvg from '@/assets/image/down.svg'
-import { BRIDGE_KEYS, type BridgeFunctionName } from '@/bridge/bridge.generated'
+// import { BRIDGE_KEYS, type BridgeFunctionName } from '@/bridge/bridge.generated'
 import { getNativeFunction } from 'juce-framework-frontend-mirror'
 import ErrorPopupWindow, { showErrorPopup } from '../other/errorPopupWindow.vue'
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts'
+import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts'
 
 // ── 标题标签 ──
 // 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
@@ -49,7 +50,7 @@ const isImporting = ref(false) // 控制按钮禁用状态和加载动画
 async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return
   isImporting.value = true
-  const results = await getNativeFunction(BRIDGE_KEYS.inputFiles)()
+  const results = await getNativeFunction(BRIDGE_inputFiles.name)()
   if (results && typeof results === 'object') {
     if ('success' in results) {
     } else if ('error' in results) {

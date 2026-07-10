@@ -1,6 +1,7 @@
 import { getNativeFunction } from "juce-framework-frontend-mirror"
-import type { BridgeFunctionName } from "./bridge.generated"
+
 import { showErrorPopup } from "@/components/other/errorPopupWindow.vue"
+import { EVENT_BRIDGE_KEYS } from "./bridge.generated"
 
 //调用示例：
 // const fetchSongs = async () => {
@@ -16,15 +17,21 @@ import { showErrorPopup } from "@/components/other/errorPopupWindow.vue"
 //     loading.value = false;
 //   }
 // };
- export async function callJuceFunc<T = unknown>(name: BridgeFunctionName, ...args: unknown[]): Promise<T> {
+ export async function callJuceFunc<T = unknown>(name: string, ...args: unknown[]): Promise<T> {
   try {
     const results = await getNativeFunction(name)(...args)//如果没有三个点只会传进来第一个数
-    if (results && typeof results === 'object' && '__error' in results) {
-      throw new Error(String(results.__error)) //如果throw了会直接跳转到catch块中，throw也有返回的属性
+    if (results && typeof results === 'object') {
+      if(EVENT_BRIDGE_KEYS.fullError in results){
+        throw new Error(String(results[EVENT_BRIDGE_KEYS.fullError])) 
+      }else if(EVENT_BRIDGE_KEYS.partError in results){
+        
+      }else if(EVENT_BRIDGE_KEYS.fullSuccess in results){
+
+      }
     }
     return results as T
-  } catch (__error) {
-    const err = __error instanceof Error ? __error : new Error(String(__error))
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error))
     showErrorPopup(err)
     console.error(err.message)
     throw err
