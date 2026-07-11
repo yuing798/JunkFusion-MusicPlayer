@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
-import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts';
+import { BRIDGE_getAllSongCount, BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 
 const songCount = ref(0);
@@ -37,6 +37,10 @@ function toggleAscending() {
   localStorage.setItem('AllMusic_isascending', String(isAscending.value));
 }
 
+async function refreshSongCount() {
+  songCount.value = await callJuceFunc<number>(BRIDGE_getAllSongCount.name);
+}
+
 onMounted(() => {
   //初始化升降序
   isAscending.value = localStorage.getItem('AllMusic_isascending') !== 'false'; //默认为升序(true)
@@ -48,12 +52,15 @@ onMounted(() => {
   } else {
     selectedSort.value = 0;
   }
+
+  refreshSongCount(); //获得歌曲总数
 });
 // computed的几个特性
 // 必须有返回值（它“计算”出结果）。
 // 依赖其他响应式数据（依赖变了，它自动重新计算）。
 // 必须是同步的（不能在里面写 setTimeout 或 await）。
 // 不应该产生“副作用”（即不应该修改其他数据、不应该操作 DOM、不应该读写 localStorage）。
+//computed 的典型场景是：“前端手里已经有一份完整数据，我需要基于它算出一个新值”。
 </script>
 
 <template>

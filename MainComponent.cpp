@@ -2,7 +2,7 @@
 #include "Utils/BridgeNames.h"
 #include "Utils/otherUtils.hpp"
 #include "constants.h"
-#include "databaseManage.hpp"
+#include "songsManage.hpp"
 #include "fileManage/fileUtils.hpp"
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
@@ -46,8 +46,9 @@ MainComponent::MainComponent(){
             }
             return std::nullopt;
         })
+        .withOptionsFrom(mSongsManagerBuilder)
         //withNativeFunction这个逼函数默认运行在Message Thread
-        .withNativeFunction(BRIDGE_inputFiles::name,//导入文件函数
+        .withNativeFunction(BRIDGE_inputFiles::name,//导入文件函数,导入文件函数因为需要绑定模态窗所以放在MainComponent中比较合适
             [this](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
@@ -100,28 +101,11 @@ MainComponent::MainComponent(){
                             return;
                         }
                     });
-                            
+
                 },
                     web.get()
                 );
 
-            }
-        ).withNativeFunction(BRIDGE_toggleMyLike::name,//将我喜欢的歌曲状态翻转
-            [](
-                const juce::Array<juce::var>& args,
-                juce::WebBrowserComponent::NativeFunctionCompletion complete
-            ){
-                int64_t id{0};
-                if(args.size()>=1) id = args[0];
-                if(SongsManage::getInstance().reverseMyLike(id)){
-                    complete(juce::var());
-                    return;
-                }else{
-                    auto error{new juce::DynamicObject()};
-                    error->setProperty("__error",utf8("[我喜欢]状态更新失败，请重试"));
-                    complete(juce::var(error));
-                    return;
-                }
             }
         );
     

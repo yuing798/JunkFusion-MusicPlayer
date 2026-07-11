@@ -1,9 +1,12 @@
-#include "databaseManage.hpp"
+#include "songsManage.hpp"
 // #include "FontAbout/font.h"
+#include "BridgeNames.h"
 #include "constants.h"
 #include "fileMessage.hpp"
+#include "fileUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include "otherUtils.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
@@ -195,17 +198,17 @@ bool SongsManage::insertSong(const SongInfo& info)
 // ============================================================
 // getTotalSongCount
 // ============================================================
-int SongsManage::getTotalSongCount()
+std::optional<int> SongsManage::getTotalSongCount()
 {
     if (!db) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("查询歌曲总数阶段发生空指针问题");
-        return 0;
+        return std::nullopt;
     };
     SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs");
     if (query.executeStep())
         return query.getColumn(0).getInt();
-    return 0;
+    return std::nullopt;
 }
 auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
     // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
@@ -446,4 +449,40 @@ bool SongsManage::reverseMyLike(int64_t id){
 
 SongsManage::~SongsManage(){
 
+}
+
+juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options& initial){
+    return initial.withNativeFunction(
+        BRIDGE_getAllSongCount::name,//得到总歌曲数目
+        [](const auto& args,auto complete){
+            auto count{SongsManage::getInstance().getTotalSongCount()};
+            auto obj{new juce::DynamicObject()};
+            if(count.has_value()){
+                obj->setProperty(BRIDGE_getAllSongCount::count,count.value());
+                complete(obj);
+                return;
+            }else{
+                obj->setProperty(BRIDGE_getAllSongCount::count,0);
+                complete(obj);
+                return ;
+            }
+        }
+    ).withNativeFunction(BRIDGE_toggleMyLike::name,//将我喜欢的歌曲状态翻转
+        [](
+            const juce::Array<juce::var>& args,
+            juce::WebBrowserComponent::NativeFunctionCompletion complete
+        ){
+            int64_t id{0};
+            if(args.size()>=1) id = args[0];
+            if(SongsManage::getInstance().reverseMyLike(id)){
+                complete(juce::var());
+                return;
+            }else{
+                auto error{new juce::DynamicObject()};
+                error->setProperty(EVENT_BRIDGE_KEYS::fullError,utf8("[我喜欢]状态更新失败，请重试"));
+                complete(juce::var(error));
+                return;
+            }
+        }
+    );
 }

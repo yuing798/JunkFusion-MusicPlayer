@@ -7,6 +7,11 @@
     },
     "toggleMyLike":{
         "name":"toggleMyLike"
+    },
+    "getAllSongCount":{
+        //数据库里总共有多少首歌曲
+        "name":"getAllSongCount",
+        "count":"count"//返回歌曲总数
     }
   },
   "event":{

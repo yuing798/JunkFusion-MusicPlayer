@@ -7,6 +7,8 @@
 #include <memory>
 #include "fileMessage.hpp"
 #include "juce_core/juce_core.h"
+#include "juce_gui_extra/juce_gui_extra.h"
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
@@ -61,7 +63,7 @@ inline const char* createNameIdIndexSQL = R"(
     CREATE INDEX IF NOT EXISTS idx_songs_nameId ON songs (nameId)
 )";
 
-class SongsManage{
+class SongsManage {
 private:
     std::unique_ptr<SQLite::Database> db;
     juce::File songsDbFile;//歌曲管理文件
@@ -93,7 +95,7 @@ public:
     bool insertSong(const SongInfo& info);
 
     /** 获取歌曲总数 */
-    int getTotalSongCount();
+    std::optional<int> getTotalSongCount();
 
     enum class SortMode {
         ByAddTime,
@@ -122,4 +124,10 @@ public:
     SongsManage& operator=(const SongsManage&) = delete;
     SongsManage(SongsManage&&) = delete;
     SongsManage& operator=(SongsManage&&) = delete;//强调全局唯一单例
+};
+
+class songsManageBuilder : public juce::OptionsBuilder<juce::WebBrowserComponent::Options>{
+public:
+
+    juce::WebBrowserComponent::Options buildOptions(const juce::WebBrowserComponent::Options& initial) override;
 };
