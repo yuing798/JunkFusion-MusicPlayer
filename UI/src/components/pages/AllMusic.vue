@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
 import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts';
@@ -13,19 +13,10 @@ const sortOptions = [
   { value: 2, label: '播放次数' }, // SortMode::ByPlayTimes
 ];
 const selectedSort = ref(0);
-// 映射到 SortMode 枚举：与 C++ indexToSortMode lambda 一致
-function indexToSortMode(idx: number): string {
-  switch (idx) {
-    case 0:
-      return 'ByAddTime';
-    case 1:
-      return 'ByName';
-    case 2:
-      return 'ByPlayTimes';
-    default:
-      return 'ByAddTime';
-  }
-}
+
+watch(selectedSort, (value) => {
+  localStorage.setItem('AllMusic_sortMode', String(value));
+});
 
 const isAscending = ref(true); // true = 升序，与 C++ ascendingWay 默认值一致
 
@@ -35,20 +26,34 @@ async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return;
   isImporting.value = true;
   try {
-    const results = await callJuceFunc(BRIDGE_inputFiles.name);
+    await callJuceFunc(BRIDGE_inputFiles.name);
   } catch (error) {
     console.error(error);
   }
 }
 
-function toggleMyLike() {
+function toggleAscending() {
   isAscending.value = !isAscending.value;
   localStorage.setItem('AllMusic_isascending', String(isAscending.value));
 }
 
 onMounted(() => {
+  //初始化升降序
   isAscending.value = localStorage.getItem('AllMusic_isascending') !== 'false'; //默认为升序(true)
+
+  //初始化排序方案
+  const sortWaysLoad = localStorage.getItem('AllMusic_sortMode');
+  if (sortWaysLoad !== null) {
+    selectedSort.value = Number(sortWaysLoad);
+  } else {
+    selectedSort.value = 0;
+  }
 });
+// computed的几个特性
+// 必须有返回值（它“计算”出结果）。
+// 依赖其他响应式数据（依赖变了，它自动重新计算）。
+// 必须是同步的（不能在里面写 setTimeout 或 await）。
+// 不应该产生“副作用”（即不应该修改其他数据、不应该操作 DOM、不应该读写 localStorage）。
 </script>
 
 <template>
@@ -87,7 +92,7 @@ onMounted(() => {
           </option>
         </select>
 
-        <button class="svg-button" @click="toggleMyLike()">
+        <button class="svg-button" @click="toggleAscending()">
           <!-- 升降序标签 -->
           <IconArrowBigUpFilled v-if="isAscending" title="升序"></IconArrowBigUpFilled>
           <IconArrowBigDownFilled v-else title="降序"></IconArrowBigDownFilled>

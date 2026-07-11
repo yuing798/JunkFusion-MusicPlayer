@@ -109,18 +109,4 @@ body {
   background-color: var(--color-main);
   padding: 15px 20px;
 }
-
-/* 默认占位内容 */
-.placeholder {
-  text-align: center;
-  color: var(--color-text-second);
-  font-size: var(--big-font);
-  user-select: none;
-}
-
-.placeholder .hint {
-  margin-top: 8px;
-  font-size: var(--little-font);
-  color: var(--color-edge);
-}
 </style>
