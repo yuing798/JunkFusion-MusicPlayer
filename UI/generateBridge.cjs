@@ -21,6 +21,7 @@ tsLines.push(`// Generated from bridgeDefs.json\n`)
 // 处理 function：每个函数生成一个独立常量
 for (const funcName of Object.keys(defs.function)) {
   tsLines.push(`export const BRIDGE_${funcName} = {`);
+  tsLines.push(`  name:'${funcName}' as const,`);
   const funcObj = defs.function[funcName];
   for (const key of Object.keys(funcObj)) {
     tsLines.push(`  ${key}: '${funcObj[key]}' as const,`);
@@ -49,6 +50,7 @@ hppLines.push('#pragma once')
 for (const funcName of Object.keys(defs.function)) {
     hppLines.push(`struct BRIDGE_${funcName} {`);
     const funcObj = defs.function[funcName];
+    hppLines.push(`    static constexpr const char* name = "${funcName}";`);
     for (const key of Object.keys(funcObj)) {
         // 假设值都是字符串，直接生成 const char*
         hppLines.push(`    static constexpr const char* ${key} = "${funcObj[key]}";`);
