@@ -18,7 +18,7 @@ watch(selectedSort, (value) => {
   localStorage.setItem('AllMusic_sortMode', String(value));
 });
 
-const isAscending = ref(true); // true = 升序，与 C++ ascendingWay 默认值一致
+const isAscending = ref(true); // true = 升序
 
 const isImporting = ref(false); // 控制按钮禁用状态和加载动画
 

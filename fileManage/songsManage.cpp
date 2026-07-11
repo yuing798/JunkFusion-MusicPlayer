@@ -484,5 +484,33 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 return;
             }
         }
+    ).withNativeFunction(
+        BRIDGE_refreshAllMusicSongs::name,//参数：当前页码,升降序，排序方法，
+        [](
+            const juce::Array<juce::var>& args,auto complete
+        ){
+            auto sortMode{SongsManage::SortMode::ByAddTime};
+            bool isAscending{true};
+            int currentPage{1};
+            if(args.size() >=3){
+                int sortWay = args[2];
+                switch (sortWay) {
+                    case 0:
+                        sortMode = SongsManage::SortMode::ByAddTime;
+                        break;
+                    case 1:
+                        sortMode = SongsManage::SortMode::ByName;
+                        break;
+                    case 2:
+                        sortMode = SongsManage::SortMode::ByPlayTimes;
+                        break;
+                    default:
+                        sortMode = SongsManage::SortMode::ByAddTime;
+                        break;
+                }
+                isAscending = args[1];
+                currentPage = args[0];
+            }
+        }
     );
 }

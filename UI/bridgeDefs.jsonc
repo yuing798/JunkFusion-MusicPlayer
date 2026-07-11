@@ -1,5 +1,6 @@
 {
-  //函数定义：name为函数名称，后面为返回值，因为前端接收到的是对象，后端接收到的是数组，数组不需要写键值对
+  //函数定义：键名为函数名称，后面为返回值，因为前端接收到的是对象，后端接收到的是数组，数组不需要写键值对
+  //node UI/generateBridge.cjs执行
   "function":{
     "inputFiles":{
         //其他返回值字段
@@ -17,5 +18,8 @@
     "fullError":"fullError",//发生了完全的错误，需要全部回滚，通常为短小快速且涉及用户交互的事件
     "partError":"partError",//发生了部分错误，比如导入5000个文件有3个文件发生错误
     "fullSuccess":"fullSuccess"//事件完全通过，并且需要弹窗报告成功
+  },
+  "other":{
+    "numRows4SinglePage":15
   }
 }

@@ -31,8 +31,16 @@ for (const funcName of Object.keys(defs.function)) {
 
 // 处理 event：所有事件合并为一个对象
 tsLines.push(`export const EVENT_BRIDGE_KEYS = {`);
-for (const eventName of Object.keys(defs.event)) {
-  tsLines.push(`  ${eventName}: '${eventName}' as const,`);
+const eventObj = defs.event;
+for (const eventName of Object.keys(eventObj)) {
+  tsLines.push(`  ${eventName}: '${eventObj[eventName]}' as const,`);
+}
+tsLines.push(`} as const`);
+
+tsLines.push(`export const OTHER_BRIDGE_KEYS = {`);
+const otherObj = defs.other;
+for (const otherName of Object.keys(otherObj)) {
+  tsLines.push(`  ${otherName}: '${otherObj[otherName]}' as const,`);
 }
 tsLines.push(`} as const`);
 
@@ -61,13 +69,24 @@ for (const funcName of Object.keys(defs.function)) {
 
 // 遍历 event，生成 EVENT_BRIDGE_KEYS 结构体
 hppLines.push('struct EVENT_BRIDGE_KEYS {');
-for (const eventName of Object.keys(defs.event)) {
-    hppLines.push(`    static constexpr const char* ${eventName} = "${eventName}";`);
+const eventobj = defs.event;
+for (const eventName of Object.keys(eventObj)) {
+    hppLines.push(`    static constexpr const char* ${eventName} = "${eventObj[eventName]}";`);
 }
 hppLines.push('};');
+
+hppLines.push('struct OTHER_BRIDGE_KEYS {');
+const otherobj = defs.other;
+for (const otherName of Object.keys(otherObj)) {
+    hppLines.push(`    static constexpr const char* ${otherName} = "${otherObj[otherName]}";`);
+}
+hppLines.push('};');
+
 const hppContent = hppLines.join('\n')
 fs.writeFileSync(hppOutputPath, hppContent);
 
 console.log('✅ Bridge files generated successfully!');
 console.log(`   - TS: ${tsOutputPath}`);
 console.log(`   - C++: ${hppOutputPath}`);
+
+//node UI/generateBridge.cjs执行
