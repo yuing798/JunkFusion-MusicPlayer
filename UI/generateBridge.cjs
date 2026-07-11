@@ -18,69 +18,35 @@ tsLines.push(`// ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.`);
 
 tsLines.push(`// Generated from bridgeDefs.json\n`)
 
-// 处理 function：每个函数生成一个独立常量
-for (const funcName of Object.keys(defs.function)) {
-  tsLines.push(`export const BRIDGE_${funcName} = {`);
-  tsLines.push(`  name:'${funcName}' as const,`);
-  const funcObj = defs.function[funcName];
-  for (const key of Object.keys(funcObj)) {
-    tsLines.push(`  ${key}: '${funcObj[key]}' as const,`);
+for(const key of Object.keys(defs)){
+  tsLines.push(`export const BRIDGE_${key} = {`);
+  tsLines.push(`  name : '${key}' as const,`);
+  const obj = defs[key];
+  for (const name of Object.keys(obj)) {
+    tsLines.push(`  ${name}: '${obj[name]}' as const,`);
   }
-  tsLines.push(`} as const`);
+  tsLines.push(`} as const\n`);
 }
-
-// 处理 event：所有事件合并为一个对象
-tsLines.push(`export const EVENT_BRIDGE_KEYS = {`);
-const eventObj = defs.event;
-for (const eventName of Object.keys(eventObj)) {
-  tsLines.push(`  ${eventName}: '${eventObj[eventName]}' as const,`);
-}
-tsLines.push(`} as const`);
-
-tsLines.push(`export const OTHER_BRIDGE_KEYS = {`);
-const otherObj = defs.other;
-for (const otherName of Object.keys(otherObj)) {
-  tsLines.push(`  ${otherName}: '${otherObj[otherName]}' as const,`);
-}
-tsLines.push(`} as const`);
 
 const tsContent = tsLines.join('\n')
 fs.writeFileSync(tsOutputPath, tsContent);
 
 // 3. 生成 C++ 头文件 (BridgeNames.h) 
-//    注意：这个文件最终需要被你的 C++ 项目包含。
+//    注意：这个文件最终需要被 C++ 项目包含。
 const hppOutputPath = path.resolve(__dirname, '../Utils/BridgeNames.h');
 const hppLines = []
 hppLines.push('//warning:this file will be generated auto,dont modify it by yourself\n');
 hppLines.push('#pragma once')
 
-// 遍历 function，为每个函数生成一个 struct
-for (const funcName of Object.keys(defs.function)) {
-    hppLines.push(`struct BRIDGE_${funcName} {`);
-    const funcObj = defs.function[funcName];
-    hppLines.push(`    static constexpr const char* name = "${funcName}";`);
-    for (const key of Object.keys(funcObj)) {
-        // 假设值都是字符串，直接生成 const char*
-        hppLines.push(`    static constexpr const char* ${key} = "${funcObj[key]}";`);
-    }
-    hppLines.push('};');
-    hppLines.push('');  // 空行分隔
+for(const key of Object.keys(defs)){
+  hppLines.push(`struct BRIDGE_${key}{`);
+  hppLines.push(`    static constexpr const char* name = "${key}" ;`);
+  const obj = defs[key];
+  for (const name of Object.keys(obj)) {
+    hppLines.push(`    static constexpr const char* ${name} = "${obj[name]}" ;`);
+  }
+  hppLines.push(`};\n`);
 }
-
-// 遍历 event，生成 EVENT_BRIDGE_KEYS 结构体
-hppLines.push('struct EVENT_BRIDGE_KEYS {');
-const eventobj = defs.event;
-for (const eventName of Object.keys(eventObj)) {
-    hppLines.push(`    static constexpr const char* ${eventName} = "${eventObj[eventName]}";`);
-}
-hppLines.push('};');
-
-hppLines.push('struct OTHER_BRIDGE_KEYS {');
-const otherobj = defs.other;
-for (const otherName of Object.keys(otherObj)) {
-    hppLines.push(`    static constexpr const char* ${otherName} = "${otherObj[otherName]}";`);
-}
-hppLines.push('};');
 
 const hppContent = hppLines.join('\n')
 fs.writeFileSync(hppOutputPath, hppContent);

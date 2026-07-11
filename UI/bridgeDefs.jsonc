@@ -1,18 +1,29 @@
 {
   //函数定义：键名为函数名称，后面为返回值，因为前端接收到的是对象，后端接收到的是数组，数组不需要写键值对
   //node UI/generateBridge.cjs执行
-  "function":{
-    "inputFiles":{
-        //其他返回值字段
-    },
-    "toggleMyLike":{
-    },
-    "getAllSongCount":{
-        //数据库里总共有多少首歌曲
-        "count":"count"//返回歌曲总数
-    },
-    "refreshAllMusicSongs":{
-    }
+
+  //注意这里面写的字符串是为了跨端传输的，不要什么字符串都往里面写！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+
+  "inputFiles":{
+      //其他返回值字段
+  },
+  "toggleMyLike":{
+  },
+  "getAllSongCount":{
+      //数据库里总共有多少首歌曲
+      "count":"count"//返回歌曲总数
+  },
+  "refreshAllMusicSongs":{
+
+      //参数
+      "page":"page",
+      "isAscending":"isAscending",
+      "sortMode":"sortMode",
+
+      //返回值
+      "songsList":"songsList",
+
+      "error":"error"//刷新失败，不要弹窗，改为一个图片放在页面上
   },
   "event":{//这些事件都需要弹窗警告
     "fullError":"fullError",//发生了完全的错误，需要全部回滚，通常为短小快速且涉及用户交互的事件
@@ -22,4 +33,4 @@
   "other":{
     "numRows4SinglePage":15
   }
-}
+}//node UI/generateBridge.cjs执行

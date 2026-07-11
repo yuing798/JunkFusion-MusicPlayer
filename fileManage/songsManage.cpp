@@ -452,7 +452,8 @@ SongsManage::~SongsManage(){
 }
 
 juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options& initial){
-    return initial.withNativeFunction(
+    return initial
+    .withNativeFunction(//得到总歌曲数目
         BRIDGE_getAllSongCount::name,//得到总歌曲数目
         [](const auto& args,auto complete){
             auto count{SongsManage::getInstance().getTotalSongCount()};
@@ -484,32 +485,40 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 return;
             }
         }
-    ).withNativeFunction(
+    ).withNativeFunction(//得到单页的歌曲信息
         BRIDGE_refreshAllMusicSongs::name,//参数：当前页码,升降序，排序方法，
         [](
             const juce::Array<juce::var>& args,auto complete
         ){
             auto sortMode{SongsManage::SortMode::ByAddTime};
-            bool isAscending{true};
-            int currentPage{1};
-            if(args.size() >=3){
-                int sortWay = args[2];
-                switch (sortWay) {
-                    case 0:
-                        sortMode = SongsManage::SortMode::ByAddTime;
-                        break;
-                    case 1:
-                        sortMode = SongsManage::SortMode::ByName;
-                        break;
-                    case 2:
-                        sortMode = SongsManage::SortMode::ByPlayTimes;
-                        break;
-                    default:
-                        sortMode = SongsManage::SortMode::ByAddTime;
-                        break;
-                }
-                isAscending = args[1];
-                currentPage = args[0];
+            int sortWay = args[0][BRIDGE_refreshAllMusicSongs::sortMode];
+            bool isAscending = args[0][BRIDGE_refreshAllMusicSongs::isAscending];
+            int targetPage = args[0][BRIDGE_refreshAllMusicSongs::page];
+            switch (sortWay) {
+                case 0:
+                    sortMode = SongsManage::SortMode::ByAddTime;
+                    break;
+                case 1:
+                    sortMode = SongsManage::SortMode::ByName;
+                    break;
+                case 2:
+                    sortMode = SongsManage::SortMode::ByPlayTimes;
+                    break;
+                default:
+                    sortMode = SongsManage::SortMode::ByAddTime;
+                    break;
+            }
+            auto results{SongsManage::getInstance().getSongPage(
+                targetPage,
+                std::stoi(OTHER_BRIDGE_KEYS::numRows4SinglePage),
+                isAscending,
+                sortMode
+            )};//vector可以为空，所以不需要std::optional进行检测
+            auto obj{new juce::DynamicObject()};
+            if(results.empty()){
+                obj->setProperty(BRIDGE_refreshAllMusicSongs::error,-1);
+            }else{
+                obj->setProperty(BRIDGE_refreshAllMusicSongs::songsList,results);
             }
         }
     );
