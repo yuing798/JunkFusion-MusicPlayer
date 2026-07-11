@@ -10,6 +10,7 @@
     "declaration-empty-line-before": null,
     "comment-whitespace-inside": null,
     "comment-empty-line-before":null,
-    "color-hex-length": null
+    "color-hex-length": null,
+    "color-function-notation":null
   }
 }

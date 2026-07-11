@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 // 使用 @ 别名引用 assets 中的 logo 图片
 // 对应 C++ 中 BinaryData::junkfusion_png
-import logoImage from '@/assets/image/junk-fusion.png'
+import logoImage from '@/assets/image/junk-fusion.png';
 
 // ── 向父组件发送事件 ──
 // 对应 C++ 中 LeftSelectedComponent::onSelectionChanged 回调
 const emit = defineEmits<{
-  (e: 'selection-changed', id: number): void
-}>()
+  (e: 'selection-changed', id: number): void;
+}>();
 //defineEmits	Vue 3 的编译器宏（Compiler Macro）。它不需要手动 import，
 // 在 <script setup> 中直接可用。作用是注册当前组件允许向外触发的事件。
 
@@ -19,13 +19,13 @@ const emit = defineEmits<{
 
 interface NavButton {
   //interface相当于cpp的struct，NavButton就是结构体名称，是一个编译期结构体定义工具
-  id: number
-  text: string
+  id: number;
+  text: string;
 }
 
 interface NavSection {
-  label: string
-  buttons: NavButton[]
+  label: string;
+  buttons: NavButton[];
 }
 
 const sections: NavSection[] = [
@@ -59,11 +59,11 @@ const sections: NavSection[] = [
       { id: 11, text: '设置' }, // settingsID
     ],
   },
-]
+];
 
 // ── 选中状态 ──
 // 默认选中第一个按钮（所有音乐），与 C++ 中 selectID 默认值 0 一致
-const selectedId = ref(0)
+const selectedId = ref(0);
 
 /**
  * 收音机行为（Radio Button）：
@@ -73,10 +73,10 @@ const selectedId = ref(0)
  */
 function handleSelect(id: number): void {
   if (selectedId.value !== id) {
-    selectedId.value = id
+    selectedId.value = id;
     // 通知父组件：选中页面已改变
     // 对应 C++: if (onSelectionChanged) onSelectionChanged(selectID);
-    emit('selection-changed', id)
+    emit('selection-changed', id);
   }
 }
 
@@ -84,7 +84,7 @@ function handleSelect(id: number): void {
  * 判断某个按钮是否被选中
  */
 function isSelected(id: number): boolean {
-  return selectedId.value === id
+  return selectedId.value === id;
 }
 </script>
 
@@ -114,13 +114,13 @@ function isSelected(id: number): boolean {
         对应 C++ 中 labelArray 和 buttons 的布局
       -->
       <div v-for="section in sections" :key="section.label" class="navSection">
-        <div class="groupLabel">{{ section.label }}</div>
+        <div class="group-label">{{ section.label }}</div>
 
         <!-- 内层循环：遍历当下分组里面的按钮 -->
         <button
           v-for="button in section.buttons"
           :key="button.id"
-          class="navButton"
+          class="nav-button"
           :class="{ active: isSelected(button.id) }"
           @click="handleSelect(button.id)"
         >
@@ -139,7 +139,7 @@ function isSelected(id: number): boolean {
       等号右边不再是一个普通字符串，而是一个 JavaScript 表达式（可以是对象、数组或三目运算符）。
       Vue 会实时计算这个表达式的值，并把它“合并”到元素的 class 属性中。
 
-      class="navButton active"：这是静态的。active 这个类永远存在，不管 isSelected 返回 true 还是 false，按钮永远高亮。
+      class="nav-button active"：这是静态的。active 这个类永远存在，不管 isSelected 返回 true 还是 false，按钮永远高亮。
       :class="{ active: isSelected(button.id) }"：这是动态的。active 类跟随状态变化。
       当 isSelected 返回 true 时，按钮高亮；返回 false 时，高亮消失。
 
@@ -166,15 +166,14 @@ function isSelected(id: number): boolean {
   height: 100vh;
   /* vh 是“视口高度（Viewport Height）”单位。
   1vh = 当前浏览器窗口可见高度 的 1%。 */
-  background-color: var(--colorNav);
-  overflow-y: auto;
+  background-color: var(--color-nav);
   /* overflow控制溢出内容如何处理 */
   /* overflow的属性值：hidden溢出的内容被裁剪掉，看不见,scroll：强制显示滚动条 */
   /* auto智能显示：内容多了自动出滚动条，少了隐藏 */
-  overflow-x: hidden;
+  overflow: hidden auto;
   /* 隐藏滚动条但保持滚动功能（可选，保留默认滚动条也 OK） */
   scrollbar-width: thin;
-  scrollbar-color: var(--colorStress) transparent;
+  scrollbar-color: var(--color-stress) transparent;
   /* scrollbar-color 接受 两个颜色值，语法是 scrollbar-color: [滑块颜色] [轨道颜色]; */
 }
 
@@ -202,21 +201,21 @@ function isSelected(id: number): boolean {
 }
 
 /* 标签区域 */
-.groupLabel {
+.group-label {
   height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
 
   /* 上下分隔线：对应 C++ 中 paths[] 的 strokePath */
-  border-top: 5px solid var(--colorEdge);
-  border-bottom: 5px solid var(--colorEdge);
+  border-top: 5px solid var(--color-edge);
+  border-bottom: 5px solid var(--color-edge);
   /* border-top: var(--divider-width) solid var(--color-hover); 
   是 border-width（粗细）、border-style（样式）、border-color（颜色） */
 
-  font-size: var(--bigFont);
+  font-size: var(--big-font);
   font-weight: bold;
-  color: var(--colorTextMain);
+  color: var(--color-text-main);
   user-select: none;
   /* user-select: none; 的意思是：禁止用户用鼠标选中该元素上的文本。
   在你正在开发的左侧导航栏（LeftColumn）中，如果用户在按钮文字上快速双击或拖拽鼠标，
@@ -228,19 +227,19 @@ function isSelected(id: number): boolean {
    宽度: 按钮区域宽 - 3px*2 的 reduced
    ================================================================ */
 
-.navButton {
+.nav-button {
   display: block;
   /* 保持你原本的尺寸和基础定位 */
   width: calc(100% - 10px);
   height: 40px;
-  margin: 4px 4px;
+  margin: 4px;
   position: relative; /* 必须加这句，用于伪元素绝对定位 */
 
   border: none;
   background-color: transparent;
 
-  font-size: var(--midFont);
-  color: var(--colorTextMain);
+  font-size: var(--mid-font);
+  color: var(--color-text-main);
   text-align: center;
   line-height: 40px;
   /* 行距 */
@@ -251,56 +250,56 @@ function isSelected(id: number): boolean {
 
   /* 优化过渡属性，加入 clip-path 和 color 的平滑过渡 */
   transition:
-    background-color var(--easeTime) ease,
-    transform var(--easeTime) ease,
-    clip-path var(--easeTime) ease,
-    color var(--easeTime) ease,
-    font-weight var(--easeTime) ease;
+    background-color var(--ease-time) ease,
+    transform var(--ease-time) ease,
+    clip-path var(--ease-time) ease,
+    color var(--ease-time) ease,
+    font-weight var(--ease-time) ease;
 }
 
 /* 悬停态 — 对应 C++ selectedButton::paintButton 中的 shouldDrawButtonAsHighlighted */
-.navButton:hover:not(.active) {
+.nav-button:hover:not(.active) {
   /* 保持你原本的悬浮位移 */
   transform: translateY(-3px);
   /* 向下为正 */
-  color: var(--colorTextMain);
+  color: var(--color-text-main);
 }
 
-.navButton.active {
-  color: var(--colorTextMain);
+.nav-button.active {
+  color: var(--color-text-main);
   font-weight: bold;
   background-color: transparent; /* 把基底留给渐变 */
 
-  --xClip: 10px;
-  --yClip: 10px;
+  --x-clip: 10px;
+  --y-clip: 10px;
 
   clip-path: polygon(
-    var(--xClip) 0,
-    calc(100% - var(--xClip)) 0,
-    100% var(--yClip),
-    100% calc(100% - var(--yClip)),
-    calc(100% - var(--xClip)) 100%,
-    var(--xClip) 100%,
-    0 calc(100% - var(--yClip)),
-    0 var(--yClip)
+    var(--x-clip) 0,
+    calc(100% - var(--x-clip)) 0,
+    100% var(--y-clip),
+    100% calc(100% - var(--y-clip)),
+    calc(100% - var(--x-clip)) 100%,
+    var(--x-clip) 100%,
+    0 calc(100% - var(--y-clip)),
+    0 var(--y-clip)
   );
 
   /* 多重渐变：135度高光掠影 + 底部逆向暗面 + 音乐软件常用的电音蓝紫主色调 */
   background-image:
     linear-gradient(
       135deg,
-      var(--colorClicked) 0%,
-      color-mix(in srgb, var(--colorClicked), var(--colorStress)) 50%
+      var(--color-clicked) 0%,
+      color-mix(in srgb, var(--color-clicked), var(--color-stress)) 50%
     ),
     linear-gradient(
       315deg,
-      var(--colorNav) 0%,
-      color-mix(in srgb, var(--colorNav), var(--colorStress)) 50%
+      var(--color-nav) 0%,
+      color-mix(in srgb, var(--color-nav), var(--color-stress)) 50%
     ),
     linear-gradient(
       180deg,
-      var(--colorStress) 0%,
-      color-mix(in srgb, var(--colorStress), var(--colorTextMain)) 50%
+      var(--color-stress) 0%,
+      color-mix(in srgb, var(--color-stress), var(--color-text-main)) 50%
     );
   /* line-gradient函数的三个参数:方向、起始颜色（含位置）、结束颜色（含位置） */
   /* background-image 支持多层叠加，写在越前面的层级越高（覆盖在上面）。 */
@@ -309,13 +308,10 @@ function isSelected(id: number): boolean {
 }
 
 /* 激活态下的内棱角光泽（使用 :before 伪元素） */
-.navButton.active::before {
+.nav-button.active::before {
   content: '';
   position: absolute;
-  top: 1px;
-  left: 1px;
-  right: 1px;
-  bottom: 1px; /* 往内缩 1px 形成晶莹边缘 */
+  inset: 1px; /* 往内缩 1px 形成晶莹边缘 */
   z-index: -1;
 
   /* 内部缩进版的八角裁切 */
@@ -331,7 +327,7 @@ function isSelected(id: number): boolean {
   );
 
   /* 上亮下暗的微弱渐变，模拟宝石上边缘的锐利折射 */
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%);
+  background: linear-gradient(180deg, rgb(255, 255, 255, 50%) 0%, rgb(255, 255, 255, 0%) 60%);
   mix-blend-mode: overlay;
 }
 /* ::before 相当于在 “蓝色的玻璃板” 上面，放了一张 “缩小的磨砂贴膜”，只在最上层折射光线，底下的蓝色玻璃依然透亮。
@@ -340,7 +336,7 @@ function isSelected(id: number): boolean {
 
 /* ==================== 3. 完美的八角外发光方案 ==================== */
 /* 核心技巧：利用 :after 伪元素作为背景，超出 button 裁剪范围的部分通过 blur 变为发光 */
-.navButton::after {
+.nav-button::after {
   content: '';
   position: absolute;
   top: 0;
@@ -348,7 +344,7 @@ function isSelected(id: number): boolean {
   width: 100%;
   height: 100%;
   z-index: -2; /* 放在最底层 */
-  background: linear-gradient(180deg, var(--colorStress), var(--colorSuperStress));
+  background: linear-gradient(180deg, var(--color-stress), var(--color-super-stress));
 
   /* 同样进行八角裁切，确保发光形状也是八角宝石状 */
   clip-path: polygon(
@@ -365,16 +361,16 @@ function isSelected(id: number): boolean {
   /* 关键：使用高斯模糊打散成霓虹外发光 */
   filter: blur(8px);
   opacity: 0; /* 默认未激活、未悬浮时完全透明 */
-  transition: opacity var(--easeTime) ease;
+  transition: opacity var(--ease-time) ease;
 }
 
 /* 激活状态下，让外发光显现 */
-.navButton.active::after {
+.nav-button.active::after {
   opacity: 0.6; /* 强弱可以通过透明度控制 */
 }
 
 /* 激活状态下再悬浮，让发光额外变强一点 */
-.navButton.active:hover::after {
+.nav-button.active:hover::after {
   opacity: 0.8;
 }
 </style>

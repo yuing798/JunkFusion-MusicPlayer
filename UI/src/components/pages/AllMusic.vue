@@ -80,7 +80,7 @@ onMounted(() => {
 
       <div class="toolbar-spacer"></div>
 
-      <select v-model="selectedSort" class="combo-sort">
+      <select v-model="selectedSort" class="combo-sort" title="排序方式">
         <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
         </option>
