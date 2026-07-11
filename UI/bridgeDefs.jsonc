@@ -32,5 +32,38 @@
   },
   "other":{
     "numRows4SinglePage":15
+  },
+
+  "songInfo":{
+    "id":"id",
+    "path":"path",
+    "fileSize":"fileSize",
+    "lastModifyTime":"lastModifyTime",
+    "duration":"duration",
+    "title":"title",
+    "artist":"artist",
+    "album":"album",
+    "albumArtist":"albumArtist",
+    "genre":"genre",
+    "trackNum":"trackNum",
+    "discNum":"discNum",
+    "year":"year",
+    "composer":"composer",
+    "hash":"hash",
+    "multiStream":"multiStream",
+    "bitRate":"bitRate",
+    "sr":"sr",
+    "numCh":"numCh",
+    "bitDepth":"bitDepth",
+    "codecName":"codecName",
+    "isMusic":"isMusic",
+    "aiGenre":"aiGenre",
+    "bpm":"bpm",
+    "key":"key",
+    "aiProcessed":"aiProcessed",
+    "isMyLike":"isMyLike",
+    "comment":"comment",
+    "playNum":"playNum",
+    "nameID":"nameID"
   }
 }//node UI/generateBridge.cjs执行

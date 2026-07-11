@@ -19,7 +19,7 @@ tsLines.push(`// ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.`);
 tsLines.push(`// Generated from bridgeDefs.json\n`)
 
 for(const key of Object.keys(defs)){
-  tsLines.push(`export const BRIDGE_${key} = {`);
+  tsLines.push(`export const B_${key} = {`);
   tsLines.push(`  name : '${key}' as const,`);
   const obj = defs[key];
   for (const name of Object.keys(obj)) {
@@ -39,7 +39,7 @@ hppLines.push('//warning:this file will be generated auto,dont modify it by your
 hppLines.push('#pragma once')
 
 for(const key of Object.keys(defs)){
-  hppLines.push(`struct BRIDGE_${key}{`);
+  hppLines.push(`struct B_${key}{`);
   hppLines.push(`    static constexpr const char* name = "${key}" ;`);
   const obj = defs[key];
   for (const name of Object.keys(obj)) {

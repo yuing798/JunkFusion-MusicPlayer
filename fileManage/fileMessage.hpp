@@ -1,6 +1,7 @@
 #pragma once
 
 // #include "FontAbout/font.h"
+#include "BridgeNames.h"
 #include "juce_core/juce_core.h"
 #include <cstdint>
 #include <optional>
@@ -74,51 +75,59 @@ struct SongInfo
         };
 
         // ── 0. 主键 ──
-        obj->setProperty("songId", song.songId);
+        obj->setProperty(B_songInfo::id, song.songId);
 
         // ── 1. 文件信息 ──
-        obj->setProperty("filePath",         juce::String(song.filePath));
-        obj->setProperty("fileSize",         song.fileSize);
-        obj->setProperty("lastModifiedTime", juce::String(song.lastModifiedTime));
-        obj->setProperty("duration",         song.duration);
+        obj->setProperty(B_songInfo::path,         juce::String(song.filePath));
+        obj->setProperty(B_songInfo::fileSize,         song.fileSize);
+        obj->setProperty(B_songInfo::lastModifyTime, juce::String(song.lastModifiedTime));
+        obj->setProperty(B_songInfo::duration,         song.duration);
 
         // ── 2. 标签信息 ──
-        obj->setProperty("title",       juce::String(song.title));
-        obj->setProperty("artist",      optStr(song.artist));
-        obj->setProperty("album",       optStr(song.album));
-        obj->setProperty("albumArtist", optStr(song.albumArtist));
-        obj->setProperty("genre",       optStr(song.genre));
-        obj->setProperty("trackNumber", optInt(song.trackNumber));
-        obj->setProperty("discNumber",  optInt(song.discNumber));
-        obj->setProperty("year",        optInt(song.year));
-        obj->setProperty("composer",    optStr(song.composer));
-        obj->setProperty("imageHash",   optStr(song.imageHash));
+        obj->setProperty(B_songInfo::title,       juce::String(song.title));
+        obj->setProperty(B_songInfo::artist,      optStr(song.artist));
+        obj->setProperty(B_songInfo::album,       optStr(song.album));
+        obj->setProperty(B_songInfo::albumArtist, optStr(song.albumArtist));
+        obj->setProperty(B_songInfo::genre,       optStr(song.genre));
+        obj->setProperty(B_songInfo::trackNum, optInt(song.trackNumber));
+        obj->setProperty(B_songInfo::discNum,  optInt(song.discNumber));
+        obj->setProperty(B_songInfo::year,        optInt(song.year));
+        obj->setProperty(B_songInfo::composer,    optStr(song.composer));
+        obj->setProperty(B_songInfo::hash,   optStr(song.imageHash));
 
         // ── 3. FFmpeg 解码层 ──
-        obj->setProperty("isMultiStreamFile", song.isMultiStreamFile);
-        obj->setProperty("bitRate",           song.bitRate);
-        obj->setProperty("sampleRate",        song.sampleRate);
-        obj->setProperty("numChannels",       song.numChannels);
-        obj->setProperty("bitDepth",          song.bitDepth);
-        obj->setProperty("codecName",         optStr(song.codecName));
+        obj->setProperty(B_songInfo::multiStream, song.isMultiStreamFile);
+        obj->setProperty(B_songInfo::bitRate,           song.bitRate);
+        obj->setProperty(B_songInfo::sr,        song.sampleRate);
+        obj->setProperty(B_songInfo::numCh,       song.numChannels);
+        obj->setProperty(B_songInfo::bitDepth,          song.bitDepth);
+        obj->setProperty(B_songInfo::codecName,         optStr(song.codecName));
 
         // ── 4. AI 分析 ──
-        obj->setProperty("isMusic",     song.isMusic);
-        obj->setProperty("aiGenre",     optStr(song.aiGenre));
-        obj->setProperty("bpm",         optInt(song.bpm));
-        obj->setProperty("key",         optStr(song.key));
-        obj->setProperty("aiProcessed", song.aiProcessed);
+        obj->setProperty(B_songInfo::isMusic,     song.isMusic);
+        obj->setProperty(B_songInfo::aiGenre,     optStr(song.aiGenre));
+        obj->setProperty(B_songInfo::bpm,         optInt(song.bpm));
+        obj->setProperty(B_songInfo::key,         optStr(song.key));
+        obj->setProperty(B_songInfo::aiProcessed, song.aiProcessed);
 
         // ── 5. 用户信息 ──
-        obj->setProperty("isMyLike",     song.isMyLike);
-        obj->setProperty("comment",      optStr(song.comment));
-        obj->setProperty("hadPlayedNum", song.hadPlayedNum);
+        obj->setProperty(B_songInfo::isMyLike,     song.isMyLike);
+        obj->setProperty(B_songInfo::comment,      optStr(song.comment));
+        obj->setProperty(B_songInfo::playNum, song.hadPlayedNum);
 
         // ── 6. 排序 ──
-        obj->setProperty("nameId", song.nameId);
+        obj->setProperty(B_songInfo::nameID, song.nameId);
 
         return juce::var(obj);
         //这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     }//将songInfo转化为var，才能推送给js端
+
+    static juce::var vector2VarArrat(const std::vector<SongInfo>& lists){
+        juce::Array<juce::var> array;
+        for (const auto& song:lists){
+            array.add(toVar(song));
+        }
+        return juce::var(array);
+    }
 
 };

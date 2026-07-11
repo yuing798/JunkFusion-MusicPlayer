@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { SongInfo } from './SongInfo'
 import { callJuceFunc } from '@/bridge/bridgeSupport'
 import { showErrorWindow } from '@/components/other/errorWindow.vue'
-import { BRIDGE_toggleMyLike } from '@/bridge/bridge.generated'
+import { B_toggleMyLike } from '@/bridge/bridge.generated'
 
 // ════════════════════════════════════════════════════════════════
 // songStore — 当前页面歌曲列表的 Pinia store
@@ -71,7 +71,7 @@ export const songStore = defineStore('songPage', {
         isMyLike: !originSong.isMyLike,
       }
       try {
-        await callJuceFunc<void>(BRIDGE_toggleMyLike.name, songId)
+        await callJuceFunc<void>(B_toggleMyLike.name, songId)
       } catch (error) {
         showErrorWindow(error)
         this.songs[index] = originSong // 回滚

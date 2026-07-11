@@ -454,21 +454,21 @@ SongsManage::~SongsManage(){
 juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options& initial){
     return initial
     .withNativeFunction(//得到总歌曲数目
-        BRIDGE_getAllSongCount::name,//得到总歌曲数目
+        B_getAllSongCount::name,//得到总歌曲数目
         [](const auto& args,auto complete){
             auto count{SongsManage::getInstance().getTotalSongCount()};
             auto obj{new juce::DynamicObject()};
             if(count.has_value()){
-                obj->setProperty(BRIDGE_getAllSongCount::count,count.value());
+                obj->setProperty(B_getAllSongCount::count,count.value());
                 complete(obj);
                 return;
             }else{
-                obj->setProperty(BRIDGE_getAllSongCount::count,0);
+                obj->setProperty(B_getAllSongCount::count,0);
                 complete(obj);
                 return ;
             }
         }
-    ).withNativeFunction(BRIDGE_toggleMyLike::name,//将我喜欢的歌曲状态翻转
+    ).withNativeFunction(B_toggleMyLike::name,//将我喜欢的歌曲状态翻转
         [](
             const juce::Array<juce::var>& args,
             juce::WebBrowserComponent::NativeFunctionCompletion complete
@@ -480,20 +480,20 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 return;
             }else{
                 auto error{new juce::DynamicObject()};
-                error->setProperty(EVENT_BRIDGE_KEYS::fullError,utf8("[我喜欢]状态更新失败，请重试"));
+                error->setProperty(B_event::fullError,utf8("[我喜欢]状态更新失败，请重试"));
                 complete(juce::var(error));
                 return;
             }
         }
     ).withNativeFunction(//得到单页的歌曲信息
-        BRIDGE_refreshAllMusicSongs::name,//参数：当前页码,升降序，排序方法，
+        B_refreshAllMusicSongs::name,//参数：当前页码,升降序，排序方法，
         [](
             const juce::Array<juce::var>& args,auto complete
         ){
             auto sortMode{SongsManage::SortMode::ByAddTime};
-            int sortWay = args[0][BRIDGE_refreshAllMusicSongs::sortMode];
-            bool isAscending = args[0][BRIDGE_refreshAllMusicSongs::isAscending];
-            int targetPage = args[0][BRIDGE_refreshAllMusicSongs::page];
+            int sortWay = args[0][B_refreshAllMusicSongs::sortMode];
+            bool isAscending = args[0][B_refreshAllMusicSongs::isAscending];
+            int targetPage = args[0][B_refreshAllMusicSongs::page];
             switch (sortWay) {
                 case 0:
                     sortMode = SongsManage::SortMode::ByAddTime;
@@ -510,15 +510,18 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
             }
             auto results{SongsManage::getInstance().getSongPage(
                 targetPage,
-                std::stoi(OTHER_BRIDGE_KEYS::numRows4SinglePage),
+                std::stoi(B_other::numRows4SinglePage),
                 isAscending,
                 sortMode
             )};//vector可以为空，所以不需要std::optional进行检测
-            auto obj{new juce::DynamicObject()};
             if(results.empty()){
-                obj->setProperty(BRIDGE_refreshAllMusicSongs::error,-1);
+                auto obj{new juce::DynamicObject()};
+                obj->setProperty(B_refreshAllMusicSongs::error,-1);
+                complete(obj);
+                return ;
             }else{
-                obj->setProperty(BRIDGE_refreshAllMusicSongs::songsList,results);
+                complete(SongInfo::vector2VarArrat(results));
+                return ;
             }
         }
     );

@@ -6,6 +6,7 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 class logSystem
 {
@@ -42,3 +43,8 @@ std::string ffmpegErrorOutput(int result);
 inline juce::String utf8(const char* name){
     return juce::String::fromUTF8(name);
 };
+
+template<typename T>
+juce::var vector2VarArrat(const std::vector<T>& lists){
+    
+}
