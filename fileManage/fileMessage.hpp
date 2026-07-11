@@ -47,7 +47,7 @@ struct SongInfo
     //这个ID号我不打算发给前端，但是codecName一定要发给前端
 
     // ── 4. AI 分析信息 ──，ai分析是和具体音频流相关的，所以没有必要放在文件层
-    bool isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
+    std::optional<bool> isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
     std::optional<std::string> aiGenre;     // AI 分析体裁
     std::optional<int>         bpm;         // 节拍数（std::nullopt 表示未知）
     std::optional<std::string> key;         // 调性（如 C major, A minor）
@@ -104,7 +104,7 @@ struct SongInfo
         obj->setProperty(B_songInfo::codecName,         optStr(song.codecName));
 
         // ── 4. AI 分析 ──
-        obj->setProperty(B_songInfo::isMusic,     song.isMusic);
+        obj->setProperty(B_songInfo::isMusic,     optInt(song.isMusic));
         obj->setProperty(B_songInfo::aiGenre,     optStr(song.aiGenre));
         obj->setProperty(B_songInfo::bpm,         optInt(song.bpm));
         obj->setProperty(B_songInfo::key,         optStr(song.key));
@@ -122,7 +122,7 @@ struct SongInfo
         //这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     }//将songInfo转化为var，才能推送给js端
 
-    static juce::var vector2VarArrat(const std::vector<SongInfo>& lists){
+    static juce::var vector2VarArray(const std::vector<SongInfo>& lists){
         juce::Array<juce::var> array;
         for (const auto& song:lists){
             array.add(toVar(song));

@@ -520,7 +520,7 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 complete(obj);
                 return ;
             }else{
-                complete(SongInfo::vector2VarArrat(results));
+                complete(SongInfo::vector2VarArray(results));
                 return ;
             }
         }

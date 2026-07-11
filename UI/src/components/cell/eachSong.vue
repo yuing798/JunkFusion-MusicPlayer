@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import Tooltip from '@/components/other/tooltip.vue'
-import PopupWindow from '@/components/other/popupWindow.vue'
-import { PlaybackState } from '@/macro/playState'
-import { songStore, getSongMetadataLines } from '@/store/songStore'
+import { computed } from 'vue';
+import PopupWindow from '@/components/other/popupWindow.vue';
+import { PlaybackState } from '@/macro/playState';
+import { songStore } from '@/store/songStore';
 
 // ── Tabler 图标 ──
 import {
@@ -12,67 +11,76 @@ import {
   IconHeart,
   IconHeartFilled,
   IconMessageCircleQuestion,
-} from '@tabler/icons-vue'
-
-// ════════════════════════════════════════════════════════════════
-// Props & Emits
-//
-// 数据流向设计：
-//   - songId 是唯一"定位器"（告诉我我是谁）
-//   - SongInfo 完整对象、展示序号均从 store 按 songId 推导
-//   - 这样避免了"父传 SongInfo 给子 → 子 emit SongInfo 回父"的冗余握手
-// ════════════════════════════════════════════════════════════════
+} from '@tabler/icons-vue';
+import type { SongInfo } from '@/store/SongInfo';
 
 const props = defineProps<{
   /** 歌曲数据库主键，用于从 store 查找完整 SongInfo 和计算序号 */
-  songId: number
+  songId: number;
   /** 当前播放状态 */
-  playbackState: PlaybackState
-}>()
-
-const emit = defineEmits<{
-  /**
-   * 请求改变播放状态。
-   * 只传 songId + 目标状态，父组件自行从 store 获取 SongInfo。
-   */
-  (e: 'request-playback-change', songId: number, nextState: PlaybackState): void
-}>()
+  playbackState: PlaybackState;
+}>();
 
 // ════════════════════════════════════════════════════════════════
 // Store — 通过 songId 查找当前行的歌曲数据
 // ════════════════════════════════════════════════════════════════
 
-const mySongStore = songStore()
+const mySongStore = songStore();
 
 /** 从 store 中按 songId 查找 SongInfo，找不到返回 undefined */
-const songInfo = computed(() => mySongStore.getSongById(props.songId))
-
-/** 从 store 中按 songId 计算全局展示序号 */
-const songIndex = computed(() => mySongStore.getSongIndexById(props.songId))
-
-// ════════════════════════════════════════════════════════════════
-// 常量
-// ════════════════════════════════════════════════════════════════
+const songInfo = computed(() => mySongStore.getSongById(props.songId));
 
 /** 多流音频悬停提示文本 */
 const MULTI_STREAM_TOOLTIP_TEXT =
-  '该文件包含多路音频流（如多语言、多声道）。当前播放器将自动为您选择质量最佳的默认音轨。如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序'
+  '该文件包含多路音频流（如多语言、多声道）。\
+  当前播放器将自动为您选择质量最佳的默认音轨。\
+  如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序';
 
 // ════════════════════════════════════════════════════════════════
 // 歌曲元数据（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
 // ════════════════════════════════════════════════════════════════
 
+function getSongMetadataLines(info: SongInfo): string[] {
+  const lines: string[] = [];
+
+  const addIf = (label: string, value: string | number | undefined): void => {
+    if (value === undefined) return;
+    const sv = String(value);
+    if (sv !== '' && sv !== '0' && sv !== '-1') {
+      lines.push(`${label}: ${sv}`);
+    }
+  };
+
+  addIf('BPM', info.bpm);
+  addIf('调性', info.key);
+  if (info.sampleRate > 0) addIf('采样率', `${info.sampleRate} Hz`);
+  if (info.bitRate > 0) addIf('比特率', `${info.bitRate} kbps`);
+  addIf('通道数', info.numChannels);
+  addIf('位深', info.bitDepth);
+  addIf('解码器名称', info.codecName);
+  lines.push(`是否已经进行过AI分析: ${info.aiProcessed ? '是' : '否'}`);
+  addIf('AI分析体裁', info.aiGenre);
+  lines.push(`是否为音乐资源: ${info.isMusic ? '是' : '否'}`);
+  addIf('专辑艺术家', info.albumArtist);
+  addIf('体裁', info.genre);
+  if (info.trackNumber !== undefined && info.trackNumber >= 0) addIf('轨道号', info.trackNumber);
+  if (info.discNumber !== undefined && info.discNumber > 0) addIf('碟片号', info.discNumber);
+  addIf('发行年份', info.year);
+  addIf('作曲者', info.composer);
+  addIf('文件路径', info.filePath);
+  addIf('文件大小', info.fileSize);
+  addIf('最后修改时间', info.lastModifiedTime);
+
+  return lines;
+}
+
 const metadataLines = computed(() => {
-  if (!songInfo.value) return []
-  return getSongMetadataLines(songInfo.value)
-})
+  if (!songInfo.value) return [];
+  return getSongMetadataLines(songInfo.value);
+});
 
 /** 弹出窗标题（songInfo 不存在时兜底） */
-const popupTitle = computed(() => songInfo.value?.title || '未知')
-
-// ════════════════════════════════════════════════════════════════
-// 事件处理
-// ════════════════════════════════════════════════════════════════
+const popupTitle = computed(() => songInfo.value?.title || '未知');
 
 /**
  * 点击序号/播放状态列的切换逻辑：
@@ -81,28 +89,27 @@ const popupTitle = computed(() => songInfo.value?.title || '未知')
  *   Paused  → 请求进入 Playing
  */
 function handleOrdinalClick(): void {
-  let nextState: PlaybackState
+  let nextState: PlaybackState;
   switch (props.playbackState) {
     case PlaybackState.Stopped:
-      nextState = PlaybackState.Playing
-      break
+      nextState = PlaybackState.Playing;
+      break;
     case PlaybackState.Playing:
-      nextState = PlaybackState.Paused
-      break
+      nextState = PlaybackState.Paused;
+      break;
     case PlaybackState.Paused:
-      nextState = PlaybackState.Playing
-      break
+      nextState = PlaybackState.Playing;
+      break;
   }
   // 只传 songId，不再传 SongInfo 对象
-  emit('request-playback-change', props.songId, nextState)
+  // emit('request-playback-change', props.songId, nextState);//以后放到playbackStore中
 }
 </script>
 
 <template>
   <!--
     EachSong — 单首歌曲行
-    对应 C++ 中的 EachSong 类
-    7 列 Grid 布局：序号/状态 | 歌名+艺术家+多流 | 专辑 | AI分类 | 播放次数 | 喜欢 | 更多
+    7 列 Grid 布局：图片资源/状态 | 歌名+艺术家+多流 | 专辑 | AI分类 | 播放次数 | 喜欢 | 更多
   -->
   <div class="each-song-row">
     <!-- ═══════════════════════════════════════════════════════════
@@ -112,8 +119,8 @@ function handleOrdinalClick(): void {
          Paused → pause.svg ->@click.stop:进入playing状态
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell cell-ordinal" @click.stop="handleOrdinalClick">
-      <span v-if="playbackState === PlaybackState.Stopped" class="ordinal-number">
-        {{ songIndex }}
+      <span v-if="playbackState === PlaybackState.Stopped" class="song-image">
+        <!-- {{ songIndex }} -->
       </span>
       <IconPlayerPlayFilled
         v-else-if="playbackState === PlaybackState.Playing"
@@ -189,12 +196,12 @@ function handleOrdinalClick(): void {
       <template #default>
         <div class="song-detail">
           <!-- 专辑封面：后续通过 imageHash 桥接获取 -->
-          <div class="song-detail__album-art">
-            <span class="song-detail__album-art-hint">专辑封面</span>
+          <div class="song-detail-album-art">
+            <span class="song-detail-album-art-hint">专辑封面</span>
           </div>
 
-          <div class="song-detail__metadata">
-            <p v-for="(line, i) in metadataLines" :key="i" class="song-detail__metadata-line">
+          <div class="song-detail-metadata">
+            <p v-for="(line, i) in metadataLines" :key="i" class="song-detail-metadata-line">
               {{ line }}
             </p>
           </div>
@@ -212,15 +219,14 @@ function handleOrdinalClick(): void {
   height: 70px;
   align-items: center;
   gap: 4px;
-  padding: 0 5px;
-  margin: 2px 5px;
-  background-color: var(--colorCell);
-  transition: background-color var(--easeTime) ease;
+  padding: 10px 5px;
+  background-color: var(--color-cell);
+  transition: background-color var(--ease-time) ease;
   user-select: none;
 }
 
 .each-song-row:hover {
-  background-color: var(--colorHover);
+  background-color: var(--color-hover);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -252,8 +258,8 @@ function handleOrdinalClick(): void {
 }
 
 .ordinal-number {
-  font-size: var(--midFont);
-  color: var(--colorTextSecond);
+  font-size: var(--mid-font);
+  color: var(--color-text-second);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -279,8 +285,8 @@ function handleOrdinalClick(): void {
 }
 
 .song-name {
-  font-size: var(--midFont);
-  color: var(--colorTextMain);
+  font-size: var(--mid-font);
+  color: var(--color-text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -288,8 +294,8 @@ function handleOrdinalClick(): void {
 }
 
 .artist-name {
-  font-size: var(--littleFont);
-  color: var(--colorTextSecond);
+  font-size: var(--little-font);
+  color: var(--color-text-second);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -298,7 +304,7 @@ function handleOrdinalClick(): void {
 /* ── 多流音频徽章：蓝底白字 ── */
 .multi-stream-badge {
   flex-shrink: 0;
-  background-color: var(--colorSuperStress);
+  background-color: var(--color-super-stress);
   color: #ffffff;
   font-size: 14px;
   font-weight: bold;
@@ -318,8 +324,8 @@ function handleOrdinalClick(): void {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: var(--midFont);
-  color: var(--colorTextSecond);
+  font-size: var(--mid-font);
+  color: var(--color-text-second);
 }
 
 .cell-album,
@@ -336,8 +342,8 @@ function handleOrdinalClick(): void {
 }
 
 .play-count-text {
-  font-size: var(--littleFont);
-  color: var(--colorTextSecond);
+  font-size: var(--little-font);
+  color: var(--color-text-second);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -353,12 +359,12 @@ function handleOrdinalClick(): void {
   height: 30px;
   border-radius: 50%;
   cursor: pointer;
-  transition: background-color var(--easeTime) ease;
+  transition: background-color var(--ease-time) ease;
 }
 
 .cell-like:hover,
 .cell-more:hover {
-  background-color: var(--colorHover);
+  background-color: var(--color-hover);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -367,32 +373,32 @@ function handleOrdinalClick(): void {
    ════════════════════════════════════════════════════════════════ */
 
 /* 专辑封面占位（后续通过 imageHash 桥接获取） */
-.song-detail__album-art {
+.song-detail-album-art {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 200px;
   height: 200px;
   margin: 0 auto 10px;
-  border-radius: var(--borderRadius);
-  background-color: var(--colorHover);
+  border-radius: var(--border-radius);
+  background-color: var(--color-hover);
 }
 
-.song-detail__album-art-hint {
-  font-size: var(--littleFont);
-  color: var(--colorTextSecond);
+.song-detail-album-art-hint {
+  font-size: var(--little-font);
+  color: var(--color-text-second);
 }
 
 /* 元数据文本 */
-.song-detail__metadata {
-  font-size: var(--littleFont);
-  color: var(--colorTextMain);
+.song-detail-metadata {
+  font-size: var(--little-font);
+  color: var(--color-text-main);
   line-height: 1.7;
   max-height: 280px;
   overflow-y: auto;
 }
 
-.song-detail__metadata-line {
+.song-detail-metadata-line {
   margin: 2px 0;
   word-break: break-all;
 }

@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
-import { BRIDGE_getAllSongCount, BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts';
+import { B_getAllSongCount, B_inputFiles } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 
 const songCount = ref(0);
@@ -22,24 +22,24 @@ const isAscending = ref(true); // true = 升序
 
 const isImporting = ref(false); // 控制按钮禁用状态和加载动画
 
-async function handleFilesSelected(): Promise<void> {
-  if (isImporting.value) return;
-  isImporting.value = true;
-  try {
-    await callJuceFunc(BRIDGE_inputFiles.name);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
 function toggleAscending() {
   isAscending.value = !isAscending.value;
   localStorage.setItem('AllMusic_isascending', String(isAscending.value));
 }
 
-async function refreshSongCount() {
-  songCount.value = await callJuceFunc<number>(BRIDGE_getAllSongCount.name);
+async function handleFilesSelected(): Promise<void> {
+  if (isImporting.value) return;
+  isImporting.value = true;
+  try {
+    await callJuceFunc(B_inputFiles.name);
+  } catch (error) {
+    console.error(error);
+  }
 }
+async function refreshSongCount() {
+  songCount.value = await callJuceFunc<number>(B_getAllSongCount.name);
+}
+const mySongStore = async function refreshPage() {};
 
 onMounted(() => {
   //初始化升降序

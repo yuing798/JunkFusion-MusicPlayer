@@ -1,5 +1,5 @@
 
-export interface SongInfo {
+export interface SongInfo {//interface指的是自定义类型
 
   /** 数据库主键，自增 ID，C++ 端为 int64_t */
   songId: number

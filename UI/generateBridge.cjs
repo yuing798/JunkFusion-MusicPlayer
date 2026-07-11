@@ -23,7 +23,12 @@ for(const key of Object.keys(defs)){
   tsLines.push(`  name : '${key}' as const,`);
   const obj = defs[key];
   for (const name of Object.keys(obj)) {
-    tsLines.push(`  ${name}: '${obj[name]}' as const,`);
+    if(obj[name] === ''){
+      tsLines.push(`  ${name}: '${name}' as const,`);//空的话直接把名称赋给value
+    }else{
+      tsLines.push(`  ${name}: '${obj[name]}' as const,`);
+    }
+    
   }
   tsLines.push(`} as const\n`);
 }
@@ -43,7 +48,11 @@ for(const key of Object.keys(defs)){
   hppLines.push(`    static constexpr const char* name = "${key}" ;`);
   const obj = defs[key];
   for (const name of Object.keys(obj)) {
-    hppLines.push(`    static constexpr const char* ${name} = "${obj[name]}" ;`);
+    if(obj[name] === ''){
+      hppLines.push(`    static constexpr const char* ${name} = "${name}" ;`);//空的话直接把名称赋给value
+    }else{
+      hppLines.push(`    static constexpr const char* ${name} = "${obj[name]}" ;`);
+    }
   }
   hppLines.push(`};\n`);
 }
