@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "stylelint-config-standard",
+    "stylelint-config-recommended-vue"
+  ],
+  "rules": {
+    "color-no-invalid-hex": true,
+    "property-no-unknown": true,
+    "declaration-block-no-duplicate-properties": true,
+    "declaration-empty-line-before": null,
+    "comment-whitespace-inside": null,
+    "comment-empty-line-before":null,
+    "color-hex-length": null
+  }
+}

@@ -1,32 +1,44 @@
 :root,.theme-light {
-    --colorMain: #f0f0f0;/*主要颜色*/
-    --colorNav:#e5eff0;/*导航窗颜色*/
-    --colorHover: #d0d0d0;/*悬浮颜色*/
-    --colorCell:#c6eaf4;/*单元格的背景色*/
-    --colorClicked: #b0c4de;/*鼠标按下去时的颜色颜色*/
-    --colorEdge: #979797;/*边框的颜色*/
-    --colorTextMain: #222222;/*主要文本的颜色*/
-    --colorTextSecond: #555555;/*次级文本的颜色*/
-    --colorStress:#00f2fe;/*强调色，比如现在在导航窗的哪个位置*/
-    --colorSuperStress:#4facfe;
+    --color-main: #f0f0f0;/*主要颜色*/
+    --color-nav:#e5eff0;/*导航窗颜色*/
+    --color-hover: #d0d0d0;/*悬浮颜色*/
+    --color-cell:#c6eaf4;/*单元格的背景色*/
+    --color-clicked: #b0c4de;/*鼠标按下去时的颜色颜色*/
+    --color-edge: #979797;/*边框的颜色*/
+    --color-text-main: #222222;/*主要文本的颜色*/
+    --color-text-second: #555555;/*次级文本的颜色*/
+    --color-stress:#00f2fe;/*强调色，比如现在在导航窗的哪个位置*/
+    --color-super-stress:#4facfe;
     /* 超级强调(给 渐变 调用的) */
-    --colorError:#e83232;
+    --color-error:#e83232;
     /* 错误提示的文字颜色 */
 }
 
 /* 2. 黑金主题（暗色 + 金色点缀）以后再写 */
 
 :root{
-    --bigFont:22px;
-    --midFont:18px;
-    --littleFont:15px;
-    --borderRadius:6px;
-    --easeTime:0.15s;
+    --big-font:22px;
+    --mid-font:18px;
+    --little-font:15px;
+    --border-radius:6px;
+    --ease-time:0.15s;
 }
 
-.icon-svg{
-    color: var(--colorTextMain);
-    width: 25px;
-    height: 25px;
-    pointer-events: none;
+.svg-button {
+  align-items: center;
+  justify-content: center;
+  width: 30px; 
+  height: 30px;
+  color: var(--color-text-main);
+  padding: 4px;
+
+  border: none;
+  border-radius: var(--border-radius);
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color var(--ease-time) ease;
+}
+
+.svg-button:hover {
+  background-color: var(--color-hover);
 }

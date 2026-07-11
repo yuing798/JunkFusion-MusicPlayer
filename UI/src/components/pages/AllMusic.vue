@@ -3,11 +3,7 @@ import { onMounted, ref } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
 import { BRIDGE_inputFiles } from '@/bridge/bridge.generated.ts';
-import { IconChevronDown, IconChevronsUp } from '@tabler/icons-vue';
-
-// ── 标题标签 ──
-// 对应 C++: BigLabel allMusicLabel{U("全部音乐")};
-const pageTitle = '全部音乐';
+import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 
 const songCount = ref(0);
 
@@ -90,9 +86,9 @@ onMounted(() => {
         </option>
       </select>
 
-      <button class="btn-icon" @click="toggleMyLike()">
-        <IconChevronsUp v-if="isAscending" class="icon-svg"></IconChevronsUp>
-        <IconChevronDown v-else class="icon-svg"></IconChevronDown>
+      <button class="svg-button" @click="toggleMyLike()">
+        <IconArrowBigUpFilled v-if="isAscending" title="升序"></IconArrowBigUpFilled>
+        <IconArrowBigDownFilled v-else title="降序"></IconArrowBigDownFilled>
       </button>
     </div>
 
@@ -118,7 +114,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--colorMain);
+  background-color: var(--color-main);
   user-select: none;
 }
 
@@ -138,14 +134,14 @@ onMounted(() => {
 .page-title {
   font-size: 30px;
   font-weight: bold;
-  color: var(--colorTextMain);
+  color: var(--color-text-main);
   min-width: 90px; /* 对应 row1.removeFromLeft(90) */
 }
 
 /* littleLabel: "共 0 首" — fontSize 15（与 C++ littleLabel 一致） */
 .song-count {
-  font-size: var(--littleFont);
-  color: var(--colorTextSecond);
+  font-size: var(--little-font);
+  color: var(--color-text-main);
   min-width: 90px; /* 对应 row1.removeFromLeft(90) */
 }
 
@@ -172,46 +168,27 @@ onMounted(() => {
   padding: 0 12px;
 
   border: none;
-  border-radius: var(--borderRadius);
-  background-color: var(--colorClicked);
-  color: var(--colorTextMain);
-  font-size: var(--midFont);
+  border-radius: var(--border-radius);
+  background-color: var(--color-clicked);
+  color: var(--color-text-main);
+  font-size: var(--mid-font);
   cursor: pointer;
   transition:
-    background-color var(--easeTime) ease,
-    opacity var(--easeTime) ease;
+    background-color var(--ease-time) ease,
+    opacity var(--ease-time) ease;
 }
 
 .btn-import:hover {
-  background-color: var(--colorHover);
+  background-color: var(--color-hover);
 }
 
 .btn-import:active {
-  background-color: var(--colorHover);
+  background-color: var(--color-hover);
 }
 
 .btn-import:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* ── 图标按钮：对应 svgButton / upDownButton ── */
-.btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px; /* 方形按钮，边长 = toolbar 行高 - 10 */
-  height: 30px;
-
-  border: none;
-  border-radius: var(--borderRadius);
-  background-color: transparent;
-  cursor: pointer;
-  transition: background-color var(--easeTime) ease;
-}
-
-.btn-icon:hover {
-  background-color: var(--colorHover);
 }
 
 /* ── 弹性空间：将排序控件推到右侧 ── */
@@ -225,23 +202,23 @@ onMounted(() => {
   height: 30px;
   padding: 0 8px;
 
-  border: 3px solid var(--colorEdge); /* 与 YComboBox kOutlineWidth = 3 一致 */
-  border-radius: var(--borderRadius); /* 与 YComboBox kCornerRadius = 6 一致 */
+  border: 3px solid var(--color-edge); /* 与 YComboBox kOutlineWidth = 3 一致 */
+  border-radius: var(--border-radius); /* 与 YComboBox kCornerRadius = 6 一致 */
   background-color: transparent;
-  color: var(--colorTextMain);
+  color: var(--color-text-main);
   font-size: 17px; /* 与 YComboBox kFontSize = 17 一致 */
   cursor: pointer;
   outline: none;
 
-  transition: border-color var(--easeTime) ease;
+  transition: border-color var(--ease-time) ease;
 }
 
 .combo-sort:hover {
-  border-color: var(--colorTextSecond);
+  border-color: var(--color-text-second);
 }
 
 .combo-sort:focus {
-  border-color: var(--colorStress);
+  border-color: var(--color-stress);
 }
 
 /* ================================================================
@@ -252,7 +229,7 @@ onMounted(() => {
 .viewport-area {
   flex: 1;
   overflow-y: auto;
-  border-top: 2px solid var(--colorEdge);
+  border-top: 2px solid var(--color-edge);
   position: relative;
 }
 
@@ -266,12 +243,12 @@ onMounted(() => {
 }
 
 .placeholder-text {
-  font-size: var(--bigFont);
-  color: var(--colorTextSecond);
+  font-size: var(--big-font);
+  color: var(--color-text-second);
 }
 
 .placeholder-hint {
-  font-size: var(--littleFont);
-  color: var(--colorEdge);
+  font-size: var(--little-font);
+  color: var(--color-edge);
 }
 </style>
