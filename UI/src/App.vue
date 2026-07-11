@@ -71,10 +71,7 @@ function resolvedComponent(id: number | null): Component | null {
    全局重置 & 基础样式
    ================================================================ */
 
-*,
-/* 通配符选择器,匹配 页面上的每一个 HTML 标签（<div>、<p>、<button>、<ul>……所有） */
-*::before,
-*::after {
+* {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -82,12 +79,12 @@ function resolvedComponent(id: number | null): Component | null {
 
 html,
 body {
-  height: 100%; /* ① 让 html 和 body 撑满整个浏览器窗口的高度 */
-  overflow: hidden; /* ② 禁止页面出现滚动条（裁剪溢出内容） */
+  height: 100%;
+  overflow: hidden;
 }
 
 #app {
-  height: 100%; /* ③ 让 Vue 挂载点也撑满整个窗口高度 */
+  height: 100vh;
 }
 
 /* ================================================================
@@ -108,10 +105,9 @@ body {
   flex: 1;
   /* 自动计算剩余的空间并全部分配给该区域 */
   display: flex;
-  align-items: center;
-  justify-content: center;
   /* 水平和垂直居中 */
   background-color: var(--color-main);
+  padding: 15px 20px;
 }
 
 /* 默认占位内容 */

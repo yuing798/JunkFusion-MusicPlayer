@@ -11,6 +11,7 @@
     "comment-whitespace-inside": null,
     "comment-empty-line-before":null,
     "color-hex-length": null,
-    "color-function-notation":null
+    "color-function-notation":null,
+    "rule-empty-line-before":null
   }
 }

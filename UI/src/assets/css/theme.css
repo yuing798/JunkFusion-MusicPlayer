@@ -17,23 +17,24 @@
 /* 2. 黑金主题（暗色 + 金色点缀）以后再写 */
 
 :root{
-    --big-font:22px;
+    --big-font:25px;
     --mid-font:18px;
     --little-font:15px;
     --border-radius:6px;
     --ease-time:0.15s;
+    --svg-btn-width:30px;
 }
 
 .svg-button {
   align-items: center;
   justify-content: center;
-  width: 30px; 
-  height: 30px;
+  width: var(--svg-btn-width); 
+  height: var(--svg-btn-width);
   color: var(--color-text-main);
   padding: 4px;
 
   border: none;
-  border-radius: var(--border-radius);
+  border-radius: calc(var(--svg-btn-width)/2.0);
   background-color: transparent;
   cursor: pointer;
   transition: background-color var(--ease-time) ease;
