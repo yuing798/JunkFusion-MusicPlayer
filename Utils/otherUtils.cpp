@@ -185,28 +185,51 @@ std::vector<std::byte> loadFile2ByteVector (const juce::File& file)
     //确保文件真实存在
     if (!file.existsAsFile()) return {};
 
-    // 2. 创建 JUCE 的文件输入流（JUCE 8 会自动返回 std::unique_ptr 智能指针）
+    //创建 JUCE 的文件输入流
     auto stream = file.createInputStream();
     
     if (stream == nullptr || stream->failedToOpen())
         return {};
 
-    // 3. 获取文件的总字节数
+    // 获取文件的总字节数
     const auto fileSize = static_cast<size_t> (stream->getTotalLength());
     
-    // 4. 精准开辟 vector 的内存空间
+    // vector 的内存空间
     std::vector<std::byte> buffer (fileSize);
 
-    // 5. 🚀 核心：直接读取到 vector 的物理内存首地址中
+    // 直接读取到 vector 的物理内存首地址中
     // buffer.data() 返回 std::byte*，会自动隐式转换为 stream->read 索要的 void*
     stream->read (buffer.data(), static_cast<int> (fileSize));
 
     return buffer;
 }
 
-juce::Image rescaleImage(juce::Image& source,int targetWidth,int targetHeight){
-    const int srcWidth = source.getWidth();
-    const int srcHeight = source.getHeight();
-    const float srcAspect = (srcWidth*1.0f)/(srcHeight*1.0f);//宽高比
-    
+juce::Image ImageRescale::clipMode(juce::Image& source,int targetWidth,int targetHeight){
+    // 防止空图片或目标尺寸为0
+    const int srcW = source.getWidth();
+    const int srcH = source.getHeight();
+    if (srcW == 0 || srcH == 0 || targetWidth == 0 || targetHeight == 0) {
+        return {};
+    }
+
+    //计算覆盖目标所需的最小缩放比例
+    const float scaleX = static_cast<float>(targetWidth) / static_cast<float>(srcW);
+    const float scaleY = static_cast<float>(targetHeight) / static_cast<float>(srcH);
+    // 取两者中的较大值：保证缩放后图片的短边一定大于等于目标短边
+    const float scale = juce::jmax(scaleX, scaleY);
+
+    // 计算“放大后的临时尺寸”
+    const int scaledW = static_cast<int>(std::ceil(srcW * scale));
+    const int scaledH = static_cast<int>(std::ceil(srcH * scale));
+
+    //执行高质量缩放
+    juce::Image scaledImage = source.rescaled(scaledW, scaledH, juce::Graphics::highResamplingQuality);
+
+    //计算居中的裁剪起始点
+    const int cropX = (scaledW - targetWidth) / 2;
+    const int cropY = (scaledH - targetHeight) / 2;
+    juce::Rectangle<int> cropArea(cropX, cropY, targetWidth, targetHeight);
+
+    //裁剪并返回最终结果
+    return scaledImage.getClippedImage(cropArea);
 }

@@ -48,4 +48,7 @@ inline juce::String utf8(const char* name){
 //从juce::File中加载数据放进vector<byte>中
 std::vector<std::byte> loadFile2ByteVector (const juce::File& file);
 
-juce::Image rescaleImage(juce::Image& source,int targetWidth = 50,int targetHeight = 50);
+struct ImageRescale{//放置所有的图片放缩策略，里面全部为静态函数
+
+    static juce::Image clipMode(juce::Image& src,int targetWidth = 50,int targetHeight = 50);
+};
