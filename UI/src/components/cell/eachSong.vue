@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import PopupWindow from '@/components/other/popupWindow.vue';
 import { PlaybackState } from '@/macro/playState';
-import { songStore } from '@/store/songStore';
 
 // ── Tabler 图标 ──
 import {
@@ -12,7 +11,7 @@ import {
   IconHeartFilled,
   IconMessageCircleQuestion,
 } from '@tabler/icons-vue';
-import type { SongInfo } from '@/store/SongInfo';
+import { songStore, type SongInfo } from '@/store/songStore';
 
 const props = defineProps<{
   /** 歌曲数据库主键，用于从 store 查找完整 SongInfo 和计算序号 */
@@ -25,10 +24,8 @@ const props = defineProps<{
 // Store — 通过 songId 查找当前行的歌曲数据
 // ════════════════════════════════════════════════════════════════
 
-const mySongStore = songStore();
-
 /** 从 store 中按 songId 查找 SongInfo，找不到返回 undefined */
-const songInfo = computed(() => mySongStore.getSongById(props.songId));
+const songInfo = computed(() => songStore.getSongById(props.songId));
 
 /** 多流音频悬停提示文本 */
 const MULTI_STREAM_TOOLTIP_TEXT =
@@ -177,7 +174,7 @@ function handleOrdinalClick(): void {
          isMyLike=false → IconHeart（空心）
          toggle 动作直接调用 store，不 emit
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-like" @click.stop="mySongStore.toggleMyLike(songId)">
+    <div class="cell cell-like" @click.stop="songStore.toggleMyLike(songId)">
       <IconHeartFilled v-if="songInfo?.isMyLike" :size="20" color="#dd6572" class="svg-icon" />
       <IconHeart v-else :size="20" class="svg-icon" />
     </div>
