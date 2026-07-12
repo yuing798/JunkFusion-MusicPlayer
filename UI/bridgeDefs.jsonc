@@ -36,9 +36,6 @@
 
   "songInfo":{
     "id":"id",
-    "path":"path",
-    "fileSize":"fileSize",
-    "lastModifyTime":"lastModifyTime",
     "duration":"duration",
     "title":"title",
     "artist":"artist",
@@ -49,7 +46,6 @@
     "discNum":"discNum",
     "year":"year",
     "composer":"composer",
-    "hash":"hash",
     "multiStream":"multiStream",
     "bitRate":"bitRate",
     "sr":"sr",
@@ -63,7 +59,6 @@
     "aiProcessed":"aiProcessed",
     "isMyLike":"isMyLike",
     "comment":"comment",
-    "playNum":"playNum",
-    "nameID":"nameID"
+    "playNum":"playNum"
   }
 }//node UI/generateBridge.cjs执行

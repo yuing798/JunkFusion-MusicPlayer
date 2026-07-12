@@ -2,7 +2,7 @@
 // #include "FontAbout/font.h"
 #include "BridgeNames.h"
 #include "constants.h"
-#include "fileMessage.hpp"
+#include "songsModel.hpp"
 #include "fileUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
@@ -21,14 +21,7 @@
 
 SongsManage::SongsManage()
 :db(nullptr){
-    
-}
-void SongsManage::init(){
-    // 使用 constants.h 中统一定义的 databaseDirId，避免路径不一致
-    if (!databaseDirId.exists())
-        databaseDirId.createDirectory();
-
-    songsDbFile = databaseDirId.getChildFile("songs.db");
+    auto songsDbFile = databaseDirId.getChildFile("songs.db");
 
     try
     {

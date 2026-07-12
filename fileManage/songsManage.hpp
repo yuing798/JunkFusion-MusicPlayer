@@ -5,7 +5,7 @@
 #include <SQLiteCpp/Transaction.h>
 #include <cstdint>
 #include <memory>
-#include "fileMessage.hpp"
+#include "songsModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_extra/juce_gui_extra.h"
 #include <optional>
@@ -13,60 +13,9 @@
 #include <string>
 #include <vector>
 
-// ============================================================
-// 建表 SQL
-// ============================================================
-
-// songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
-//PRIMARY KEY:主键 AUTOINCREMENT：自动递增
-//NOT NULL:禁止留空
-//UNIQUE:唯一
-//REAL:存储浮点数
-//CREATE TABLE IF NOT EXISTS songs:如果名为 songs 的表在当前数据库中不存在，则创建它；如果已经存在，则直接忽略，什么也不做（不会报错）
-inline const char* createSongsTableSQL = R"(
-    CREATE TABLE IF NOT EXISTS songs (
-        songId             INTEGER PRIMARY KEY AUTOINCREMENT,
-        filePath           TEXT    UNIQUE NOT NULL,
-        fileName           TEXT    NOT NULL,
-        fileSize           INTEGER NOT NULL,
-        lastModifiedTime   TEXT    NOT NULL,
-        addTime            TEXT,
-        isMultiStreamFile  INTEGER,
-        duration           REAL,
-        title              TEXT,
-        artist             TEXT,
-        album              TEXT,
-        albumArtist        TEXT,
-        genre              TEXT,
-        trackNumber        INTEGER,
-        discNumber         INTEGER,
-        year               INTEGER,
-        composer           TEXT,
-        imageHash          TEXT,
-        bitRate            INTEGER,
-        bitDepth           INTEGER,
-        sampleRate         INTEGER,
-        numChannels        INTEGER,
-        codecName          TEXT,
-        isMusic            INTEGER DEFAULT 0,
-        aiGenre            TEXT,
-        bpm                INTEGER DEFAULT 0,
-        key                TEXT,
-        aiProcessed        INTEGER DEFAULT 0,
-        isMyLike           INTEGER DEFAULT 0,
-        comment            TEXT,
-        hadPlayedNum       INTEGER DEFAULT 0,
-        nameId            INTEGER DEFAULT 0
-    )
-)";
-inline const char* createNameIdIndexSQL = R"(
-    CREATE INDEX IF NOT EXISTS idx_songs_nameId ON songs (nameId)
-)";
-
 class SongsManage {
 private:
     std::unique_ptr<SQLite::Database> db;
-    juce::File songsDbFile;//歌曲管理文件
 
     /** 创建 songs 表，如果已存在则跳过 */
     void createTables();
@@ -116,7 +65,6 @@ public:
         static SongsManage instance; //首次调用时创建，程序结束时自动析构
         return instance;
     }
-    void init();
 
     bool reverseMyLike(int64_t id);
 

@@ -3,10 +3,10 @@
 #include "fileManage/songsManage.hpp"
 #include "fileManage/serial.hpp"
 #include "juce_core/juce_core.h"
-#include "juce_data_structures/juce_data_structures.h"
 #include "otherUtils.hpp"
 #include <stdlib.h>
 #include <string>
+#include "songImageManage.hpp"
 
 //==============================================================================
 class GuiAppApplication final : public juce::JUCEApplication
@@ -36,10 +36,11 @@ public:
         if(!LocalDirId.exists()) LocalDirId.createDirectory();
         if(!imageDirId.exists()) imageDirId.createDirectory();
         if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//创建对应的用户数据保存文件夹
+        if (!databaseDirId.exists()) databaseDirId.createDirectory();
 
-        SongsManage::getInstance().init();
         mLogSystem.init();//spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
-        // Serial::getInstance().init();
+        SongsManage::getInstance();
+        SongImageManager::getInstance();
 
         mainWindow.reset (new MainWindow (getApplicationName()));
     }

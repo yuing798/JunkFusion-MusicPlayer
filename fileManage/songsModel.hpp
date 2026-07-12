@@ -78,9 +78,6 @@ struct SongInfo
         obj->setProperty(B_songInfo::id, song.songId);
 
         // ── 1. 文件信息 ──
-        obj->setProperty(B_songInfo::path,         juce::String(song.filePath));
-        obj->setProperty(B_songInfo::fileSize,         song.fileSize);
-        obj->setProperty(B_songInfo::lastModifyTime, juce::String(song.lastModifiedTime));
         obj->setProperty(B_songInfo::duration,         song.duration);
 
         // ── 2. 标签信息 ──
@@ -93,7 +90,6 @@ struct SongInfo
         obj->setProperty(B_songInfo::discNum,  optInt(song.discNumber));
         obj->setProperty(B_songInfo::year,        optInt(song.year));
         obj->setProperty(B_songInfo::composer,    optStr(song.composer));
-        obj->setProperty(B_songInfo::hash,   optStr(song.imageHash));
 
         // ── 3. FFmpeg 解码层 ──
         obj->setProperty(B_songInfo::multiStream, song.isMultiStreamFile);
@@ -115,9 +111,6 @@ struct SongInfo
         obj->setProperty(B_songInfo::comment,      optStr(song.comment));
         obj->setProperty(B_songInfo::playNum, song.hadPlayedNum);
 
-        // ── 6. 排序 ──
-        obj->setProperty(B_songInfo::nameID, song.nameId);
-
         return juce::var(obj);
         //这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     }//将songInfo转化为var，才能推送给js端
@@ -131,3 +124,68 @@ struct SongInfo
     }
 
 };
+//模拟文件结构
+// Cache/Covers/
+// ├── {hash}/               # 以哈希值命名的文件夹
+// │   ├── original.jpg      # 原始提取的图片（作为母本）
+// │   ├── 50.jpg            # 50x50 缩略图（懒生成）
+// │   └── 240.jpg           # 240x240 缩略图（懒生成）
+struct songImageInfo{
+    std::string hash;//原始图片的哈希值,图片路径是使用哈希值拼接出来的，所以不需要单独设置，用哈希值作为唯一主键
+    std::string lastModifiedTime;       // 文件最后一次修改时间
+    int width{0};
+    int height{0};
+};
+
+// songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
+inline const char* createSongsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS songs (
+        songId             INTEGER PRIMARY KEY AUTOINCREMENT,
+        filePath           TEXT    UNIQUE NOT NULL,
+        fileName           TEXT    NOT NULL,
+        fileSize           INTEGER NOT NULL,
+        lastModifiedTime   TEXT    NOT NULL,
+        addTime            TEXT,
+        isMultiStreamFile  INTEGER,
+        duration           REAL,
+        title              TEXT,
+        artist             TEXT,
+        album              TEXT,
+        albumArtist        TEXT,
+        genre              TEXT,
+        trackNumber        INTEGER,
+        discNumber         INTEGER,
+        year               INTEGER,
+        composer           TEXT,
+        bitRate            INTEGER,
+        bitDepth           INTEGER,
+        sampleRate         INTEGER,
+        numChannels        INTEGER,
+        codecName          TEXT,
+        isMusic            INTEGER DEFAULT 0,
+        aiGenre            TEXT,
+        bpm                INTEGER DEFAULT 0,
+        key                TEXT,
+        aiProcessed        INTEGER DEFAULT 0,
+        isMyLike           INTEGER DEFAULT 0,
+        comment            TEXT,
+        hadPlayedNum       INTEGER DEFAULT 0,
+        nameId            INTEGER DEFAULT 0,
+        coverId INTEGER,
+        FOREIGN KEY (coverId) REFERENCES songImage(id) ON DELETE SET NULL
+    )
+)";
+inline const char* createNameIdIndexSQL = R"(
+    CREATE INDEX IF NOT EXISTS idx_songs_nameId ON songs (nameId)
+)";
+
+inline const char* createSongImageTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS songImage(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hash TEXT UNIQUE NOT NULL,
+        width INTEGER DEFAULT 0,
+        height INTEGER DEFAULT 0,
+        lastModifyTime INTEGER NOT NULL
+    )
+    
+)";
