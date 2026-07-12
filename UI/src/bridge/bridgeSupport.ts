@@ -1,6 +1,6 @@
 import { getNativeFunction } from "juce-framework-frontend-mirror"
 
-import { EVENT_BRIDGE_KEYS } from "./bridge.generated"
+import { B_event } from "./bridge.generated"
 import { showErrorWindow } from "@/components/other/errorWindow.vue"
 
 //调用示例：
@@ -21,17 +21,25 @@ import { showErrorWindow } from "@/components/other/errorWindow.vue"
   try {
     const results = await getNativeFunction(name)(...args)//如果没有三个点只会传进来第一个数
     if (results && typeof results === 'object') {
-      if(EVENT_BRIDGE_KEYS.fullError in results){
-        throw new Error(String(results[EVENT_BRIDGE_KEYS.fullError])) 
-      }else if(EVENT_BRIDGE_KEYS.partError in results){
-        showErrorWindow(results[EVENT_BRIDGE_KEYS.partError],10000)//如果有部分错误的弹窗显示10秒
-      }else if(EVENT_BRIDGE_KEYS.fullSuccess in results){
-        showErrorWindow(results[EVENT_BRIDGE_KEYS.fullSuccess],2000)//如果有完全成功的弹窗显示2秒
+      if(B_event.fullError in results){
+        throw new Error(String(results[B_event.fullError])) 
+      }else if(B_event.partError in results){
+        showErrorWindow(results[B_event.partError],10000)//如果有部分错误的弹窗显示10秒
+      }else if(B_event.fullSuccess in results){
+        showErrorWindow(results[B_event.fullSuccess],2000)//如果有完全成功的弹窗显示2秒
       }
     }
     return results as T
   } catch (error) {
     showErrorWindow(error)
     throw error
+  }
+}
+
+export function getBackendAddress(path: string,isDev:boolean = true): string {
+  if(isDev){
+    return `https://juce.backend/${path}`;
+  }else{
+    return path;
   }
 }

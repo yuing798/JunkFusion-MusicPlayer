@@ -1,5 +1,6 @@
 #pragma once
 #include "juce_core/juce_core.h"
+#include "juce_graphics/juce_graphics.h"
 #include <SQLiteCpp/Exception.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
@@ -43,3 +44,8 @@ std::string ffmpegErrorOutput(int result);
 inline juce::String utf8(const char* name){
     return juce::String::fromUTF8(name);
 };
+
+//从juce::File中加载数据放进vector<byte>中
+std::vector<std::byte> loadFile2ByteVector (const juce::File& file);
+
+juce::Image rescaleImage(juce::Image& source,int targetWidth = 50,int targetHeight = 50);

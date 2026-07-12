@@ -27,28 +27,31 @@ MainComponent::MainComponent(){
             .withUserDataFolder(LocalDirId.getChildFile("UICache"))
         )//windows需要有专门的存储路径，放置应用web缓存
         
+        //下面放置的是后端需要直接和前端交互的函数
         .withResourceProvider([](const juce::String& path) -> std::optional<juce::WebBrowserComponent::Resource> {
 
-            if(path.startsWith("/albumImage/")){//传输歌曲封面到专辑和歌单页
-                juce::String hash = path.substring(12);
+            if(path.startsWith("songImage/")){//传输歌曲封面到专辑和歌单页
+                juce::String hash = path.substring(11);
                 juce::String fileName{hash + ".jpg"};
                 juce::File imageFile{imageDirId.getChildFile(fileName)};
                 if (imageFile.existsAsFile()) {
-                    juce::MemoryBlock buffer;
-                    imageFile.loadFileAsData(buffer);
+                    std::vector<std::byte> buffer{loadFile2ByteVector(imageFile)};
 
-                    //将 void* 强转为 std::byte* 指针
-                    auto* bytePtr = static_cast<const std::byte*> (buffer.getData());
-                    std::vector<std::byte> vecData (bytePtr, bytePtr + buffer.getSize());
-
-                    return juce::WebBrowserComponent::Resource { std::move(vecData), "image/jpeg" };
+                    return juce::WebBrowserComponent::Resource{
+                        std::move(buffer),
+                        "image/jepg"
+                    };
                 }
             }
             return std::nullopt;
-        })
+        }
+            #ifdef JUCE_DEBUG
+            ,"http://localhost:5173"//debug模式下需要调用外部域名
+            #endif
+        )
         .withOptionsFrom(mSongsManagerBuilder)
         //withNativeFunction这个逼函数默认运行在Message Thread
-        .withNativeFunction(BRIDGE_inputFiles::name,//导入文件函数,导入文件函数因为需要绑定模态窗所以放在MainComponent中比较合适
+        .withNativeFunction(B_inputFiles::name,//导入文件函数,导入文件函数因为需要绑定模态窗所以放在MainComponent中比较合适
             [this](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
@@ -81,7 +84,7 @@ MainComponent::MainComponent(){
                         if(errorStr.isNotEmpty()){
                             auto obj{new juce::DynamicObject()};
                             obj->setProperty(
-                                EVENT_BRIDGE_KEYS::partError,
+                                B_event::partError,
                                 utf8("导入完成\n成功 ") + 
                                 juce::String(numAll - num4ErrorFile) 
                                 + utf8("首----失败") 
@@ -95,7 +98,7 @@ MainComponent::MainComponent(){
                         }else{
                             auto obj{new juce::DynamicObject()};
                             obj->setProperty(
-                                EVENT_BRIDGE_KEYS::fullSuccess,
+                                B_event::fullSuccess,
                                 utf8("导入成功\n共导入") + juce::String(numAll) + utf8("首"));
                             complete(juce::var(obj));
                             return;
@@ -114,7 +117,8 @@ MainComponent::MainComponent(){
     #ifdef JUCE_DEBUG
     web->goToURL("http://localhost:5173/");
     #else
-        //这里到时候放置release版本的二进制资源打包，因为http://127.0.0.1:5173是开发者专用的
+    web->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
+    //这里到时候放置release版本的二进制资源打包，因为http://127.0.0.1:5173是开发者专用的
     #endif
 }
 

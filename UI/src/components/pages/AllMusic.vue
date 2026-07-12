@@ -32,6 +32,7 @@ async function handleFilesSelected(): Promise<void> {
   isImporting.value = true;
   try {
     await callJuceFunc(B_inputFiles.name);
+    refreshSongCount();
   } catch (error) {
     console.error(error);
   }

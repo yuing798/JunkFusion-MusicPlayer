@@ -113,6 +113,10 @@ export interface SongInfo {//interface指的是自定义类型
 //   - 统一管理"我喜欢"的乐观更新与回滚
 // ════════════════════════════════════════════════════════════════
 
+// ||（逻辑或）：只要左侧是假值（0、''、false、null、undefined），就使用右侧默认值。
+
+// ??（空值合并）：只有左侧是 null 或 undefined 时，才使用右侧默认值。
+
 const useSongStore = defineStore('songPage', {
   state: () => ({
     /** 当前展示的歌曲信息（一页最多 15 首） */

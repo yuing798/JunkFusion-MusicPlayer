@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <iostream>
 #include <string>
+#include <utility>
 extern "C"{
     #include <libavutil/error.h>//负责日志信息
 }
@@ -177,4 +178,35 @@ std::string ffmpegErrorOutput(int result){
     // 将错误码ret转换为可读字符串存入errbuf
     av_strerror(result, errbuf, sizeof(errbuf));
     return std::string(errbuf); 
+}
+
+std::vector<std::byte> loadFile2ByteVector (const juce::File& file)
+{
+    //确保文件真实存在
+    if (!file.existsAsFile()) return {};
+
+    // 2. 创建 JUCE 的文件输入流（JUCE 8 会自动返回 std::unique_ptr 智能指针）
+    auto stream = file.createInputStream();
+    
+    if (stream == nullptr || stream->failedToOpen())
+        return {};
+
+    // 3. 获取文件的总字节数
+    const auto fileSize = static_cast<size_t> (stream->getTotalLength());
+    
+    // 4. 精准开辟 vector 的内存空间
+    std::vector<std::byte> buffer (fileSize);
+
+    // 5. 🚀 核心：直接读取到 vector 的物理内存首地址中
+    // buffer.data() 返回 std::byte*，会自动隐式转换为 stream->read 索要的 void*
+    stream->read (buffer.data(), static_cast<int> (fileSize));
+
+    return buffer;
+}
+
+juce::Image rescaleImage(juce::Image& source,int targetWidth,int targetHeight){
+    const int srcWidth = source.getWidth();
+    const int srcHeight = source.getHeight();
+    const float srcAspect = (srcWidth*1.0f)/(srcHeight*1.0f);//宽高比
+    
 }

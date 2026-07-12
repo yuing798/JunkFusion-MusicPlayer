@@ -111,12 +111,12 @@ function handleOrdinalClick(): void {
   <div class="each-song-row">
     <!-- ═══════════════════════════════════════════════════════════
          第 1 列：序号 / 播放状态 (50px)
-         Stopped → 显示序号数字 ->@click.stop:进入playing状态
+         Stopped → 显示图片 ->@click.stop:进入playing状态
          Playing → play.svg ->@click.stop:进入paused状态
          Paused → pause.svg ->@click.stop:进入playing状态
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-ordinal" @click.stop="handleOrdinalClick">
-      <span v-if="playbackState === PlaybackState.Stopped" class="song-image">
+    <div class="playback-image-area" @click.stop="handleOrdinalClick">
+      <span v-if="playbackState === PlaybackState.Stopped">
         <!-- {{ songIndex }} -->
       </span>
       <IconPlayerPlayFilled
@@ -245,18 +245,13 @@ function handleOrdinalClick(): void {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   第 1 列：序号 / 播放状态
+   第 1 列：图片 / 播放状态
    ════════════════════════════════════════════════════════════════ */
 
-.cell-ordinal {
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.ordinal-number {
-  font-size: var(--mid-font);
-  color: var(--color-text-second);
+.playback-image-area {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
 }
 
 /* ════════════════════════════════════════════════════════════════
