@@ -2,16 +2,16 @@
 // #include "FontAbout/font.h"
 #include "BridgeNames.h"
 #include "constants.h"
-#include "songsModel.hpp"
-#include "fileUtils.hpp"
+#include "otherUtils.hpp"
+#include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
-#include "otherUtils.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <sha1.h>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <unicode/coll.h>
@@ -19,47 +19,148 @@
 #include <unicode/stringpiece.h>
 #include <vector>
 
-SongsManage::SongsManage()
-:songDb(nullptr){
-    auto songsDbFile = databaseDirId.getChildFile("song.db");
-    auto imageDbFile = databaseDirId.getChildFile("songImage.db");
+extern "C" {
+    #include <libavformat/avformat.h>
+    #include <libavcodec/avcodec.h>
+    #include <libavutil/dict.h>
+    #include <libavutil/samplefmt.h>
+}
 
+SongsManage::SongsManage(SQLite::Database* d)
+:db(d){
     try
     {
-        songDb = std::make_unique<SQLite::Database>(
-            songsDbFile.getFullPathName().toStdString(),
-            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
-        );
-        songDb->exec(createSongsTableSQL);
-        songDb->exec(createNameIdIndexSQL);
-
-        songImageDb = std::make_unique<SQLite::Database>(
-            imageDbFile.getFullPathName().toStdString(),
-            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
-        );
-        songImageDb->exec(createSongImageTableSQL);
+        db->exec(createSongsTableSQL);
+        db->exec(createNameIdIndexSQL);
+        db->exec(createSongImageTableSQL);
     }
     catch (const std::exception& e)
     {
-        // 数据库初始化失败 → songDb 保持 nullptr，后续所有操作安全返回空
+        // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
         auto logger = spdlog::get(LogAllID);
         if (logger) logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}", e.what());
     }
 }
 
-bool SongsManage::isSongExists(const std::string& filePath)
+bool SongsManage::insertSong(juce::File& path)
 {
-    if (!songDb) return false;
-    SQLite::Statement query(*songDb, "SELECT COUNT(*) FROM songs WHERE filePath = :filePath");
-    // COUNT(*) 是 SQL 中的一个聚合函数，它的作用是统计满足条件的记录总数（行数）
-    query.bind(":filePath", filePath);
-    query.executeStep();
-    return query.getColumn(0).getInt() > 0;
-}
+    
+    SongInfo info{};
+    info.filePath = path.getFullPathName().toStdString();
+    info.fileSize = path.getSize();
+    info.lastModifiedTime = path.getLastModificationTime().toString(true, true).toStdString();
 
-bool SongsManage::insertSong(const SongInfo& info)
-{
-    if(!songDb) return false;
+    auto logger{spdlog::get(LogSchedulerID)};
+
+    //ffmpeg解码层信息
+    int result{0};//解码层结果，一般成功返回零
+    AVFormatContext* inputContext{nullptr};
+    result = avformat_open_input(&inputContext, info.filePath.c_str(), nullptr, nullptr);
+    if(result!=0){
+        //非多媒体文件也会返回AVERROR
+        //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
+        if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:",ffmpegErrorOutput(result));
+        avformat_close_input(&inputContext);
+        return false;
+    }
+    result = avformat_find_stream_info(inputContext, nullptr);
+    if(result<0){
+        //SPDLOG:无法找到流信息
+        if(logger) logger->error("无法找到该文件的流信息:",ffmpegErrorOutput(result));
+        avformat_close_input(&inputContext);
+        return false;
+    }
+
+    // 时长（秒）
+    if (inputContext->duration != AV_NOPTS_VALUE)
+    {
+        info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
+    }//每条流的时长都一样
+
+    int streamCount{0};
+    info.isMultiStreamFile = 0;
+    for(size_t i = 0; i < inputContext->nb_streams; i++){
+        if(inputContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
+            streamCount++;
+            if(streamCount > 1){
+                info.isMultiStreamFile = 1;//多音频流文件
+                break;
+            }
+        }
+    }
+
+    auto currentIndex{av_find_best_stream(
+        inputContext, 
+        AVMEDIA_TYPE_AUDIO, 
+        -1, 
+        -1, 
+        nullptr, 
+        0
+    )};
+
+    auto*           pAudioStream = inputContext->streams[currentIndex];
+    auto*  decoderPar      = pAudioStream->codecpar;
+    info.codecID = decoderPar->codec_id;
+    info.codecName = avcodec_get_name(decoderPar->codec_id);
+
+    // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
+    info.bitRate = decoderPar->bit_rate / 1000;
+    if (info.bitRate <= 0 && info.duration > 0.0 && info.fileSize > 0)
+    {
+        info.bitRate = static_cast<int>(
+            info.fileSize * 8.0 / info.duration / 1000.0);
+    }
+
+    // 采样率（Hz）
+    info.sampleRate = decoderPar->sample_rate;
+
+    // 通道数
+    info.numChannels = decoderPar->ch_layout.nb_channels;
+
+    // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
+    int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(decoderPar->format));
+    if (bytesPerSample > 0)
+    {
+        info.bitDepth = bytesPerSample * 8;
+    }
+    else
+    {
+        info.bitDepth = decoderPar->bits_per_coded_sample;
+    }
+    //提取文件层面的标签数据
+    AVDictionary*   pTags = inputContext->metadata;
+    AVDictionaryEntry* pEntry = nullptr;
+
+    if ((pEntry = av_dict_get(pTags, "title",       nullptr, 0))){
+        if(pEntry->value){
+            info.title = pEntry->value;
+        }else{
+            info.title = juce::File(info.filePath).getFileNameWithoutExtension().toStdString();
+        }
+    }
+    auto safeToInt = [](const char* str) -> int{
+        try { return std::stoi(str); }
+        catch (...) { return 0; }
+    };
+
+    if ((pEntry = av_dict_get(pTags, "artist",       nullptr, 0)))
+        info.artist = pEntry->value;
+    if ((pEntry = av_dict_get(pTags, "album",        nullptr, 0)))
+        info.album = pEntry->value;
+    if ((pEntry = av_dict_get(pTags, "album_artist", nullptr, 0)))
+        info.albumArtist = pEntry->value;
+    if ((pEntry = av_dict_get(pTags, "genre",        nullptr, 0)))
+        info.genre = pEntry->value;
+    if ((pEntry = av_dict_get(pTags, "track",        nullptr, 0)))
+        info.trackNumber = safeToInt(pEntry->value);
+    if ((pEntry = av_dict_get(pTags, "disc",         nullptr, 0)))
+        info.discNumber = safeToInt(pEntry->value);
+    if ((pEntry = av_dict_get(pTags, "date",         nullptr, 0)))
+        info.year = safeToInt(pEntry->value);
+    if ((pEntry = av_dict_get(pTags, "composer",     nullptr, 0)))
+        info.composer = pEntry->value;
+
+    if(!db) return false;
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
         // ── 必选字段 ──
@@ -69,6 +170,11 @@ bool SongsManage::insertSong(const SongInfo& info)
         stmt.bind(":isMultiStreamFile",info.isMultiStreamFile);
         stmt.bind(":duration",         info.duration);
         stmt.bind(":title",            info.title);
+        // ── FFmpeg 必选 int 字段 ──
+        stmt.bind(":bitRate",     info.bitRate);
+        stmt.bind(":bitDepth",    info.bitDepth);
+        stmt.bind(":sampleRate",  info.sampleRate);
+        stmt.bind(":numChannels", info.numChannels);
 
         // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
         auto bindOptStr = [&](const char* name, const std::optional<std::string>& v) {
@@ -89,15 +195,10 @@ bool SongsManage::insertSong(const SongInfo& info)
         bindOptInt(":discNumber",  info.discNumber);
         bindOptInt(":year",        info.year);
         bindOptStr(":composer",    info.composer);
-        bindOptStr(":imageHash",   info.imageHash);
         bindOptStr(":codecName",   info.codecName);
-
-        // ── FFmpeg 必选 int 字段 ──
-        stmt.bind(":bitRate",     info.bitRate);
-        stmt.bind(":bitDepth",    info.bitDepth);
-        stmt.bind(":sampleRate",  info.sampleRate);
-        stmt.bind(":numChannels", info.numChannels);
     };
+
+    int64_t songId{0};
 
     try
     {
@@ -105,11 +206,11 @@ bool SongsManage::insertSong(const SongInfo& info)
         int64_t existingId = -1;
 
         {
-            SQLite::Statement checkQuery(*songDb,
+            SQLite::Statement checkQuery(*db,
                 "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath");
             checkQuery.bind(":filePath", info.filePath);
 
-            if (checkQuery.executeStep())//getColumn() 有一个铁律：在调用 getColumn() 之前，必须确保 executeStep() 返回了 true
+            if (checkQuery.executeStep())
             {
                 existingId = checkQuery.getColumn("songId").getInt64();
                 int64_t existingSize = checkQuery.getColumn("fileSize").getInt64();
@@ -126,39 +227,38 @@ bool SongsManage::insertSong(const SongInfo& info)
         }
 
         // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
-        SQLite::Transaction transaction(*songDb);
+        SQLite::Transaction transaction(*db);
 
         if (existingId >= 0)
         {
             // ── 文件已变更：更新 songs 记录 ──
-            SQLite::Statement updateSong(*songDb,
+            SQLite::Statement updateSong(*db,
                 "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
                 "lastModifiedTime = :lastModifiedTime, isMultiStreamFile = :isMultiStreamFile, "
                 "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
                 "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = :year, composer = :composer, "
-                "imageHash = :imageHash, bitRate = :bitRate, bitDepth = :bitDepth, "
+                "bitRate = :bitRate, bitDepth = :bitDepth, "
                 "sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
                 "WHERE songId = :songId"
             );
-            //UPDATE songs 表示要对 songs 表进行更新操作。
-            //SET 后面跟着一系列 字段 = :命名参数，表示要把这些字段的值替换成绑定的新值。
-            //WHERE 限定只更新那些 songId 等于绑定值的行
 
             bindSongFields(updateSong);
             updateSong.bind(":songId", existingId);
             updateSong.exec();
+            songId = existingId;
 
         }
         else
         {
             // ── 新文件：插入 songs 记录 ──
-            SQLite::Statement insertSong(*songDb,
+            SQLite::Statement insertSong(*db,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                 "isMultiStreamFile, duration, title, artist, album, albumArtist, "
-                "genre, trackNumber, discNumber, year, composer, imageHash, bitRate, bitDepth, sampleRate, numChannels, codecName) "
+                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName) "
                 "VALUES (:filePath, :fileSize, :lastModifiedTime, :isMultiStreamFile, :duration, :title, :artist, :album, :albumArtist, "
-                ":genre, :trackNumber, :discNumber, :year, :composer, :imageHash, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName)"
+                ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName)"
             );
+            songId = db->getLastInsertRowid();
 
             bindSongFields(insertSong);
             insertSong.exec();
@@ -168,7 +268,6 @@ bool SongsManage::insertSong(const SongInfo& info)
 
         // ── 全部成功，提交事务 ──
         transaction.commit();
-        return true;
     }
     catch (const SQLite::Exception& e)
     {
@@ -178,6 +277,67 @@ bool SongsManage::insertSong(const SongInfo& info)
         if(logger) logger->error("data update error",e.what());
         return false;
     }
+
+    //这里进行封面提取
+    std::string hash;
+    std::string lastModifiedTime;
+    AVPacket coverPacket;
+    coverPacket.data = nullptr;
+    coverPacket.size = 0;
+    SHA1 sha1;
+    for(size_t i=0; i<inputContext->nb_streams; i++){
+        auto* stream{inputContext->streams[i]};
+        auto type{stream->codecpar->codec_type};
+        if(type == AVMEDIA_TYPE_ATTACHMENT || (type == AVMEDIA_TYPE_VIDEO && (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))){
+            coverPacket = stream->attached_pic;
+            break;
+        }
+
+    }//这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
+
+    if(coverPacket.data && coverPacket.size > 0){
+        do{
+            std::string hashHex = sha1(coverPacket.data,coverPacket.size);
+            juce::File hashImageDir{songImageDirId.getChildFile(hashHex)};//直接用哈希值作为文件名
+
+            if(hashImageDir.exists()){
+                break;
+            }else{
+                hashImageDir.createDirectory();
+            }//如果这个目录已经存在，直接退出，避免保存两个相同图片
+
+            juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
+            originalFile.create();//上面已经判断过是否存在了，不要再判断一次
+
+            juce::FileOutputStream outputStream(originalFile);
+            if(outputStream.openedOk()){
+                outputStream.write(coverPacket.data, coverPacket.size);
+                outputStream.flush();
+            }
+
+            //将图片信息插入数据库
+            SQLite::Statement insertImageSql(
+                *db,
+                "INSERT INTO songImage (hash, lastModifiedTime) "
+                "VALUES (:hash, :lastModifiedTime)" 
+            );
+            insertImageSql.bind(":hash",hashHex);
+            insertImageSql.bind(":lastModifiedTime",info.lastModifiedTime);
+            insertImageSql.exec();
+            
+            SQLite::Statement updateSongs4coverId(
+                *db,
+                "UPDATE songs SET coverId =:coverId WHERE songId =:songId"
+            );
+            updateSongs4coverId.bind(":songId",songId);
+            updateSongs4coverId.bind(":coverId",db->getLastInsertRowid());
+            updateSongs4coverId.exec();
+
+        }while(0);
+    }
+    
+
+    avformat_close_input(&inputContext);
 }
 
 // ============================================================
@@ -185,12 +345,12 @@ bool SongsManage::insertSong(const SongInfo& info)
 // ============================================================
 std::optional<int> SongsManage::getTotalSongCount()
 {
-    if (!songDb) {
+    if (!db) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("查询歌曲总数阶段发生空指针问题");
         return std::nullopt;
     };
-    SQLite::Statement query(*songDb, "SELECT COUNT(*) FROM songs");
+    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs");
     if (query.executeStep())
         return query.getColumn(0).getInt();
     return std::nullopt;
@@ -264,7 +424,7 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
 std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bool ascending)
 {
     std::vector<SongInfo> result;
-    if (!songDb) {
+    if (!db) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("更新歌曲页码阶段发生空指针问题");
         return result;
@@ -282,7 +442,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
         sql +=" DESC ";
     }
     sql += " LIMIT :limit OFFSET :offset";
-    SQLite::Statement query(*songDb,sql);
+    SQLite::Statement query(*db,sql);
 
     //OFFSET 的起始行从 0 开始计数
     //DESC：降序排列（Descending）。即时间越大的（越新的）排在最前面。如果写成 ASC，则是升序
@@ -300,7 +460,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
 std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,bool ascending)
 {
     std::vector<SongInfo> result;
-    if (!songDb) {
+    if (!db) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("按播放次数排序查询歌曲阶段发生空指针问题");
         return result;
@@ -318,7 +478,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
         sql +=" DESC ";
     }
     sql += " LIMIT :limit OFFSET :offset";
-    SQLite::Statement query(*songDb,sql);
+    SQLite::Statement query(*db,sql);
 
     query.bind(":limit", limit);
     query.bind(":offset", offset);
@@ -331,7 +491,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
 std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool ascending)
 {
     std::vector<SongInfo> result;
-    if (!songDb)
+    if (!db)
     {
         auto logger = spdlog::get(LogAllID);
         if (logger) logger->debug("按名称排序查询歌曲阶段发生空指针问题");
@@ -350,7 +510,7 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
     else
         sql += " DESC ";
     sql += " LIMIT :limit OFFSET :offset";
-    SQLite::Statement query(*songDb, sql);
+    SQLite::Statement query(*db, sql);
     query.bind(":limit", limit);
     query.bind(":offset", offset);
 
@@ -371,13 +531,13 @@ std::vector<SongInfo> SongsManage::getSongPage(int offset, int limit, bool ascen
 
 void SongsManage::rebuildNameIds()
 {
-    if (!songDb) return;
+    if (!db) return;
 
     // ── 1. 取出所有 songId 和 title ──
     struct NameEntry { int64_t songId; std::string title; };
     std::vector<NameEntry> entries;
     {
-        SQLite::Statement query(*songDb, "SELECT songId, title FROM songs");
+        SQLite::Statement query(*db, "SELECT songId, title FROM songs");
         while (query.executeStep())
         {
             entries.push_back({
@@ -408,7 +568,7 @@ void SongsManage::rebuildNameIds()
     // ── 3. 按排序后的顺序更新 nameId ──
     for (int i = 0; i < static_cast<int>(entries.size()); ++i)
     {
-        SQLite::Statement update(*songDb,
+        SQLite::Statement update(*db,
             "UPDATE songs SET nameId = :nameId WHERE songId = :songId");
         update.bind(":nameId", i + 1);
         update.bind(":songId", entries[i].songId);
@@ -419,7 +579,7 @@ void SongsManage::rebuildNameIds()
 bool SongsManage::reverseMyLike(int64_t id){
     
     try{
-        SQLite::Statement sql(*songDb,
+        SQLite::Statement sql(*db,
             "UPDATE songs SET isMyLike = 1 - isMyLike WHERE songId = :songId");
         sql.bind(":songId",id);
 
@@ -436,28 +596,26 @@ bool SongsManage::reverseMyLike(int64_t id){
     }
 }
 
-std::optional<std::string> SongsManage::getImageHashBySongId(int64_t songId){
+std::optional<songImageInfo> SongsManage::getImageInfoBySongId(int64_t songId){
 
-    
+    songImageInfo info{};
     try{
-        SQLite::Statement songSql(
-            *songDb,
-            "SELECT coverId FROM songs WHERE songId =:songId"
+        SQLite::Statement sql(
+            *db,
+            "SELECT si.hash,si.width,si.height,si.lastModifyTime "
+            "FROM songs s "
+            "LEFT JOIN songImage si ON s.coverId = si.id "
+            "WHERE s.songId = :songId"
         );
-        songSql.bind(":songId",songId);
-        int64_t coverId{0};
-        if(songSql.executeStep()){
-            coverId = songSql.getColumn("coverId").getInt64();
+        sql.bind(":songId",songId);
+        if(sql.executeStep()){
+            info.hash = sql.getColumn("hash").getString();
+            info.width=sql.getColumn("width").getInt();
+            info.height=sql.getColumn("height").getInt();
+            info.lastModifiedTime = sql.getColumn("lastModifyTime").getString();
+            return info;
         }
-
-        SQLite::Statement imageSql{
-            *songImageDb,
-            "SELECT hash FROM songImage WHERE coverId =:coverId"
-        };
-        imageSql.bind(":coverId",coverId);
-        if(imageSql.executeStep()){
-            return imageSql.getColumn("hash").getString();
-        }
+        
         return std::nullopt;
     }catch(...){
         return std::nullopt;

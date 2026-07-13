@@ -69,7 +69,7 @@ MainComponent::MainComponent(){
                         const int numAll{files.size()};
                         int num4ErrorFile{0};
                         for(auto& file:files){
-                            auto song{getStreamMetaData(file)};
+                            auto song{getSongData(file)};
                             if(!song){
                                 errorStr += (file.getFileName()) + utf8("\n"); 
                                 num4ErrorFile++;

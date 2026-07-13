@@ -1,6 +1,7 @@
 #pragma once
 #include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Exception.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
@@ -47,6 +48,9 @@ inline juce::String utf8(const char* name){
 
 //从juce::File中加载数据放进vector<byte>中
 std::vector<std::byte> loadFile2ByteVector (const juce::File& file);
+
+//异步打开文件选择框，支持多选，回调返回选中的文件数组
+void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>,juce::Component* parentComponent = nullptr);
 
 struct ImageRescale{//放置所有的图片放缩策略，里面全部为静态函数
 

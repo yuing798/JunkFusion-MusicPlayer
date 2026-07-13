@@ -6,7 +6,6 @@
 #include "otherUtils.hpp"
 #include <stdlib.h>
 #include <string>
-#include "songImageManage.hpp"
 
 //==============================================================================
 class GuiAppApplication final : public juce::JUCEApplication
@@ -33,14 +32,12 @@ public:
         _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--auto-open-devtools-for-tabs");//这一行的作用是打开webview2的控制台
         #endif
 
-        if(!LocalDirId.exists()) LocalDirId.createDirectory();
-        if(!imageDirId.exists()) imageDirId.createDirectory();
-        if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//创建对应的用户数据保存文件夹
-        if (!databaseDirId.exists()) databaseDirId.createDirectory();
+        if(!LocalDirId.exists()) LocalDirId.createDirectory();//整个应用的数据文件夹
+        if(!imageDirId.exists()) imageDirId.createDirectory();//里面放置所有的用户图像信息
+        if(!songImageDirId.exists()) songImageDirId.createDirectory();//放置歌曲封面信息
+        if(!logInfoDirId.exists()) logInfoDirId.createDirectory();//日志文件夹
 
         mLogSystem.init();//spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
-        SongsManage::getInstance();
-        SongImageManager::getInstance();
 
         mainWindow.reset (new MainWindow (getApplicationName()));
     }

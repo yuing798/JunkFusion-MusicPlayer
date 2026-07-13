@@ -36,7 +36,7 @@ static const juce::File LocalDirId{
     ).getChildFile("JunkFusion")
 };
 static const juce::File imageDirId{LocalDirId.getChildFile("image")};
-static const juce::File databaseDirId{LocalDirId.getChildFile("database")};
+static const juce::File songImageDirId{imageDirId.getChildFile("songs")};
 static const juce::File logInfoDirId{LocalDirId.getChildFile("logInfo")};
 
 //禁止拷贝和移动的宏

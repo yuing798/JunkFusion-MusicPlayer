@@ -5,7 +5,7 @@
 #include <SQLiteCpp/Transaction.h>
 #include <cstdint>
 #include <memory>
-#include "songsModel.hpp"
+#include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_extra/juce_gui_extra.h"
 #include <optional>
@@ -15,17 +15,13 @@
 
 class SongsManage {
 private:
-    std::unique_ptr<SQLite::Database> songDb;
-    std::unique_ptr<SQLite::Database> songImageDb;
+    SQLite::Database* db;
 
     /** 使用 ICU Collator 按 title 排序后为所有歌曲重新分配 nameId */
     void rebuildNameIds();
     
 public:
-
-    /** 检查 filePath 是否已在数据库中（仅按路径匹配，不做 size/time 比较） */
-    bool isSongExists(const std::string& filePath);
-    SongsManage();
+    explicit SongsManage(SQLite::Database*);
     ~SongsManage();
 
     /**
@@ -40,7 +36,7 @@ public:
      *
      * @param info     歌曲信息
      */
-    bool insertSong(const SongInfo& info);
+    bool insertSong(juce::File& path);
 
     /** 获取歌曲总数 */
     std::optional<int> getTotalSongCount();
@@ -60,19 +56,10 @@ public:
     /** 统一分页入口，根据 SortMode 选择排序方式 */
     std::vector<SongInfo> getSongPage(int offset, int limit, bool ascending, SortMode mode);
 
-    static SongsManage& getInstance() {
-        static SongsManage instance; //首次调用时创建，程序结束时自动析构
-        return instance;
-    }
-
     bool reverseMyLike(int64_t id);
 
-    std::optional<std::string> getImageHashBySongId(int64_t songId);
+    std::optional<songImageInfo> getImageInfoBySongId(int64_t songId);
 
-    SongsManage(const SongsManage&) = delete;
-    SongsManage& operator=(const SongsManage&) = delete;
-    SongsManage(SongsManage&&) = delete;
-    SongsManage& operator=(SongsManage&&) = delete;//强调全局唯一单例
 };
 
 class songsManageBuilder : public juce::OptionsBuilder<juce::WebBrowserComponent::Options>{

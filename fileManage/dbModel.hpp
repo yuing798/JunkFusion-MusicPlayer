@@ -32,7 +32,7 @@ struct SongInfo
     std::optional<std::string> composer;        // 作曲者
     //这些基础数据都是文件容器层面的
 
-    std::optional<std::string> imageHash;       //图片所对应的哈希值索引
+    // std::optional<std::string> imageHash;       //图片所对应的哈希值索引
 
     // ── 2. FFmpeg 解码层信息 ──
     bool isMultiStreamFile{0};
@@ -185,7 +185,7 @@ inline const char* createSongImageTableSQL = R"(
         hash TEXT UNIQUE NOT NULL,
         width INTEGER DEFAULT 0,
         height INTEGER DEFAULT 0,
-        lastModifyTime INTEGER NOT NULL
+        lastModifiedTime INTEGER NOT NULL
     )
     
 )";
