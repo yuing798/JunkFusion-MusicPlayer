@@ -20,32 +20,31 @@
 #include <vector>
 
 SongsManage::SongsManage()
-:db(nullptr){
-    auto songsDbFile = databaseDirId.getChildFile("songs.db");
+:songDb(nullptr){
+    auto songsDbFile = databaseDirId.getChildFile("song.db");
+    auto imageDbFile = databaseDirId.getChildFile("songImage.db");
 
     try
     {
-        db = std::make_unique<SQLite::Database>(
+        songDb = std::make_unique<SQLite::Database>(
             songsDbFile.getFullPathName().toStdString(),
             SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
         );
-        createTables();
+        songDb->exec(createSongsTableSQL);
+        songDb->exec(createNameIdIndexSQL);
+
+        songImageDb = std::make_unique<SQLite::Database>(
+            imageDbFile.getFullPathName().toStdString(),
+            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
+        );
+        songImageDb->exec(createSongImageTableSQL);
     }
     catch (const std::exception& e)
     {
-        // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
+        // 数据库初始化失败 → songDb 保持 nullptr，后续所有操作安全返回空
         auto logger = spdlog::get(LogAllID);
         if (logger) logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}", e.what());
     }
-}
-
-// ============================================================
-// createTables
-// ============================================================
-void SongsManage::createTables()
-{
-    db->exec(createSongsTableSQL);
-    db->exec(createNameIdIndexSQL);
 }
 
 // ============================================================
@@ -53,8 +52,8 @@ void SongsManage::createTables()
 // ============================================================
 bool SongsManage::isSongExists(const std::string& filePath)
 {
-    if (!db) return false;
-    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs WHERE filePath = :filePath");
+    if (!songDb) return false;
+    SQLite::Statement query(*songDb, "SELECT COUNT(*) FROM songs WHERE filePath = :filePath");
     query.bind(":filePath", filePath);
     query.executeStep();
     //执行查询：数据库跑去找数据。
@@ -67,7 +66,7 @@ bool SongsManage::isSongExists(const std::string& filePath)
 // ============================================================
 bool SongsManage::insertSong(const SongInfo& info)
 {
-    if(!db) return false;
+    if(!songDb) return false;
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&info](SQLite::Statement& stmt) {
         // ── 必选字段 ──
@@ -113,7 +112,7 @@ bool SongsManage::insertSong(const SongInfo& info)
         int64_t existingId = -1;
 
         {
-            SQLite::Statement checkQuery(*db,
+            SQLite::Statement checkQuery(*songDb,
                 "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath");
             checkQuery.bind(":filePath", info.filePath);
 
@@ -134,12 +133,12 @@ bool SongsManage::insertSong(const SongInfo& info)
         }
 
         // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
-        SQLite::Transaction transaction(*db);
+        SQLite::Transaction transaction(*songDb);
 
         if (existingId >= 0)
         {
             // ── 文件已变更：更新 songs 记录 ──
-            SQLite::Statement updateSong(*db,
+            SQLite::Statement updateSong(*songDb,
                 "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
                 "lastModifiedTime = :lastModifiedTime, isMultiStreamFile = :isMultiStreamFile, "
                 "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
@@ -160,7 +159,7 @@ bool SongsManage::insertSong(const SongInfo& info)
         else
         {
             // ── 新文件：插入 songs 记录 ──
-            SQLite::Statement insertSong(*db,
+            SQLite::Statement insertSong(*songDb,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                 "isMultiStreamFile, duration, title, artist, album, albumArtist, "
                 "genre, trackNumber, discNumber, year, composer, imageHash, bitRate, bitDepth, sampleRate, numChannels, codecName) "
@@ -193,12 +192,12 @@ bool SongsManage::insertSong(const SongInfo& info)
 // ============================================================
 std::optional<int> SongsManage::getTotalSongCount()
 {
-    if (!db) {
+    if (!songDb) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("查询歌曲总数阶段发生空指针问题");
         return std::nullopt;
     };
-    SQLite::Statement query(*db, "SELECT COUNT(*) FROM songs");
+    SQLite::Statement query(*songDb, "SELECT COUNT(*) FROM songs");
     if (query.executeStep())
         return query.getColumn(0).getInt();
     return std::nullopt;
@@ -272,7 +271,7 @@ auto dataLookfor = [](SQLite::Statement& query,std::vector<SongInfo>& result){
 std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bool ascending)
 {
     std::vector<SongInfo> result;
-    if (!db) {
+    if (!songDb) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("更新歌曲页码阶段发生空指针问题");
         return result;
@@ -290,7 +289,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
         sql +=" DESC ";
     }
     sql += " LIMIT :limit OFFSET :offset";
-    SQLite::Statement query(*db,sql);
+    SQLite::Statement query(*songDb,sql);
 
     //OFFSET 的起始行从 0 开始计数
     //DESC：降序排列（Descending）。即时间越大的（越新的）排在最前面。如果写成 ASC，则是升序
@@ -308,7 +307,7 @@ std::vector<SongInfo> SongsManage::getSongsPageBySongId(int offset, int limit,bo
 std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,bool ascending)
 {
     std::vector<SongInfo> result;
-    if (!db) {
+    if (!songDb) {
         auto logger = spdlog::get(LogAllID);
         logger->debug("按播放次数排序查询歌曲阶段发生空指针问题");
         return result;
@@ -326,7 +325,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
         sql +=" DESC ";
     }
     sql += " LIMIT :limit OFFSET :offset";
-    SQLite::Statement query(*db,sql);
+    SQLite::Statement query(*songDb,sql);
 
     query.bind(":limit", limit);
     query.bind(":offset", offset);
@@ -339,7 +338,7 @@ std::vector<SongInfo> SongsManage::getSongPageByPlayTimes(int offset, int limit,
 std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool ascending)
 {
     std::vector<SongInfo> result;
-    if (!db)
+    if (!songDb)
     {
         auto logger = spdlog::get(LogAllID);
         if (logger) logger->debug("按名称排序查询歌曲阶段发生空指针问题");
@@ -358,7 +357,7 @@ std::vector<SongInfo> SongsManage::getSongPageByName(int offset, int limit, bool
     else
         sql += " DESC ";
     sql += " LIMIT :limit OFFSET :offset";
-    SQLite::Statement query(*db, sql);
+    SQLite::Statement query(*songDb, sql);
     query.bind(":limit", limit);
     query.bind(":offset", offset);
 
@@ -379,13 +378,13 @@ std::vector<SongInfo> SongsManage::getSongPage(int offset, int limit, bool ascen
 
 void SongsManage::rebuildNameIds()
 {
-    if (!db) return;
+    if (!songDb) return;
 
     // ── 1. 取出所有 songId 和 title ──
     struct NameEntry { int64_t songId; std::string title; };
     std::vector<NameEntry> entries;
     {
-        SQLite::Statement query(*db, "SELECT songId, title FROM songs");
+        SQLite::Statement query(*songDb, "SELECT songId, title FROM songs");
         while (query.executeStep())
         {
             entries.push_back({
@@ -416,7 +415,7 @@ void SongsManage::rebuildNameIds()
     // ── 3. 按排序后的顺序更新 nameId ──
     for (int i = 0; i < static_cast<int>(entries.size()); ++i)
     {
-        SQLite::Statement update(*db,
+        SQLite::Statement update(*songDb,
             "UPDATE songs SET nameId = :nameId WHERE songId = :songId");
         update.bind(":nameId", i + 1);
         update.bind(":songId", entries[i].songId);
@@ -427,7 +426,7 @@ void SongsManage::rebuildNameIds()
 bool SongsManage::reverseMyLike(int64_t id){
     
     try{
-        SQLite::Statement sql(*db,
+        SQLite::Statement sql(*songDb,
             "UPDATE songs SET isMyLike = 1 - isMyLike WHERE songId = :songId");
         sql.bind(":songId",id);
 

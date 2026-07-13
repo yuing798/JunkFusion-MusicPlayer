@@ -15,10 +15,9 @@
 
 class SongsManage {
 private:
-    std::unique_ptr<SQLite::Database> db;
+    std::unique_ptr<SQLite::Database> songDb;
+    std::unique_ptr<SQLite::Database> songImageDb;
 
-    /** 创建 songs 表，如果已存在则跳过 */
-    void createTables();
     /** 使用 ICU Collator 按 title 排序后为所有歌曲重新分配 nameId */
     void rebuildNameIds();
     
