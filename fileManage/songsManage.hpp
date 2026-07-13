@@ -67,6 +67,8 @@ public:
 
     bool reverseMyLike(int64_t id);
 
+    std::optional<std::string> getImageHashBySongId(int64_t songId);
+
     SongsManage(const SongsManage&) = delete;
     SongsManage& operator=(const SongsManage&) = delete;
     SongsManage(SongsManage&&) = delete;

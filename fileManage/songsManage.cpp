@@ -47,23 +47,16 @@ SongsManage::SongsManage()
     }
 }
 
-// ============================================================
-// isSongExists
-// ============================================================
 bool SongsManage::isSongExists(const std::string& filePath)
 {
     if (!songDb) return false;
     SQLite::Statement query(*songDb, "SELECT COUNT(*) FROM songs WHERE filePath = :filePath");
+    // COUNT(*) 是 SQL 中的一个聚合函数，它的作用是统计满足条件的记录总数（行数）
     query.bind(":filePath", filePath);
     query.executeStep();
-    //执行查询：数据库跑去找数据。
     return query.getColumn(0).getInt() > 0;
-    //COUNT(*) 没有列名，所以仍然用数字索引（从 0 开始）
 }
 
-// ============================================================
-// insertSong
-// ============================================================
 bool SongsManage::insertSong(const SongInfo& info)
 {
     if(!songDb) return false;
@@ -431,11 +424,43 @@ bool SongsManage::reverseMyLike(int64_t id){
         sql.bind(":songId",id);
 
         int rowAffected = sql.exec();//（数据变更语句）：返回受影响的行数
-        if(rowAffected > 0) return true;
+        if(rowAffected > 0){
+            return true;
+        }else{
+            return false;
+        }
     }catch(...){
         auto logger{spdlog::get(LogSchedulerID)};
         logger->critical("[我喜欢]状态更新失败，请重试");
         return false;
+    }
+}
+
+std::optional<std::string> SongsManage::getImageHashBySongId(int64_t songId){
+
+    
+    try{
+        SQLite::Statement songSql(
+            *songDb,
+            "SELECT coverId FROM songs WHERE songId =:songId"
+        );
+        songSql.bind(":songId",songId);
+        int64_t coverId{0};
+        if(songSql.executeStep()){
+            coverId = songSql.getColumn("coverId").getInt64();
+        }
+
+        SQLite::Statement imageSql{
+            *songImageDb,
+            "SELECT hash FROM songImage WHERE coverId =:coverId"
+        };
+        imageSql.bind(":coverId",coverId);
+        if(imageSql.executeStep()){
+            return imageSql.getColumn("hash").getString();
+        }
+        return std::nullopt;
+    }catch(...){
+        return std::nullopt;
     }
 }
 
