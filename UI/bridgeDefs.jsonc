@@ -31,7 +31,8 @@
     "fullSuccess":"fullSuccess"//事件完全通过，并且需要弹窗报告成功
   },
   "other":{
-    "numRows4SinglePage":15
+    "traditionalPageRows":20,//传统分页每一页的页数
+    "scrollPageRows":50//滚动分页每一页的页数
   },
 
   "songInfo":{

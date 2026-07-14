@@ -254,14 +254,7 @@ void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::canSelectMultipleItems, // 支持多选
         [chooser, onFileSelected](const juce::FileChooser&)
             {
-                //回调函数的传参只有在回调实际触发时才能知道
-                // std::function：这是一个通用的函数包装器，意味着你可以传入任何可调用的对象：
-                // 普通函数、函数指针、Lambda 表达式、std::bind 生成的对象等。
 
-                // void：这个回调函数没有返回值。
-
-                // const FileChooser &：回调被触发时，系统会把启动这次操作的 FileChooser 对象的常量引用传进来。
-                // 获取选中的所有文件
                 juce::Array<juce::File> selected = chooser->getResults();
 
                 // 调用回调，传递文件列表

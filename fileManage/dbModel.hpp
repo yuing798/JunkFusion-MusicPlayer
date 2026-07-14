@@ -58,6 +58,8 @@ struct SongInfo
     std::optional<std::string> comment;     // 备注(用户写进去的)
     int hadPlayedNum{0};//已经播放了多少次
 
+    std::string hash;//图片的哈希值，后端自用，因为要进行二进制处理后才能发给前端
+
     //6.排序字段
     int nameId{0};//优先级排序之后的位置，逻辑上是不会变的
 
@@ -130,12 +132,6 @@ struct SongInfo
 // │   ├── original.jpg      # 原始提取的图片（作为母本）
 // │   ├── 50.jpg            # 50x50 缩略图（懒生成）
 // │   └── 240.jpg           # 240x240 缩略图（懒生成）
-struct songImageInfo{
-    std::string hash;//原始图片的哈希值,图片路径是使用哈希值拼接出来的，所以不需要单独设置，用哈希值作为唯一主键
-    std::string lastModifiedTime;       // 文件最后一次修改时间
-    int width{0};
-    int height{0};
-};
 
 // songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
 inline const char* createSongsTableSQL = R"(
@@ -185,7 +181,8 @@ inline const char* createSongImageTableSQL = R"(
         hash TEXT UNIQUE NOT NULL,
         width INTEGER DEFAULT 0,
         height INTEGER DEFAULT 0,
-        lastModifiedTime INTEGER NOT NULL
+        lastModifiedTime INTEGER NOT NULL，
+        fileSize           INTEGER NOT NULL,
     )
     
 )";
