@@ -64,3 +64,24 @@ juce::Image ImageManager::clipMode(juce::Image& img,int targetWidth,int targetHe
     //裁剪并返回最终结果
     return scaledImage.getClippedImage(cropArea);
 }
+std::vector<std::byte> ImageManager::jpg2ByteVector(juce::Image& img){
+
+    juce::JPEGImageFormat jpegFormat;
+
+    // 可选：设置 JPEG 质量（0-100，默认 90）
+    // jpegFormat.setQuality(85); 
+
+    juce::MemoryOutputStream memoryStream;
+
+    if (jpegFormat.writeImageToStream(img, memoryStream))
+    {
+        const void* data = memoryStream.getData();
+        size_t size = memoryStream.getDataSize();
+
+        const std::byte* byteData = static_cast<const std::byte*>(data);
+        std::vector<std::byte> vec(byteData, byteData + size);
+        return vec;
+    }else{
+        return {};
+    }
+}
