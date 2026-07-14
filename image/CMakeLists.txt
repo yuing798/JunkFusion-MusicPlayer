@@ -3,3 +3,6 @@ juce_add_binary_data(
     SOURCES
         JunkFusion.png
 )
+target_sources(JunkFusion PRIVATE
+    ImageManager.cpp
+)

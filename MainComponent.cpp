@@ -39,7 +39,9 @@ MainComponent::MainComponent(){
                 if(tokens[2] == "image"){//歌曲的信息,URL格式为/songId/8175019024(id号)/image/imageType
                     std::string hash{dbManager::getInstance().getSongsManager().getImageHashBySongId(songId)};
                     if(tokens[3] == "50x50"){
-                        
+                        if(hash.empty()){
+                            
+                        }
                     }
                 }
             }
