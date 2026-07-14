@@ -1,6 +1,7 @@
 #include "otherUtils.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
+#include "juce_graphics/juce_graphics.h"
 #include <SQLiteCpp/Exception.h>
 #include <cstddef>
 #include <iostream>
@@ -204,10 +205,11 @@ std::vector<std::byte> loadFile2ByteVector (const juce::File& file)
     return buffer;
 }
 
-juce::Image ImageRescale::clipMode(juce::Image& source,int targetWidth,int targetHeight){
+juce::Image ImageRescale::clipMode(juce::File& source,int targetWidth,int targetHeight){
     // 防止空图片或目标尺寸为0
-    const int srcW = source.getWidth();
-    const int srcH = source.getHeight();
+    juce::Image image{juce::ImageCache::getFromFile(source)};
+    const int srcW = image.getWidth();
+    const int srcH = image.getHeight();
     if (srcW == 0 || srcH == 0 || targetWidth == 0 || targetHeight == 0) {
         return {};
     }
@@ -223,7 +225,7 @@ juce::Image ImageRescale::clipMode(juce::Image& source,int targetWidth,int targe
     const int scaledH = static_cast<int>(std::ceil(srcH * scale));
 
     //执行高质量缩放
-    juce::Image scaledImage = source.rescaled(scaledW, scaledH, juce::Graphics::highResamplingQuality);
+    juce::Image scaledImage = image.rescaled(scaledW, scaledH, juce::Graphics::highResamplingQuality);
 
     //计算居中的裁剪起始点
     const int cropX = (scaledW - targetWidth) / 2;

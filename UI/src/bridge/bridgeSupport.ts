@@ -35,11 +35,3 @@ import { showErrorWindow } from "@/components/other/errorWindow.vue"
     throw error
   }
 }
-
-export function getBackendAddress(path: string,isDev:boolean = true): string {
-  if(isDev){
-    return `https://juce.backend/${path}`;
-  }else{
-    return path;
-  }
-}

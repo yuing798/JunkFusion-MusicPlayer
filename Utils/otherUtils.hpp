@@ -54,5 +54,5 @@ void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>
 
 struct ImageRescale{//放置所有的图片放缩策略，里面全部为静态函数
 
-    static juce::Image clipMode(juce::Image& src,int targetWidth = 50,int targetHeight = 50);
+    static juce::Image clipMode(juce::File& source,int targetWidth = 50,int targetHeight = 50);
 };

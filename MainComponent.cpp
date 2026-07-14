@@ -3,17 +3,19 @@
 #include "Utils/otherUtils.hpp"
 #include "constants.h"
 #include "songsManage.hpp"
-#include "fileManage/fileUtils.hpp"
-#include "songsModel.hpp"
+#include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "juce_gui_extra/juce_gui_extra.h"
 #include "serial.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
+#include "fileManage/dbManager.hpp"
 
 //==============================================================================
 MainComponent::MainComponent(){
@@ -24,23 +26,21 @@ MainComponent::MainComponent(){
         .withBackend(juce::WebBrowserComponent::Options::Backend::webview2)
         .withNativeIntegrationEnabled(true)
         .withWinWebView2Options(juce::WebBrowserComponent::Options::WinWebView2{}
-            .withUserDataFolder(LocalDirId.getChildFile("UICache"))
+            .withUserDataFolder(LocalDirId)
         )//windows需要有专门的存储路径，放置应用web缓存
         
         //下面放置的是后端需要直接和前端交互的函数
         .withResourceProvider([](const juce::String& path) -> std::optional<juce::WebBrowserComponent::Resource> {
 
-            if(path.startsWith("songImage/")){//传输歌曲封面到专辑和歌单页
-                juce::String hash = path.substring(11);
-                juce::String fileName{hash + ".jpg"};
-                juce::File imageFile{imageDirId.getChildFile(fileName)};
-                if (imageFile.existsAsFile()) {
-                    std::vector<std::byte> buffer{loadFile2ByteVector(imageFile)};
-
-                    return juce::WebBrowserComponent::Resource{
-                        std::move(buffer),
-                        "image/jepg"
-                    };
+            juce::StringArray tokens;
+            tokens.addTokens(path,"/","");//将原始URL按照斜杠进行切分
+            if(tokens[0] == "songId"){
+                int64_t songId{tokens[1].getLargeIntValue()};
+                if(tokens[2] == "image"){//歌曲的信息,URL格式为/songId/8175019024(id号)/image/imageType
+                    std::string hash{dbManager::getInstance().getSongsManager().getImageHashBySongId(songId)};
+                    if(tokens[3] == "50x50"){
+                        
+                    }
                 }
             }
             return std::nullopt;
@@ -69,16 +69,10 @@ MainComponent::MainComponent(){
                         const int numAll{files.size()};
                         int num4ErrorFile{0};
                         for(auto& file:files){
-                            auto song{getSongData(file)};
-                            if(!song){
+                            bool isSuccess = dbManager::getInstance().getSongsManager().insertSong(file);
+                            if(!isSuccess){
                                 errorStr += (file.getFileName()) + utf8("\n"); 
                                 num4ErrorFile++;
-                            }
-                            if(!song->filePath.empty()){
-                                if(!SongsManage::getInstance().insertSong(*song)){
-                                    errorStr += (file.getFileName()) + utf8("\n"); 
-                                    num4ErrorFile++;
-                                }
                             }
                         }
                         if(errorStr.isNotEmpty()){

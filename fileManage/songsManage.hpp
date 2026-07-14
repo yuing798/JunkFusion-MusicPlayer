@@ -28,19 +28,7 @@ public:
     explicit SongsManage(SQLite::Database& d);
     ~SongsManage();
 
-    /**
-     * 插入一首歌，带事务保护。
-     *
-     * 防重复策略：
-     *   1. 数据库层：filePath 有 UNIQUE 约束
-     *   2. 代码层：插入前先查询 filePath，比较 fileSize 和 lastModifiedTime
-     *      - 完全相同 → 视为重复，跳过插入
-     *      - 不同 → 文件已更新，更新旧记录
-     *      - 不存在 → 正常插入
-     *
-     * @param info     歌曲信息
-     */
-    bool insertSong(juce::File& path);
+    bool insertSong(const juce::File& path);
 
     /** 获取歌曲总数 */
     std::optional<int> getTotalSongCount();
@@ -54,6 +42,7 @@ public:
     std::vector<SongInfo> getSongPage(int page, bool ascending, SortMode mode);
 
     bool reverseMyLike(int64_t id);
+    std::string getImageHashBySongId(int64_t id);
 
 };
 

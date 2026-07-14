@@ -42,7 +42,7 @@ SongsManage::SongsManage(SQLite::Database& d)
     }
 }
 
-bool SongsManage::insertSong(juce::File& path)
+bool SongsManage::insertSong(const juce::File& path)
 {
     
     SongInfo info{};
@@ -273,14 +273,11 @@ bool SongsManage::insertSong(juce::File& path)
     {
         // 事务 RAII 保证：析构时检测到未 commit → 自动 ROLLBACK
         // 数据库恢复到"这首歌完全没存在过"的干净状态
-        auto logger = spdlog::get(LogAllID);
         if(logger) logger->error("data update error",e.what());
         return false;
     }
 
     //这里进行封面提取
-    std::string hash;
-    std::string lastModifiedTime;
     AVPacket coverPacket;
     coverPacket.data = nullptr;
     coverPacket.size = 0;
@@ -297,8 +294,8 @@ bool SongsManage::insertSong(juce::File& path)
 
     if(coverPacket.data && coverPacket.size > 0){
         do{
-            std::string hashHex = sha1(coverPacket.data,coverPacket.size);
-            juce::File hashImageDir{songImageDirId.getChildFile(hashHex)};//直接用哈希值作为文件名
+            std::string hash = sha1(coverPacket.data,coverPacket.size);
+            juce::File hashImageDir{songImageDirId.getChildFile(hash)};//直接用哈希值作为文件名
 
             if(hashImageDir.exists()){
                 break;
@@ -319,11 +316,12 @@ bool SongsManage::insertSong(juce::File& path)
                 //将图片信息插入数据库
                 SQLite::Statement insertImageSql(
                     db,
-                    "INSERT INTO songImage (hash, lastModifiedTime) "
-                    "VALUES (:hash, :lastModifiedTime)" 
+                    "INSERT INTO songImage (hash, lastModifiedTime, fileSize) "
+                    "VALUES (:hash, :lastModifiedTime, :fileSize)" 
                 );
-                insertImageSql.bind(":hash",hashHex);
+                insertImageSql.bind(":hash",hash);
                 insertImageSql.bind(":lastModifiedTime",info.lastModifiedTime);
+                insertImageSql.bind(":fileSize",originalFile.getSize());
                 insertImageSql.exec();
 
                 SQLite::Statement updateSongs4coverId(
@@ -362,20 +360,19 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
         genre, trackNumber, discNumber, year, composer, 
         bitRate, bitDepth, sampleRate, numChannels, codecName, 
         isMusic, aiGenre, bpm, key, aiProcessed, 
-        isMyLike, comment, hadPlayedNum, nameId , songImage.hash AS coverHash
+        isMyLike, comment, hadPlayedNum, nameId 
         FROM songs 
-        LEFT JOIN songImage ON coverId = songImage.id 
         ORDER BY 
     )";//按照顺序查询的sql语句，后面接上排序方式;
     switch(mode){
         case SongsManage::SortMode::ByAddTime://添加进应用中的时间和songId一样都是单调递增的
-            sql += "songId";
+            sql += " songId ";
             break;
         case SongsManage::SortMode::ByName:
-            sql += "nameId";
+            sql += " nameId ";
             break;
         case SongsManage::SortMode::ByPlayTimes:
-            sql += "hadPlayedNum";
+            sql += " hadPlayedNum " ;
             break;
     }
     if (ascending)
@@ -444,7 +441,6 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
         info.comment          = optStrCol("comment");
         info.hadPlayedNum     = query.getColumn("hadPlayedNum").getInt();
         info.nameId           = query.getColumn("nameId").getInt();
-        info.hash = query.getColumn("coverHash").getString();
 
         result.push_back(std::move(info));
     }
@@ -515,6 +511,18 @@ bool SongsManage::reverseMyLike(int64_t id){
         logger->error("[我喜欢]状态更新失败，请重试");
         return false;
     }
+}
+
+std::string SongsManage::getImageHashBySongId(int64_t id){
+    SQLite::Statement sql(
+        db,
+        "SELECT songImage.hash AS coverHash FROM songs LEFT JOIN songImage ON songs.coverId = songImage.id WHERE songs.songId = :id"
+    );
+    sql.bind(":id",id);
+    if(sql.executeStep()){
+        return sql.getColumn("coverHash").getString();
+    }
+    return "";
 }
 
 SongsManage::~SongsManage(){

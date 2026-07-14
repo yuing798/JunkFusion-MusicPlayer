@@ -23,7 +23,7 @@ for(const key of Object.keys(defs)){
   tsLines.push(`  name : '${key}' as const,`);
   const obj = defs[key];
   for (const name of Object.keys(obj)) {
-    if(obj[name] === ''){
+    if(obj[name] === ""){
       tsLines.push(`  ${name}: '${name}' as const,`);//空的话直接把名称赋给value
     }else{
       tsLines.push(`  ${name}: '${obj[name]}' as const,`);

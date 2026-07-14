@@ -37,8 +37,8 @@ juce_add_gui_app(JunkFusion
     VERSION ${PROJECT_VERSION}
     COMPANY_NAME "YusekX"
     PRODUCT_NAME "JunkFusion"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/jf2-Photoroom.png"
-    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/jf2-Photoroom.png"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/image/JunkFusion.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/JunkFusion.png"
     NEEDS_WEB_BROWSER TRUE
     NEEDS_WEBVIEW2 TRUE
 )
@@ -56,6 +56,7 @@ target_sources(JunkFusion
 )
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
+add_subdirectory(image)
 
 # add_custom_command 是 CMake 中用来在构建过程中插入自定义操作的核心指令
 add_custom_command(
@@ -96,7 +97,7 @@ target_link_directories(JunkFusion
 target_link_libraries(JunkFusion
     PRIVATE
         # --- 项目内部库 ---
-        # JunkFusionBinaryData
+        JunkFusionBinaryData
 
         # --- JUCE 官方音频与 UI 模块 ---
         juce::juce_audio_utils       # 包含底层声卡设备管理
@@ -104,7 +105,6 @@ target_link_libraries(JunkFusion
         juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
         juce::juce_gui_extra         # 包含高级 UI 组件
         juce::juce_gui_basics#基础UI组件
-        # juce::juce_animation#动画效果模块
         
         # 第三方库
         ${FFMPEG_LIBRARIES}#解码层和重采样层
