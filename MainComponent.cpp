@@ -2,6 +2,7 @@
 #include "Utils/BridgeNames.h"
 #include "Utils/otherUtils.hpp"
 #include "constants.h"
+#include "juce_graphics/juce_graphics.h"
 #include "songsManage.hpp"
 #include "dbModel.hpp"
 #include "juce_core/juce_core.h"
@@ -16,6 +17,7 @@
 #include <string>
 #include <vector>
 #include "fileManage/dbManager.hpp"
+#include "image/ImageManager.hpp"
 
 //==============================================================================
 MainComponent::MainComponent(){
@@ -30,7 +32,7 @@ MainComponent::MainComponent(){
         )//windows需要有专门的存储路径，放置应用web缓存
         
         //下面放置的是后端需要直接和前端交互的函数
-        .withResourceProvider([](const juce::String& path) -> std::optional<juce::WebBrowserComponent::Resource> {
+        .withResourceProvider([this](const juce::String& path) -> std::optional<juce::WebBrowserComponent::Resource> {
 
             juce::StringArray tokens;
             tokens.addTokens(path,"/","");//将原始URL按照斜杠进行切分
@@ -38,9 +40,22 @@ MainComponent::MainComponent(){
                 int64_t songId{tokens[1].getLargeIntValue()};
                 if(tokens[2] == "image"){//歌曲的信息,URL格式为/songId/8175019024(id号)/image/imageType
                     std::string hash{dbManager::getInstance().getSongsManager().getImageHashBySongId(songId)};
+                    juce::File songImageDir{songImageDirId.getChildFile(hash)};
                     if(tokens[3] == "50x50"){
                         if(hash.empty()){
-                            
+                            return juce::WebBrowserComponent::Resource(
+                                ImageManager::png2ByteVector(imageHolder50x50),
+                                "image/png"
+                            );
+                        }else{
+                            juce::Image originalImage{juce::ImageCache::getFromFile(
+                                songImageDir.getChildFile("original.jpg")
+                            )};
+                            juce::File image50x50{songImageDir.getChildFile("50x50.jpg")};
+                            if(!image50x50.existsAsFile()){
+                                juce::Image songImage50x50 = ImageManager::clipMode(originalImage,50,50);
+                            }
+                            // juce::Image songImage50x50 = ImageManager::clipMode(originalImage);
                         }
                     }
                 }

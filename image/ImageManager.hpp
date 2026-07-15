@@ -1,24 +1,16 @@
 #include "BinaryData.h"
 #include "constants.h"
+#include "juce_core/juce_core.h"
 #include "juce_graphics/juce_graphics.h"
 #include <cstddef>
 #include <vector>
-class ImageManager {
+namespace ImageManager {
     
-public:
+    //将png加载为byteVector,参数二：是否存储图片，图片路径为什么
+    std::vector<std::byte> png2ByteVector(juce::Image&,const juce::File& path = juce::File{});
 
-    juce::Image originalIcon;      // 原始尺寸
-    juce::Image icon50;            // 缩放后的 50x50
-
-    ImageManager();
-    void loadFromBinaryData();//将应用级图片注册到内存中
-    std::vector<std::byte> png2ByteVector(juce::Image&);//将png加载为byteVector
-    std::vector<std::byte> jpg2ByteVector(juce::Image&);//将jpg加载为byteVector
+    //将jpg加载为byteVector,默认Q值为85,参数三：是否存储图片
+    std::vector<std::byte> jpg2ByteVector(juce::Image& , int Q = 85,const juce::File& path = juce::File{});
     juce::Image clipMode(juce::Image& img,int targetWidth = 50,int targetHeight = 50);//裁剪图片
 
-    static ImageManager& getInstance(){
-        static ImageManager instance;
-        return instance;
-    }
-    DONT_COPY_AND_MOVE(ImageManager)
 };
