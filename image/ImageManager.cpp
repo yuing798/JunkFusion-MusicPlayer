@@ -3,23 +3,10 @@
 #include "juce_core/juce_core.h"
 #include <spdlog/spdlog.h>
 
-std::vector<std::byte> ImageManager::png2ByteVector(juce::Image& img,const juce::File& path){
+std::vector<std::byte> ImageManager::png2MemoryAndFile(juce::Image& img,const juce::File& path){
 
     // 1. 创建 PNG 编码器
     juce::PNGImageFormat pngFormat;
-
-    if(path.getFullPathName().isNotEmpty()){
-        juce::FileOutputStream fileStream(path);
-        if(fileStream.openedOk()){
-            if(!pngFormat.writeImageToStream(img,fileStream)){
-                auto logger = spdlog::get(LogUiID);
-                logger->error("error to write image into file {}",path.getFullPathName().toStdString());
-            }
-        }else{
-            auto logger = spdlog::get(LogUiID);
-            logger->error("error to open file {}",path.getFullPathName().toStdString());
-        }
-    }
 
     // 2. 创建内存输出流，用于接收编码后的数据
     juce::MemoryOutputStream memoryStream;
@@ -30,6 +17,17 @@ std::vector<std::byte> ImageManager::png2ByteVector(juce::Image& img,const juce:
         // 4. 获取编码后的数据
         const void* data = memoryStream.getData();
         size_t size = memoryStream.getDataSize();
+
+        if(path.getFullPathName().isNotEmpty() && !path.existsAsFile()){
+            juce::FileOutputStream fileStream(path);//如果文件本身不存在，juce::FileOutputStream 会自动创建该文件
+            if(fileStream.openedOk()){
+                fileStream.write(data,size);
+                fileStream.flush();
+            }else{
+                auto logger = spdlog::get(LogUiID);
+                logger->error("error to write image into file {}",path.getFullPathName().toStdString());
+            }
+        }
 
         // 5. 转换为 std::vector<std::byte>
         const std::byte* byteData = static_cast<const std::byte*>(data);
@@ -74,7 +72,7 @@ juce::Image ImageManager::clipMode(juce::Image& img,int targetWidth,int targetHe
     //裁剪并返回最终结果
     return scaledImage.getClippedImage(cropArea);
 }
-std::vector<std::byte> ImageManager::jpg2ByteVector(juce::Image& img, int Q,const juce::File& path){
+std::vector<std::byte> ImageManager::jpg2MemoryAndFile(juce::Image& img, int Q,const juce::File& path){
 
     juce::JPEGImageFormat jpegFormat;
 
@@ -83,31 +81,29 @@ std::vector<std::byte> ImageManager::jpg2ByteVector(juce::Image& img, int Q,cons
 
     juce::MemoryOutputStream memoryStream;
 
-    if(path.getFullPathName().isNotEmpty()){
-        juce::FileOutputStream fileStream(path);
-        if(fileStream.openedOk()){
-            if(!jpegFormat.writeImageToStream(img,fileStream)){
-                auto logger = spdlog::get(LogUiID);
-                logger->error("error to write image into file {}",path.getFullPathName().toStdString());
-            }
-        }else{
-            auto logger = spdlog::get(LogUiID);
-            logger->error("error to open file {}",path.getFullPathName().toStdString());
-        }
-    }
-
     if (jpegFormat.writeImageToStream(img, memoryStream))
     {
         
         const void* data = memoryStream.getData();
         size_t size = memoryStream.getDataSize();
 
+        if(path.getFullPathName().isNotEmpty() && !path.existsAsFile()){
+            juce::FileOutputStream fileStream(path);//如果文件本身不存在，juce::FileOutputStream 会自动创建该文件
+            if(fileStream.openedOk()){
+                fileStream.write(data,size);
+                fileStream.flush();
+            }else{
+                auto logger = spdlog::get(LogUiID);
+                logger->error("error to write image into file {}",path.getFullPathName().toStdString());
+            }
+        }
+
         const std::byte* byteData = static_cast<const std::byte*>(data);
         std::vector<std::byte> vec(byteData, byteData + size);
         return vec;
     }else{
         auto logger = spdlog::get(LogUiID);
-        logger->error("error to write img into stream");
+        logger->error("error to write img into memory stream");
         return {};
     }
 }
