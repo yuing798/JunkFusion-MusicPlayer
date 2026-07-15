@@ -167,22 +167,10 @@ inline const char* createSongsTableSQL = R"(
         comment            TEXT,
         hadPlayedNum       INTEGER DEFAULT 0,
         nameId            INTEGER DEFAULT 0,
-        coverId INTEGER,
+        hash TEXT,
         FOREIGN KEY (coverId) REFERENCES songImage(id) ON DELETE SET NULL
     )
 )";
 inline const char* createNameIdIndexSQL = R"(
     CREATE INDEX IF NOT EXISTS idx_songs_nameId ON songs (nameId)
-)";
-
-inline const char* createSongImageTableSQL = R"(
-    CREATE TABLE IF NOT EXISTS songImage(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        hash TEXT UNIQUE NOT NULL,
-        width INTEGER DEFAULT 0,
-        height INTEGER DEFAULT 0,
-        lastModifiedTime INTEGER NOT NULL，
-        fileSize           INTEGER NOT NULL,
-    )
-    
 )";

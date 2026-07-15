@@ -32,7 +32,6 @@ SongsManage::SongsManage(SQLite::Database& d)
     {
         db.exec(createSongsTableSQL);
         db.exec(createNameIdIndexSQL);
-        db.exec(createSongImageTableSQL);
     }
     catch (const std::exception& e)
     {
@@ -160,8 +159,49 @@ bool SongsManage::insertSong(const juce::File& path)
     if ((pEntry = av_dict_get(pTags, "composer",     nullptr, 0)))
         info.composer = pEntry->value;
 
+    //这里进行封面提取
+    AVPacket coverPacket;
+    std::string hash;
+    coverPacket.data = nullptr;
+    coverPacket.size = 0;
+    SHA1 sha1;
+    for(size_t i=0; i<inputContext->nb_streams; i++){
+        auto* stream{inputContext->streams[i]};
+        auto type{stream->codecpar->codec_type};
+        if(type == AVMEDIA_TYPE_ATTACHMENT || (type == AVMEDIA_TYPE_VIDEO && (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))){
+            coverPacket = stream->attached_pic;
+            break;
+        }
+
+    }//这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
+
+    if(coverPacket.data && coverPacket.size > 0){
+        do{
+            hash = sha1(coverPacket.data,coverPacket.size);
+
+            juce::File hashImageDir{songImageDirId.getChildFile(hash)};
+            //直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
+
+            if(hashImageDir.exists()){
+                break;
+            }else{
+                hashImageDir.createDirectory();
+            }//如果这个目录已经存在，直接退出，避免保存两个相同图片
+
+            juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
+
+            juce::FileOutputStream outputStream(originalFile);
+            if(outputStream.openedOk()){
+                outputStream.write(coverPacket.data, coverPacket.size);
+                outputStream.flush();
+            }
+
+        }while(0);
+    }
+    avformat_close_input(&inputContext);
+
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
-    auto bindSongFields = [&info](SQLite::Statement& stmt) {
+    auto bindSongFields = [&info,hash](SQLite::Statement& stmt) {
         // ── 必选字段 ──
         stmt.bind(":filePath",         info.filePath);
         stmt.bind(":fileSize",         static_cast<int64_t>(info.fileSize));
@@ -195,6 +235,7 @@ bool SongsManage::insertSong(const juce::File& path)
         bindOptInt(":year",        info.year);
         bindOptStr(":composer",    info.composer);
         bindOptStr(":codecName",   info.codecName);
+        bindOptStr(":hash", hash);
     };
 
     int64_t songId{0};
@@ -237,7 +278,7 @@ bool SongsManage::insertSong(const juce::File& path)
                 "lastModifiedTime = :lastModifiedTime, isMultiStreamFile = :isMultiStreamFile, "
                 "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
                 "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = :year, composer = :composer, "
-                "bitRate = :bitRate, bitDepth = :bitDepth, "
+                "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
                 "sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
                 "WHERE songId = :songId"
             );
@@ -245,7 +286,6 @@ bool SongsManage::insertSong(const juce::File& path)
             bindSongFields(updateSong);
             updateSong.bind(":songId", existingId);
             updateSong.exec();
-            songId = existingId;
 
         }
         else
@@ -254,11 +294,10 @@ bool SongsManage::insertSong(const juce::File& path)
             SQLite::Statement insertSong(db,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                 "isMultiStreamFile, duration, title, artist, album, albumArtist, "
-                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName) "
+                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName, hash) "
                 "VALUES (:filePath, :fileSize, :lastModifiedTime, :isMultiStreamFile, :duration, :title, :artist, :album, :albumArtist, "
-                ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName)"
+                ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName, :hash)"
             );
-            songId = db.getLastInsertRowid();
 
             bindSongFields(insertSong);
             insertSong.exec();
@@ -277,67 +316,6 @@ bool SongsManage::insertSong(const juce::File& path)
         return false;
     }
 
-    //这里进行封面提取
-    AVPacket coverPacket;
-    coverPacket.data = nullptr;
-    coverPacket.size = 0;
-    SHA1 sha1;
-    for(size_t i=0; i<inputContext->nb_streams; i++){
-        auto* stream{inputContext->streams[i]};
-        auto type{stream->codecpar->codec_type};
-        if(type == AVMEDIA_TYPE_ATTACHMENT || (type == AVMEDIA_TYPE_VIDEO && (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))){
-            coverPacket = stream->attached_pic;
-            break;
-        }
-
-    }//这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
-
-    if(coverPacket.data && coverPacket.size > 0){
-        do{
-            std::string hash = sha1(coverPacket.data,coverPacket.size);
-            juce::File hashImageDir{songImageDirId.getChildFile(hash)};//直接用哈希值作为文件名
-
-            if(hashImageDir.exists()){
-                break;
-            }else{
-                hashImageDir.createDirectory();
-            }//如果这个目录已经存在，直接退出，避免保存两个相同图片
-
-            juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
-            originalFile.create();//上面已经判断过是否存在了，不要再判断一次
-
-            juce::FileOutputStream outputStream(originalFile);
-            if(outputStream.openedOk()){
-                outputStream.write(coverPacket.data, coverPacket.size);
-                outputStream.flush();
-            }
-
-            try{
-                //将图片信息插入数据库
-                SQLite::Statement insertImageSql(
-                    db,
-                    "INSERT INTO songImage (hash, lastModifiedTime, fileSize) "
-                    "VALUES (:hash, :lastModifiedTime, :fileSize)" 
-                );
-                insertImageSql.bind(":hash",hash);
-                insertImageSql.bind(":lastModifiedTime",info.lastModifiedTime);
-                insertImageSql.bind(":fileSize",originalFile.getSize());
-                insertImageSql.exec();
-
-                SQLite::Statement updateSongs4coverId(
-                    db,
-                    "UPDATE songs SET coverId =:coverId WHERE songId =:songId"
-                );
-                updateSongs4coverId.bind(":songId",songId);
-                updateSongs4coverId.bind(":coverId",db.getLastInsertRowid());
-                updateSongs4coverId.exec();
-            }catch(...){
-                return false;
-            }
-
-        }while(0);
-    }
-    avformat_close_input(&inputContext);
     return true;
 }
 

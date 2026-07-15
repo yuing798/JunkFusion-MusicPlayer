@@ -49,12 +49,17 @@ MainComponent::MainComponent(){
                                 "image/png"
                             );//没有图片的话返回占位图片
                         }else{
-                            juce::Image originalImage{juce::ImageCache::getFromFile(
-                                songImageDir.getChildFile("original.jpg")
-                            )};
+                            
                             juce::File image50x50{songImageDir.getChildFile("50x50.jpg")};
-                            if(!image50x50.existsAsFile()){
+                            if(!image50x50.existsAsFile()){//说明是第一次加载50x50图片，没有加入缓存
+                                juce::Image originalImage{juce::ImageCache::getFromFile(
+                                    songImageDir.getChildFile("original.jpg")
+                                )};//得到原始图片
+
+                                //裁剪图片
                                 juce::Image songImage50x50 = ImageManager::clipMode(originalImage,50,50);
+
+                                //加载到磁盘和内存中
                                 auto vec = ImageManager::jpg2MemoryAndFile(songImage50x50,70,image50x50);
                                 return juce::WebBrowserComponent::Resource(vec,"image/jpeg");
                             }else{
@@ -74,6 +79,7 @@ MainComponent::MainComponent(){
             #endif
         )
         .withOptionsFrom(mSongsManagerBuilder)
+
         //withNativeFunction这个逼函数默认运行在Message Thread
         .withNativeFunction(B_inputFiles::name,//导入文件函数,导入文件函数因为需要绑定模态窗所以放在MainComponent中比较合适
             [this](
@@ -110,7 +116,6 @@ MainComponent::MainComponent(){
                                 + utf8("首:\n")
                                 + errorStr 
                             );
-                            //这个不使用__error的原因是__error报错是全部推倒重来
                             complete(juce::var(obj));
                             return;
                         }else{
