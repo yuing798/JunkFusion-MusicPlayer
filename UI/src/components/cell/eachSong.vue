@@ -27,12 +27,6 @@ const props = defineProps<{
 /** 从 store 中按 songId 查找 SongInfo，找不到返回 undefined */
 const songInfo = computed(() => songStore.getSongById(props.songId));
 
-/** 多流音频悬停提示文本 */
-const MULTI_STREAM_TOOLTIP_TEXT =
-  '该文件包含多路音频流（如多语言、多声道）。\
-  当前播放器将自动为您选择质量最佳的默认音轨。\
-  如需切换其他音轨，请使用专业音频工具（如 MKVToolNix）自行调整文件封装顺序';
-
 // ════════════════════════════════════════════════════════════════
 // 歌曲元数据（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
 // ════════════════════════════════════════════════════════════════
@@ -132,13 +126,10 @@ function handleOrdinalClick(): void {
          第 2 列：歌名 + 艺术家 + 多流徽章 (flex: 1)
          垂直堆叠：上行 = 歌名 + 多流徽章，下行 = 艺术家名
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-name-artist">
+    <div class="cell-name-artist">
       <div class="name-row">
         <Tooltip :text="songInfo?.title ?? ''">
           <span class="song-name">{{ songInfo?.title ?? '' }}</span>
-        </Tooltip>
-        <Tooltip :text="MULTI_STREAM_TOOLTIP_TEXT">
-          <span v-if="songInfo?.isMultiStreamFile" class="multi-stream-badge"> 多流音频 </span>
         </Tooltip>
       </div>
       <div class="artist-row">
@@ -151,21 +142,21 @@ function handleOrdinalClick(): void {
     <!-- ═══════════════════════════════════════════════════════════
          第 3 列：专辑名称 (150px)
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-album">
+    <div class="cell-album">
       <span class="ellipsis-text">{{ songInfo?.album ?? '未知' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 4 列：AI 分类标签 (120px)
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-genre">
+    <div class="cell-genre">
       <span class="ellipsis-text">{{ songInfo?.aiGenre ?? '' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
          第 5 列：播放次数 (80px)
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-play-count">
+    <div class="cell-play-count">
       <span class="play-count-text">{{ songInfo?.hadPlayedNum ?? 0 }}</span>
     </div>
 
@@ -175,7 +166,7 @@ function handleOrdinalClick(): void {
          isMyLike=false → IconHeart（空心）
          toggle 动作直接调用 store，不 emit
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell cell-like" @click.stop="songStore.toggleMyLike(songId)">
+    <div class="cell-like" @click.stop="songStore.toggleMyLike(songId)">
       <IconHeartFilled v-if="songInfo?.isMyLike" :size="20" color="#dd6572" class="svg-icon" />
       <IconHeart v-else :size="20" class="svg-icon" />
     </div>
@@ -186,7 +177,7 @@ function handleOrdinalClick(): void {
          ═══════════════════════════════════════════════════════════ -->
     <PopupWindow :title="popupTitle">
       <template #trigger>
-        <div class="cell cell-more">
+        <div class="cell-more">
           <IconMessageCircleQuestion :size="20" class="svg-icon" />
         </div>
       </template>
@@ -227,16 +218,6 @@ function handleOrdinalClick(): void {
 
 .each-song-row:hover {
   background-color: linear-gradient(to top, var(--color-text-second), var(--color-main));
-}
-
-/* ════════════════════════════════════════════════════════════════
-   通用单元格
-   ════════════════════════════════════════════════════════════════ */
-
-.cell {
-  display: flex;
-  align-items: center;
-  overflow: hidden;
 }
 
 /* ════════════════════════════════════════════════════════════════

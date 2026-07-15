@@ -35,7 +35,6 @@ struct SongInfo
     // std::optional<std::string> imageHash;       //图片所对应的哈希值索引
 
     // ── 2. FFmpeg 解码层信息 ──
-    bool isMultiStreamFile{0};
     
     int64_t    bitRate      = 0;            // 比特率（kbps）
     int sampleRate{0};          // 采样率（Hz）ffmpeg只能读取整数采样率，
@@ -92,7 +91,6 @@ struct SongInfo
         obj->setProperty(B_songInfo::composer,    optStr(song.composer));
 
         // ── 3. FFmpeg 解码层 ──
-        obj->setProperty(B_songInfo::multiStream, song.isMultiStreamFile);
         obj->setProperty(B_songInfo::bitRate,           song.bitRate);
         obj->setProperty(B_songInfo::sr,        song.sampleRate);
         obj->setProperty(B_songInfo::numCh,       song.numChannels);

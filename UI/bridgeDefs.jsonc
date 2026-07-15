@@ -47,7 +47,6 @@
     "discNum":"discNum",
     "year":"year",
     "composer":"composer",
-    "multiStream":"multiStream",
     "bitRate":"bitRate",
     "sr":"sr",
     "numCh":"numCh",

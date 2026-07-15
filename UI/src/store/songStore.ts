@@ -49,9 +49,6 @@ export interface SongInfo {//interface指的是自定义类型
 
   imageHash?: string
 
-  /** 是否包含多路音频流（如多语言、多声道） */
-  isMultiStreamFile: boolean
-
   /** 比特率（kbps），C++ 端为 int64_t */
   bitRate: number
 

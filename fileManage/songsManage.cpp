@@ -76,18 +76,6 @@ bool SongsManage::insertSong(const juce::File& path)
         info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
     }//每条流的时长都一样
 
-    int streamCount{0};
-    info.isMultiStreamFile = 0;
-    for(size_t i = 0; i < inputContext->nb_streams; i++){
-        if(inputContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
-            streamCount++;
-            if(streamCount > 1){
-                info.isMultiStreamFile = 1;//多音频流文件
-                break;
-            }
-        }
-    }
-
     auto currentIndex{av_find_best_stream(
         inputContext, 
         AVMEDIA_TYPE_AUDIO, 
@@ -206,7 +194,6 @@ bool SongsManage::insertSong(const juce::File& path)
         stmt.bind(":filePath",         info.filePath);
         stmt.bind(":fileSize",         static_cast<int64_t>(info.fileSize));
         stmt.bind(":lastModifiedTime", info.lastModifiedTime);
-        stmt.bind(":isMultiStreamFile",info.isMultiStreamFile);
         stmt.bind(":duration",         info.duration);
         stmt.bind(":title",            info.title);
         // ── FFmpeg 必选 int 字段 ──
@@ -273,7 +260,7 @@ bool SongsManage::insertSong(const juce::File& path)
             // ── 文件已变更：更新 songs 记录 ──
             SQLite::Statement updateSong(db,
                 "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
-                "lastModifiedTime = :lastModifiedTime, isMultiStreamFile = :isMultiStreamFile, "
+                "lastModifiedTime = :lastModifiedTime, "
                 "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
                 "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = :year, composer = :composer, "
                 "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
@@ -291,9 +278,9 @@ bool SongsManage::insertSong(const juce::File& path)
             // ── 新文件：插入 songs 记录 ──
             SQLite::Statement insertSong(db,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
-                "isMultiStreamFile, duration, title, artist, album, albumArtist, "
+                "duration, title, artist, album, albumArtist, "
                 "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName, hash) "
-                "VALUES (:filePath, :fileSize, :lastModifiedTime, :isMultiStreamFile, :duration, :title, :artist, :album, :albumArtist, "
+                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, :album, :albumArtist, "
                 ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName, :hash)"
             );
 
@@ -330,7 +317,7 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
 
     std::string sql = R"(
         SELECT songId, filePath, fileSize, lastModifiedTime, 
-        isMultiStreamFile, duration, title, artist, album, albumArtist, 
+        duration, title, artist, album, albumArtist, 
         genre, trackNumber, discNumber, year, composer, 
         bitRate, bitDepth, sampleRate, numChannels, codecName, 
         isMusic, aiGenre, bpm, key, aiProcessed, 
@@ -382,7 +369,6 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
         info.filePath         = query.getColumn("filePath").getString();
         info.fileSize         = query.getColumn("fileSize").getInt64();
         info.lastModifiedTime = query.getColumn("lastModifiedTime").getString();
-        info.isMultiStreamFile = query.getColumn("isMultiStreamFile").getInt() != 0;
         info.duration         = query.getColumn("duration").getDouble();
 
         // ── 标签 ──
