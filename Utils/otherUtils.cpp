@@ -181,29 +181,29 @@ std::string ffmpegErrorOutput(int result){
     return std::string(errbuf); 
 }
 
-// std::vector<std::byte> loadFile2ByteVector (const juce::File& file)
-// {
-//     //确保文件真实存在
-//     if (!file.existsAsFile()) return {};
+std::vector<std::byte> loadFile2ByteVector (const juce::File& file)
+{
+    //确保文件真实存在
+    if (!file.existsAsFile()) return {};
 
-//     //创建 JUCE 的文件输入流
-//     auto stream = file.createInputStream();
+    //创建 JUCE 的文件输入流
+    auto stream = file.createInputStream();
     
-//     if (stream == nullptr || stream->failedToOpen())
-//         return {};
+    if (stream == nullptr || stream->failedToOpen())
+        return {};
 
-//     // 获取文件的总字节数
-//     const auto fileSize = static_cast<size_t> (stream->getTotalLength());
+    // 获取文件的总字节数
+    const auto fileSize = static_cast<size_t> (stream->getTotalLength());
     
-//     // vector 的内存空间
-//     std::vector<std::byte> buffer (fileSize);
+    // vector 的内存空间
+    std::vector<std::byte> buffer (fileSize);
 
-//     // 直接读取到 vector 的物理内存首地址中
-//     // buffer.data() 返回 std::byte*，会自动隐式转换为 stream->read 索要的 void*
-//     stream->read (buffer.data(), static_cast<int> (fileSize));
+    // 直接读取到 vector 的物理内存首地址中
+    // buffer.data() 返回 std::byte*，会自动隐式转换为 stream->read 索要的 void*
+    stream->read (buffer.data(), static_cast<int> (fileSize));
 
-//     return buffer;
-// }
+    return buffer;
+}
 
 void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)> onFileSelected,juce::Component* parentComponent)
 {

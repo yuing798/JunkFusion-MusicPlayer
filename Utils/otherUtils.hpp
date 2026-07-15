@@ -46,5 +46,7 @@ inline juce::String utf8(const char* name){
     return juce::String::fromUTF8(name);
 };
 
+std::vector<std::byte> loadFile2ByteVector (const juce::File& file);
+
 //异步打开文件选择框，支持多选，回调返回选中的文件数组
 void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>,juce::Component* parentComponent = nullptr);

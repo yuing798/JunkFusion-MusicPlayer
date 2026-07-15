@@ -41,12 +41,13 @@ MainComponent::MainComponent(){
                 if(tokens[2] == "image"){//歌曲的信息,URL格式为/songId/8175019024(id号)/image/imageType
                     std::string hash{dbManager::getInstance().getSongsManager().getImageHashBySongId(songId)};
                     juce::File songImageDir{songImageDirId.getChildFile(hash)};
+
                     if(tokens[3] == "50x50"){
                         if(hash.empty()){
                             return juce::WebBrowserComponent::Resource(
-                                ImageManager::png2ByteVector(imageHolder50x50),
+                                ImageManager::png2MemoryAndFile(imageHolder50x50),
                                 "image/png"
-                            );
+                            );//没有图片的话返回占位图片
                         }else{
                             juce::Image originalImage{juce::ImageCache::getFromFile(
                                 songImageDir.getChildFile("original.jpg")
@@ -54,8 +55,14 @@ MainComponent::MainComponent(){
                             juce::File image50x50{songImageDir.getChildFile("50x50.jpg")};
                             if(!image50x50.existsAsFile()){
                                 juce::Image songImage50x50 = ImageManager::clipMode(originalImage,50,50);
+                                auto vec = ImageManager::jpg2MemoryAndFile(songImage50x50,70,image50x50);
+                                return juce::WebBrowserComponent::Resource(vec,"image/jpeg");
+                            }else{
+                                return juce::WebBrowserComponent::Resource(
+                                    loadFile2ByteVector(image50x50),
+                                    "image/jpeg"
+                                );
                             }
-                            // juce::Image songImage50x50 = ImageManager::clipMode(originalImage);
                         }
                     }
                 }
