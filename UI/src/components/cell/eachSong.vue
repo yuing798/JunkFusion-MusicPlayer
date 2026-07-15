@@ -116,15 +116,16 @@ function handleOrdinalClick(): void {
          Paused → pause.svg ->@click.stop:进入playing状态
          ═══════════════════════════════════════════════════════════ -->
     <div class="playback-image-area" @click.stop="handleOrdinalClick">
-      <span v-if="playbackState === PlaybackState.Stopped">
-        <!-- {{ songIndex }} -->
-      </span>
+      <div v-if="playbackState === PlaybackState.Stopped">
+        <img :src="`songId/${props.songId}/image/50x50`" class="cover-img" />
+        <IconPlayerPlayFilled class="hover-play"></IconPlayerPlayFilled>
+      </div>
+
       <IconPlayerPlayFilled
         v-else-if="playbackState === PlaybackState.Playing"
-        :size="24"
-        class="svg-icon"
+        class="play-pause-icon"
       />
-      <IconPlayerPause v-else :size="24" class="svg-icon" />
+      <IconPlayerPause v-else class="play-pause-icon" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -213,17 +214,19 @@ function handleOrdinalClick(): void {
   display: grid;
   /* display: grid; 是 CSS 的网格布局（Grid Layout）属性，它把一个容器变成了"网格化"的二维布局系统——你可以像画表格一样，把子元素按行和列整齐排列 */
   grid-template-columns: 50px 1fr 150px 120px 80px 40px 40px;
-  height: 70px;
+  /* 分别为图片，歌名，专辑，AI标签，播放次数，我喜欢，更多 */
+  height: 80px;
   align-items: center;
   gap: 4px;
   padding: 10px 5px;
-  background-color: var(--color-cell);
+  background-color: linear-gradient(to top, var(--color-edge), var(--color-main));
   transition: background-color var(--ease-time) ease;
   user-select: none;
+  border-bottom: 3px solid var(--color-edge); /* 粗细 颜色 样式 */
 }
 
 .each-song-row:hover {
-  background-color: var(--color-hover);
+  background-color: linear-gradient(to top, var(--color-text-second), var(--color-main));
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -237,21 +240,49 @@ function handleOrdinalClick(): void {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   SVG 图标：不拦截鼠标事件（由父按钮处理）
-   ════════════════════════════════════════════════════════════════ */
-
-.svg-icon {
-  pointer-events: none;
-}
-
-/* ════════════════════════════════════════════════════════════════
    第 1 列：图片 / 播放状态
    ════════════════════════════════════════════════════════════════ */
 
 .playback-image-area {
   width: 50px;
   height: 50px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-img {
+  height: 100%;
+  width: 100%;
   object-fit: cover;
+  transition: filter var(--ease-time) ease;
+}
+.cover-img:hover {
+  filter: brightness(0.3);
+  /* 悬浮时图片颜色变浅 */
+}
+
+.hover-play {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-main);
+  opacity: 0;
+  transition: opacity var(--ease-time) ease;
+}
+.hover-play:hover {
+  opacity: 1;
+  /* 只有当悬浮的时候才显示播放图标 */
+}
+
+.play-pause-icon {
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-main);
 }
 
 /* ════════════════════════════════════════════════════════════════

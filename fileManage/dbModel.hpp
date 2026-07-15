@@ -58,8 +58,6 @@ struct SongInfo
     std::optional<std::string> comment;     // 备注(用户写进去的)
     int hadPlayedNum{0};//已经播放了多少次
 
-    std::string hash;//图片的哈希值，后端自用，因为要进行二进制处理后才能发给前端
-
     //6.排序字段
     int nameId{0};//优先级排序之后的位置，逻辑上是不会变的
 
@@ -112,6 +110,7 @@ struct SongInfo
         obj->setProperty(B_songInfo::isMyLike,     song.isMyLike);
         obj->setProperty(B_songInfo::comment,      optStr(song.comment));
         obj->setProperty(B_songInfo::playNum, song.hadPlayedNum);
+        //图片哈希值不用传给前端
 
         return juce::var(obj);
         //这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
@@ -167,8 +166,7 @@ inline const char* createSongsTableSQL = R"(
         comment            TEXT,
         hadPlayedNum       INTEGER DEFAULT 0,
         nameId            INTEGER DEFAULT 0,
-        hash TEXT,
-        FOREIGN KEY (coverId) REFERENCES songImage(id) ON DELETE SET NULL
+        hash TEXT
     )
 )";
 inline const char* createNameIdIndexSQL = R"(

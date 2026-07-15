@@ -238,8 +238,6 @@ bool SongsManage::insertSong(const juce::File& path)
         bindOptStr(":hash", hash);
     };
 
-    int64_t songId{0};
-
     try
     {
         // ── 第 1 道防线：代码层查询 file_path，比较 size 和 last_modified_time ──
@@ -310,8 +308,6 @@ bool SongsManage::insertSong(const juce::File& path)
     }
     catch (const SQLite::Exception& e)
     {
-        // 事务 RAII 保证：析构时检测到未 commit → 自动 ROLLBACK
-        // 数据库恢复到"这首歌完全没存在过"的干净状态
         if(logger) logger->error("data update error",e.what());
         return false;
     }

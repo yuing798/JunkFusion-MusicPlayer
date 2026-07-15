@@ -1,12 +1,12 @@
 :root,.theme-light {
     --color-main: #f0f0f0;/*主要颜色*/
-    --color-nav:#e5eff0;/*导航窗颜色*/
-    --color-hover: #d0d0d0;/*悬浮颜色*/
-    --color-cell:#c6eaf4;/*单元格的背景色*/
+    --color-nav:#e2e4e4;/*导航窗颜色*/
+    --color-hover: #c5c4c4;/*悬浮颜色*/
+    --color-cell:#f2fcff;/*单元格的背景色*/
     --color-clicked: #b0c4de;/*鼠标按下去时的颜色颜色*/
     --color-edge: #979797;/*边框的颜色*/
     --color-text-main: #222222;/*主要文本的颜色*/
-    --color-text-second: #555555;/*次级文本的颜色*/
+    --color-text-second: #555555;/*次级文本的颜色*/ 
     --color-stress:#00f2fe;/*强调色，比如现在在导航窗的哪个位置*/
     --color-super-stress:#4facfe;
     /* 超级强调(给 渐变 调用的) */
@@ -25,7 +25,7 @@
     --svg-btn-width:30px;
 }
 
-.svg-button {
+/* .svg-button {
   align-items: center;
   justify-content: center;
   width: var(--svg-btn-width); 
@@ -42,4 +42,4 @@
 
 .svg-button:hover {
   background-color: var(--color-hover);
-}
+} */
