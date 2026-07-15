@@ -1,6 +1,6 @@
-<script lang="ts">
-import { ref } from 'vue'
-
+<script setup lang="ts">
+import { ref } from 'vue';
+import { IconX } from '@tabler/icons-vue';
 // ════════════════════════════════════════════════════════════════
 // 模块级单例状态
 //
@@ -9,30 +9,26 @@ import { ref } from 'vue'
 // ════════════════════════════════════════════════════════════════
 
 /** 弹窗显示的文本内容 */
-const message = ref('')
+const message = ref('');
 
 /** 是否正在显示（驱动 CSS transition） */
-const visible = ref(false)
+const visible = ref(false);
 
 /** 隐藏定时器句柄，用于在新错误到来时重置计时 */
-let hideTimer: ReturnType<typeof setTimeout> | null = null
+let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** 从任意类型的错误中提取可显示的字符串 */
 function extractError(error: unknown): string {
   if (error instanceof Error) {
-    return error.message
+    return error.message;
   }
   if (typeof error === 'string') {
-    return error
+    return error;
   }
   if (error !== null && error !== undefined) {
-    try {
-      return JSON.stringify(error)
-    } catch {
-      return String(error)
-    }
+    return error.toString();
   }
-  return ''
+  return '';
 }
 
 /**
@@ -41,10 +37,10 @@ function extractError(error: unknown): string {
  */
 export function closeErrorWindow(): void {
   if (hideTimer !== null) {
-    clearTimeout(hideTimer)
-    hideTimer = null
+    clearTimeout(hideTimer);
+    hideTimer = null;
   }
-  visible.value = false
+  visible.value = false;
 }
 
 /**
@@ -77,34 +73,29 @@ export function closeErrorWindow(): void {
  */
 export function showErrorWindow(msg: unknown, holdTime: number = 3000): void {
   if (hideTimer !== null) {
-    clearTimeout(hideTimer)
-    hideTimer = null
+    clearTimeout(hideTimer);
+    hideTimer = null;
   } // 清理已有的定时器，防止重合
 
-  message.value = extractError(msg)
-  visible.value = true
+  message.value = extractError(msg);
+  visible.value = true;
 
   // 300ms（淡入）+ holdTime（保持）后开始淡出
   hideTimer = setTimeout(() => {
-    visible.value = false
-    hideTimer = null
-  }, 300 + holdTime)
+    visible.value = false;
+    hideTimer = null;
+  }, 300 + holdTime);
   // lambda 函数在当计时器结束时会被执行
 }
-</script>
-
-<script setup lang="ts">
-import { IconX } from '@tabler/icons-vue'
-// ── 组件本身仅负责渲染，所有状态由模块级 <script> 驱动 ──
 </script>
 
 <template>
   <Teleport to="body">
     <div class="error-popup" :class="{ visible }">
-      <div class="error-popup__content">
+      <div class="error-popup-content">
         {{ message }}
       </div>
-      <button class="error-popup__close" @click="closeErrorWindow">
+      <button class="error-popup-close" @click="closeErrorWindow">
         <IconX class="svg-button" />
       </button>
     </div>
@@ -121,51 +112,53 @@ import { IconX } from '@tabler/icons-vue'
      - 然后               opacity 1 → 0（淡出，300ms）
    ════════════════════════════════════════════════════════════════ */
 .svg-button {
-  size: 20px;
-  color: var(--colorTextMain);
+  width: 30px;
+  height: 30px;
+  color: var(--color-text-main);
 }
 
 .error-popup {
   position: fixed;
+  /* “钉在屏幕上的元素”，无论页面如何滚动，它都待在原地不动。 */
   z-index: 10000;
   left: 50%;
+  /* 把元素的左侧移到父容器宽度的50%位置 */
   top: 50%;
   transform: translate(-50%, -50%);
+  /* 把元素向左移动自身宽度的50%，向上移动自身高度的50% */
 
   /* 固定宽度，高度由内容撑开 */
   width: 360px;
 
   /* 外观 */
-  background-color: color-mix(in srgb, var(--colorHover), transparent 30%);
-  border-radius: var(--borderRadius);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  background-color: color-mix(in srgb, var(--color-hover), transparent 30%);
+  /* in srgb:请用 sRGB 这个坐标系的规则来计算两种颜色的中间值 */
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 16px rgb(0, 0, 0, 25%);
 
   /* 默认隐藏 — 由 .visible 控制淡入/淡出 */
   opacity: 0;
-  transition: opacity 300ms ease;
-  pointer-events: none;
+  /* 0代表完全不透明 */
+  transition: opacity var(--ease-time) ease;
+  /* pointer-events: none; 会让当前元素及其所有子元素完全"不响应"鼠标事件（点击、悬停、拖拽等）。
+  即使给子元素单独设置 pointer-events: auto;，也无效，因为父级的规则会阻止事件到达子元素。 */
 }
 
 .error-popup.visible {
   opacity: 1;
-  /*
-     pointer-events 保持 none，整个弹窗不阻挡下层鼠标事件 —
-     只有右上角 X 按钮单独恢复为 auto，保证关闭按钮可点击
-  */
 }
 
 /* ── 内容区域 ── */
-.error-popup__content {
-  color: var(--colorError);
-  font-size: var(--midFont);
+.error-popup-content {
+  color: var(--color-error);
+  font-size: var(--mid-font);
   line-height: 1.5;
   text-align: center;
   padding: 16px 24px;
-  word-break: break-word;
 }
 
 /* ── 关闭按钮（右上角 X） ── */
-.error-popup__close {
+.error-popup-close {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -176,18 +169,16 @@ import { IconX } from '@tabler/icons-vue'
   justify-content: center;
   border: none;
   background: transparent;
-  color: var(--colorTextSecond);
+  color: var(--color-text-main);
   cursor: pointer;
-  border-radius: var(--borderRadius);
+  border-radius: var(--border-radius);
   padding: 0;
-  transition: background-color var(--easeTime) ease;
+  transition: background-color var(--ease-time) ease;
 
-  /* 只让这个按钮响应鼠标，下层其余部分继续穿透 */
   pointer-events: auto;
 }
 
-.error-popup__close:hover {
-  background-color: color-mix(in srgb, var(--colorHover), transparent 0%);
-  color: var(--colorTextMain);
+.error-popup-close:hover {
+  background-color: color-mix(in srgb, var(--color-hover), transparent 0%);
 }
 </style>

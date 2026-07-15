@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { watch } from 'vue'
-import EachSong from '@/components/cell/eachSong.vue'
-import PageChange from '@/components/other/pageChange.vue'
-import { PlaybackState } from '@/macro/playState'
-import type { SongInfo } from '@/store/SongInfo'
-import { songStore } from '@/store/songStore'
+import { watch } from 'vue';
+import EachSong from '@/components/cell/eachSong.vue';
+import PageChange from '@/components/other/pageChange.vue';
+import { PlaybackState } from '@/macro/playState';
+import { songStore, type SongInfo } from '@/store/songStore';
 
 //该处为分页加载
 
@@ -33,37 +32,35 @@ import { songStore } from '@/store/songStore'
 
 const props = defineProps<{
   /** 总页码数 */
-  totalPages: number
+  totalPages: number;
   /** 当前选中的页码（从 1 开始） */
-  currentPage: number
+  currentPage: number;
   /** 当前页的歌曲信息数组，最多 15 首 */
-  songInfos: SongInfo[]
+  songInfos: SongInfo[];
   /** 当前正在播放的歌曲 ID，null 表示无歌曲播放 */
-  activeSongId: number | null
+  activeSongId: number | null;
   /** 当前播放状态 */
-  activePlaybackState: PlaybackState
-}>()
+  activePlaybackState: PlaybackState;
+}>();
 
 const emit = defineEmits<{
-  (e: 'page-change', page: number): void
+  (e: 'page-change', page: number): void;
   /** 请求改变播放状态 — 只传 songId，不传 SongInfo 对象 */
-  (e: 'request-playback-change', songId: number, nextState: PlaybackState): void
-}>()
+  (e: 'request-playback-change', songId: number, nextState: PlaybackState): void;
+}>();
 
 // ════════════════════════════════════════════════════════════════
 // 将父组件传入的歌曲数据写入 store
 // 这样 eachSong 就不需要 songInfo prop，直接从 store 按 songId 查找
 // ════════════════════════════════════════════════════════════════
 
-const mySongStore = songStore()
-
 watch(
   () => props.songInfos,
   (infos) => {
-    mySongStore.setPageData(infos, (props.currentPage - 1) * 15)
+    songStore.setPageData(infos, (props.currentPage - 1) * 15);
   },
   { immediate: true },
-)
+);
 
 // ════════════════════════════════════════════════════════════════
 // 每首歌曲的播放状态
@@ -73,9 +70,9 @@ watch(
 
 function getSongPlaybackState(song: SongInfo): PlaybackState {
   if (props.activeSongId !== null && song.songId === props.activeSongId) {
-    return props.activePlaybackState
+    return props.activePlaybackState;
   }
-  return PlaybackState.Stopped
+  return PlaybackState.Stopped;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -87,11 +84,11 @@ function getSongPlaybackState(song: SongInfo): PlaybackState {
 // ════════════════════════════════════════════════════════════════
 
 function onRequestPlaybackChange(songId: number, nextState: PlaybackState): void {
-  emit('request-playback-change', songId, nextState)
+  emit('request-playback-change', songId, nextState);
 }
 
 function onPageChange(page: number): void {
-  emit('page-change', page)
+  emit('page-change', page);
 }
 </script>
 
@@ -112,7 +109,7 @@ function onPageChange(page: number): void {
          ═══════════════════════════════════════════════════════════ -->
     <div class="song-list">
       <EachSong
-        v-for="song in mySongStore.songs"
+        v-for="song in songStore.songs"
         :key="song.songId"
         :song-id="song.songId"
         :playback-state="getSongPlaybackState(song)"

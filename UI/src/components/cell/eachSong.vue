@@ -12,6 +12,7 @@ import {
   IconMessageCircleQuestion,
 } from '@tabler/icons-vue';
 import { songStore, type SongInfo } from '@/store/songStore';
+import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
 
 const props = defineProps<{
   /** 歌曲数据库主键，用于从 store 查找完整 SongInfo 和计算序号 */
@@ -111,7 +112,10 @@ function handleOrdinalClick(): void {
          ═══════════════════════════════════════════════════════════ -->
     <div class="playback-image-area" @click.stop="handleOrdinalClick">
       <div v-if="playbackState === PlaybackState.Stopped">
-        <img :src="`songId/${props.songId}/image/50x50`" class="cover-img" />
+        <img
+          :src="getBackendResourceAddress(`songId/${props.songId}/image/50x50`)"
+          class="cover-img"
+        />
         <IconPlayerPlayFilled class="hover-play"></IconPlayerPlayFilled>
       </div>
 
@@ -123,20 +127,15 @@ function handleOrdinalClick(): void {
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
-         第 2 列：歌名 + 艺术家 + 多流徽章 (flex: 1)
-         垂直堆叠：上行 = 歌名 + 多流徽章，下行 = 艺术家名
+         第 2 列：歌名 + 艺术家 (flex: 1)
+         垂直堆叠：上行 = 歌名 下行 = 艺术家名
          ═══════════════════════════════════════════════════════════ -->
-    <div class="cell-name-artist">
-      <div class="name-row">
-        <Tooltip :text="songInfo?.title ?? ''">
-          <span class="song-name">{{ songInfo?.title ?? '' }}</span>
-        </Tooltip>
-      </div>
-      <div class="artist-row">
-        <Tooltip :text="songInfo?.artist ?? '未知'">
-          <span class="artist-name">{{ songInfo?.artist ?? '未知' }}</span>
-        </Tooltip>
-      </div>
+    <div class="song-name-artist">
+      <span class="song-artist-name">{{ songInfo?.title ?? '' }}</span>
+      <!-- {{ }} 是 Vue 的插值语法，只能用在 HTML 模板（template） 中，作用是把数据渲染到页面上 -->
+      <!-- ||：只要左边是假值（false、0、''、null、undefined），就用右边。
+           ??：只有当左边是 null 或 undefined 时，才用右边（更精准）。 -->
+      <span class="song-artist-name">{{ songInfo?.artist ?? '未知' }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -157,7 +156,7 @@ function handleOrdinalClick(): void {
          第 5 列：播放次数 (80px)
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell-play-count">
-      <span class="play-count-text">{{ songInfo?.hadPlayedNum ?? 0 }}</span>
+      <span class="play-count-text">{{ songInfo?.hadPlayedNum }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -235,8 +234,8 @@ function handleOrdinalClick(): void {
 }
 
 .cover-img {
-  height: 100%;
-  width: 100%;
+  height: 36px;
+  width: 36px;
   object-fit: cover;
   transition: filter var(--ease-time) ease;
 }
@@ -272,50 +271,25 @@ function handleOrdinalClick(): void {
    没有它 flex/grid 子元素不会收缩到内容宽度以下
    ════════════════════════════════════════════════════════════════ */
 
-.cell-name-artist {
+.song-name-artist {
   flex-direction: column;
-  align-items: stretch;
+  /* 将主轴方向从水平（默认）改为垂直。 */
+  align-items: flex-start;
+  /* 靠左对齐 */
   justify-content: center;
   gap: 2px;
   min-width: 0;
+  /* 强行覆盖为 0，允许此容器在空间不足时收缩，防止被内部长文本撑破，从而配合溢出省略号（ellipsis）生效。 */
 }
 
-.name-row,
-.artist-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.song-name {
-  font-size: var(--mid-font);
-  color: var(--color-text-main);
-  white-space: nowrap;
+/* .song-name-artist span的意思是让song-name-artist类里面的所有span组件都遵循这个效果 */
+.song-name-artist span {
+  max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.artist-name {
-  font-size: var(--little-font);
-  color: var(--color-text-second);
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* ── 多流音频徽章：蓝底白字 ── */
-.multi-stream-badge {
-  flex-shrink: 0;
-  background-color: var(--color-super-stress);
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 1px 6px;
-  border-radius: 3px;
-  white-space: nowrap;
-  cursor: default;
+  display: block;
+  /* 让该元素独占一行 */
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -359,8 +333,8 @@ function handleOrdinalClick(): void {
 .cell-more {
   justify-content: center;
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   cursor: pointer;
   transition: background-color var(--ease-time) ease;

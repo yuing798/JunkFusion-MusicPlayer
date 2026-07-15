@@ -4,13 +4,13 @@
     --color-hover: #c5c4c4;/*悬浮颜色*/
     --color-cell:#f2fcff;/*单元格的背景色*/
     --color-clicked: #b0c4de;/*鼠标按下去时的颜色颜色*/
-    --color-edge: #979797;/*边框的颜色*/
+    --color-edge: #b2b1b1;/*边框的颜色*/
     --color-text-main: #222222;/*主要文本的颜色*/
     --color-text-second: #555555;/*次级文本的颜色*/ 
     --color-stress:#00f2fe;/*强调色，比如现在在导航窗的哪个位置*/
     --color-super-stress:#4facfe;
     /* 超级强调(给 渐变 调用的) */
-    --color-error:#e83232;
+    --color-error:#991f1f;
     /* 错误提示的文字颜色 */
 }
 
