@@ -1,6 +1,5 @@
-<script setup lang="ts">
+<script lang="ts">
 import { ref } from 'vue';
-import { IconX } from '@tabler/icons-vue';
 // ════════════════════════════════════════════════════════════════
 // 模块级单例状态
 //
@@ -87,6 +86,10 @@ export function showErrorWindow(msg: unknown, holdTime: number = 3000): void {
   }, 300 + holdTime);
   // lambda 函数在当计时器结束时会被执行
 }
+</script>
+
+<script setup lang="ts">
+import { IconX } from '@tabler/icons-vue';
 </script>
 
 <template>

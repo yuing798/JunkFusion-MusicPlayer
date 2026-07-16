@@ -31,16 +31,18 @@ async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return;
   isImporting.value = true;
   try {
-    await callJuceFunc(B_inputFiles.name);
-    refreshSongCount();
+    await callJuceFunc<void>(B_inputFiles.name);
   } catch (error) {
     console.error(error);
+  } finally {
+    await refreshSongCount();
+    isImporting.value = false;
   }
 }
 async function refreshSongCount() {
-  songCount.value = await callJuceFunc<number>(B_getAllSongCount.name);
+  const obj = await callJuceFunc<{ count: number }>(B_getAllSongCount.name);
+  songCount.value = obj.count;
 }
-const mySongStore = async function refreshPage() {};
 
 onMounted(() => {
   //初始化升降序

@@ -17,21 +17,16 @@ import { showErrorWindow } from "@/components/other/errorWindow.vue"
 //     loading.value = false;
 //   }
 // };
- export async function callJuceFunc<T = unknown>(name: string, ...args: unknown[]): Promise<T> {
-  try {
-    const results = await getNativeFunction(name)(...args)//如果没有三个点只会传进来第一个数
-    if (results && typeof results === 'object') {
-      if(B_event.fullError in results){
-        throw new Error(String(results[B_event.fullError])) 
-      }else if(B_event.partError in results){
-        showErrorWindow(results[B_event.partError],10000)//如果有部分错误的弹窗显示10秒
-      }else if(B_event.fullSuccess in results){
-        showErrorWindow(results[B_event.fullSuccess],2000)//如果有完全成功的弹窗显示2秒
-      }
+export async function callJuceFunc<T = unknown>(name: string, ...args: unknown[]): Promise<T> {
+  const results = await getNativeFunction(name)(...args)//如果没有三个点只会传进来第一个数
+  if (results && typeof results === 'object') {
+    if(B_event.fullError in results){
+      showErrorWindow(results[B_event.fullError]);//完全错误直接默认3s，因为完全错误一般只是小型操作
+    }else if(B_event.partError in results){
+      showErrorWindow(results[B_event.partError],10000)//如果有部分错误的弹窗显示10秒
+    }else if(B_event.fullSuccess in results){
+      showErrorWindow(results[B_event.fullSuccess],2000)//如果有完全成功的弹窗显示2秒
     }
-    return results as T
-  } catch (error) {
-    showErrorWindow(error)
-    throw error
   }
+  return results as T
 }
