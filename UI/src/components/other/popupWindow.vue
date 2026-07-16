@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, nextTick, onUnmounted } from 'vue'
-import { IconX } from '@tabler/icons-vue'
+import { ref, nextTick, onUnmounted } from 'vue';
+import { IconX } from '@tabler/icons-vue';
 
 // ════════════════════════════════════════════════════════════════
 // PopupWindow — 可复用的弹出窗组件
 //
 // 使用方式：
 //   <PopupWindow ref="popupRef" title="歌曲详情" :width="400">
-//     <template #trigger>
+//     <template #trigger-button>
 //       <button>打开弹窗</button>
 //     </template>
-//     <template #default>
+//     <template #popup-window-component>
 //       <YourContentComponent />
 //     </template>
 //   </PopupWindow>
@@ -18,7 +18,7 @@ import { IconX } from '@tabler/icons-vue'
 // 父组件中调用 popupRef.open() / popupRef.close() 来控制弹窗。
 //
 // 特性：
-//   - 点击 #trigger 插槽内容自动打开弹窗
+//   - 点击 #trigger-button 插槽内容自动打开弹窗
 //   - 缩放 + 淡入动画，变换原点 = 触发按钮中心
 //   - 可拖动标题栏
 //   - 标题居中，右上角 X 关闭按钮
@@ -28,52 +28,55 @@ import { IconX } from '@tabler/icons-vue'
 const props = withDefaults(
   defineProps<{
     /** 弹窗标题（显示在标题栏居中位置） */
-    title: string
+    title: string;
     /** 弹窗宽度（px），默认 400 */
-    width?: number
+    width?: number;
   }>(),
   {
     width: 400,
   },
-)
+);
 
 const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+  (e: 'close'): void;
+}>();
 
 // ── 状态 ──
 
-const triggerWrapper = ref<HTMLElement | null>(null)
-const popupEl = ref<HTMLElement | null>(null)
-const visible = ref(false)
-const closing = ref(false)
-const popupLeft = ref('0px')
-const popupTop = ref('0px')
+const triggerWrapper = ref<HTMLElement | null>(null);
+const popupEl = ref<HTMLElement | null>(null);
+const visible = ref(false);
+const closing = ref(false);
+const popupLeft = ref('0px');
+const popupTop = ref('0px');
 
 // ── 拖动 ──
 
-const dragging = ref(false)
-const dragOffset = ref({ x: 0, y: 0 })
+const dragging = ref(false);
+const dragOffset = ref({ x: 0, y: 0 });
 
 function onTitleMouseDown(e: MouseEvent): void {
-  if ((e.target as HTMLElement).closest('.popup-close-btn')) return
-  dragging.value = true
-  const rect = popupEl.value!.getBoundingClientRect()
-  dragOffset.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  window.addEventListener('mousemove', onDragMove)
-  window.addEventListener('mouseup', onDragEnd)
+  if ((e.target as HTMLElement).closest('.popup-close-btn')) return;
+  // closest() 是 DOM 的原生方法，从当前元素开始，向父级查找匹配选择器的元素
+  dragging.value = true;
+  const rect = popupEl.value!.getBoundingClientRect();
+  // 获得popupEl这个元素在整个应用中的宽高和相对坐标
+  dragOffset.value = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  // 获得鼠标在当前组件坐标系的坐标
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup', onDragEnd);
 }
 
 function onDragMove(e: MouseEvent): void {
-  if (!dragging.value) return
-  popupLeft.value = e.clientX - dragOffset.value.x + 'px'
-  popupTop.value = e.clientY - dragOffset.value.y + 'px'
+  if (!dragging.value) return;
+  popupLeft.value = e.clientX - dragOffset.value.x + 'px';
+  popupTop.value = e.clientY - dragOffset.value.y + 'px';
 }
 
 function onDragEnd(): void {
-  dragging.value = false
-  window.removeEventListener('mousemove', onDragMove)
-  window.removeEventListener('mouseup', onDragEnd)
+  dragging.value = false;
+  window.removeEventListener('mousemove', onDragMove);
+  window.removeEventListener('mouseup', onDragEnd);
 }
 
 // ── 打开 / 关闭 ──
@@ -88,50 +91,60 @@ function onDragEnd(): void {
 function open(): void {
   if (triggerWrapper.value) {
     // triggerWrapper 是内联 <span>，其 getBoundingClientRect 即为内容的包围盒
-    const rect = triggerWrapper.value.getBoundingClientRect()
-    document.documentElement.style.setProperty('--popup-origin-x', rect.left + rect.width / 2 + 'px')
-    document.documentElement.style.setProperty('--popup-origin-y', rect.top + rect.height / 2 + 'px')
+    const rect = triggerWrapper.value.getBoundingClientRect();
+    document.documentElement.style.setProperty(
+      '--popup-origin-x',
+      rect.left + rect.width / 2 + 'px',
+    );
+    document.documentElement.style.setProperty(
+      '--popup-origin-y',
+      rect.top + rect.height / 2 + 'px',
+    );
   }
 
-  visible.value = true
-  closing.value = false
+  visible.value = true;
+  closing.value = false;
 
   // 粗略居中
-  popupLeft.value = (window.innerWidth - props.width) / 2 + 'px'
-  popupTop.value = (window.innerHeight - 350) / 2 + 'px'
+  popupLeft.value = (window.innerWidth - props.width) / 2 + 'px';
+  popupTop.value = (window.innerHeight - 350) / 2 + 'px';
 
   // 渲染后精确居中
   void nextTick(() => {
     if (popupEl.value) {
-      const r = popupEl.value.getBoundingClientRect()
-      popupLeft.value = (window.innerWidth - r.width) / 2 + 'px'
-      popupTop.value = (window.innerHeight - r.height) / 2 + 'px'
+      const r = popupEl.value.getBoundingClientRect();
+      popupLeft.value = (window.innerWidth - r.width) / 2 + 'px';
+      popupTop.value = (window.innerHeight - r.height) / 2 + 'px';
     }
-  })
+  });
 }
 
 /** 关闭弹窗（带动画） */
 function close(): void {
-  closing.value = true
+  closing.value = true;
   setTimeout(() => {
-    visible.value = false
-    closing.value = false
-    emit('close')
-  }, 200) // 匹配 CSS 动画时长
+    visible.value = false;
+    closing.value = false;
+    emit('close');
+  }, 200); // 匹配 CSS 动画时长，延迟执行
 }
 
 // ── 暴露给父组件 ──
 
-defineExpose({ open, close })
+defineExpose({ open, close });
+// emit：是子组件向父组件“喊话”（向上传递事件）。
+// defineExpose：是父组件主动“伸手”去拿子组件的东西（向下调用方法）。
+// defineExpose：“子组件把钥匙交给父组件”，父组件通过 ref 直接调用。
+// export：“组件把工具放在工具箱里”，任何 JS 文件都可以 import 拿走去用。
 
 // ── 清理 ──
 
 onUnmounted(() => {
-  document.documentElement.style.removeProperty('--popup-origin-x')
-  document.documentElement.style.removeProperty('--popup-origin-y')
-  window.removeEventListener('mousemove', onDragMove)
-  window.removeEventListener('mouseup', onDragEnd)
-})
+  document.documentElement.style.removeProperty('--popup-origin-x');
+  document.documentElement.style.removeProperty('--popup-origin-y');
+  window.removeEventListener('mousemove', onDragMove);
+  window.removeEventListener('mouseup', onDragEnd);
+});
 </script>
 
 <template>
@@ -140,7 +153,10 @@ onUnmounted(() => {
     使用 <span> 以便作为内联元素融入父级布局（如 Grid cell）。
   -->
   <span ref="triggerWrapper" class="popup-trigger" @click.stop="open">
-    <slot name="trigger" />
+    <!-- ref的意思是绑定js对象使得该对象能够实现函数效果 -->
+    <!-- 父组件调用<templete #插槽名>来进行填充 -->
+    <slot name="trigger-button" />
+    <!-- 向外连接按钮，点击出现弹窗 -->
   </span>
 
   <!-- 弹出窗 — Teleport to body -->
@@ -153,7 +169,6 @@ onUnmounted(() => {
       :style="{
         left: popupLeft,
         top: popupTop,
-        width: width + 'px',
       }"
     >
       <!-- 标题栏：居中标题 + 右侧关闭按钮，可拖动 -->
@@ -166,7 +181,8 @@ onUnmounted(() => {
 
       <!-- 内容区域：默认插槽，由调用方投射任意组件 -->
       <div class="popup-body">
-        <slot />
+        <slot name="popup-window-component" />
+        <!-- 默认插槽，没有内容 -->
       </div>
     </div>
   </Teleport>
@@ -179,6 +195,7 @@ onUnmounted(() => {
 
 .popup-trigger {
   display: contents;
+  /* display: contents; 就像把这个元素从 DOM 树中“掏空”，只留下它的子元素，仿佛这个元素从未存在过。 */
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -188,11 +205,12 @@ onUnmounted(() => {
 
 .popup-window {
   position: fixed;
+  /* 这个元素会相对于“浏览器可视区域（Viewport）”固定，不会随页面滚动而移动。 但它本身可以通过 top、left、transform 等属性移动位置。 */
   z-index: 10000;
-  min-height: 100px;
-  background-color: var(--colorMain);
-  border-radius: 7px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  min-height: 250px;
+  background-color: var(--color-hover);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 24px rgb(0, 0, 0, 25%);
 
   /*
     变换原点通过 JS 动态设置（触发按钮中心在 viewport 中的坐标），
@@ -202,8 +220,26 @@ onUnmounted(() => {
 
   /* v-if 挂载时自动触发打开动画 */
   animation: popup-open 200ms ease-out forwards;
-}
+  /* 特性	transition（过渡）	animation（动画）
+  触发方式	需要用户交互（hover、点击、类名变化）	自动执行（页面加载即播放）
+  循环次数	只执行 1 次（从 A 到 B）	可无限循环（infinite）
+  关键帧	❌ 不需要，只需定义起始和结束状态	✅ 需要 @keyframes 定义多个阶段
+  控制灵活性	较低（只有开始/结束两个状态）	较高（可以定义 0%、50%、100% 等多个状态）
+  语法复杂度	简单（1 行搞定）	较复杂（需要 @keyframes 配合）
+  适用场景	简单的悬停效果（按钮变色、卡片浮起）	复杂的持续动画（加载动画、闪烁、旋转） */
 
+  /* 第一个参数popup-open（动画名称）
+  作用：指定要播放的 @keyframes 动画叫什么名字 */
+  /* 第四个参数forwards（填充模式）
+  作用：控制动画结束后，元素停在什么状态
+
+  值	效果
+  none（默认）	动画结束后回到初始状态
+  forwards	动画结束后停在最后一帧（100%） ✅
+  backwards	动画开始前显示第一帧（0%）
+  both	同时应用 forwards + backwards */
+}
+/* 内联元素（Inline Element） 就是“不换行”的元素。它只占据自己内容所需的宽度，多个内联元素会在同一行从左到右依次排列，直到宽度不够才换行。 */
 .popup-window.popup-closing {
   animation: popup-close 200ms ease-in forwards;
 }
@@ -244,9 +280,9 @@ onUnmounted(() => {
 }
 
 .popup-title {
-  font-size: var(--midFont);
+  font-size: var(--mid-font);
   font-weight: bold;
-  color: var(--colorTextMain);
+  color: var(--color-text-main);
   max-width: calc(100% - 32px);
   overflow: hidden;
   white-space: nowrap;
@@ -265,18 +301,18 @@ onUnmounted(() => {
   justify-content: center;
   border: none;
   background: transparent;
-  color: var(--colorTextSecond);
+  color: var(--color-text-second);
   cursor: pointer;
-  border-radius: var(--borderRadius);
+  border-radius: var(--border-radius);
   padding: 0;
   transition:
-    background-color var(--easeTime) ease,
-    color var(--easeTime) ease;
+    background-color var(--ease-time) ease,
+    color var(--ease-time) ease;
 }
 
 .popup-close-btn:hover {
-  background-color: var(--colorHover);
-  color: var(--colorTextMain);
+  background-color: var(--color-hover);
+  color: var(--color-text-main);
 }
 
 /* ── 内容区域 ── */
