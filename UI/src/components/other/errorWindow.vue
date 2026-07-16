@@ -103,6 +103,7 @@ export function showErrorWindow(msg: unknown, holdTime: number = 3000): void {
 </template>
 
 <style scoped>
+/* 让当前组件的样式只作用于当前组件，不会泄漏到父组件或子组件中。 */
 /* ════════════════════════════════════════════════════════════════
    error-popup — 全局错误弹窗
 

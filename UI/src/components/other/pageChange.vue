@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue';
 
 // ════════════════════════════════════════════════════════════════
 // PageChange — 页面切换组件
@@ -22,43 +22,60 @@ import { ref, computed, watch } from 'vue'
 
 const props = defineProps<{
   /** 总页码数 */
-  totalPages: number
+  totalPages: number;
   /** 当前选中的页码（从 1 开始） */
-  currentPage: number
-}>()
+  currentPage: number;
+}>();
 
 const emit = defineEmits<{
-  (e: 'page-change', page: number): void
-}>()
+  (e: 'page-change', page: number): void;
+}>();
 
 // ════════════════════════════════════════════════════════════════
 // 跳转输入框
 // ════════════════════════════════════════════════════════════════
 
-const jumpInput = ref('')
+const jumpInput = ref('');
 
 // 当 totalPages 或 currentPage 变化时清空输入框
 watch(
   () => [props.totalPages, props.currentPage],
+  // Getter 函数就是“一个返回某个值的函数”。在 Vue 的上下文中，它特指不带参数、只负责返回响应式数据的函数。
+  // 它是一个函数（箭头函数或普通函数）
+  // 没有参数（通常）
+  // 返回一个值
+  // 内部访问了响应式数据
+
+  // 箭头函数和普通函数的区别
+  // 普通函数：谁调用我，我就指向谁（动态绑定）。
+  // 箭头函数：我写在哪里，我就指向哪里（静态绑定）
+  // 普通函数：看“点” —— 谁用 . 调用了函数，this 就指向谁。
+  // 箭头函数：看“定义” —— 函数在哪个作用域定义的，this 就指向那个作用域的 this。
   () => {
-    jumpInput.value = ''
+    jumpInput.value = '';
   },
-)
+  // 为什么这里都写箭头函数
+  // 箭头函数：() => [...]（一行搞定，不用写 return）
+  // 普通函数：function() { return [...]; }（要写两行）
+  // 如果你确实需要用到 this 来访问组件实例（比如在 Options API 中），那你必须用普通函数，
+  // 因为箭头函数会绑定外层的 this（通常是 undefined），拿不到组件实例。
+  // 但在 <script setup> 中，你永远不需要用 this，所以箭头函数就是绝对的最佳选择。
+);
 
 /** 点击 go 按钮或按下回车 */
 function goAndEnterClick(): void {
-  const targetPage = parseInt(jumpInput.value, 10) //将输入框的输入解析为10进制
-  if (isNaN(targetPage)) return
+  const targetPage = parseInt(jumpInput.value, 10); //将输入框的输入解析为10进制
+  if (isNaN(targetPage)) return;
   if (targetPage >= 1 && targetPage <= props.totalPages && targetPage !== props.currentPage) {
-    jumpInput.value = ''
-    emit('page-change', targetPage)
+    jumpInput.value = ''; //输入数字有效并回车开始跳转
+    emit('page-change', targetPage);
   }
 }
 
 /** 输入框回车 */
 function onJumpKeydown(e: KeyboardEvent): void {
   if (e.key === 'Enter') {
-    goAndEnterClick()
+    goAndEnterClick();
   }
 }
 
@@ -71,67 +88,72 @@ function onJumpKeydown(e: KeyboardEvent): void {
 // ════════════════════════════════════════════════════════════════
 
 interface PageItem {
-  type: 'page' | 'ellipsis'
-  page?: number //? 表示这个字段是可选的
+  type: 'page' | 'ellipsis';
+  page?: number; //? 表示这个字段是可选的，这里的 page 是变量名（对象的属性名）
 }
 
 const pageItems = computed<PageItem[]>(() => {
-  const n = props.totalPages
-  const cur = props.currentPage
+  // 这里的 <PageItem[]> 就是给 computed 加上的泛型（Generic）类型标注，
+  // 它的意思是：这个计算属性返回的值，其类型是 PageItem 类型的数组（即 PageItem[]）。
+  // 泛型应该写在 computed 上（computed<类型>(...)），而不是写在变量名上。因为 computed() 返回的是 ComputedRef，不是原始值。
+  // 也就是说
+  // const pageItems : PageItem[] = computed(() =>{})是错误的
+  const n = props.totalPages;
+  const cur = props.currentPage;
 
-  if (n <= 0) return []
+  if (n <= 0) return [];
 
   if (n <= 7) {
     // 全部显示
     //生成了一个长度为 n 的数组，每个元素都是一个带有 type 和 page 属性的对象，分别表示“页码类型”和“页码数值”。
     //(_, i) => ({ type: 'page' as const, page: i + 1 })（映射函数）
-    return Array.from({ length: n }, (_, i) => ({ type: 'page' as const, page: i + 1 }))
+    return Array.from({ length: n }, (_, i) => ({ type: 'page' as const, page: i + 1 }));
   }
 
   // > 7 页：[1] + 5 槽 + [N]
-  const items: PageItem[] = []
-  items.push({ type: 'page', page: 1 })
+  const items: PageItem[] = [];
+  items.push({ type: 'page', page: 1 });
 
-  let winStart: number
-  let winEnd: number
+  let winStart: number;
+  let winEnd: number;
 
   if (cur <= 3) {
     // 靠近首页
-    winStart = 2
-    winEnd = 5
+    winStart = 2;
+    winEnd = 5;
   } else if (cur >= n - 2) {
     // 靠近末页
-    winEnd = n - 1
-    winStart = n - 4
+    winEnd = n - 1;
+    winStart = n - 4;
   } else {
     // 中间
-    winStart = cur - 1
-    winEnd = cur + 1
+    winStart = cur - 1;
+    winEnd = cur + 1;
   }
 
   if (winStart > 2) {
-    items.push({ type: 'ellipsis' })
+    items.push({ type: 'ellipsis' });
   }
 
   for (let p = winStart; p <= winEnd; ++p) {
-    items.push({ type: 'page', page: p })
+    items.push({ type: 'page', page: p });
   }
 
   if (winEnd < n - 1) {
-    items.push({ type: 'ellipsis' })
+    items.push({ type: 'ellipsis' });
   }
 
-  items.push({ type: 'page', page: n })
+  items.push({ type: 'page', page: n });
 
-  return items
-})
+  return items;
+});
 
 // ════════════════════════════════════════════════════════════════
 // 按钮禁用状态
 // ════════════════════════════════════════════════════════════════
 
-const isPrevDisabled = computed(() => props.currentPage <= 1)
-const isNextDisabled = computed(() => props.currentPage >= props.totalPages)
+const isPrevDisabled = computed<boolean>(() => props.currentPage <= 1);
+const isNextDisabled = computed<boolean>(() => props.currentPage >= props.totalPages);
 
 // ════════════════════════════════════════════════════════════════
 // 事件处理
@@ -139,25 +161,25 @@ const isNextDisabled = computed(() => props.currentPage >= props.totalPages)
 
 function goToPage(page: number): void {
   if (page >= 1 && page <= props.totalPages && page !== props.currentPage) {
-    emit('page-change', page)
+    emit('page-change', page);
   }
 }
 
 function goPrev(): void {
   if (props.currentPage > 1) {
-    emit('page-change', props.currentPage - 1)
+    emit('page-change', props.currentPage - 1);
   }
 }
 
 function goNext(): void {
   if (props.currentPage < props.totalPages) {
-    emit('page-change', props.currentPage + 1)
+    emit('page-change', props.currentPage + 1);
   }
 }
 
 /** 判断是否为当前页 */
 function isCurrent(page: number): boolean {
-  return page === props.currentPage
+  return page === props.currentPage;
 }
 </script>
 
@@ -178,7 +200,7 @@ function isCurrent(page: number): boolean {
         class="page-btn"
         :class="{ disabled: isPrevDisabled }"
         :disabled="isPrevDisabled"
-        @click="goPrev"
+        @click="goPrev()"
       >
         <
       </button>
@@ -220,6 +242,7 @@ function isCurrent(page: number): boolean {
         placeholder="跳转到..."
         @keydown="onJumpKeydown"
       />
+      <!-- v-model 是 Vue 中双向数据绑定的核心指令。简单来说，它让 输入框的值 和 JavaScript 变量 之间建立了一个“实时同步通道”。 -->
       <button class="page-btn go-btn" @click="goAndEnterClick">go</button>
     </div>
   </div>
@@ -262,23 +285,23 @@ function isCurrent(page: number): boolean {
   margin: 2px;
 
   border: none;
-  border-radius: var(--borderRadius);
-  background-color: var(--colorMain);
-  color: var(--colorTextMain);
-  font-size: var(--midFont);
+  border-radius: var(--border-radius);
+  background-color: var(--color-main);
+  color: var(--color-text-main);
+  font-size: var(--mid-font);
   cursor: pointer;
   transition:
-    background-color var(--easeTime) ease,
-    color var(--easeTime) ease;
+    background-color var(--ease-time) ease,
+    color var(--ease-time) ease;
 }
 
-.page-btn:hover:not(.disabled):not(.active) {
-  background-color: var(--colorHover);
+.page-btn:hover:not(.disabled, .active) {
+  background-color: var(--color-hover);
 }
 
 /* 当前页 — 对应 C++ setPageButtonColor: blackGrey 背景 + 白字 */
 .page-btn.active {
-  background-color: var(--colorTextSecond);
+  background-color: var(--color-text-second);
   color: #ffffff;
 }
 
@@ -296,8 +319,8 @@ function isCurrent(page: number): boolean {
   justify-content: center;
   width: 40px;
   height: 40px;
-  font-size: var(--midFont);
-  color: var(--colorTextSecond);
+  font-size: var(--mid-font);
+  color: var(--color-text-second);
   cursor: default;
 }
 
@@ -324,25 +347,25 @@ function isCurrent(page: number): boolean {
   padding: 0 8px;
   margin: 0 5px;
 
-  border: 3px solid var(--colorEdge);
-  border-radius: var(--borderRadius);
+  border: 3px solid var(--color-edge);
+  border-radius: var(--border-radius);
   background-color: transparent;
-  color: var(--colorTextMain);
-  font-size: var(--midFont);
+  color: var(--color-text-main);
+  font-size: var(--mid-font);
   outline: none;
-  transition: border-color var(--easeTime) ease;
+  transition: border-color var(--ease-time) ease;
 }
 
 .jump-input:hover {
-  border-color: var(--colorTextSecond);
+  border-color: var(--color-text-second);
 }
 
 .jump-input:focus {
-  border-color: var(--colorStress);
+  border-color: var(--color-stress);
 }
 
 .jump-input::placeholder {
-  color: var(--colorTextSecond);
+  color: var(--color-text-second);
   opacity: 0.6;
 }
 
