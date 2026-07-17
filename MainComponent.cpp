@@ -15,6 +15,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "fileManage/dbManager.hpp"
 #include "image/ImageManager.hpp"
@@ -94,7 +95,7 @@ MainComponent::MainComponent(){
                         return;
                     }//用户取消选择
 
-                    juce::Thread::launch([files,complete](){
+                    dbManager::getInstance().runOnWrite([files,complete = std::move(complete)](){
                         juce::String errorStr{""};
                         const int numAll{files.size()};
                         int num4ErrorFile{0};

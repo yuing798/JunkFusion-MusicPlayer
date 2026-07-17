@@ -34,11 +34,8 @@ void logSystem::init(){
     try
     {
         // ── 1. 准备日志目录 ──
-        auto logDir = logInfoDirId.getChildFile("logs");
-        if (!logDir.exists())
-            logDir.createDirectory();
 
-        const auto logDirPath = logDir.getFullPathName().toStdString();
+        const auto logDirPath = logInfoDirId.getFullPathName().toStdString();
 
         // ── 2. 初始化异步日志线程池 ──
         // queue_size=8192 / 1 个后台线程，足以应对音频和 AI 的异步写入

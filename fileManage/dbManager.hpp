@@ -8,7 +8,9 @@
 class dbManager {
 private:
     std::unique_ptr<SQLite::Database> db;
-    std::unique_ptr<SongsManage> songs;
+    std::unique_ptr<SongsManage> songs;//歌曲管理
+    //std::unique_ptr<PluginsManage> plugins;//插件管理
+
     juce::ThreadPool writeWorker{1};//保证数据库写操作串行化
     juce::ThreadPool readWorker{3};//读操作轻量快速，所以分配三个线程
 

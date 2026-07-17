@@ -16,6 +16,7 @@
 #include <unicode/coll.h>
 #include <unicode/locid.h>
 #include <unicode/stringpiece.h>
+#include <utility>
 #include <vector>
 #include "./dbManager.hpp"
 
@@ -494,72 +495,79 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
     .withNativeFunction(//得到总歌曲数目
         B_getAllSongCount::name,//得到总歌曲数目
         [](const auto& args,auto complete){
-            auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
-            auto obj{new juce::DynamicObject()};
-            if(count.has_value()){
-                obj->setProperty(B_getAllSongCount::count,count.value());
-                complete(obj);
-                return;
-            }else{
-                obj->setProperty(B_getAllSongCount::count,0);
-                complete(obj);
-                return ;
-            }
+            dbManager::getInstance().runOnRead([complete = std::move(complete)]{
+                auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
+                auto obj{new juce::DynamicObject()};
+                if(count.has_value()){
+                    obj->setProperty(B_getAllSongCount::count,count.value());
+                    complete(obj);
+                    return;
+                }else{
+                    obj->setProperty(B_getAllSongCount::count,0);
+                    complete(obj);
+                    return ;
+                }
+            });
         }
     ).withNativeFunction(B_toggleMyLike::name,//将我喜欢的歌曲状态翻转
         [](
             const juce::Array<juce::var>& args,
             juce::WebBrowserComponent::NativeFunctionCompletion complete
         ){
-            int64_t id{0};
-            if(args.size()>=1) id = args[0];
-            if(dbManager::getInstance().getSongsManager().reverseMyLike(id)){
-                complete(juce::var());
-                return;
-            }else{
-                auto error{new juce::DynamicObject()};
-                error->setProperty(B_event::fullError,utf8("[我喜欢]状态更新失败，请重试"));
-                complete(juce::var(error));
-                return;
-            }
+            dbManager::getInstance().runOnWrite([args,complete = std::move(complete)]{
+                //const不能执行移动操作
+                int64_t id{0};
+                if(args.size()>=1) id = args[0];
+                if(dbManager::getInstance().getSongsManager().reverseMyLike(id)){
+                    complete(juce::var());
+                    return;
+                }else{
+                    auto error{new juce::DynamicObject()};
+                    error->setProperty(B_event::fullError,utf8("[我喜欢]状态更新失败，请重试"));
+                    complete(juce::var(error));
+                    return;
+                }
+            });
         }
     ).withNativeFunction(//得到单页的歌曲信息
         B_refreshAllMusicSongs::name,//参数：当前页码,升降序，排序方法，
         [](
             const juce::Array<juce::var>& args,auto complete
         ){
-            auto sortMode{SongsManage::SortMode::ByAddTime};
-            int sortWay = args[0][B_refreshAllMusicSongs::sortMode];
-            bool isAscending = args[0][B_refreshAllMusicSongs::isAscending];
-            int targetPage = args[0][B_refreshAllMusicSongs::page];
-            switch (sortWay) {
-                case 0:
-                    sortMode = SongsManage::SortMode::ByAddTime;
-                    break;
-                case 1:
-                    sortMode = SongsManage::SortMode::ByName;
-                    break;
-                case 2:
-                    sortMode = SongsManage::SortMode::ByPlayTimes;
-                    break;
-                default:
-                    sortMode = SongsManage::SortMode::ByAddTime;
-                    break;
-            }
-            auto results{dbManager::getInstance().getSongsManager().getSongPage(
-                targetPage,
-                isAscending,
-                sortMode
-            )};//vector可以为空，所以不需要std::optional进行检测
-            if(results.empty()){
-                auto obj{new juce::DynamicObject()};
-                obj->setProperty(B_refreshAllMusicSongs::error,-1);
-                complete(obj);
-                return ;
-            }else{
-                complete(SongInfo::vector2VarArray(results));
-                return ;
-            }
+            dbManager::getInstance().runOnRead([args,complete = std::move(complete)]{
+                auto sortMode{SongsManage::SortMode::ByAddTime};
+                int sortWay = args[0][B_refreshAllMusicSongs::sortMode];
+                bool isAscending = args[0][B_refreshAllMusicSongs::isAscending];
+                int targetPage = args[0][B_refreshAllMusicSongs::page];
+                switch (sortWay) {
+                    case 0:
+                        sortMode = SongsManage::SortMode::ByAddTime;
+                        break;
+                    case 1:
+                        sortMode = SongsManage::SortMode::ByName;
+                        break;
+                    case 2:
+                        sortMode = SongsManage::SortMode::ByPlayTimes;
+                        break;
+                    default:
+                        sortMode = SongsManage::SortMode::ByAddTime;
+                        break;
+                }
+                auto results{dbManager::getInstance().getSongsManager().getSongPage(
+                    targetPage,
+                    isAscending,
+                    sortMode
+                )};//vector可以为空，所以不需要std::optional进行检测
+                if(results.empty()){
+                    auto obj{new juce::DynamicObject()};
+                    obj->setProperty(B_refreshAllMusicSongs::error,-1);
+                    complete(obj);
+                    return ;
+                }else{
+                    complete(SongInfo::vector2VarArray(results));
+                    return ;
+                }
+            });
         }
     );
 }
