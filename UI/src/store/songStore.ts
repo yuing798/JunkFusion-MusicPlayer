@@ -114,7 +114,7 @@ export interface SongInfo {//interface指的是自定义类型
 
 // ??（空值合并）：只有左侧是 null 或 undefined 时，才使用右侧默认值。
 
-const useSongStore = defineStore('songPage', {
+export const useSongStore = defineStore('songPage', {
   state: () => ({
     /** 当前展示的歌曲信息（一页最多 15 首） */
     songs: [] as SongInfo[],
@@ -143,7 +143,7 @@ const useSongStore = defineStore('songPage', {
      * @param songs       - 当前页歌曲数组
      * @param beginIndex  - 当前页第一首歌曲的全局序号（用于计算每行的 displayNumber）
      */
-    setPageData(songs: SongInfo[], beginIndex: number) {
+    setPageData(songs: SongInfo[]) {
       this.songs = songs
     },
 
@@ -158,7 +158,7 @@ const useSongStore = defineStore('songPage', {
         isMyLike: !originSong.isMyLike,
       }
       try {
-        await callJuceFunc<void>(B_toggleMyLike.name, songId)
+        await callJuceFunc(B_toggleMyLike.name, songId)
       } catch (error) {
         showErrorWindow(error)
         this.songs[index] = originSong // 回滚
@@ -166,5 +166,3 @@ const useSongStore = defineStore('songPage', {
     },
   },
 })
-
-export const songStore = useSongStore();

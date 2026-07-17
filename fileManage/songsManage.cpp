@@ -467,9 +467,9 @@ bool SongsManage::reverseMyLike(int64_t id){
         }else{
             return false;
         }
-    }catch(...){
+    }catch(const SQLite::Exception& e){
         auto logger{spdlog::get(LogUiID)};
-        logger->error("[我喜欢]状态更新失败，请重试");
+        logger->error("[我喜欢]状态更新失败，请重试:{}",e.what());
         return false;
     }
 }

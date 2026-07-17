@@ -2,8 +2,13 @@
 import { onMounted, ref, watch } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
-import { B_getAllSongCount, B_inputFiles } from '@/bridge/bridge.generated.ts';
+import {
+  B_getAllSongCount,
+  B_inputFiles,
+  B_refreshAllMusicSongs,
+} from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
+import { useSongStore, type SongInfo } from '@/store/songStore';
 
 const songCount = ref(0);
 
@@ -42,6 +47,27 @@ async function handleFilesSelected(): Promise<void> {
 async function refreshSongCount() {
   const obj = await callJuceFunc(B_getAllSongCount.name);
   songCount.value = (obj as any)?.[B_getAllSongCount.count];
+}
+const songStore = useSongStore();
+
+async function refreshSongPage(targetPage: number, isAscending: boolean, sortMode: number) {
+  const result = await callJuceFunc(B_refreshAllMusicSongs.name, {
+    page: targetPage,
+    isAscending: isAscending,
+    sortMode: sortMode,
+  });
+  if (result) {
+    if (typeof result === 'object' && B_refreshAllMusicSongs.error in result) {
+      refreshErrorPage();
+    }
+    if (Array.isArray(result)) {
+      songStore.setPageData(result as SongInfo[]);
+    }
+  }
+}
+
+function refreshErrorPage() {
+  //错误页面显示图像
 }
 
 onMounted(() => {

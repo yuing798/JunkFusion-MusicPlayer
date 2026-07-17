@@ -12,7 +12,7 @@ private:
     //std::unique_ptr<PluginsManage> plugins;//插件管理
 
     juce::ThreadPool writeWorker{1};//保证数据库写操作串行化
-    juce::ThreadPool readWorker{3};//读操作轻量快速，所以分配三个线程
+    juce::ThreadPool readWorker{1};
 
 public:
     explicit dbManager() {
