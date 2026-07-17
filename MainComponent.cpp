@@ -14,11 +14,11 @@
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <utility>
 #include <vector>
 #include "fileManage/dbManager.hpp"
-#include "image/ImageManager.hpp"
 
 //==============================================================================
 MainComponent::MainComponent(){
@@ -46,7 +46,7 @@ MainComponent::MainComponent(){
                     if(tokens[3] == "50x50"){
                         if(hash.empty()){
                             return juce::WebBrowserComponent::Resource(
-                                ImageManager::png2MemoryAndFile(imageHolder50x50),
+                                imageHolder50x50,
                                 "image/png"
                             );//没有图片的话返回占位图片
                         }else{
@@ -90,7 +90,11 @@ MainComponent::MainComponent(){
 
                 getMultiMediaFileChoose([complete](const juce::Array<juce::File>& files){
 
+                    auto logger{spdlog::get(LogSchedulerID)};
+                    logger->info("开始导入音频文件");
+
                     if(files.isEmpty()){
+                        logger->info("用户取消了音频文件导入");
                         complete(juce::var());//就算不需要cpp到js的通信也必须发送完成信号
                         return;
                     }//用户取消选择

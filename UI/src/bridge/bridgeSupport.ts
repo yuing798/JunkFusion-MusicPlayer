@@ -17,7 +17,7 @@ import { showErrorWindow } from "@/components/other/errorWindow.vue"
 //     loading.value = false;
 //   }
 // };
-export async function callJuceFunc<T = unknown>(name: string, ...args: unknown[]): Promise<T> {
+export async function callJuceFunc(name: string, ...args: unknown[]): Promise<unknown> {
   const results = await getNativeFunction(name)(...args)//如果没有三个点只会传进来第一个数
   if (results && typeof results === 'object') {
     if(B_event.fullError in results){
@@ -28,5 +28,5 @@ export async function callJuceFunc<T = unknown>(name: string, ...args: unknown[]
       showErrorWindow(results[B_event.fullSuccess],2000)//如果有完全成功的弹窗显示2秒
     }
   }
-  return results as T
+  return results
 }

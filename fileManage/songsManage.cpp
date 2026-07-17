@@ -59,14 +59,14 @@ bool SongsManage::insertSong(const juce::File& path)
     if(result!=0){
         //非多媒体文件也会返回AVERROR
         //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
-        if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:",ffmpegErrorOutput(result));
+        if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:{}",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
         return false;
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if(result<0){
         //SPDLOG:无法找到流信息
-        if(logger) logger->error("无法找到该文件的流信息:",ffmpegErrorOutput(result));
+        if(logger) logger->error("无法找到该文件的流信息:{}",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
         return false;
     }
@@ -296,7 +296,7 @@ bool SongsManage::insertSong(const juce::File& path)
     }
     catch (const SQLite::Exception& e)
     {
-        if(logger) logger->error("data update error",e.what());
+        if(logger) logger->error("insert song error:{}",e.what());
         return false;
     }
 

@@ -135,7 +135,6 @@ inline const char* createSongsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songs (
         songId             INTEGER PRIMARY KEY AUTOINCREMENT,
         filePath           TEXT    UNIQUE NOT NULL,
-        fileName           TEXT    NOT NULL,
         fileSize           INTEGER NOT NULL,
         lastModifiedTime   TEXT    NOT NULL,
         addTime            TEXT,

@@ -31,7 +31,7 @@ async function handleFilesSelected(): Promise<void> {
   if (isImporting.value) return;
   isImporting.value = true;
   try {
-    await callJuceFunc<void>(B_inputFiles.name);
+    await callJuceFunc(B_inputFiles.name);
   } catch (error) {
     console.error(error);
   } finally {
@@ -40,8 +40,8 @@ async function handleFilesSelected(): Promise<void> {
   }
 }
 async function refreshSongCount() {
-  const obj = await callJuceFunc<{ count: number }>(B_getAllSongCount.name);
-  songCount.value = obj.count;
+  const obj = await callJuceFunc(B_getAllSongCount.name);
+  songCount.value = (obj as any)?.[B_getAllSongCount.count];
 }
 
 onMounted(() => {

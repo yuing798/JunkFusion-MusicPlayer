@@ -11,6 +11,7 @@ public:
     explicit LRUCachePool(size_t c) : capacity(c) {
         if (c == 0) throw std::invalid_argument("capacity must be > 0");
     }
+    ~LRUCachePool() = default;
 
     // 获取值，若不存在则返回默认构造的 Value（要求 Value 有默认构造函数）
     std::optional<Value&> get(const Key& key) {
@@ -52,6 +53,7 @@ public:
     size_t size() const { return cacheMap.size(); }
 
 private:
+    bool isByteCalc{false};//是通过总容量计算LRU大小还是通过总数计算，这个留待以后再开发，现在用不到
     size_t capacity;
     std::list<std::pair<Key, Value>> cacheList;          // 双向链表
     std::unordered_map<Key, typename std::list<std::pair<Key, Value>>::iterator> cacheMap;      // 键 → 链表迭代器

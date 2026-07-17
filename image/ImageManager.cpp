@@ -3,7 +3,7 @@
 #include "juce_core/juce_core.h"
 #include <spdlog/spdlog.h>
 
-std::vector<std::byte> ImageManager::png2MemoryAndFile(juce::Image& img,const juce::File& path){
+std::vector<std::byte> ImageManager::png2MemoryAndFile(juce::Image img,const juce::File& path){
 
     // 1. 创建 PNG 编码器
     juce::PNGImageFormat pngFormat;
