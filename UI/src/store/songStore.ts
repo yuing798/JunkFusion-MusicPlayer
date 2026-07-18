@@ -8,76 +8,50 @@ export interface SongInfo {//interface指的是自定义类型
 
   /** 数据库主键，自增 ID，C++ 端为 int64_t */
   songId: number
-
   /** 歌曲时长（秒） */
   duration: number
-
   title: string
-
   /** 艺术家名称，C++ 端为 std::optional */
   artist: string|null
-
   /** 专辑名称，C++ 端为 std::optional */
   album: string|null
-
   /** 专辑艺术家，C++ 端为 std::optional */
   albumArtist: string|null
-
   /** 体裁，C++ 端为 std::optional */
   genre: string|null
-
   /** 轨道号，C++ 端为 std::optional（undefined 表示不存在） */
   trackNumber: number|null
-
   /** 碟片号，C++ 端为 std::optional（undefined 表示不存在） */
   discNumber: number|null
-
   /** 发行年份，C++ 端为 std::optional（undefined 表示不存在） */
   year: number|null
-
   /** 作曲者，C++ 端为 std::optional */
   composer: string|null
-
   /** 比特率（kbps），C++ 端为 int64_t */
   bitRate: number
-
   /** 采样率（Hz） */
   sampleRate: number
-
   /** 通道数 */
   numChannels: number
-
   /** 位深 */
   bitDepth: number
-
   /** 编码器名称，C++ 端为 std::optional */
   codecName: string|null
-
-  /** 是否被检测为音乐资源 */
-  isMusic: boolean
-
   /** AI 分析体裁，C++ 端为 std::optional */
   aiGenre: string|null
-
   /** 节拍数（BPM），C++ 端为 std::optional（undefined 表示未知） */
   bpm: number|null
-
   /** 调性（如 "C major", "A minor"），C++ 端为 std::optional */
   key: string|null
-
   // ════════════════════════════════════════════════════════════════
   // 5. 用户信息
   // ════════════════════════════════════════════════════════════════
-
   /** 是否添加到"我喜欢"列表 */
   isMyLike: boolean
-
   /** 用户备注，C++ 端为 std::optional */
   comment: string|null
-
   /** 已经播放了多少次 */
   playNum: number
-
 }
 // ════════════════════════════════════════════════════════════════
 // songStore — 当前页面歌曲列表的 Pinia store

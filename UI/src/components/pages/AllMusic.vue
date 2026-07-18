@@ -87,6 +87,7 @@ onMounted(() => {
   }
 
   refreshSongCount(); //获得歌曲总数
+  refreshSongPage(1, isAscending.value, selectedSort.value); //刷新页面数据
 });
 // computed的几个特性
 // 必须有返回值（它“计算”出结果）。

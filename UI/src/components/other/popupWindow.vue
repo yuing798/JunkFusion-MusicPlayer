@@ -6,7 +6,7 @@ import { IconX } from '@tabler/icons-vue';
 // PopupWindow — 可复用的弹出窗组件
 //
 // 使用方式：
-//   <PopupWindow ref="popupRef" title="歌曲详情" :width="400">
+//   <PopupWindow ref="popupRef" title="歌曲详情" >
 //     <template #trigger-button>
 //       <button>打开弹窗</button>
 //     </template>
@@ -25,17 +25,12 @@ import { IconX } from '@tabler/icons-vue';
 //   - Teleport to body
 // ════════════════════════════════════════════════════════════════
 
-const props = withDefaults(
-  defineProps<{
-    /** 弹窗标题（显示在标题栏居中位置） */
-    title: string;
-    /** 弹窗宽度（px），默认 400 */
-    width?: number;
-  }>(),
-  {
-    width: 400,
-  },
-);
+const props = defineProps<{
+  /** 弹窗标题（显示在标题栏居中位置） */
+  title: string;
+  /** 弹窗宽度（px） */
+  width: number;
+}>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -220,24 +215,6 @@ onUnmounted(() => {
 
   /* v-if 挂载时自动触发打开动画 */
   animation: popup-open 200ms ease-out forwards;
-  /* 特性	transition（过渡）	animation（动画）
-  触发方式	需要用户交互（hover、点击、类名变化）	自动执行（页面加载即播放）
-  循环次数	只执行 1 次（从 A 到 B）	可无限循环（infinite）
-  关键帧	❌ 不需要，只需定义起始和结束状态	✅ 需要 @keyframes 定义多个阶段
-  控制灵活性	较低（只有开始/结束两个状态）	较高（可以定义 0%、50%、100% 等多个状态）
-  语法复杂度	简单（1 行搞定）	较复杂（需要 @keyframes 配合）
-  适用场景	简单的悬停效果（按钮变色、卡片浮起）	复杂的持续动画（加载动画、闪烁、旋转） */
-
-  /* 第一个参数popup-open（动画名称）
-  作用：指定要播放的 @keyframes 动画叫什么名字 */
-  /* 第四个参数forwards（填充模式）
-  作用：控制动画结束后，元素停在什么状态
-
-  值	效果
-  none（默认）	动画结束后回到初始状态
-  forwards	动画结束后停在最后一帧（100%） ✅
-  backwards	动画开始前显示第一帧（0%）
-  both	同时应用 forwards + backwards */
 }
 /* 内联元素（Inline Element） 就是“不换行”的元素。它只占据自己内容所需的宽度，多个内联元素会在同一行从左到右依次排列，直到宽度不够才换行。 */
 .popup-window.popup-closing {
@@ -318,6 +295,6 @@ onUnmounted(() => {
 /* ── 内容区域 ── */
 
 .popup-body {
-  padding: 10px;
+  padding: 5px;
 }
 </style>

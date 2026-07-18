@@ -52,7 +52,6 @@
     "numCh":"numCh",
     "bitDepth":"bitDepth",
     "codecName":"codecName",
-    "isMusic":"isMusic",
     "aiGenre":"aiGenre",
     "bpm":"bpm",
     "key":"key",

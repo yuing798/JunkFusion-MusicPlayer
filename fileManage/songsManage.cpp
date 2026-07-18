@@ -120,11 +120,9 @@ bool SongsManage::insertSong(const juce::File& path)
     AVDictionaryEntry* pEntry = nullptr;
 
     if ((pEntry = av_dict_get(pTags, "title",       nullptr, 0))){
-        if(pEntry->value){
-            info.title = pEntry->value;
-        }else{
-            info.title = juce::File(info.filePath).getFileNameWithoutExtension().toStdString();
-        }
+        info.title = pEntry->value;
+    }else{
+        info.title = juce::File(info.filePath).getFileNameWithoutExtension().toStdString();
     }
     auto safeToInt = [](const char* str) -> int{
         try { return std::stoi(str); }

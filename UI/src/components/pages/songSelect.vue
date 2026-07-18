@@ -2,8 +2,7 @@
 import { watch } from 'vue';
 import EachSong from '@/components/cell/eachSong.vue';
 import PageChange from '@/components/other/pageChange.vue';
-import { PlaybackState } from '@/macro/playState';
-import { songStore, type SongInfo } from '@/store/songStore';
+import { useSongStore } from '@/store/songStore';
 
 //该处为分页加载
 
@@ -35,57 +34,18 @@ const props = defineProps<{
   totalPages: number;
   /** 当前选中的页码（从 1 开始） */
   currentPage: number;
-  /** 当前页的歌曲信息数组，最多 15 首 */
-  songInfos: SongInfo[];
-  /** 当前正在播放的歌曲 ID，null 表示无歌曲播放 */
-  activeSongId: number | null;
-  /** 当前播放状态 */
-  activePlaybackState: PlaybackState;
 }>();
 
 const emit = defineEmits<{
   (e: 'page-change', page: number): void;
-  /** 请求改变播放状态 — 只传 songId，不传 SongInfo 对象 */
-  (e: 'request-playback-change', songId: number, nextState: PlaybackState): void;
 }>();
-
-// ════════════════════════════════════════════════════════════════
-// 将父组件传入的歌曲数据写入 store
-// 这样 eachSong 就不需要 songInfo prop，直接从 store 按 songId 查找
-// ════════════════════════════════════════════════════════════════
-
-watch(
-  () => props.songInfos,
-  (infos) => {
-    songStore.setPageData(infos, (props.currentPage - 1) * 15);
-  },
-  { immediate: true },
-);
-
 // ════════════════════════════════════════════════════════════════
 // 每首歌曲的播放状态
 // 只有当 song.songId === activeSongId 时才显示 activePlaybackState，
 // 否则为 Stopped（显示序号）
 // ════════════════════════════════════════════════════════════════
 
-function getSongPlaybackState(song: SongInfo): PlaybackState {
-  if (props.activeSongId !== null && song.songId === props.activeSongId) {
-    return props.activePlaybackState;
-  }
-  return PlaybackState.Stopped;
-}
-
-// ════════════════════════════════════════════════════════════════
-// 事件冒泡
-//
-// toggle-like / show-more-info 不再冒泡：
-//   - toggle 在 store 中完成（乐观更新 + 回滚）
-//   - 更多信息弹窗在 eachSong 内部（PopupWindow），不需要外部参与
-// ════════════════════════════════════════════════════════════════
-
-function onRequestPlaybackChange(songId: number, nextState: PlaybackState): void {
-  emit('request-playback-change', songId, nextState);
-}
+const songStore = useSongStore();
 
 function onPageChange(page: number): void {
   emit('page-change', page);
@@ -108,13 +68,7 @@ function onPageChange(page: number): void {
            - playbackState → 控制播放/暂停图标
          ═══════════════════════════════════════════════════════════ -->
     <div class="song-list">
-      <EachSong
-        v-for="song in songStore.songs"
-        :key="song.songId"
-        :song-id="song.songId"
-        :playback-state="getSongPlaybackState(song)"
-        @request-playback-change="onRequestPlaybackChange"
-      />
+      <EachSong v-for="song in songStore.songs" :key="song.songId" :song-id="song.songId" />
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════

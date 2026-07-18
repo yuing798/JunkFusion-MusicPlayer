@@ -98,7 +98,6 @@ struct SongInfo
         obj->setProperty(B_songInfo::codecName,         optStr(song.codecName));
 
         // ── 4. AI 分析 ──
-        obj->setProperty(B_songInfo::isMusic,     optInt(song.isMusic));
         obj->setProperty(B_songInfo::aiGenre,     optStr(song.aiGenre));
         obj->setProperty(B_songInfo::bpm,         optInt(song.bpm));
         obj->setProperty(B_songInfo::key,         optStr(song.key));
