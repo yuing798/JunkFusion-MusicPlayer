@@ -3,20 +3,11 @@ import { callJuceFunc } from '@/bridge/bridgeSupport'
 import { showErrorWindow } from '@/components/other/errorWindow.vue'
 import { B_toggleMyLike } from '@/bridge/bridge.generated'
 
-
+// TypeScript 的 interface：它只在编译时存在，用来检查类型。编译成 JavaScript 后，它会被完全删除，不留任何痕迹。
 export interface SongInfo {//interface指的是自定义类型
 
   /** 数据库主键，自增 ID，C++ 端为 int64_t */
   songId: number
-
-  /** 文件完整路径 */
-  filePath: string
-
-  /** 文件大小（字节），C++ 端为 int64_t */
-  fileSize: number
-
-  /** 文件最后一次修改时间 */
-  lastModifiedTime: string
 
   /** 歌曲时长（秒） */
   duration: number
@@ -24,30 +15,28 @@ export interface SongInfo {//interface指的是自定义类型
   title: string
 
   /** 艺术家名称，C++ 端为 std::optional */
-  artist?: string
+  artist: string|null
 
   /** 专辑名称，C++ 端为 std::optional */
-  album?: string
+  album: string|null
 
   /** 专辑艺术家，C++ 端为 std::optional */
-  albumArtist?: string
+  albumArtist: string|null
 
   /** 体裁，C++ 端为 std::optional */
-  genre?: string
+  genre: string|null
 
   /** 轨道号，C++ 端为 std::optional（undefined 表示不存在） */
-  trackNumber?: number
+  trackNumber: number|null
 
   /** 碟片号，C++ 端为 std::optional（undefined 表示不存在） */
-  discNumber?: number
+  discNumber: number|null
 
   /** 发行年份，C++ 端为 std::optional（undefined 表示不存在） */
-  year?: number
+  year: number|null
 
   /** 作曲者，C++ 端为 std::optional */
-  composer?: string
-
-  imageHash?: string
+  composer: string|null
 
   /** 比特率（kbps），C++ 端为 int64_t */
   bitRate: number
@@ -62,22 +51,19 @@ export interface SongInfo {//interface指的是自定义类型
   bitDepth: number
 
   /** 编码器名称，C++ 端为 std::optional */
-  codecName?: string
+  codecName: string|null
 
   /** 是否被检测为音乐资源 */
   isMusic: boolean
 
   /** AI 分析体裁，C++ 端为 std::optional */
-  aiGenre?: string
+  aiGenre: string|null
 
   /** 节拍数（BPM），C++ 端为 std::optional（undefined 表示未知） */
-  bpm?: number
+  bpm: number|null
 
   /** 调性（如 "C major", "A minor"），C++ 端为 std::optional */
-  key?: string
-
-  /** 是否已经进行过 AI 处理 */
-  aiProcessed: boolean
+  key: string|null
 
   // ════════════════════════════════════════════════════════════════
   // 5. 用户信息
@@ -87,19 +73,11 @@ export interface SongInfo {//interface指的是自定义类型
   isMyLike: boolean
 
   /** 用户备注，C++ 端为 std::optional */
-  comment?: string
+  comment: string|null
 
   /** 已经播放了多少次 */
-  hadPlayedNum: number
+  playNum: number
 
-  /**
-   * 优先级排序后的位置
-   *
-   * 由 C++ 端使用 ICU Collator 按 title 拼音排序后分配，
-   * 每次插入/更新歌曲后自动重建。
-   * 逻辑上不会因其他操作而改变。
-   */
-  nameId: number
 }
 // ════════════════════════════════════════════════════════════════
 // songStore — 当前页面歌曲列表的 Pinia store
@@ -109,10 +87,6 @@ export interface SongInfo {//interface指的是自定义类型
 //   - 提供 getSongById 让子组件按 ID 查找
 //   - 统一管理"我喜欢"的乐观更新与回滚
 // ════════════════════════════════════════════════════════════════
-
-// ||（逻辑或）：只要左侧是假值（0、''、false、null、undefined），就使用右侧默认值。
-
-// ??（空值合并）：只有左侧是 null 或 undefined 时，才使用右侧默认值。
 
 export const useSongStore = defineStore('songPage', {
   state: () => ({

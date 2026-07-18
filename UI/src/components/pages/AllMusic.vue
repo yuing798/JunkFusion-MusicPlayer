@@ -6,6 +6,7 @@ import {
   B_getAllSongCount,
   B_inputFiles,
   B_refreshAllMusicSongs,
+  B_songInfo,
 } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 import { useSongStore, type SongInfo } from '@/store/songStore';
@@ -58,10 +59,13 @@ async function refreshSongPage(targetPage: number, isAscending: boolean, sortMod
   });
   if (result) {
     if (typeof result === 'object' && B_refreshAllMusicSongs.error in result) {
-      refreshErrorPage();
+      refreshErrorPage(); //错误页面刷新出来需要图片占位
+      return;
     }
     if (Array.isArray(result)) {
-      songStore.setPageData(result as SongInfo[]);
+      const pageList = result as SongInfo[];
+      songStore.setPageData(pageList);
+      return;
     }
   }
 }

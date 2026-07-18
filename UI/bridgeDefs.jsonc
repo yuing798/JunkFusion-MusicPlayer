@@ -36,7 +36,7 @@
   },
 
   "songInfo":{
-    "id":"id",
+    "songId":"",
     "duration":"duration",
     "title":"title",
     "artist":"artist",
@@ -56,7 +56,6 @@
     "aiGenre":"aiGenre",
     "bpm":"bpm",
     "key":"key",
-    "aiProcessed":"aiProcessed",
     "isMyLike":"isMyLike",
     "comment":"comment",
     "playNum":"playNum"

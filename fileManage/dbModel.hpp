@@ -74,7 +74,7 @@ struct SongInfo
         };
 
         // ── 0. 主键 ──
-        obj->setProperty(B_songInfo::id, song.songId);
+        obj->setProperty(B_songInfo::songId, song.songId);
 
         // ── 1. 文件信息 ──
         obj->setProperty(B_songInfo::duration,         song.duration);
@@ -102,7 +102,6 @@ struct SongInfo
         obj->setProperty(B_songInfo::aiGenre,     optStr(song.aiGenre));
         obj->setProperty(B_songInfo::bpm,         optInt(song.bpm));
         obj->setProperty(B_songInfo::key,         optStr(song.key));
-        obj->setProperty(B_songInfo::aiProcessed, song.aiProcessed);
 
         // ── 5. 用户信息 ──
         obj->setProperty(B_songInfo::isMyLike,     song.isMyLike);
