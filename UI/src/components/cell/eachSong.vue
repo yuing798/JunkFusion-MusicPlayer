@@ -20,37 +20,6 @@ const props = defineProps<{
 const playBackStore = usePlayBackStore();
 const songStore = useSongStore();
 
-// ════════════════════════════════════════════════════════════════
-// 歌曲元数据（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
-// ════════════════════════════════════════════════════════════════
-
-function getSongOtherInfo(): string {
-  const s = props.song;
-  let text: string = '';
-  const addIf = (label: string, value: string | number | null): void => {
-    if (value === null) return;
-    const sv = String(value);
-    text += `${label}:${sv}\n`;
-  }; //如果不为空则加上这一行
-
-  addIf('播放次数', s.playNum);
-  addIf('BPM', s.bpm);
-  addIf('调性', s.key);
-  addIf('采样率', `${s.sampleRate} Hz`);
-  addIf('比特率', `${s.bitRate} kbps`);
-  addIf('通道数', s.numChannels);
-  addIf('位深', s.bitDepth);
-  addIf('解码器名称', s.codecName);
-  addIf('体裁(AI分析)', s.aiGenre);
-  addIf('专辑艺术家', s.albumArtist);
-  addIf('体裁', s.genre);
-  addIf('轨道号', s.trackNumber);
-  addIf('碟片号', s.discNumber);
-  addIf('发行年份', s.year);
-  addIf('作曲者', s.composer);
-
-  return text;
-}
 /** 弹出窗标题（songInfo 不存在时兜底） */
 const popupTitle = computed(() => props.song.title);
 
@@ -147,18 +116,7 @@ function changePlayBack() {
         </div>
       </template>
 
-      <template #popup-window-component>
-        <div class="song-other-info">
-          <!-- 专辑封面：后续通过 imageHash 桥接获取 -->
-          <img :src="getBackendResourceAddress(`songId/${props.song.songId}/image/240x240`)" />
-
-          <div class="song-detail-info">
-            <p v-for="(line, i) in metadataLines" :key="i" class="song-detail-metadata-line">
-              {{ line }}
-            </p>
-          </div>
-        </div>
-      </template>
+      <template #popup-window-component> </template>
     </PopupWindow>
   </div>
 </template>

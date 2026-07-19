@@ -9,6 +9,7 @@
     --color-text-second: #555555;/*次级文本的颜色*/ 
     --color-stress:#00f2fe;/*强调色，比如现在在导航窗的哪个位置*/
     --color-super-stress:#4facfe;
+    --color-shadow:#2f76b4;
     /* 超级强调(给 渐变 调用的) */
     --color-error:#991f1f;
     /* 错误提示的文字颜色 */
@@ -25,21 +26,54 @@
     --svg-btn-width:30px;
 }
 
-/* .svg-button {
-  align-items: center;
-  justify-content: center;
-  width: var(--svg-btn-width); 
-  height: var(--svg-btn-width);
+/* 类似金属形状的仿真按钮 */
+.shiny-btn {
+  /* 尺寸与文字 */
+  display: inline-block;
+  padding: 14px 36px;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--color-text-main);
-  padding: 4px;
-
   border: none;
-  border-radius: calc(var(--svg-btn-width)/2.0);
-  background-color: transparent;
+  border-radius: 8px;
+
+  /* 主体渐变（从左上亮到右下暗） */
+  background: linear-gradient(145deg, var(--color-stress), var(--color-super-stress));
+
+  /* 立体阴影：底部深色 + 外围柔光 */
+  box-shadow:
+    0 6px 0 var(--color-shadow),           /* 底部硬阴影，模拟厚度 */
+    0 8px 20px rgb(0, 0, 0, 25%); /* 环境阴影 */
+
+  /* 定位基准，用于光泽伪元素 */
+  position: relative;
   cursor: pointer;
-  transition: background-color var(--ease-time) ease;
+
+  /* 点击时瞬间响应，不拖沓 */
+  transition: all 0.06s linear;
 }
 
-.svg-button:hover {
-  background-color: var(--color-hover);
-} */
+/* ⭐ 光泽效果：覆盖在按钮上半部分的半透明白色渐变 */
+.shiny-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 55%;               /* 覆盖上半部分 */
+  background: linear-gradient(
+    180deg,
+    var(--color-edge) 0%,
+    var(--color-text-main) 100%
+  );
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;      /* 允许点击穿透到按钮 */
+}
+
+/* ⭐ 点击时：按钮下移，阴影消失，模拟凹陷 */
+.shiny-btn:active {
+  transform: translateY(6px);
+  box-shadow:
+    0 0 0 var(--color-shadow),           /* 底部硬阴影消失 */
+    0 4px 12px rgb(0, 0, 0, 15%); /* 环境阴影减弱 */
+}
