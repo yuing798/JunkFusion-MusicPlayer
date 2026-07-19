@@ -32,8 +32,6 @@ struct SongInfo
     std::optional<std::string> composer;        // 作曲者
     //这些基础数据都是文件容器层面的
 
-    // std::optional<std::string> imageHash;       //图片所对应的哈希值索引
-
     // ── 2. FFmpeg 解码层信息 ──
     
     int64_t    bitRate      = 0;            // 比特率（kbps）
@@ -46,7 +44,6 @@ struct SongInfo
     //这个ID号我不打算发给前端，但是codecName一定要发给前端
 
     // ── 4. AI 分析信息 ──，ai分析是和具体音频流相关的，所以没有必要放在文件层
-    std::optional<bool> isMusic{false};//检测这个流是不是音乐资源，没有的话ai分析个屁
     std::optional<std::string> aiGenre;     // AI 分析体裁
     std::optional<int>         bpm;         // 节拍数（std::nullopt 表示未知）
     std::optional<std::string> key;         // 调性（如 C major, A minor）
@@ -152,7 +149,6 @@ inline const char* createSongsTableSQL = R"(
         sampleRate         INTEGER,
         numChannels        INTEGER,
         codecName          TEXT,
-        isMusic            INTEGER DEFAULT 0,
         aiGenre            TEXT,
         bpm                INTEGER DEFAULT 0,
         key                TEXT,

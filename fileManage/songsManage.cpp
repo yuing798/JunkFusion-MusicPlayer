@@ -6,6 +6,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
 #include <memory>
@@ -319,7 +320,7 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
         duration, title, artist, album, albumArtist, 
         genre, trackNumber, discNumber, year, composer, 
         bitRate, bitDepth, sampleRate, numChannels, codecName, 
-        isMusic, aiGenre, bpm, key, aiProcessed, 
+        aiGenre, bpm, key, aiProcessed, 
         isMyLike, comment, hadPlayedNum, nameId 
         FROM songs 
         ORDER BY 
@@ -389,7 +390,6 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
         info.codecName        = optStrCol("codecName");
 
         // ── AI 分析 ──
-        info.isMusic          = query.getColumn("isMusic").getInt() != 0;
         info.aiGenre          = optStrCol("aiGenre");
         info.bpm              = optIntCol("bpm");
         info.key              = optStrCol("key");
@@ -473,13 +473,18 @@ bool SongsManage::reverseMyLike(int64_t id){
 }
 
 std::string SongsManage::getImageHashBySongId(int64_t id){
-    SQLite::Statement sql(
-        db,
-        "SELECT songImage.hash AS coverHash FROM songs LEFT JOIN songImage ON songs.coverId = songImage.id WHERE songs.songId = :id"
-    );
-    sql.bind(":id",id);
-    if(sql.executeStep()){
-        return sql.getColumn("coverHash").getString();
+    try{
+        SQLite::Statement sql(
+            db,
+            "SELECT hash FROM songs WHERE songs.songId = :songId"
+        );
+        sql.bind(":songId",id);
+        if(sql.executeStep()){
+            return sql.getColumn("hash").getString();
+        }
+    }catch(const SQLite::Exception& e){
+        auto logger =  spdlog::get(LogUiID);
+        logger->error("获取歌曲封面哈希值失败:{}",e.what());
     }
     return "";
 }

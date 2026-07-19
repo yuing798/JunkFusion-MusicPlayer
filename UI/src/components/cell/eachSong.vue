@@ -24,7 +24,7 @@ const songStore = useSongStore();
 // 歌曲元数据（弹出窗内容，与 C++ OtherSongInfoIntro 一致）
 // ════════════════════════════════════════════════════════════════
 
-function getSongMetadataLines(): string {
+function getSongOtherInfo(): string {
   const s = props.song;
   let text: string = '';
   const addIf = (label: string, value: string | number | null): void => {
@@ -33,6 +33,7 @@ function getSongMetadataLines(): string {
     text += `${label}:${sv}\n`;
   }; //如果不为空则加上这一行
 
+  addIf('播放次数', s.playNum);
   addIf('BPM', s.bpm);
   addIf('调性', s.key);
   addIf('采样率', `${s.sampleRate} Hz`);
@@ -40,7 +41,7 @@ function getSongMetadataLines(): string {
   addIf('通道数', s.numChannels);
   addIf('位深', s.bitDepth);
   addIf('解码器名称', s.codecName);
-  addIf('AI分析体裁', s.aiGenre);
+  addIf('体裁(AI分析)', s.aiGenre);
   addIf('专辑艺术家', s.albumArtist);
   addIf('体裁', s.genre);
   addIf('轨道号', s.trackNumber);
@@ -50,12 +51,6 @@ function getSongMetadataLines(): string {
 
   return text;
 }
-
-const metadataLines = computed(() => {
-  if (!songInfo.value) return [];
-  return getSongMetadataLines(songInfo.value);
-});
-
 /** 弹出窗标题（songInfo 不存在时兜底） */
 const popupTitle = computed(() => props.song.title);
 
@@ -94,10 +89,10 @@ function changePlayBack() {
         <IconPlayerPlayFilled class="hover-play"></IconPlayerPlayFilled>
       </div>
 
-      <div v-else style="display: contents">
+      <templete v-else>
         <IconPlayerPause v-if="playBackStore.isPlaying === true" class="svg-icon"></IconPlayerPause>
         <IconPlayerPlayFilled v-else class="svg-icon"></IconPlayerPlayFilled>
-      </div>
+      </templete>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -145,7 +140,7 @@ function changePlayBack() {
          第 7 列：更多信息按钮 (40px)
          点击触发 PopupWindow，仿 C++ PopupWindowButton 的缩放动画
          ═══════════════════════════════════════════════════════════ -->
-    <PopupWindow :title="popupTitle" :width="450">
+    <PopupWindow title="歌曲详情">
       <template #trigger-button>
         <div class="cell-more">
           <IconMessageCircleQuestion class="svg-icon" />
@@ -318,7 +313,7 @@ function changePlayBack() {
 
 /* ════════════════════════════════════════════════════════════════
    弹出窗内容区域 — 歌曲详情
-   由 PopupWindow 的 #default 插槽投射
+   由 PopupWindow 的 #popup-window-component 插槽投射
    ════════════════════════════════════════════════════════════════ */
 
 .song-other-info {
