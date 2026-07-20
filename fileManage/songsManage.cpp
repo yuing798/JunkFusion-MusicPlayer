@@ -286,8 +286,6 @@ bool SongsManage::insertSong(const juce::File& path)
             bindSongFields(insertSong);
             insertSong.exec();
         }
-        // ── 插入/更新完成后重建 nameId 排序 ──
-        rebuildNameIds();
 
         // ── 全部成功，提交事务 ──
         transaction.commit();
@@ -483,7 +481,14 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
         [](
             const juce::Array<juce::var>& args,auto complete
         ){
-            
+            dbManager::getInstance().runOnRead([complete = std::move(complete)]{
+                std::vector<SongInfo> songs = dbManager::getInstance().getSongsManager().getAllSongs();
+                if(!songs.empty()){
+                    complete(SongInfo::vector2VarArray(songs));
+                }else{
+                    complete(B_getAllSongs::nothing);
+                }
+            });
         }
     ).withNativeFunction(B_saveComment::name,//保存对单首歌曲的评论
         [](const juce::Array<juce::var>& args,auto complete){
