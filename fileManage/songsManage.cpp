@@ -596,6 +596,6 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                     text,
                     songId
                 );
-            })
+            });
     });
 }

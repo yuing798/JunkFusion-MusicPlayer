@@ -133,7 +133,6 @@ inline const char* createSongsTableSQL = R"(
         fileSize           INTEGER NOT NULL,
         lastModifiedTime   TEXT    NOT NULL,
         addTime            TEXT,
-        isMultiStreamFile  INTEGER,
         duration           REAL,
         title              TEXT,
         artist             TEXT,

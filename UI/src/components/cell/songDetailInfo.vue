@@ -12,7 +12,7 @@ const s = props.song;
 const remarkText = ref(''); //备注文本
 
 async function saveRemakeText() {
-  callJuceFunc(B_saveComment.name, { text: remarkText, songId: s.songId });
+  await callJuceFunc(B_saveComment.name, { text: remarkText, songId: s.songId });
 }
 
 function convert2String(value: number | null | string) {
@@ -48,7 +48,6 @@ const musicInfoArray = computed(() => [
     <div class="left-column">
       <img :src="getBackendResourceAddress(`songId/${s.songId}/image/240x240`)" />
       <div style="display: flex; flex-direction: column">
-        <button class="shiny-btn">编辑内容</button>
         <button class="shiny-btn">联网自动获取补全元数据</button>
       </div>
     </div>
@@ -83,7 +82,7 @@ const musicInfoArray = computed(() => [
         title="点击输入备注内容"
         v-model="remarkText"
         placeholder="点击输入备注"
-        rows="4"
+        rows="3"
         @blur="saveRemakeText()"
       ></textarea>
     </div>

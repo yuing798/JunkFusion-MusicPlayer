@@ -12,6 +12,7 @@ import {
 import { useSongStore, type SongInfo } from '@/store/songStore';
 import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
 import { usePlayBackStore } from '@/store/playBackStore';
+import SongDetailInfo from './songDetailInfo.vue';
 
 const props = defineProps<{
   song: SongInfo;
@@ -116,7 +117,9 @@ function changePlayBack() {
         </div>
       </template>
 
-      <template #popup-window-component> </template>
+      <template #popup-window-component>
+        <SongDetailInfo :song="song"></SongDetailInfo>
+      </template>
     </PopupWindow>
   </div>
 </template>
