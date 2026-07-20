@@ -21,9 +21,6 @@ const props = defineProps<{
 const playBackStore = usePlayBackStore();
 const songStore = useSongStore();
 
-/** 弹出窗标题（songInfo 不存在时兜底） */
-const popupTitle = computed(() => props.song.title);
-
 function changePlayBack() {
   if (props.song.songId !== playBackStore.currentSongId) {
     playBackStore.currentSongId = props.song.songId;
@@ -99,7 +96,6 @@ function changePlayBack() {
          第 6 列：我喜欢按钮 (40px)
          isMyLike=true → IconHeartFilled（红心）
          isMyLike=false → IconHeart（空心）
-         toggle 动作直接调用 store，不 emit
          ═══════════════════════════════════════════════════════════ -->
     <div class="cell-like" @click.stop="songStore.toggleMyLike(props.song.songId)">
       <IconHeartFilled v-if="props.song.isMyLike" color="red" class="svg-icon" />

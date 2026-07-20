@@ -70,6 +70,33 @@ MainComponent::MainComponent(){
                                 );
                             }
                         }
+                    }else if(tokens[3] == "240x240"){
+                        if(hash.empty()){
+                            return juce::WebBrowserComponent::Resource(
+                                imageHolder240x240,
+                                "image/png"
+                            );//没有图片的话返回占位图片
+                        }else{
+
+                            juce::File image240x240{songImageDir.getChildFile("240x240.jpg")};
+                            if(!image240x240.existsAsFile()){//说明是第一次加载240x240图片，没有加入缓存
+                                juce::Image originalImage{juce::ImageCache::getFromFile(
+                                    songImageDir.getChildFile("original.jpg")
+                                )};//得到原始图片
+
+                                //裁剪图片
+                                juce::Image songImage240x240 = ImageManager::clipMode(originalImage,50,50);
+
+                                //加载到磁盘和内存中
+                                auto vec = ImageManager::jpg2MemoryAndFile(songImage240x240,70,image240x240);
+                                return juce::WebBrowserComponent::Resource(vec,"image/jpeg");
+                            }else{
+                                return juce::WebBrowserComponent::Resource(
+                                    loadFile2ByteVector(image240x240),
+                                    "image/jpeg"
+                                );
+                            }
+                        }
                     }
                 }
             }
