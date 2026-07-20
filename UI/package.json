@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@tabler/icons-vue": "^3.44.0",
+    "@tanstack/vue-virtual": "^3.13.33",
     "juce-framework-frontend-mirror": "^8.0.10",
     "pinia": "^3.0.4",
     "vue": "^3.5.38"

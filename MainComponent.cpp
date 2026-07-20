@@ -85,10 +85,10 @@ MainComponent::MainComponent(){
                                 )};//得到原始图片
 
                                 //裁剪图片
-                                juce::Image songImage240x240 = ImageManager::clipMode(originalImage,50,50);
+                                juce::Image songImage240x240 = ImageManager::clipMode(originalImage,240,240);
 
                                 //加载到磁盘和内存中
-                                auto vec = ImageManager::jpg2MemoryAndFile(songImage240x240,70,image240x240);
+                                auto vec = ImageManager::jpg2MemoryAndFile(songImage240x240,80,image240x240);
                                 return juce::WebBrowserComponent::Resource(vec,"image/jpeg");
                             }else{
                                 return juce::WebBrowserComponent::Resource(

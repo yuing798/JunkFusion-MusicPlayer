@@ -587,7 +587,7 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 }
             });
         }
-    ).withNativeFunction(B_saveComment::name,
+    ).withNativeFunction(B_saveComment::name,//保存对单首歌曲的评论
         [](const juce::Array<juce::var>& args,auto complete){
             juce::String text{args[0][B_saveComment::text]};
             int64_t songId{args[0][B_saveComment::songId]};
@@ -596,6 +596,7 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                     text,
                     songId
                 );
+                complete(juce::var());
             });
     });
 }

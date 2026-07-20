@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
 import {
@@ -10,6 +10,8 @@ import {
 } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 import { useSongStore, type SongInfo } from '@/store/songStore';
+import { useVirtualizer } from '@tanstack/vue-virtual';
+import EachSong from '../cell/eachSong.vue';
 
 const songCount = ref(0);
 
@@ -73,6 +75,21 @@ async function refreshSongPage(targetPage: number, isAscending: boolean, sortMod
 function refreshErrorPage() {
   //错误页面显示图像
 }
+const songs = ref<SongInfo[]>([]);
+const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
+
+const virtualizer = useVirtualizer({
+  // 注意：count 必须用箭头函数包裹，确保响应式变化时重新计算
+  count: (() => songs.value.length) as any,
+
+  getScrollElement: () => scrollContainerRef.value,
+
+  // 每行固定高度（根据你的 UI 调整，单位 px）
+  estimateSize: () => 80,
+
+  // 上下多预渲染 10 个节点，防止快速滚动白屏
+  overscan: 10,
+});
 
 onMounted(() => {
   //初始化升降序
@@ -89,12 +106,6 @@ onMounted(() => {
   refreshSongCount(); //获得歌曲总数
   refreshSongPage(1, isAscending.value, selectedSort.value); //刷新页面数据
 });
-// computed的几个特性
-// 必须有返回值（它“计算”出结果）。
-// 依赖其他响应式数据（依赖变了，它自动重新计算）。
-// 必须是同步的（不能在里面写 setTimeout 或 await）。
-// 不应该产生“副作用”（即不应该修改其他数据、不应该操作 DOM、不应该读写 localStorage）。
-//computed 的典型场景是：“前端手里已经有一份完整数据，我需要基于它算出一个新值”。
 </script>
 
 <template>
@@ -141,8 +152,23 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="viewport-area">
-      <div class="viewport-placeholder"></div>
+    <div class="scroll-container" ref="scrollContainerRef">
+      <!-- 外层视口 -->
+      <div :style="{ height: `${virtualizer.getTotalSize()}px` }" style="position: relative">
+        <!-- 内层viewport ，因为v-bind需要传进来一个js对象，所以必须使用花括号-->
+        <EachSong
+          v-for="virtualRow in virtualizer.getVirtualItems()"
+          :key="String(virtualRow.key)"
+          :style="{
+            transform: `translateY(${virtualRow.start}px)`,
+            height: `${virtualRow.size}px`,
+          }"
+          style="position: absolute; top: 0; left: 0"
+          :song="songs[virtualRow.index]!"
+        >
+          <!-- 虚拟滚动情景使用transform对GPU更友好 -->
+        </EachSong>
+      </div>
     </div>
   </div>
 </template>
@@ -263,36 +289,5 @@ onMounted(() => {
 
 .combo-sort:focus {
   border-color: var(--color-stress);
-}
-
-/* ================================================================
-   第 3 块：Viewport 区域 — 对应 C++ mViewPort
-   占满剩余高度（约 80%）
-   ================================================================ */
-
-.viewport-area {
-  flex: 1;
-  overflow-y: auto;
-  border-top: 2px solid var(--color-edge);
-  position: relative;
-}
-
-.viewport-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 8px;
-}
-
-.placeholder-text {
-  font-size: var(--big-font);
-  color: var(--color-text-second);
-}
-
-.placeholder-hint {
-  font-size: var(--little-font);
-  color: var(--color-edge);
 }
 </style>

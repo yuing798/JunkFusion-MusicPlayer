@@ -11,7 +11,7 @@ const props = defineProps<{
 const s = props.song;
 const remarkText = ref(''); //备注文本
 
-async function saveRemakeText() {
+async function saveComment() {
   await callJuceFunc(B_saveComment.name, { text: remarkText, songId: s.songId });
 }
 
@@ -83,7 +83,7 @@ const musicInfoArray = computed(() => [
         v-model="remarkText"
         placeholder="点击输入备注"
         rows="3"
-        @blur="saveRemakeText()"
+        @blur="saveComment()"
       ></textarea>
     </div>
   </div>

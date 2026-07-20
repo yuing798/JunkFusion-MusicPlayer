@@ -126,7 +126,7 @@ function changePlayBack() {
   /* display: grid; 是 CSS 的网格布局（Grid Layout）属性，它把一个容器变成了"网格化"的二维布局系统——你可以像画表格一样，把子元素按行和列整齐排列 */
   grid-template-columns: 50px 1fr 150px 120px 80px 40px 40px;
   /* 分别为图片，歌名，专辑，AI标签，播放次数，我喜欢，更多 */
-  height: 80px;
+  height: 100%;
   align-items: center;
   gap: 4px;
   padding: 10px 5px;
