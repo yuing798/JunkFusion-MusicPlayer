@@ -7,7 +7,6 @@
     "ffmpeg",
     "spdlog",
     "sqlitecpp",
-    "hash-library",
-    "icu"
+    "hash-library"
   ]
 }

@@ -33,7 +33,6 @@ SongsManage::SongsManage(SQLite::Database& d)
     try
     {
         db.exec(createSongsTableSQL);
-        db.exec(createNameIdIndexSQL);
     }
     catch (const std::exception& e)
     {
@@ -310,40 +309,22 @@ std::optional<int> SongsManage::getTotalSongCount()
     return std::nullopt;
 }
 
-std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMode mode)
+std::vector<SongInfo> SongsManage::getAllSongs()
 {
 
     std::vector<SongInfo> result;
 
     std::string sql = R"(
-        SELECT songId, filePath, fileSize, lastModifiedTime, 
+        SELECT songId, 
         duration, title, artist, album, albumArtist, 
         genre, trackNumber, discNumber, year, composer, 
         bitRate, bitDepth, sampleRate, numChannels, codecName, 
         aiGenre, bpm, key, aiProcessed, 
         isMyLike, comment, hadPlayedNum, nameId 
         FROM songs 
-        ORDER BY 
-    )";//按照顺序查询的sql语句，后面接上排序方式;
-    switch(mode){
-        case SongsManage::SortMode::ByAddTime://添加进应用中的时间和songId一样都是单调递增的
-            sql += " songId ";
-            break;
-        case SongsManage::SortMode::ByName:
-            sql += " nameId ";
-            break;
-        case SongsManage::SortMode::ByPlayTimes:
-            sql += " hadPlayedNum " ;
-            break;
-    }
-    if (ascending)
-        sql += " ASC ";
-    else
-        sql += " DESC ";
-    sql += " LIMIT :limit OFFSET :offset";
+    )";//按照顺序查询的sql语句
+
     SQLite::Statement query(db, sql);
-    query.bind(":limit", traditionalPageRows);
-    query.bind(":offset", traditionalPageRows * page);
 
     // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
     auto optStrCol = [&](const char* colName) -> std::optional<std::string> {
@@ -366,9 +347,6 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
     {
         SongInfo info{};
         info.songId           = query.getColumn("songId").getInt64();
-        info.filePath         = query.getColumn("filePath").getString();
-        info.fileSize         = query.getColumn("fileSize").getInt64();
-        info.lastModifiedTime = query.getColumn("lastModifiedTime").getString();
         info.duration         = query.getColumn("duration").getDouble();
 
         // ── 标签 ──
@@ -399,58 +377,11 @@ std::vector<SongInfo> SongsManage::getSongPage(int page, bool ascending, SortMod
         info.isMyLike         = query.getColumn("isMyLike").getInt() != 0;
         info.comment          = optStrCol("comment");
         info.hadPlayedNum     = query.getColumn("hadPlayedNum").getInt();
-        info.nameId           = query.getColumn("nameId").getInt();
 
         result.push_back(std::move(info));
     }
 
     return result;
-}
-
-void SongsManage::rebuildNameIds()
-{
-
-    // ── 1. 取出所有 songId 和 title ──
-    struct NameEntry { int64_t songId; std::string title; };
-    std::vector<NameEntry> entries;
-    {
-        SQLite::Statement query(db, "SELECT songId, title FROM songs");
-        while (query.executeStep())
-        {
-            entries.push_back({
-                query.getColumn("songId").getInt64(),
-                query.getColumn("title").getString()
-            });
-        }
-    }
-    if (entries.empty()) return;
-
-    // ── 2. ICU Collator 按 title 排序 ──
-    UErrorCode status = U_ZERO_ERROR;
-    std::unique_ptr<icu::Collator> coll(
-        icu::Collator::createInstance(icu::Locale::getRoot(), status));
-
-    if (U_SUCCESS(status) && coll)
-    {
-        std::sort(entries.begin(), entries.end(),
-            [&](const NameEntry& a, const NameEntry& b)
-            {
-                UErrorCode err = U_ZERO_ERROR;
-                return coll->compareUTF8(
-                    icu::StringPiece(a.title),
-                    icu::StringPiece(b.title), err) == UCOL_LESS;
-            });
-    }
-
-    // ── 3. 按排序后的顺序更新 nameId ──
-    for (int i = 0; i < static_cast<int>(entries.size()); ++i)
-    {
-        SQLite::Statement update(db,
-            "UPDATE songs SET nameId = :nameId WHERE songId = :songId");
-        update.bind(":nameId", i + 1);
-        update.bind(":songId", entries[i].songId);
-        update.exec();
-    }
 }
 
 bool SongsManage::reverseMyLike(int64_t id){
@@ -548,44 +479,11 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
             });
         }
     ).withNativeFunction(//得到单页的歌曲信息
-        B_refreshAllMusicSongs::name,//参数：当前页码,升降序，排序方法，
+        B_getAllSongs::name,//参数：当前页码,升降序，排序方法，
         [](
             const juce::Array<juce::var>& args,auto complete
         ){
-            dbManager::getInstance().runOnRead([args,complete = std::move(complete)]{
-                auto sortMode{SongsManage::SortMode::ByAddTime};
-                int sortWay = args[0][B_refreshAllMusicSongs::sortMode];
-                bool isAscending = args[0][B_refreshAllMusicSongs::isAscending];
-                int targetPage = args[0][B_refreshAllMusicSongs::page];
-                switch (sortWay) {
-                    case 0:
-                        sortMode = SongsManage::SortMode::ByAddTime;
-                        break;
-                    case 1:
-                        sortMode = SongsManage::SortMode::ByName;
-                        break;
-                    case 2:
-                        sortMode = SongsManage::SortMode::ByPlayTimes;
-                        break;
-                    default:
-                        sortMode = SongsManage::SortMode::ByAddTime;
-                        break;
-                }
-                auto results{dbManager::getInstance().getSongsManager().getSongPage(
-                    targetPage,
-                    isAscending,
-                    sortMode
-                )};//vector可以为空，所以不需要std::optional进行检测
-                if(results.empty()){
-                    auto obj{new juce::DynamicObject()};
-                    obj->setProperty(B_refreshAllMusicSongs::error,-1);
-                    complete(obj);
-                    return ;
-                }else{
-                    complete(SongInfo::vector2VarArray(results));
-                    return ;
-                }
-            });
+            
         }
     ).withNativeFunction(B_saveComment::name,//保存对单首歌曲的评论
         [](const juce::Array<juce::var>& args,auto complete){

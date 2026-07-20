@@ -53,40 +53,23 @@ async function refreshSongCount() {
 }
 const songStore = useSongStore();
 
-async function refreshSongPage(targetPage: number, isAscending: boolean, sortMode: number) {
-  const result = await callJuceFunc(B_refreshAllMusicSongs.name, {
-    page: targetPage,
-    isAscending: isAscending,
-    sortMode: sortMode,
-  });
-  if (result) {
-    if (typeof result === 'object' && B_refreshAllMusicSongs.error in result) {
-      refreshErrorPage(); //错误页面刷新出来需要图片占位
-      return;
-    }
-    if (Array.isArray(result)) {
-      const pageList = result as SongInfo[];
-      songStore.setPageData(pageList);
-      return;
-    }
-  }
-}
-
 function refreshErrorPage() {
   //错误页面显示图像
 }
 const songs = ref<SongInfo[]>([]);
 const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
 
+function refreshViewport() {
+  virtualizer.value?.measure();
+}
+
 const virtualizer = useVirtualizer({
   // 注意：count 必须用箭头函数包裹，确保响应式变化时重新计算
-  count: (() => songs.value.length) as any,
+  count: songs.value.length,
 
   getScrollElement: () => scrollContainerRef.value,
-
   // 每行固定高度（根据你的 UI 调整，单位 px）
   estimateSize: () => 80,
-
   // 上下多预渲染 10 个节点，防止快速滚动白屏
   overscan: 10,
 });
@@ -102,9 +85,7 @@ onMounted(() => {
   } else {
     selectedSort.value = 0;
   }
-
   refreshSongCount(); //获得歌曲总数
-  refreshSongPage(1, isAscending.value, selectedSort.value); //刷新页面数据
 });
 </script>
 
@@ -152,7 +133,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="scroll-container" ref="scrollContainerRef">
+    <div style="flex: 1; overflow-y: auto" ref="scrollContainerRef">
       <!-- 外层视口 -->
       <div :style="{ height: `${virtualizer.getTotalSize()}px` }" style="position: relative">
         <!-- 内层viewport ，因为v-bind需要传进来一个js对象，所以必须使用花括号-->

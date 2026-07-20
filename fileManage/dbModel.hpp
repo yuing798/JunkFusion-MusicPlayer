@@ -155,10 +155,6 @@ inline const char* createSongsTableSQL = R"(
         isMyLike           INTEGER DEFAULT 0,
         comment            TEXT,
         hadPlayedNum       INTEGER DEFAULT 0,
-        nameId            INTEGER DEFAULT 0,
         hash TEXT
     )
-)";
-inline const char* createNameIdIndexSQL = R"(
-    CREATE INDEX IF NOT EXISTS idx_songs_nameId ON songs (nameId)
 )";

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { callJuceFunc } from '@/bridge/bridgeSupport'
 import { showErrorWindow } from '@/components/other/errorWindow.vue'
-import { B_toggleMyLike } from '@/bridge/bridge.generated'
+import { B_getAllSongs, B_toggleMyLike } from '@/bridge/bridge.generated'
 
 // TypeScript 的 interface：它只在编译时存在，用来检查类型。编译成 JavaScript 后，它会被完全删除，不留任何痕迹。
 export interface SongInfo {//interface指的是自定义类型
@@ -62,37 +62,28 @@ export interface SongInfo {//interface指的是自定义类型
 //   - 统一管理"我喜欢"的乐观更新与回滚
 // ════════════════════════════════════════════════════════════════
 
-export const useSongStore = defineStore('songPage', {
+export const useSongStore = defineStore('allSongs', {
   state: () => ({
-    /** 当前展示的歌曲信息（一页最多 15 首） */
-    songs: [] as SongInfo[],
+    songs: [] as SongInfo[],//所有歌曲
   }),
 
   getters: {
-    /**
-     * 根据 songId 查找歌曲。
-     * 找不到返回 undefined。
-     *
-     * 用法（组件中）：
-     *   const song = mySongStore.getSongById(props.songId)
-     */
-    getSongById: (state) => {
-      return (songId: number): SongInfo | undefined =>
-        state.songs.find((s) => s.songId === songId)
-    },
 
   },
 
   actions: {
-    /**
-     * 设置当前页的歌曲数据。
-     * 由父组件（songSelect / AllMusic）在拿到新页面数据后调用。
-     *
-     * @param songs       - 当前页歌曲数组
-     * @param beginIndex  - 当前页第一首歌曲的全局序号（用于计算每行的 displayNumber）
-     */
-    setPageData(songs: SongInfo[]) {
-      this.songs = songs
+
+    async getAllSongs(){
+      const result =  await callJuceFunc(B_getAllSongs.name);
+      if(Array.isArray(result)){
+        this.songs = result as SongInfo[];
+      }else if(typeof result === 'string'){
+        if(result === B_getAllSongs.nothing){
+          //啥都没有的页面
+        }else if(result === B_getAllSongs.error){
+          //出错了，你他妈重新刷新吧
+        }
+      }
     },
 
     /** 切换"我喜欢"状态（乐观更新 + 回滚） */

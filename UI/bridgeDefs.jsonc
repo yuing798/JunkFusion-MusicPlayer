@@ -13,17 +13,12 @@
       //数据库里总共有多少首歌曲
       "count":"count"//返回歌曲总数
   },
-  "refreshAllMusicSongs":{
-
-      //参数
-      "page":"page",
-      "isAscending":"isAscending",
-      "sortMode":"sortMode",
+  "getAllSongs":{
 
       //返回值
       "songsList":"songsList",
-
-      "error":"error"//刷新失败，不要弹窗，改为一个图片放在页面上
+      "nothing":"",//数据库中没有歌曲
+      "error":""//刷新失败，不要弹窗，改为一个图片放在页面上
   },
 
   "saveComment":{
@@ -36,8 +31,7 @@
     "fullSuccess":"fullSuccess"//事件完全通过，并且需要弹窗报告成功
   },
   "other":{
-    "traditionalPageRows":20,//传统分页每一页的页数
-    "scrollPageRows":50//滚动分页每一页的页数
+    "scrollPageRows":200//滚动分页每一页的页数
   },
 
   "songInfo":{
