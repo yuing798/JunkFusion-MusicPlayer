@@ -1,30 +1,43 @@
 <script setup lang="ts">
+import { B_saveComment } from '@/bridge/bridge.generated';
+import { callJuceFunc } from '@/bridge/bridgeSupport';
 import type { SongInfo } from '@/store/songStore';
 import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
   song: SongInfo;
 }>();
-
 const s = props.song;
+const remarkText = ref(''); //备注文本
+
+async function saveRemakeText() {
+  callJuceFunc(B_saveComment.name, { text: remarkText, songId: s.songId });
+}
+
+function convert2String(value: number | null | string) {
+  if (value === null) return null;
+  if (typeof value === 'number') return String(value);
+  return value;
+}
+
 const techInfoArray = computed(() => [
-  { label: '时长', value: s.duration },
-  { label: '采样率', value: s.sampleRate },
-  { label: '比特率', value: s.bitRate },
-  { label: '通道数', value: s.numChannels },
-  { label: '位深', value: s.bitDepth },
+  { label: '时长', value: convert2String(s.duration) },
+  { label: '采样率', value: convert2String(s.sampleRate) + 'Hz' },
+  { label: '比特率', value: convert2String(s.bitRate) + 'Kbps' },
+  { label: '通道数', value: convert2String(s.numChannels) },
+  { label: '位深', value: convert2String(s.bitDepth) },
   { label: '解码器', value: s.codecName },
 ]);
 const musicInfoArray = computed(() => [
-  { label: '播放次数', value: s.playNum },
-  { label: 'BPM', value: s.bpm },
+  { label: '播放次数', value: convert2String(s.playNum) },
+  { label: 'BPM', value: convert2String(s.bpm) },
   { label: '调性', value: s.key },
   { label: '体裁(原始)', value: s.genre },
   { label: '体裁(AI分析)', value: s.aiGenre },
-  { label: '轨道号', value: s.trackNumber },
-  { label: '碟片号', value: s.discNumber },
-  { label: '发行年份', value: s.year },
+  { label: '轨道号', value: convert2String(s.trackNumber) },
+  { label: '碟片号', value: convert2String(s.discNumber) },
+  { label: '发行年份', value: convert2String(s.year) },
   { label: '作曲家', value: s.composer },
   { label: '专辑艺术家', value: s.albumArtist },
 ]);
@@ -50,7 +63,7 @@ const musicInfoArray = computed(() => [
         <!-- 这里放置技术参数 -->
         <div v-for="item in techInfoArray" :key="item.label">
           <div v-if="item.value !== null">
-            <span class="opt-label">{{ item.label }} </span>
+            <label class="opt-label">{{ item.label }} </label>
             <span class="opt-value" :title="item.value">{{ item.value }}</span>
           </div>
         </div>
@@ -59,11 +72,20 @@ const musicInfoArray = computed(() => [
         <!-- 这里放置音乐参数 -->
         <div v-for="item in musicInfoArray" :key="item.label">
           <div v-if="item.value !== null">
-            <span class="opt-label">{{ item.label }} </span>
-            <span class="opt-value">{{ item.value }}</span>
+            <label class="opt-label">{{ item.label }} </label>
+            <span class="opt-value" :title="item.value">{{ item.value }}</span>
           </div>
         </div>
       </div>
+      <!-- 这里放置备注文本框 -->
+      <textarea
+        class="remark-area"
+        title="点击输入备注内容"
+        v-model="remarkText"
+        placeholder="点击输入备注"
+        rows="4"
+        @blur="saveRemakeText()"
+      ></textarea>
     </div>
   </div>
 </template>
@@ -75,7 +97,7 @@ const musicInfoArray = computed(() => [
   justify-content: center;
   /* 水平居中 */
 
-  width: 720px;
+  width: 900px;
   padding: 10px;
   gap: 10px;
 }
@@ -108,5 +130,16 @@ const musicInfoArray = computed(() => [
 .opt-value {
   /* 可选字段的具体数值 */
   color: var(--color-text-main);
+}
+
+.remark-area {
+  color: var(--color-text-main);
+  font-size: var(--little-font);
+  border: 2px solid transparent;
+  transition: border-color var(--ease-time) ease;
+}
+
+.remark-area:focus {
+  border-color: var(--color-edge);
 }
 </style>

@@ -489,6 +489,21 @@ std::string SongsManage::getImageHashBySongId(int64_t id){
     return "";
 }
 
+void SongsManage::saveComment(juce::String text,int64_t songId){
+    try{
+        SQLite::Statement sql(
+            db,
+            "UPDATE songs SET comment = :comment WHERE somgId = :songId"
+        );
+        sql.bind(":comment",text.toStdString());
+        sql.bind(":songId",songId);
+        sql.exec();
+    }catch(const SQLite::Exception& e){
+        auto logger{spdlog::get(LogUiID)};
+        logger->error("id号{}:评论更新失败",songId);
+    }
+}
+
 SongsManage::~SongsManage(){
 
 }
@@ -572,5 +587,15 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 }
             });
         }
-    );
+    ).withNativeFunction(B_saveComment::name,
+        [](const juce::Array<juce::var>& args,auto complete){
+            juce::String text{args[0][B_saveComment::text]};
+            int64_t songId{args[0][B_saveComment::songId]};
+            dbManager::getInstance().runOnWrite([text,songId,complete = std::move(complete)]{
+                dbManager::getInstance().getSongsManager().saveComment(
+                    text,
+                    songId
+                );
+            })
+    });
 }

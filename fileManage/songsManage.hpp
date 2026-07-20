@@ -43,6 +43,7 @@ public:
 
     bool reverseMyLike(int64_t id);
     std::string getImageHashBySongId(int64_t id);
+    void saveComment(juce::String text,int64_t songId);
 
 };
 

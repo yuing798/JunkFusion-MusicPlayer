@@ -25,6 +25,11 @@
 
       "error":"error"//刷新失败，不要弹窗，改为一个图片放在页面上
   },
+
+  "saveComment":{
+    "text":"",
+    "songId":""
+  },
   "event":{//这些事件都需要弹窗警告
     "fullError":"fullError",//发生了完全的错误，需要全部回滚，通常为短小快速且涉及用户交互的事件
     "partError":"partError",//发生了部分错误，比如导入5000个文件有3个文件发生错误
