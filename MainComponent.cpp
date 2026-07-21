@@ -130,19 +130,29 @@ MainComponent::MainComponent(){
                         const int numAll{files.size()};
                         int numSuccess{0};
                         std::vector<SongInfo> songs;
+                        juce::Array<juce::String> errorFiles;
                         for(auto& file:files){
                             auto result= dbManager::getInstance().getSongsManager().insertSong(file);
                             if(result.has_value()){
                                 numSuccess++;
                                 songs.push_back(result.value());
+                            }else{
+                                errorFiles.add(file.getFileName());
                             }
                         }
                         auto obj{new juce::DynamicObject()};
                         obj->setProperty(B_songImport::songs,SongInfo::vector2VarArray(songs));
+                        obj->setProperty(B_songImport::errorFiles,juce::var(errorFiles));
                         obj->setProperty(B_songImport::numImport,numAll);
                         obj->setProperty(B_songImport::numSuccess,numSuccess);
                         complete(juce::var(obj));
                         logger->info("歌曲导入完成:导入总数{},成功数目{}",numAll,numSuccess);
+                        if(!errorFiles.isEmpty()){
+                            logger->warn("导入失败曲目:\n");
+                            for(auto& errorFile : errorFiles){
+                                logger->warn("{}\n",errorFile.toStdString());
+                            }
+                        }
                         return ;
 
                     });
