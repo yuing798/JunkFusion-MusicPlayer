@@ -4,8 +4,9 @@
 
   //注意这里面写的字符串是为了跨端传输的，不要什么字符串都往里面写！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 
-  "inputFiles":{
-      //其他返回值字段
+  "songImport":{
+      "numImport":"",//导入的文件总数
+      "numSuccess":""//成功导入的歌曲数
   },
   "toggleMyLike":{
   },
@@ -15,10 +16,8 @@
   },
   "getAllSongs":{
 
-      //返回值
-      "songsList":"songsList",
-      "nothing":"",//数据库中没有歌曲
-      "error":""//刷新失败，不要弹窗，改为一个图片放在页面上
+    "songsList":"songsList",
+    "nothing":""//数据库中没有歌曲
   },
 
   "saveComment":{

@@ -77,12 +77,10 @@ export const useSongStore = defineStore('allSongs', {
       const result =  await callJuceFunc(B_getAllSongs.name);
       if(Array.isArray(result)){
         this.songs = result as SongInfo[];
-      }else if(typeof result === 'string'){
-        if(result === B_getAllSongs.nothing){
+        return;
+      }else if(typeof result === 'string' && result === B_getAllSongs.nothing){
           //啥都没有的页面
-        }else if(result === B_getAllSongs.error){
-          //出错了，你他妈重新刷新吧
-        }
+          return;
       }
     },
 

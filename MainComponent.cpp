@@ -109,13 +109,13 @@ MainComponent::MainComponent(){
         .withOptionsFrom(mSongsManagerBuilder)
 
         //withNativeFunction这个逼函数默认运行在Message Thread
-        .withNativeFunction(B_inputFiles::name,//导入文件函数,导入文件函数因为需要绑定模态窗所以放在MainComponent中比较合适
+        .withNativeFunction(B_songImport::name,
             [this](
                 const juce::Array<juce::var>& args,
                 juce::WebBrowserComponent::NativeFunctionCompletion complete
             ){
 
-                getMultiMediaFileChoose([complete](const juce::Array<juce::File>& files){
+                getMultiMediaFileChoose([complete = std::move(complete)](const juce::Array<juce::File>& files){
 
                     auto logger{spdlog::get(LogSchedulerID)};
                     logger->info("开始导入音频文件");
@@ -127,37 +127,20 @@ MainComponent::MainComponent(){
                     }//用户取消选择
 
                     dbManager::getInstance().runOnWrite([files,complete = std::move(complete)](){
-                        juce::String errorStr{""};
                         const int numAll{files.size()};
-                        int num4ErrorFile{0};
+                        int numSuccess{0};
                         for(auto& file:files){
-                            bool isSuccess = dbManager::getInstance().getSongsManager().insertSong(file);
-                            if(!isSuccess){
-                                errorStr += (file.getFileName()) + utf8("\n"); 
-                                num4ErrorFile++;
+                            auto result= dbManager::getInstance().getSongsManager().insertSong(file);
+                            if(result.has_value()){
+                                numSuccess++;
                             }
                         }
-                        if(errorStr.isNotEmpty()){
-                            auto obj{new juce::DynamicObject()};
-                            obj->setProperty(
-                                B_event::partError,
-                                utf8("导入完成\n成功 ") + 
-                                juce::String(numAll - num4ErrorFile) 
-                                + utf8("首----失败") 
-                                + juce::String(num4ErrorFile) 
-                                + utf8("首:\n")
-                                + errorStr 
-                            );
-                            complete(juce::var(obj));
-                            return;
-                        }else{
-                            auto obj{new juce::DynamicObject()};
-                            obj->setProperty(
-                                B_event::fullSuccess,
-                                utf8("导入成功\n共导入") + juce::String(numAll) + utf8("首"));
-                            complete(juce::var(obj));
-                            return;
-                        }
+                        auto obj{new juce::DynamicObject()};
+                        obj->setProperty(B_songImport::numImport,numAll);
+                        obj->setProperty(B_songImport::numSuccess,numSuccess);
+                        complete(juce::var(obj));
+                        return ;
+
                     });
 
                 },

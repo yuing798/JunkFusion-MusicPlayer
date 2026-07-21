@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, type Component } from 'vue';
 import LeftColumn from './components/LeftColumn.vue';
 import AllMusic from './components/pages/AllMusic.vue';
+import { useSongStore } from './store/songStore.ts';
 
 //应用初始化的时候执行一次,不需要放到scripts的末尾
 onMounted(() => {
@@ -48,6 +49,12 @@ function resolvedComponent(id: number | null): Component | null {
 }
 // ?? 是 JavaScript/TypeScript 的“空值合并运算符（Nullish Coalescing Operator）”，
 // 它的作用是：如果左边的值是 null 或 undefined，就取右边的值；否则就取左边的值。
+
+const songStore = useSongStore();
+
+onMounted(() => {
+  songStore.getAllSongs();
+});
 </script>
 
 <template>

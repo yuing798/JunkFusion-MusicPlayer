@@ -11,12 +11,8 @@
 struct SongInfo
 {
     int64_t songId{0};
-    // ── 1. 文件信息 ──
-    std::string filePath;               // 文件完整路径
-    int64_t      fileSize    = 0;        // 文件大小（字节）
-    std::string lastModifiedTime;       // 文件最后一次修改时间
-    // std::string addTime;                // 添加到应用的时间
-    double duration     = 0.0;          // 歌曲时长（秒）时长应该每条流都一样
+
+    double duration{0.0};          // 歌曲时长（秒）时长应该每条流都一样
 
     // ── 3. 标签信息 ──
     std::string title;           //名称，因为有的音乐文件有自带的标题(不是文件名!!!)
@@ -39,23 +35,17 @@ struct SongInfo
     // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
     int    numChannels  = 0;            // 通道数
     int    bitDepth     = 0;            // 位深
-    std::optional<std::string> codecName; // 编码器名称
-    int codecID{0};//编码器ID，因为编码器名称不一定有，但是编码器ID一定有
-    //这个ID号我不打算发给前端，但是codecName一定要发给前端
+    std::optional<std::string> codecName; // 编码器名称//因为编码器名称不一定有，但是编码器ID一定有
 
     // ── 4. AI 分析信息 ──，ai分析是和具体音频流相关的，所以没有必要放在文件层
     std::optional<std::string> aiGenre;     // AI 分析体裁
     std::optional<int>         bpm;         // 节拍数（std::nullopt 表示未知）
     std::optional<std::string> key;         // 调性（如 C major, A minor）
-    bool        aiProcessed = false;    // 是否已经进行过 AI 处理
 
     //5.用户信息
     bool isMyLike{0};//是否添加到了我喜欢列表
     std::optional<std::string> comment;     // 备注(用户写进去的)
-    int hadPlayedNum{0};//已经播放了多少次
-
-    //6.排序字段
-    int nameId{0};//优先级排序之后的位置，逻辑上是不会变的
+    int playNum{0};//已经播放了多少次
 
     //将songInfo转化为var，才能推送给js端
     static juce::var toVar(const SongInfo& song){
@@ -102,7 +92,7 @@ struct SongInfo
         // ── 5. 用户信息 ──
         obj->setProperty(B_songInfo::isMyLike,     song.isMyLike);
         obj->setProperty(B_songInfo::comment,      optStr(song.comment));
-        obj->setProperty(B_songInfo::playNum, song.hadPlayedNum);
+        obj->setProperty(B_songInfo::playNum, song.playNum);
         //图片哈希值不用传给前端
 
         return juce::var(obj);
@@ -118,12 +108,6 @@ struct SongInfo
     }
 
 };
-//模拟文件结构
-// Cache/Covers/
-// ├── {hash}/               # 以哈希值命名的文件夹
-// │   ├── original.jpg      # 原始提取的图片（作为母本）
-// │   ├── 50.jpg            # 50x50 缩略图（懒生成）
-// │   └── 240.jpg           # 240x240 缩略图（懒生成）
 
 // songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
 inline const char* createSongsTableSQL = R"(
@@ -132,7 +116,6 @@ inline const char* createSongsTableSQL = R"(
         filePath           TEXT    UNIQUE NOT NULL,
         fileSize           INTEGER NOT NULL,
         lastModifiedTime   TEXT    NOT NULL,
-        addTime            TEXT,
         duration           REAL,
         title              TEXT,
         artist             TEXT,
@@ -147,14 +130,15 @@ inline const char* createSongsTableSQL = R"(
         bitDepth           INTEGER,
         sampleRate         INTEGER,
         numChannels        INTEGER,
-        codecName          TEXT,
+        codecId INTEGER, 
+        codecName TEXT, 
         aiGenre            TEXT,
         bpm                INTEGER DEFAULT 0,
         key                TEXT,
         aiProcessed        INTEGER DEFAULT 0,
         isMyLike           INTEGER DEFAULT 0,
         comment            TEXT,
-        hadPlayedNum       INTEGER DEFAULT 0,
+        playNum       INTEGER DEFAULT 0,
         hash TEXT
     )
 )";

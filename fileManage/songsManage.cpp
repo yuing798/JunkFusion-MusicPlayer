@@ -14,9 +14,6 @@
 #include <sha1.h>
 #include <spdlog/spdlog.h>
 #include <string>
-#include <unicode/coll.h>
-#include <unicode/locid.h>
-#include <unicode/stringpiece.h>
 #include <utility>
 #include <vector>
 #include "./dbManager.hpp"
@@ -42,33 +39,32 @@ SongsManage::SongsManage(SQLite::Database& d)
     }
 }
 
-bool SongsManage::insertSong(const juce::File& path)
+std::optional<SongInfo> SongsManage::insertSong(const juce::File& path)
 {
-    
     SongInfo info{};
-    info.filePath = path.getFullPathName().toStdString();
-    info.fileSize = path.getSize();
-    info.lastModifiedTime = path.getLastModificationTime().toString(true, true).toStdString();
+    std::string filePath = path.getFullPathName().toStdString();
+    int64_t fileSize = path.getSize();
+    std:: string lastModifiedTime = path.getLastModificationTime().toString(true, true).toStdString();
 
     auto logger{spdlog::get(LogSchedulerID)};
 
     //ffmpeg解码层信息
     int result{0};//解码层结果，一般成功返回零
     AVFormatContext* inputContext{nullptr};
-    result = avformat_open_input(&inputContext, info.filePath.c_str(), nullptr, nullptr);
+    result = avformat_open_input(&inputContext, filePath.c_str(), nullptr, nullptr);
     if(result!=0){
         //非多媒体文件也会返回AVERROR
         //SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
         if(logger) logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:{}",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
-        return false;
+        return std::nullopt;
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if(result<0){
         //SPDLOG:无法找到流信息
         if(logger) logger->error("无法找到该文件的流信息:{}",ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
-        return false;
+        return std::nullopt;
     }
 
     // 时长（秒）
@@ -88,15 +84,15 @@ bool SongsManage::insertSong(const juce::File& path)
 
     auto*           pAudioStream = inputContext->streams[currentIndex];
     auto*  decoderPar      = pAudioStream->codecpar;
-    info.codecID = decoderPar->codec_id;
+    int codecID = decoderPar->codec_id;
     info.codecName = avcodec_get_name(decoderPar->codec_id);
 
     // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
     info.bitRate = decoderPar->bit_rate / 1000;
-    if (info.bitRate <= 0 && info.duration > 0.0 && info.fileSize > 0)
+    if (info.bitRate <= 0 && info.duration > 0.0 && fileSize > 0)
     {
         info.bitRate = static_cast<int>(
-            info.fileSize * 8.0 / info.duration / 1000.0);
+            fileSize * 8.0 / info.duration / 1000.0);
     }
 
     // 采样率（Hz）
@@ -122,7 +118,7 @@ bool SongsManage::insertSong(const juce::File& path)
     if ((pEntry = av_dict_get(pTags, "title",       nullptr, 0))){
         info.title = pEntry->value;
     }else{
-        info.title = juce::File(info.filePath).getFileNameWithoutExtension().toStdString();
+        info.title = juce::File(filePath).getFileNameWithoutExtension().toStdString();
     }
     auto safeToInt = [](const char* str) -> int{
         try { return std::stoi(str); }
@@ -188,18 +184,7 @@ bool SongsManage::insertSong(const juce::File& path)
     avformat_close_input(&inputContext);
 
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
-    auto bindSongFields = [&info,hash](SQLite::Statement& stmt) {
-        // ── 必选字段 ──
-        stmt.bind(":filePath",         info.filePath);
-        stmt.bind(":fileSize",         static_cast<int64_t>(info.fileSize));
-        stmt.bind(":lastModifiedTime", info.lastModifiedTime);
-        stmt.bind(":duration",         info.duration);
-        stmt.bind(":title",            info.title);
-        // ── FFmpeg 必选 int 字段 ──
-        stmt.bind(":bitRate",     info.bitRate);
-        stmt.bind(":bitDepth",    info.bitDepth);
-        stmt.bind(":sampleRate",  info.sampleRate);
-        stmt.bind(":numChannels", info.numChannels);
+    auto bindSongFields = [&](SQLite::Statement& stmt) {
 
         // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
         auto bindOptStr = [&](const char* name, const std::optional<std::string>& v) {
@@ -211,6 +196,19 @@ bool SongsManage::insertSong(const juce::File& path)
             if (v.has_value()) stmt.bind(name, v.value());
             else               stmt.bind(name);
         };
+
+        // ── 必选字段 ──
+        stmt.bind(":filePath",         filePath);
+        stmt.bind(":fileSize",         static_cast<int64_t>(fileSize));
+        stmt.bind(":lastModifiedTime", lastModifiedTime);
+        stmt.bind(":duration",         info.duration);
+        stmt.bind(":title",            info.title);
+        // ── FFmpeg 必选 int 字段 ──
+        stmt.bind(":bitRate",     info.bitRate);
+        stmt.bind(":bitDepth",    info.bitDepth);
+        stmt.bind(":sampleRate",  info.sampleRate);
+        stmt.bind(":numChannels", info.numChannels);
+        stmt.bind(":codecId",codecID);
 
         bindOptStr(":artist",      info.artist);
         bindOptStr(":album",       info.album);
@@ -234,7 +232,7 @@ bool SongsManage::insertSong(const juce::File& path)
                 db,
                 "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath"
             );
-            checkQuery.bind(":filePath", info.filePath);
+            checkQuery.bind(":filePath", filePath);
 
             if (checkQuery.executeStep())
             {
@@ -243,10 +241,10 @@ bool SongsManage::insertSong(const juce::File& path)
                 std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
 
                 // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
-                if (static_cast<int64_t>(info.fileSize) == existingSize
-                    && info.lastModifiedTime == existingTime)
+                if (static_cast<int64_t>(fileSize) == existingSize
+                    && lastModifiedTime == existingTime)
                 {
-                    return false;
+                    return std::nullopt;
                 }
             }
         }
@@ -263,7 +261,7 @@ bool SongsManage::insertSong(const juce::File& path)
                 "duration = :duration, title = :title, artist = :artist, album = :album, albumArtist = :albumArtist, "
                 "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = :year, composer = :composer, "
                 "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
-                "sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
+                "sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName , codecId = :codecId"
                 "WHERE songId = :songId"
             );
 
@@ -278,8 +276,8 @@ bool SongsManage::insertSong(const juce::File& path)
             SQLite::Statement insertSong(db,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                 "duration, title, artist, album, albumArtist, "
-                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName, hash) "
-                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, :album, :albumArtist, "
+                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName, hash, codecId) "
+                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, :album, :albumArtist, :codecId, "
                 ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName, :hash)"
             );
 
@@ -293,10 +291,10 @@ bool SongsManage::insertSong(const juce::File& path)
     catch (const SQLite::Exception& e)
     {
         if(logger) logger->error("insert song error:{}",e.what());
-        return false;
+        return std::nullopt;
     }
 
-    return true;
+    return info;
 }
 
 std::optional<int> SongsManage::getTotalSongCount()
@@ -476,7 +474,7 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
                 }
             });
         }
-    ).withNativeFunction(//得到单页的歌曲信息
+    ).withNativeFunction(//得到所有歌曲信息
         B_getAllSongs::name,//参数：当前页码,升降序，排序方法，
         [](
             const juce::Array<juce::var>& args,auto complete

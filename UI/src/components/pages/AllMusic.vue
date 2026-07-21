@@ -2,12 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 
 import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
-import {
-  B_getAllSongCount,
-  B_inputFiles,
-  B_refreshAllMusicSongs,
-  B_songInfo,
-} from '@/bridge/bridge.generated.ts';
+import { B_getAllSongCount, B_inputFiles, B_songInfo } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 import { useSongStore, type SongInfo } from '@/store/songStore';
 import { useVirtualizer } from '@tanstack/vue-virtual';
@@ -56,7 +51,6 @@ const songStore = useSongStore();
 function refreshErrorPage() {
   //错误页面显示图像
 }
-const songs = ref<SongInfo[]>([]);
 const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
 
 function refreshViewport() {
@@ -64,11 +58,10 @@ function refreshViewport() {
 }
 
 const virtualizer = useVirtualizer({
-  // 注意：count 必须用箭头函数包裹，确保响应式变化时重新计算
-  count: songs.value.length,
+  count: songStore.songs.length,
 
   getScrollElement: () => scrollContainerRef.value,
-  // 每行固定高度（根据你的 UI 调整，单位 px）
+  // 每行固定高度
   estimateSize: () => 80,
   // 上下多预渲染 10 个节点，防止快速滚动白屏
   overscan: 10,
@@ -145,7 +138,7 @@ onMounted(() => {
             height: `${virtualRow.size}px`,
           }"
           style="position: absolute; top: 0; left: 0"
-          :song="songs[virtualRow.index]!"
+          :song="songStore.songs[virtualRow.index]!"
         >
           <!-- 虚拟滚动情景使用transform对GPU更友好 -->
         </EachSong>

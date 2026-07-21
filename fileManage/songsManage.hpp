@@ -24,7 +24,7 @@ public:
     explicit SongsManage(SQLite::Database& d);
     ~SongsManage();
 
-    bool insertSong(const juce::File& path);
+    std::optional<SongInfo> insertSong(const juce::File& path);
 
     /** 获取歌曲总数 */
     std::optional<int> getTotalSongCount();
