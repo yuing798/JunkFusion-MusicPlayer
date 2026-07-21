@@ -7,11 +7,11 @@ import { ref } from 'vue';
 // 因此任意位置的 try/catch 调用 showErrorWindow() 都能驱动同一个弹窗。
 // ════════════════════════════════════════════════════════════════
 
-/** 弹窗显示的文本内容 */
-const message = ref('');
+/** 弹窗显示的文本内容（模块级单例，由 showInfoWindow 写入） */
+const _message = ref('');
 
-/** 是否正在显示（驱动 CSS transition） */
-const visible = ref(false);
+/** 是否正在显示，驱动 CSS transition（模块级单例，由 showInfoWindow 写入） */
+const _visible = ref(false);
 
 /** 隐藏定时器句柄，用于在新错误到来时重置计时 */
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -39,7 +39,7 @@ export function closeInfoWindow(): void {
     clearTimeout(hideTimer);
     hideTimer = null;
   }
-  visible.value = false;
+  _visible.value = false;
 }
 
 /**
@@ -47,17 +47,17 @@ export function closeInfoWindow(): void {
  *
  * 使用方式（任意 .ts / .vue 文件）：
  * ```ts
- * import { showErrorWindow } from '@/components/other/errorWindow.vue'
+ * import { showInfoWindow } from '@/components/other/infoWindow.vue'
  *
  * try {
  *   // ...
- * } catch (error) {
- *   showErrorWindow(error)
+ * } catch (info) {
+ *   showinfoWindow(info)
  * }
  *
  * // 自定义保持时间：
- * showErrorWindow('操作成功', 2000)
- * showErrorWindow(new Error('失败'), 5000)
+ * showinfoWindow('操作成功', 2000)
+ * showinfoWindow(new Error('失败'), 5000)
  * ```
  *
  * @param msg  - 错误信息。支持 Error / string / 任意对象（自动 JSON.stringify）
@@ -76,12 +76,12 @@ export function showInfoWindow(msg: unknown, holdTime: number = 3000): void {
     hideTimer = null;
   } // 清理已有的定时器，防止重合
 
-  message.value = extractInfo(msg);
-  visible.value = true;
+  _message.value = extractInfo(msg);
+  _visible.value = true;
 
   // 300ms（淡入）+ holdTime（保持）后开始淡出
   hideTimer = setTimeout(() => {
-    visible.value = false;
+    _visible.value = false;
     hideTimer = null;
   }, 300 + holdTime);
   // lambda 函数在当计时器结束时会被执行
@@ -90,6 +90,19 @@ export function showInfoWindow(msg: unknown, holdTime: number = 3000): void {
 
 <script setup lang="ts">
 import { IconX } from '@tabler/icons-vue';
+
+// ════════════════════════════════════════════════════════════════
+// 将模块级单例状态与函数桥接到 <script setup> 作用域，
+// 才能被 <template> 访问。
+//
+// 右侧 _message / _visible / closeInfoWindow 来自 <script lang="ts">
+// 模块作用域；左侧 message / visible / closeInfoWindow 是
+// <script setup> 顶层绑定 → 模板可见。
+// 它们指向同一个 Ref / Function，无数据复制。
+// ════════════════════════════════════════════════════════════════
+const message = _message;
+const visible = _visible;
+const closeWindow = closeInfoWindow;
 </script>
 
 <template>
@@ -98,7 +111,7 @@ import { IconX } from '@tabler/icons-vue';
       <div class="info-popup-content">
         {{ message }}
       </div>
-      <button class="info-popup-close" @click="closeInfoWindow()">
+      <button class="info-popup-close" @click="closeWindow()">
         <IconX class="svg-button" />
       </button>
     </div>

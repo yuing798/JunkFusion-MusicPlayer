@@ -3,6 +3,7 @@ import { ref, watch, onMounted, type Component } from 'vue';
 import LeftColumn from './components/LeftColumn.vue';
 import AllMusic from './components/pages/AllMusic.vue';
 import { useSongStore } from './store/songStore.ts';
+import InfoWindow from './components/other/infoWindow.vue';
 
 //应用初始化的时候执行一次,不需要放到scripts的末尾
 onMounted(() => {
@@ -61,6 +62,7 @@ onMounted(() => {
          @selection-changed 接收子组件传上来的页面 id -->
     <LeftColumn @selection-changed="handlePageChange" />
 
+    <InfoWindow />
     <main class="main-content">
       <component v-if="resolvedComponent(currentPageId)" :is="resolvedComponent(currentPageId)" />
       <div v-else class="placeholder">

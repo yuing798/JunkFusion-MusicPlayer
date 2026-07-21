@@ -72,15 +72,15 @@ struct SongInfo
         obj->setProperty(B_songInfo::album,       optStr(song.album));
         obj->setProperty(B_songInfo::albumArtist, optStr(song.albumArtist));
         obj->setProperty(B_songInfo::genre,       optStr(song.genre));
-        obj->setProperty(B_songInfo::trackNum, optInt(song.trackNumber));
-        obj->setProperty(B_songInfo::discNum,  optInt(song.discNumber));
+        obj->setProperty(B_songInfo::trackNumber, optInt(song.trackNumber));
+        obj->setProperty(B_songInfo::discNumber,  optInt(song.discNumber));
         obj->setProperty(B_songInfo::year,        optInt(song.year));
         obj->setProperty(B_songInfo::composer,    optStr(song.composer));
 
         // ── 3. FFmpeg 解码层 ──
         obj->setProperty(B_songInfo::bitRate,           song.bitRate);
-        obj->setProperty(B_songInfo::sr,        song.sampleRate);
-        obj->setProperty(B_songInfo::numCh,       song.numChannels);
+        obj->setProperty(B_songInfo::sampleRate,        song.sampleRate);
+        obj->setProperty(B_songInfo::numChannels,       song.numChannels);
         obj->setProperty(B_songInfo::bitDepth,          song.bitDepth);
         obj->setProperty(B_songInfo::codecName,         optStr(song.codecName));
 

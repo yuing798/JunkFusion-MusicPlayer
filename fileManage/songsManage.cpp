@@ -275,8 +275,8 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path)
             // ── 新文件：插入 songs 记录 ──
             SQLite::Statement insertSong(db,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
-                "duration, title, artist, album, albumArtist, "
-                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName, hash, codecId) "
+                "duration, title, artist, album, albumArtist, codecId, "
+                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, sampleRate, numChannels, codecName, hash) "
                 "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, :album, :albumArtist, :codecId, "
                 ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, :sampleRate, :numChannels, :codecName, :hash)"
             );
@@ -307,74 +307,77 @@ std::optional<int> SongsManage::getTotalSongCount()
 
 std::vector<SongInfo> SongsManage::getAllSongs()
 {
-
     std::vector<SongInfo> result;
 
-    std::string sql = R"(
-        SELECT songId, 
-        duration, title, artist, album, albumArtist, 
-        genre, trackNumber, discNumber, year, composer, 
-        bitRate, bitDepth, sampleRate, numChannels, codecName, 
-        aiGenre, bpm, key, aiProcessed, 
-        isMyLike, comment, hadPlayedNum, nameId 
-        FROM songs 
-    )";//按照顺序查询的sql语句
+    try{
+        std::string sql = R"(
+            SELECT songId, 
+            duration, title, artist, album, albumArtist, 
+            genre, trackNumber, discNumber, year, composer, 
+            bitRate, bitDepth, sampleRate, numChannels, codecName, 
+            aiGenre, bpm, key, aiProcessed, 
+            isMyLike, comment, playNum
+            FROM songs 
+        )";//按照顺序查询的sql语句
 
-    SQLite::Statement query(db, sql);
+        SQLite::Statement query(db, sql);
 
-    // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
-    auto optStrCol = [&](const char* colName) -> std::optional<std::string> {
-        auto col = query.getColumn(colName);
-        if (col.isNull()) return std::nullopt;
-        std::string s = col.getString();
-        if(s.empty()){
-            return std::nullopt;
-        }else{
-            return s;
+        // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
+        auto optStrCol = [&](const char* colName) -> std::optional<std::string> {
+            auto col = query.getColumn(colName);
+            if (col.isNull()) return std::nullopt;
+            std::string s = col.getString();
+            if(s.empty()){
+                return std::nullopt;
+            }else{
+                return s;
+            }
+        };
+        // ── 辅助：读取可能为 NULL 的 int 列 → std::optional<int> ──
+        auto optIntCol = [&](const char* colName) -> std::optional<int> {
+            if (query.getColumn(colName).isNull()) return std::nullopt;
+            return query.getColumn(colName).getInt();
+        };
+
+        while (query.executeStep())
+        {
+            SongInfo info{};
+            info.songId           = query.getColumn("songId").getInt64();
+            info.duration         = query.getColumn("duration").getDouble();
+
+            // ── 标签 ──
+            info.title            = query.getColumn("title").getString();
+            info.artist           = optStrCol("artist");
+            info.album            = optStrCol("album");
+            info.albumArtist      = optStrCol("albumArtist");
+            info.genre            = optStrCol("genre");
+            info.trackNumber      = optIntCol("trackNumber");
+            info.discNumber       = optIntCol("discNumber");
+            info.year             = optIntCol("year");
+            info.composer         = optStrCol("composer");
+
+            // ── FFmpeg 解码层 ──
+            info.bitRate          = query.getColumn("bitRate").getInt64();
+            info.bitDepth         = query.getColumn("bitDepth").getInt();
+            info.sampleRate       = query.getColumn("sampleRate").getInt();
+            info.numChannels      = query.getColumn("numChannels").getInt();
+            info.codecName        = optStrCol("codecName");
+
+            // ── AI 分析 ──
+            info.aiGenre          = optStrCol("aiGenre");
+            info.bpm              = optIntCol("bpm");
+            info.key              = optStrCol("key");
+
+            // ── 用户信息 ──
+            info.isMyLike         = query.getColumn("isMyLike").getInt() != 0;
+            info.comment          = optStrCol("comment");
+            info.playNum     = query.getColumn("playNum").getInt();
+
+            result.push_back(std::move(info));
         }
-    };
-    // ── 辅助：读取可能为 NULL 的 int 列 → std::optional<int> ──
-    auto optIntCol = [&](const char* colName) -> std::optional<int> {
-        if (query.getColumn(colName).isNull()) return std::nullopt;
-        return query.getColumn(colName).getInt();
-    };
-
-    while (query.executeStep())
-    {
-        SongInfo info{};
-        info.songId           = query.getColumn("songId").getInt64();
-        info.duration         = query.getColumn("duration").getDouble();
-
-        // ── 标签 ──
-        info.title            = query.getColumn("title").getString();
-        info.artist           = optStrCol("artist");
-        info.album            = optStrCol("album");
-        info.albumArtist      = optStrCol("albumArtist");
-        info.genre            = optStrCol("genre");
-        info.trackNumber      = optIntCol("trackNumber");
-        info.discNumber       = optIntCol("discNumber");
-        info.year             = optIntCol("year");
-        info.composer         = optStrCol("composer");
-
-        // ── FFmpeg 解码层 ──
-        info.bitRate          = query.getColumn("bitRate").getInt64();
-        info.bitDepth         = query.getColumn("bitDepth").getInt();
-        info.sampleRate       = query.getColumn("sampleRate").getInt();
-        info.numChannels      = query.getColumn("numChannels").getInt();
-        info.codecName        = optStrCol("codecName");
-
-        // ── AI 分析 ──
-        info.aiGenre          = optStrCol("aiGenre");
-        info.bpm              = optIntCol("bpm");
-        info.key              = optStrCol("key");
-        info.aiProcessed      = query.getColumn("aiProcessed").getInt() != 0;
-
-        // ── 用户信息 ──
-        info.isMyLike         = query.getColumn("isMyLike").getInt() != 0;
-        info.comment          = optStrCol("comment");
-        info.hadPlayedNum     = query.getColumn("hadPlayedNum").getInt();
-
-        result.push_back(std::move(info));
+    }catch(const SQLite::Exception& e){
+        auto logger =  spdlog::get(LogUiID);
+        logger->error("getAllSongs发生失败:{}",e.what());
     }
 
     return result;
@@ -420,14 +423,14 @@ void SongsManage::saveComment(juce::String text,int64_t songId){
     try{
         SQLite::Statement sql(
             db,
-            "UPDATE songs SET comment = :comment WHERE somgId = :songId"
+            "UPDATE songs SET comment = :comment WHERE songId = :songId"
         );
         sql.bind(":comment",text.toStdString());
         sql.bind(":songId",songId);
         sql.exec();
     }catch(const SQLite::Exception& e){
         auto logger{spdlog::get(LogUiID)};
-        logger->error("id号{}:评论更新失败",songId);
+        logger->error("id号{}:评论更新失败:{}",songId,e.what());
     }
 }
 
@@ -490,7 +493,7 @@ juce::WebBrowserComponent::Options songsManageBuilder::buildOptions(const juce::
         }
     ).withNativeFunction(B_saveComment::name,//保存对单首歌曲的评论
         [](const juce::Array<juce::var>& args,auto complete){
-            juce::String text{args[0][B_saveComment::text]};
+            juce::String text{args[0][B_saveComment::text].toString()};
             int64_t songId{args[0][B_saveComment::songId]};
             dbManager::getInstance().runOnWrite([text,songId,complete = std::move(complete)]{
                 dbManager::getInstance().getSongsManager().saveComment(

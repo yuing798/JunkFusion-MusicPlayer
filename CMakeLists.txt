@@ -112,7 +112,7 @@ target_link_libraries(JunkFusion
         spdlog::spdlog#日志系统
         unofficial::hash-library#哈希算法库
         # ONNX::onnxruntime
-        PkgConfig::ICU#字符串排序功能
+        # PkgConfig::ICU#字符串排序功能
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置

@@ -36,6 +36,7 @@ async function songImport() {
   isImporting.value = true;
   try {
     const obj = await getNativeFunction(B_songImport.name)();
+    console.log('songImport result:', obj, typeof obj);
     if (obj && typeof obj === 'object') {
       const numImport = obj[B_songImport.numImport];
       const numSuccess = obj[B_songImport.numSuccess];
@@ -73,7 +74,7 @@ const songStore = useSongStore();
 const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
 
 const virtualizer = useVirtualizer({
-  count: songStore.songs.length,
+  count: computed(() => songStore.songs.length) as unknown as number,
 
   getScrollElement: () => scrollContainerRef.value,
   // 每行固定高度

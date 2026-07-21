@@ -1,8 +1,5 @@
 // stores/playBackStore.ts
 import { defineStore } from 'pinia';
-import { useSongStore, type SongInfo } from './songStore'; // 导入数据 Store
-
-const songStore = useSongStore();
 
 export const usePlayBackStore = defineStore('playBack', {
   state: () => ({

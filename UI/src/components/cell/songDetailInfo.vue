@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { B_saveComment } from '@/bridge/bridge.generated';
-import { callJuceFunc } from '@/bridge/bridgeSupport';
 import type { SongInfo } from '@/store/songStore';
-import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
+import { getBackendResourceAddress, getNativeFunction } from 'juce-framework-frontend-mirror';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -12,7 +11,7 @@ const s = props.song;
 const remarkText = ref(''); //备注文本
 
 async function saveComment() {
-  await callJuceFunc(B_saveComment.name, { text: remarkText, songId: s.songId });
+  await getNativeFunction(B_saveComment.name)({ text: remarkText, songId: s.songId });
 }
 
 function convert2String(value: number | null | string) {
