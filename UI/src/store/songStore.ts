@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { callJuceFunc } from '@/bridge/bridgeSupport'
 import { showErrorWindow } from '@/components/other/errorWindow.vue'
 import { B_getAllSongs, B_toggleMyLike } from '@/bridge/bridge.generated'
+import { getNativeFunction } from 'juce-framework-frontend-mirror'
 
 // TypeScript 的 interface：它只在编译时存在，用来检查类型。编译成 JavaScript 后，它会被完全删除，不留任何痕迹。
 export interface SongInfo {//interface指的是自定义类型
@@ -74,7 +74,7 @@ export const useSongStore = defineStore('allSongs', {
   actions: {
 
     async getAllSongs(){
-      const result =  await callJuceFunc(B_getAllSongs.name);
+      const result =  await getNativeFunction(B_getAllSongs.name)();
       if(Array.isArray(result)){
         this.songs = result as SongInfo[];
         return;
@@ -95,7 +95,7 @@ export const useSongStore = defineStore('allSongs', {
         isMyLike: !originSong.isMyLike,
       }
       try {
-        await callJuceFunc(B_toggleMyLike.name, songId)
+        await getNativeFunction(B_toggleMyLike.name)(songId);
       } catch (error) {
         showErrorWindow(error)
         this.songs[index] = originSong // 回滚

@@ -126,23 +126,26 @@ MainComponent::MainComponent(){
                         return;
                     }//用户取消选择
 
-                    dbManager::getInstance().runOnWrite([files,complete = std::move(complete)](){
+                    dbManager::getInstance().runOnWrite([logger,files,complete = std::move(complete)](){
                         const int numAll{files.size()};
                         int numSuccess{0};
+                        std::vector<SongInfo> songs;
                         for(auto& file:files){
                             auto result= dbManager::getInstance().getSongsManager().insertSong(file);
                             if(result.has_value()){
                                 numSuccess++;
+                                songs.push_back(result.value());
                             }
                         }
                         auto obj{new juce::DynamicObject()};
+                        obj->setProperty(B_songImport::songs,SongInfo::vector2VarArray(songs));
                         obj->setProperty(B_songImport::numImport,numAll);
                         obj->setProperty(B_songImport::numSuccess,numSuccess);
                         complete(juce::var(obj));
+                        logger->info("歌曲导入完成:导入总数{},成功数目{}",numAll,numSuccess);
                         return ;
 
                     });
-
                 },
                     web.get()
                 );

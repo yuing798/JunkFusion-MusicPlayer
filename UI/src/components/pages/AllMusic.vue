@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 
-import { callJuceFunc } from '@/bridge/bridgeSupport.ts';
-import { B_getAllSongCount, B_inputFiles, B_songInfo } from '@/bridge/bridge.generated.ts';
+import { B_getAllSongCount, B_songImport, B_songInfo } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
 import { useSongStore, type SongInfo } from '@/store/songStore';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import EachSong from '../cell/eachSong.vue';
+import { getNativeFunction } from 'juce-framework-frontend-mirror';
+import { showErrorWindow } from '../other/errorWindow.vue';
 
 const songCount = ref(0);
 
@@ -30,11 +31,20 @@ function toggleAscending() {
   localStorage.setItem('AllMusic_isascending', String(isAscending.value));
 }
 
-async function handleFilesSelected(): Promise<void> {
+async function songImport() {
   if (isImporting.value) return;
   isImporting.value = true;
   try {
-    await callJuceFunc(B_inputFiles.name);
+    const obj = await getNativeFunction(B_songImport.name)();
+    if (obj && typeof obj === 'object') {
+      const numImport = obj[B_songImport.numImport];
+      const numSuccess = obj[B_songImport.numSuccess];
+      songStore.songs.push(...obj[B_songImport.songs]);
+      //...的意思是解包，防止直接推入一整个数组放在尾部
+      showErrorWindow(
+        '导入歌曲完成\n总共导入' + numImport + '个文件' + '\n成功' + numSuccess + '个文件',
+      );
+    }
   } catch (error) {
     console.error(error);
   } finally {
@@ -43,19 +53,14 @@ async function handleFilesSelected(): Promise<void> {
   }
 }
 async function refreshSongCount() {
-  const obj = await callJuceFunc(B_getAllSongCount.name);
-  songCount.value = (obj as any)?.[B_getAllSongCount.count];
+  const obj = await getNativeFunction(B_getAllSongCount.name)();
+  if (obj && typeof obj === 'object' && B_getAllSongCount.count in obj) {
+    songCount.value = obj[B_getAllSongCount.count];
+  }
 }
 const songStore = useSongStore();
 
-function refreshErrorPage() {
-  //错误页面显示图像
-}
 const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
-
-function refreshViewport() {
-  virtualizer.value?.measure();
-}
 
 const virtualizer = useVirtualizer({
   count: songStore.songs.length,
@@ -105,7 +110,7 @@ onMounted(() => {
         宽度 80px，与 C++ row2.removeFromLeft(80) 一致
       -->
       <div class="left-column">
-        <button class="btn-import" :disabled="isImporting" @click="handleFilesSelected">
+        <button class="btn-import" :disabled="isImporting" @click="songImport()">
           导入文件/扫描文件夹
         </button>
       </div>

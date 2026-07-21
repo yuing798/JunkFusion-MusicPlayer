@@ -47,8 +47,6 @@ function resolvedComponent(id: number | null): Component | null {
   if (id === null) return null;
   return pageIdToComponent[id] ?? null;
 }
-// ?? 是 JavaScript/TypeScript 的“空值合并运算符（Nullish Coalescing Operator）”，
-// 它的作用是：如果左边的值是 null 或 undefined，就取右边的值；否则就取左边的值。
 
 const songStore = useSongStore();
 

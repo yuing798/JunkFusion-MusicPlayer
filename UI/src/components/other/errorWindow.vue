@@ -159,6 +159,8 @@ import { IconX } from '@tabler/icons-vue';
   line-height: 1.5;
   text-align: center;
   padding: 16px 24px;
+  white-space: pre-wrap;
+  /* 保留\n换行符 */
 }
 
 /* ── 关闭按钮（右上角 X） ── */

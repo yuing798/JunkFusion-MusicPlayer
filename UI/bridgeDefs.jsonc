@@ -6,7 +6,8 @@
 
   "songImport":{
       "numImport":"",//导入的文件总数
-      "numSuccess":""//成功导入的歌曲数
+      "numSuccess":"",//成功导入的歌曲数
+      "songs":""//返回的歌曲数组
   },
   "toggleMyLike":{
   },
