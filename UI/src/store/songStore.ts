@@ -4,6 +4,7 @@ import { B_getAllSongs, B_toggleMyLike } from '@/bridge/bridge.generated'
 import { getNativeFunction } from 'juce-framework-frontend-mirror'
 
 // TypeScript 的 interface：它只在编译时存在，用来检查类型。编译成 JavaScript 后，它会被完全删除，不留任何痕迹。
+//用于描述对象的结构
 export interface SongInfo {//interface指的是自定义类型
 
   /** 数据库主键，自增 ID，C++ 端为 int64_t */
@@ -19,11 +20,11 @@ export interface SongInfo {//interface指的是自定义类型
   albumArtist: string|null
   /** 体裁，C++ 端为 std::optional */
   genre: string|null
-  /** 轨道号，C++ 端为 std::optional（undefined 表示不存在） */
+  /** 轨道号，C++ 端为 std::optional */
   trackNumber: number|null
-  /** 碟片号，C++ 端为 std::optional（undefined 表示不存在） */
+  /** 碟片号，C++ 端为 std::optional */
   discNumber: number|null
-  /** 发行年份，C++ 端为 std::optional（undefined 表示不存在） */
+  /** 发行年份，C++ 端为 std::optional */
   year: number|null
   /** 作曲者，C++ 端为 std::optional */
   composer: string|null
@@ -39,7 +40,7 @@ export interface SongInfo {//interface指的是自定义类型
   codecName: string|null
   /** AI 分析体裁，C++ 端为 std::optional */
   aiGenre: string|null
-  /** 节拍数（BPM），C++ 端为 std::optional（undefined 表示未知） */
+  /** 节拍数（BPM），C++ 端为 std::optional */
   bpm: number|null
   /** 调性（如 "C major", "A minor"），C++ 端为 std::optional */
   key: string|null

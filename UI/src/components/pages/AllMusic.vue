@@ -41,9 +41,19 @@ async function songImport() {
       const numSuccess = obj[B_songImport.numSuccess];
       songStore.songs.push(...obj[B_songImport.songs]);
       //...的意思是解包，防止直接推入一整个数组放在尾部
-      showErrorWindow(
-        '导入歌曲完成\n总共导入' + numImport + '个文件' + '\n成功' + numSuccess + '个文件',
-      );
+      let windowText: string =
+        '导入歌曲完成\n总共导入' + numImport + '个文件' + '\n成功' + numSuccess + '个文件';
+
+      const errorFiles = obj[B_songImport.errorFiles] as string[];
+      const errorFilesLength = errorFiles.length;
+
+      if (errorFilesLength !== 0) {
+        windowText += '\n失败文件:\n';
+        for (let i = 0; i < errorFilesLength; i++) {
+          windowText += errorFiles[i] + '\n';
+        }
+      }
+      showErrorWindow(windowText);
     }
   } catch (error) {
     console.error(error);
