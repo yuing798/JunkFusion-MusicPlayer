@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { showErrorWindow } from '@/components/other/errorWindow.vue'
 import { B_getAllSongs, B_toggleMyLike } from '@/bridge/bridge.generated'
 import { getNativeFunction } from 'juce-framework-frontend-mirror'
+import { showInfoWindow } from '@/components/other/infoWindow.vue'
 
 // TypeScript 的 interface：它只在编译时存在，用来检查类型。编译成 JavaScript 后，它会被完全删除，不留任何痕迹。
 //用于描述对象的结构
@@ -98,7 +98,7 @@ export const useSongStore = defineStore('allSongs', {
       try {
         await getNativeFunction(B_toggleMyLike.name)(songId);
       } catch (error) {
-        showErrorWindow(error)
+        showInfoWindow(error)
         this.songs[index] = originSong // 回滚
       }
     },

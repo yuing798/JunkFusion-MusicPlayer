@@ -7,7 +7,7 @@ import { useSongStore, type SongInfo } from '@/store/songStore';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import EachSong from '../cell/eachSong.vue';
 import { getNativeFunction } from 'juce-framework-frontend-mirror';
-import { showErrorWindow } from '../other/errorWindow.vue';
+import { showInfoWindow } from '../other/infoWindow.vue';
 
 const songCount = ref(0);
 
@@ -53,7 +53,7 @@ async function songImport() {
           windowText += errorFiles[i] + '\n';
         }
       }
-      showErrorWindow(windowText);
+      showInfoWindow(windowText);
     }
   } catch (error) {
     console.error(error);

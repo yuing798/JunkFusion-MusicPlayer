@@ -17,15 +17,15 @@ const visible = ref(false);
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** 从任意类型的错误中提取可显示的字符串 */
-function extractError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+function extractInfo(info: unknown): string {
+  if (info instanceof Error) {
+    return info.message;
   }
-  if (typeof error === 'string') {
-    return error;
+  if (typeof info === 'string') {
+    return info;
   }
-  if (error !== null && error !== undefined) {
-    return error.toString();
+  if (info !== null && info !== undefined) {
+    return info.toString();
   }
   return '';
 }
@@ -34,7 +34,7 @@ function extractError(error: unknown): string {
  * 立刻关闭弹窗（被用户点击 X 按钮或是手动调用时触发）。
  * 不经过定时器，直接触发 300ms 淡出动画。
  */
-export function closeErrorWindow(): void {
+export function closeInfoWindow(): void {
   if (hideTimer !== null) {
     clearTimeout(hideTimer);
     hideTimer = null;
@@ -70,13 +70,13 @@ export function closeErrorWindow(): void {
  * - 用户可点击右上角 X 按钮提前关闭
  * - 连续调用时重置计时器，始终展示最新一条错误
  */
-export function showErrorWindow(msg: unknown, holdTime: number = 3000): void {
+export function showInfoWindow(msg: unknown, holdTime: number = 3000): void {
   if (hideTimer !== null) {
     clearTimeout(hideTimer);
     hideTimer = null;
   } // 清理已有的定时器，防止重合
 
-  message.value = extractError(msg);
+  message.value = extractInfo(msg);
   visible.value = true;
 
   // 300ms（淡入）+ holdTime（保持）后开始淡出
@@ -94,11 +94,11 @@ import { IconX } from '@tabler/icons-vue';
 
 <template>
   <Teleport to="body">
-    <div class="error-popup" :class="{ visible }">
-      <div class="error-popup-content">
+    <div class="info-popup" :class="{ visible }">
+      <div class="info-popup-content">
         {{ message }}
       </div>
-      <button class="error-popup-close" @click="closeErrorWindow">
+      <button class="info-popup-close" @click="closeInfoWindow()">
         <IconX class="svg-button" />
       </button>
     </div>
@@ -121,7 +121,7 @@ import { IconX } from '@tabler/icons-vue';
   color: var(--color-text-main);
 }
 
-.error-popup {
+.info-popup {
   position: fixed;
   /* “钉在屏幕上的元素”，无论页面如何滚动，它都待在原地不动。 */
   z-index: 10000;
@@ -148,13 +148,13 @@ import { IconX } from '@tabler/icons-vue';
   即使给子元素单独设置 pointer-events: auto;，也无效，因为父级的规则会阻止事件到达子元素。 */
 }
 
-.error-popup.visible {
+.info-popup.visible {
   opacity: 1;
 }
 
 /* ── 内容区域 ── */
-.error-popup-content {
-  color: var(--color-error);
+.info-popup-content {
+  color: var(--color-info);
   font-size: var(--mid-font);
   line-height: 1.5;
   text-align: center;
@@ -164,7 +164,7 @@ import { IconX } from '@tabler/icons-vue';
 }
 
 /* ── 关闭按钮（右上角 X） ── */
-.error-popup-close {
+.info-popup-close {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -184,7 +184,7 @@ import { IconX } from '@tabler/icons-vue';
   pointer-events: auto;
 }
 
-.error-popup-close:hover {
+.info-popup-close:hover {
   background-color: color-mix(in srgb, var(--color-hover), transparent 0%);
 }
 </style>
