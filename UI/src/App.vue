@@ -67,17 +67,7 @@ onMounted(() => {
     <p>主内容区域</p>
     <p class="hint">（选择左侧导航以查看页面）</p>
   </template>
-  <playBar
-    style="
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 90px;
-      z-index: 1000;
-      background: var(--color-hover);
-    "
-  ></playBar>
+  <playBar></playBar>
 </template>
 
 <style>
