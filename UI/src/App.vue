@@ -57,20 +57,27 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-layout">
-    <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件
+  <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件
          @selection-changed 接收子组件传上来的页面 id -->
-    <LeftColumn @selection-changed="handlePageChange" />
+  <LeftColumn @selection-changed="handlePageChange" />
 
-    <InfoWindow />
-    <main class="main-content">
-      <component v-if="resolvedComponent(currentPageId)" :is="resolvedComponent(currentPageId)" />
-      <div v-else class="placeholder">
-        <p>主内容区域</p>
-        <p class="hint">（选择左侧导航以查看页面）</p>
-      </div>
-    </main>
-  </div>
+  <InfoWindow />
+  <component v-if="resolvedComponent(currentPageId)" :is="resolvedComponent(currentPageId)" />
+  <template v-else>
+    <p>主内容区域</p>
+    <p class="hint">（选择左侧导航以查看页面）</p>
+  </template>
+  <playBar
+    style="
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 90px;
+      z-index: 1000;
+      background: var(--color-hover);
+    "
+  ></playBar>
 </template>
 
 <style>
