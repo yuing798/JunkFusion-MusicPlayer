@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, nextTick, onUnmounted } from 'vue'
-import { IconX } from '@tabler/icons-vue'
+import { ref, onUnmounted } from 'vue';
+import { IconX } from '@tabler/icons-vue';
 
 // ════════════════════════════════════════════════════════════════
 // PopupWindow — 可复用的弹出窗组件
@@ -27,21 +27,19 @@ import { IconX } from '@tabler/icons-vue'
 
 const props = defineProps<{
   /** 弹窗标题（显示在标题栏居中位置） */
-  title: string
-}>()
+  title: string;
+}>();
 
 const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+  (e: 'close'): void;
+}>();
 
 // ── 状态 ──
 
-const triggerWrapper = ref<HTMLElement | null>(null)
-const popupEl = ref<HTMLElement | null>(null)
-const visible = ref(false)
-const closing = ref(false)
-const popupLeft = ref('0px')
-const popupTop = ref('0px')
+const triggerWrapper = ref<HTMLElement | null>(null);
+const popupEl = ref<HTMLElement | null>(null);
+const visible = ref(false);
+const closing = ref(false);
 
 // ── 打开 / 关闭 ──
 
@@ -54,50 +52,41 @@ const popupTop = ref('0px')
  */
 function open(): void {
   if (triggerWrapper.value) {
-    const rect = triggerWrapper.value.getBoundingClientRect()
+    const rect = triggerWrapper.value.getBoundingClientRect();
     document.documentElement.style.setProperty(
       '--popup-origin-x',
       rect.left + rect.width / 2 + 'px',
-    )
+    );
     document.documentElement.style.setProperty(
       '--popup-origin-y',
       rect.top + rect.height / 2 + 'px',
-    )
+    );
   }
 
-  visible.value = true
-  closing.value = false
-
-  // 渲染后根据实际尺寸精确居中
-  void nextTick(() => {
-    if (popupEl.value) {
-      const r = popupEl.value.getBoundingClientRect()
-      popupLeft.value = (window.innerWidth - r.width) / 2 + 'px'
-      popupTop.value = (window.innerHeight - r.height) / 2 + 'px'
-    }
-  })
+  visible.value = true;
+  closing.value = false;
 }
 
 /** 关闭弹窗（带动画） */
 function close(): void {
-  closing.value = true
+  closing.value = true;
   setTimeout(() => {
-    visible.value = false
-    closing.value = false
-    emit('close')
-  }, 200) // 匹配 CSS 动画时长，延迟执行
+    visible.value = false;
+    closing.value = false;
+    emit('close');
+  }, 200); // 匹配 CSS 动画时长，延迟执行
 }
 
 // ── 暴露给父组件 ──
 
-defineExpose({ open, close })
+defineExpose({ open, close });
 
 // ── 清理 ──
 
 onUnmounted(() => {
-  document.documentElement.style.removeProperty('--popup-origin-x')
-  document.documentElement.style.removeProperty('--popup-origin-y')
-})
+  document.documentElement.style.removeProperty('--popup-origin-x');
+  document.documentElement.style.removeProperty('--popup-origin-y');
+});
 </script>
 
 <template>
@@ -111,16 +100,14 @@ onUnmounted(() => {
 
   <!-- 弹出窗 — Teleport to body -->
   <Teleport to="body">
+    <!-- 半透明遮罩层，覆盖整个窗口，点击遮罩关闭弹窗 -->
     <div
       v-if="visible"
-      ref="popupEl"
-      class="popup-window"
-      :class="{ 'popup-closing': closing }"
-      :style="{
-        left: popupLeft,
-        top: popupTop,
-      }"
-    >
+      class="popup-backdrop"
+      :class="{ 'backdrop-closing': closing }"
+      @click="close"
+    />
+    <div v-if="visible" ref="popupEl" class="popup-window" :class="{ 'popup-closing': closing }">
       <!-- 标题栏：居中标题 + 右侧关闭按钮 -->
       <div class="popup-titlebar">
         <span class="popup-title">{{ title }}</span>
@@ -147,6 +134,41 @@ onUnmounted(() => {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   遮罩层 — 半透明灰色背景，覆盖整个窗口
+   点击遮罩关闭弹窗
+   ════════════════════════════════════════════════════════════════ */
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgb(0, 0, 0, 35%);
+  animation: backdrop-fade-in 200ms ease-out forwards;
+}
+
+.popup-backdrop.backdrop-closing {
+  animation: backdrop-fade-out 200ms ease-in forwards;
+}
+
+@keyframes backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdrop-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
    弹出窗 — Teleported to body
    仿 C++ popupWindow + PopupWindowButton 的缩放动画
    宽高由内容决定，不设 width/height
@@ -155,6 +177,8 @@ onUnmounted(() => {
 .popup-window {
   position: fixed;
   z-index: 10000;
+  left: 50%;
+  top: 50%;
   /* 宽高由 .popup-titlebar(32px) + .popup-body 内容自适应 */
   background-color: var(--color-hover);
   border-radius: var(--border-radius);
@@ -176,22 +200,22 @@ onUnmounted(() => {
 
 @keyframes popup-open {
   from {
-    transform: scale(0);
+    transform: translate(-50%, -50%) scale(0);
     opacity: 0;
   }
   to {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
 }
 
 @keyframes popup-close {
   from {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
   to {
-    transform: scale(0);
+    transform: translate(-50%, -50%) scale(0);
     opacity: 0;
   }
 }

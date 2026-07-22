@@ -57,10 +57,10 @@ function changePlayBack() {
         <IconPlayerPlayFilled class="hover-play"></IconPlayerPlayFilled>
       </div>
 
-      <templete v-else>
+      <template v-else>
         <IconPlayerPause v-if="playBackStore.isPlaying === true" class="svg-icon"></IconPlayerPause>
         <IconPlayerPlayFilled v-else class="svg-icon"></IconPlayerPlayFilled>
-      </templete>
+      </template>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -132,14 +132,14 @@ function changePlayBack() {
   align-items: center;
   gap: 4px;
   padding: 10px 5px;
-  background: linear-gradient(to top, var(--color-edge), var(--color-main));
+  background: linear-gradient(to top, var(--color-edge), var(--color-main) 30%);
   transition: background-color var(--ease-time) ease;
   user-select: none;
   border-bottom: 3px solid var(--color-edge); /* 粗细 颜色 样式 */
 }
 
 .each-song-row:hover {
-  background: linear-gradient(to top, var(--color-text-second), var(--color-main));
+  background: linear-gradient(to top, var(--color-text-second), var(--color-main) 30%);
 }
 
 /* ════════════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { B_saveComment } from '@/bridge/bridge.generated';
-import type { SongInfo } from '@/store/songStore';
+import { useSongStore, type SongInfo } from '@/store/songStore';
 import { getBackendResourceAddress, getNativeFunction } from 'juce-framework-frontend-mirror';
 import { computed, ref } from 'vue';
 
@@ -8,10 +8,11 @@ const props = defineProps<{
   song: SongInfo;
 }>();
 const s = props.song;
-const remarkText = ref(''); //备注文本
+const remarkText = ref(s.comment ?? ''); //备注文本，初始化为已有备注值
 
 async function saveComment() {
-  await getNativeFunction(B_saveComment.name)({ text: remarkText, songId: s.songId });
+  s.comment = remarkText.value;
+  await getNativeFunction(B_saveComment.name)({ text: remarkText.value, songId: s.songId });
 }
 
 function convert2String(value: number | null | string) {
@@ -20,8 +21,10 @@ function convert2String(value: number | null | string) {
   return value;
 }
 
+const songStore = useSongStore();
+
 const techInfoArray = computed(() => [
-  { label: '时长', value: convert2String(s.duration) },
+  { label: '时长', value: convert2String(songStore.formatDuration(s.duration)) },
   { label: '采样率', value: convert2String(s.sampleRate) + 'Hz' },
   { label: '比特率', value: convert2String(s.bitRate) + 'Kbps' },
   { label: '通道数', value: convert2String(s.numChannels) },
@@ -60,7 +63,7 @@ const musicInfoArray = computed(() => [
       <div class="meta-grid">
         <!-- 这里放置技术参数 -->
         <div v-for="item in techInfoArray" :key="item.label">
-          <div v-if="item.value !== null">
+          <div v-if="item.value !== null" class="label-value">
             <label class="opt-label">{{ item.label }} </label>
             <span class="opt-value" :title="item.value">{{ item.value }}</span>
           </div>
@@ -69,7 +72,7 @@ const musicInfoArray = computed(() => [
       <div class="meta-grid">
         <!-- 这里放置音乐参数 -->
         <div v-for="item in musicInfoArray" :key="item.label">
-          <div v-if="item.value !== null">
+          <div v-if="item.value !== null" class="label-value">
             <label class="opt-label">{{ item.label }} </label>
             <span class="opt-value" :title="item.value">{{ item.value }}</span>
           </div>
@@ -78,10 +81,9 @@ const musicInfoArray = computed(() => [
       <!-- 这里放置备注文本框 -->
       <textarea
         class="remark-area"
-        title="点击输入备注内容"
         v-model="remarkText"
         placeholder="点击输入备注"
-        rows="3"
+        rows="4"
         @blur="saveComment()"
       ></textarea>
     </div>
@@ -100,7 +102,7 @@ const musicInfoArray = computed(() => [
   gap: 10px;
 }
 
-.left-colume {
+.left-column {
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -121,13 +123,20 @@ const musicInfoArray = computed(() => [
   border-top: 1px solid var(--color-edge);
 }
 
+.label-value {
+  display: flex;
+  gap: 6px;
+}
+
 .opt-label {
   /* 可选字段的标签 */
   color: var(--color-text-second);
+  user-select: none;
 }
 .opt-value {
   /* 可选字段的具体数值 */
   color: var(--color-text-main);
+  cursor: default;
 }
 
 .remark-area {
@@ -135,6 +144,7 @@ const musicInfoArray = computed(() => [
   font-size: var(--little-font);
   border: 2px solid transparent;
   transition: border-color var(--ease-time) ease;
+  resize: none;
 }
 
 .remark-area:focus {

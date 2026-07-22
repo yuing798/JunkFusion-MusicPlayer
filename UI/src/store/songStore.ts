@@ -102,5 +102,24 @@ export const useSongStore = defineStore('allSongs', {
         this.songs[index] = originSong // 回滚
       }
     },
+
+    /**
+     * 将秒数格式化为 分:秒 或 时:分:秒
+     * @param seconds 秒数（浮点数）
+     * @returns 格式化的时间字符串
+     */
+    formatDuration(seconds: number): string {
+      if (!seconds || seconds < 0) return '0:00'
+
+      const totalSec = Math.floor(seconds)
+      const hours = Math.floor(totalSec / 3600)
+      const minutes = Math.floor((totalSec % 3600) / 60)
+      const secs = totalSec % 60
+
+      if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+      }
+      return `${minutes}:${String(secs).padStart(2, '0')}`
+    }
   },
 })
