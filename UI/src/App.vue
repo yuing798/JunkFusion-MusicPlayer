@@ -123,9 +123,7 @@ body {
 /* 1. 动画进行时的状态：告诉浏览器哪些属性要过渡，时长和缓动函数 */
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition:
-    transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1),
-    opacity 0.4s ease;
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 
   /* 参数拆解：cubic-bezier(P1x, P1y, P2x, P2y)
   你给的 (0.25, 0.8, 0.25, 1) 对应两个控制点：
@@ -139,13 +137,11 @@ body {
 .slide-up-enter-from,
 .slide-up-leave-to {
   transform: translateY(100%); /* 整个播放栏向下移动自身高度（即完全移出屏幕底部） */
-  opacity: 0;
 }
 
 /* 3. 进入后（显示状态）& 离开前（显示状态） */
 .slide-up-enter-to,
 .slide-up-leave-from {
   transform: translateY(0); /* 恢复到正常位置（紧贴底部） */
-  opacity: 1;
 }
 </style>

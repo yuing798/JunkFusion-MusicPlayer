@@ -6,7 +6,7 @@ const playBackStore = usePlayBackStore();
 </script>
 
 <template>
-  <div class="playbar-layout" v-if="playBackStore.currentSongId !== null">
+  <div class="playbar-layout">
     <div class="left-area">
       <img :src="getBackendResourceAddress(`songId/${playBackStore.currentSongId}/image/50x50`)" />
     </div>
