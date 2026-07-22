@@ -73,15 +73,16 @@ const songStore = useSongStore();
 
 const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
 
-const virtualizer = useVirtualizer({
-  count: computed(() => songStore.songs.length) as unknown as number,
-
-  getScrollElement: () => scrollContainerRef.value,
-  // 每行固定高度
-  estimateSize: () => 80,
-  // 上下多预渲染 10 个节点，防止快速滚动白屏
-  overscan: 10,
-});
+const virtualizer = useVirtualizer(
+  computed(() => ({
+    count: songStore.songs.length,
+    getScrollElement: () => scrollContainerRef.value,
+    // 每行固定高度
+    estimateSize: () => 80,
+    // 上下多预渲染 10 个节点，防止快速滚动白屏
+    overscan: 10,
+  })),
+);
 
 onMounted(() => {
   //初始化升降序
