@@ -626,8 +626,7 @@ webComponent.evaluateJavascript("document.title", [](auto result) {
 |------|------|
 | `build/debug/_deps/juce-src/examples/Plugins/WebViewPluginDemo.h` | 后端 WebView 完整实现示例 |
 | `build/debug/_deps/juce-src/examples/Plugins/WebViewPluginDemoGUI/src/App.js` | 前端 React WebView 实现示例 |
-| `build/debug/_deps/juce-src/modules/juce_gui_extra/native/javascript/index.js` | JUCE 官方 JS 前端库（所有 API） |
-| `build/debug/_deps/juce-src/modules/juce_gui_extra/native/javascript/check_native_interop.js` | 底层注入脚本（`window.__JUCE__` 初始化） |
+| `UI/node_modules/juce-framework-frontend-mirror` | JUCE 官方 JS 前端库（所有前端 API） |
 | `build/debug/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebBrowserComponent.h` | WebBrowserComponent 头文件（Options API） |
 | `build/debug/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebBrowserComponent.cpp` | WebBrowserComponent 实现（底层通信机制） |
 | `build/debug/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebControlRelays.h` | WebSliderRelay / WebToggleButtonRelay / WebComboBoxRelay 定义 |

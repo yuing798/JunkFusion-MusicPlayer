@@ -35,8 +35,10 @@ MainComponent::MainComponent(){
         //下面放置的是后端需要直接和前端交互的函数
         .withResourceProvider([this](const juce::String& path) -> std::optional<juce::WebBrowserComponent::Resource> {
 
+            // 去掉开头的 "/"，与 JUCE 官方 WebViewPluginDemo 的 fromFirstOccurrenceOf 处理方式一致
+            const auto cleanPath = path.fromFirstOccurrenceOf("/", false, false);
             juce::StringArray tokens;
-            tokens.addTokens(path,"/","");//将原始URL按照斜杠进行切分
+            tokens.addTokens(cleanPath,"/","");//将原始URL按照斜杠进行切分
             if(tokens[0] == "songId"){
                 int64_t songId{tokens[1].getLargeIntValue()};
                 if(tokens[2] == "image"){//歌曲的信息,URL格式为/songId/8175019024(id号)/image/imageType

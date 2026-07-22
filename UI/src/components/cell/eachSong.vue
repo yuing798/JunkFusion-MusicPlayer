@@ -128,17 +128,18 @@ function changePlayBack() {
   grid-template-columns: 50px 1fr 150px 120px 80px 40px 40px;
   /* 分别为图片，歌名，专辑，AI标签，播放次数，我喜欢，更多 */
   height: 100%;
+  width: 100%;
   align-items: center;
   gap: 4px;
   padding: 10px 5px;
-  background-color: linear-gradient(to top, var(--color-edge), var(--color-main));
+  background: linear-gradient(to top, var(--color-edge), var(--color-main));
   transition: background-color var(--ease-time) ease;
   user-select: none;
   border-bottom: 3px solid var(--color-edge); /* 粗细 颜色 样式 */
 }
 
 .each-song-row:hover {
-  background-color: linear-gradient(to top, var(--color-text-second), var(--color-main));
+  background: linear-gradient(to top, var(--color-text-second), var(--color-main));
 }
 
 /* ════════════════════════════════════════════════════════════════

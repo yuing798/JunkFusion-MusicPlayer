@@ -269,6 +269,8 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path)
             updateSong.bind(":songId", existingId);
             updateSong.exec();
 
+            // ── 回写主键：UPDATE 后 info.songId 仍是 0，必须手动赋值 ──
+            info.songId = existingId;
         }
         else
         {
@@ -283,6 +285,9 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path)
 
             bindSongFields(insertSong);
             insertSong.exec();
+
+            // ── INSERT 后 SQLite 自动生成主键，必须读回否则 songId 始终 = 0 ──
+            info.songId = db.getLastInsertRowid();
         }
 
         // ── 全部成功，提交事务 ──
