@@ -4,6 +4,7 @@ import LeftColumn from './components/LeftColumn.vue';
 import AllMusic from './components/pages/AllMusic.vue';
 import { useSongStore } from './store/songStore.ts';
 import InfoWindow from './components/other/infoWindow.vue';
+import { usePlayBackStore } from './store/playBackStore.ts';
 
 //应用初始化的时候执行一次,不需要放到scripts的末尾
 onMounted(() => {
@@ -50,6 +51,7 @@ function resolvedComponent(id: number | null): Component | null {
 }
 
 const songStore = useSongStore();
+const playBackStore = usePlayBackStore();
 
 onMounted(() => {
   songStore.getAllSongs();
@@ -67,7 +69,11 @@ onMounted(() => {
     <p>主内容区域</p>
     <p class="hint">（选择左侧导航以查看页面）</p>
   </template>
-  <playBar></playBar>
+  <Transition name="slide-up">
+    <!-- 自动监听v-if改变的瞬间，并施加动画效果 -->
+    <playBar v-if="playBackStore.currentSongId !== null"></playBar>
+    <!-- v-if放在外层而非内层的原因是如果放在内层的话即使if为false,script中也会执行，造成不必要的开销 -->
+  </Transition>
 </template>
 
 <style>
@@ -112,5 +118,34 @@ body {
   /* 水平和垂直居中 */
   background-color: var(--color-main);
   padding: 15px 20px;
+}
+
+/* 1. 动画进行时的状态：告诉浏览器哪些属性要过渡，时长和缓动函数 */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition:
+    transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1),
+    opacity 0.4s ease;
+
+  /* 参数拆解：cubic-bezier(P1x, P1y, P2x, P2y)
+  你给的 (0.25, 0.8, 0.25, 1) 对应两个控制点：
+  点 1（P1）：(0.25, 0.8) —— 控制开头的速度（X=0.25 时，Y 已经达到了 0.8，说明起步极快）。
+  点 2（P2）：(0.25, 1) —— 控制结尾的速度（X=0.25 时，Y 才刚到 1，说明最后的 75% 时间都在缓慢微调）。 */
+  /* -active 是 Vue <Transition> 组件在动画执行期间（持续阶段） 添加的类名。它的核心职责只有一个：
+    定义动画持续多久、延迟多久、以及用什么缓动函数（即上面说的 cubic-bezier） */
+}
+
+/* 2. 进入前（隐藏状态）& 离开后（隐藏状态） */
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%); /* 整个播放栏向下移动自身高度（即完全移出屏幕底部） */
+  opacity: 0;
+}
+
+/* 3. 进入后（显示状态）& 离开前（显示状态） */
+.slide-up-enter-to,
+.slide-up-leave-from {
+  transform: translateY(0); /* 恢复到正常位置（紧贴底部） */
+  opacity: 1;
 }
 </style>
