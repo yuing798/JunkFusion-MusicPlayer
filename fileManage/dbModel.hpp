@@ -133,7 +133,7 @@ inline const char* createSongsTableSQL = R"(
         codecId INTEGER, 
         codecName TEXT, 
         aiGenre            TEXT,
-        bpm                INTEGER DEFAULT 0,
+        bpm                INTEGER,
         key                TEXT,
         aiProcessed        INTEGER DEFAULT 0,
         isMyLike           INTEGER DEFAULT 0,
