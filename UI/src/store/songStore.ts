@@ -74,7 +74,7 @@ export const useSongStore = defineStore('allSongs', {
 
   actions: {
 
-    async getAllSongs(){
+    async getAllSongs(){//把数据库里面的所有歌曲拿出来放到内存中
       const result =  await getNativeFunction(B_getAllSongs.name)();
       if(Array.isArray(result)){
         this.songs = result as SongInfo[];

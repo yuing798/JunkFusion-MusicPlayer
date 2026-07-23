@@ -5,6 +5,7 @@ import AllMusic from './components/pages/AllMusic.vue';
 import { useSongStore } from './store/songStore.ts';
 import InfoWindow from './components/other/infoWindow.vue';
 import { usePlayBackStore } from './store/playBackStore.ts';
+import playBar from './components/playBar.vue';
 
 //应用初始化的时候执行一次,不需要放到scripts的末尾
 onMounted(() => {
@@ -59,20 +60,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件
+  <div class="app-layout">
+    <!-- 左侧导航栏：对应 C++ 中的 LeftColumn 组件
          @selection-changed 接收子组件传上来的页面 id -->
-  <LeftColumn @selection-changed="handlePageChange" />
+    <LeftColumn @selection-changed="handlePageChange" />
 
-  <InfoWindow />
-  <component v-if="resolvedComponent(currentPageId)" :is="resolvedComponent(currentPageId)" />
-  <template v-else>
-    <p>主内容区域</p>
-    <p class="hint">（选择左侧导航以查看页面）</p>
-  </template>
+    <InfoWindow />
+    <main class="main-content">
+      <component v-if="resolvedComponent(currentPageId)" :is="resolvedComponent(currentPageId)" />
+      <div v-else class="placeholder">
+        <p>主内容区域</p>
+        <p class="hint">（选择左侧导航以查看页面）</p>
+      </div>
+    </main>
+  </div>
   <Transition name="slide-up">
     <!-- 自动监听v-if改变的瞬间，并施加动画效果 -->
     <playBar v-if="playBackStore.currentSongId !== null"></playBar>
-    <!-- v-if放在外层而非内层的原因是如果放在内层的话即使if为false,script中也会执行，造成不必要的开销 -->
   </Transition>
 </template>
 

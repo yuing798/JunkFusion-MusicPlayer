@@ -73,9 +73,39 @@ const songStore = useSongStore();
 
 const scrollContainerRef = ref<HTMLElement | null>(null); //滚动容器窗口
 
+const sortSongs = computed(() => {
+  const copy = [...songStore.songs]; //浅拷贝(只拷贝指针)
+  switch (selectedSort.value) {
+    case 0:
+      //添加时间排序
+      if (isAscending.value) {
+        return copy.sort((a, b) => a.songId - b.songId);
+      } else {
+        return copy.sort((a, b) => b.songId - a.songId);
+      }
+    case 1:
+      //歌曲名称排序
+      const collator = new Intl.Collator('en', { numeric: true });
+      if (isAscending.value) {
+        return copy.sort((a, b) => collator.compare(a.title, b.title));
+      } else {
+        return copy.sort((a, b) => collator.compare(b.title, a.title));
+      }
+    case 2:
+      //播放次数排序
+      if (isAscending.value) {
+        return copy.sort((a, b) => a.playNum - b.playNum);
+      } else {
+        return copy.sort((a, b) => b.playNum - a.playNum);
+      }
+    default:
+      return copy;
+  }
+});
+
 const virtualizer = useVirtualizer(
   computed(() => ({
-    count: songStore.songs.length,
+    count: sortSongs.value.length,
     getScrollElement: () => scrollContainerRef.value,
     // 每行固定高度
     estimateSize: () => 80,

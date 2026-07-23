@@ -33,17 +33,20 @@ const playBackStore = usePlayBackStore();
   grid-column: 1/2;
   padding: 0 10px;
   gap: 10px;
+  display: flex;
 }
 
 .mid-area {
   grid-column: 3/4;
   padding: 0 10px;
   gap: 10px;
+  display: flex;
 }
 
 .right-area {
   grid-column: 5/6;
   padding: 0 10px;
   gap: 10px;
+  display: flex;
 }
 </style>
