@@ -9,6 +9,7 @@ export const usePlayBackStore = defineStore('playBack', {
     isPlaying: false,
     //当前播放到哪里了
     currentTimeStamp : null as number|null,
+    playMode:0 as number,//0代表顺序播放，1代表列表循环，2代表单曲循环，3代表随机播放
   }),
 
   actions: {
@@ -20,6 +21,12 @@ export const usePlayBackStore = defineStore('playBack', {
     restoreCurrentSongId(){
       const songId = localStorage.getItem("playbar_currentSongId");
       if(songId) this.currentSongId = Number(songId);
+    },
+    playmodeChange(){
+      this.playMode++;
+      if(this.playMode === 4){
+        this.playMode -= 4;
+      }
     }
   },
 });

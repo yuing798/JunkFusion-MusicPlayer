@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { usePlayBackStore } from '@/store/playBackStore';
 import { useSongStore } from '@/store/songStore';
-import { IconHeart, IconHeartFilled, IconMessageCircleQuestion } from '@tabler/icons-vue';
+import {
+  IconArrowsRight,
+  IconArrowsShuffle,
+  IconHeart,
+  IconHeartFilled,
+  IconMessageCircleQuestion,
+} from '@tabler/icons-vue';
+import listCircle from '@/assets/image/listCircle.svg';
+import singleCircle from '@/assets/image/singleCircle.svg';
 import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
 import PopupWindow from './other/popupWindow.vue';
 import SongDetailInfo from './cell/songDetailInfo.vue';
@@ -47,7 +55,28 @@ const info = computed(() => {
         </template>
       </PopupWindow>
     </div>
-    <div class="mid-area"></div>
+    <div class="mid-area">
+      <div @click.stop="playBackStore.playmodeChange()">
+        <IconArrowsRight
+          v-if="playBackStore.playMode === 0"
+          class="svg-icon"
+          title="顺序播放"
+        ></IconArrowsRight>
+        <img
+          v-else-if="playBackStore.playMode === 1"
+          :src="listCircle"
+          class="svg-icon"
+          title="列表循环"
+        />
+        <img
+          v-else-if="playBackStore.playMode === 2"
+          :src="singleCircle"
+          class="svg-icon"
+          title="单曲循环"
+        />
+        <IconArrowsShuffle v-else class="svg-icon" title="随机播放"></IconArrowsShuffle>
+      </div>
+    </div>
     <div class="right-area"></div>
   </div>
 </template>
@@ -63,7 +92,7 @@ const info = computed(() => {
   background: var(--color-hover);
   padding: 10px 30px;
   display: grid;
-  grid-template-columns: 500px 1fr 330px 1fr 330px;
+  grid-template-columns: 500px 1fr 330px 1fr 550px;
 }
 
 .left-area {
@@ -121,14 +150,23 @@ const info = computed(() => {
   height: 32px;
   color: var(--color-text-main);
 }
+.svg-icon:hover {
+  background: var(--color-super-stress);
+}
 
 .mid-area {
+  grid-column: 3/4;
   padding: 0 10px;
+  /* background-color: black; */
   gap: 10px;
   display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .right-area {
+  /* background-color: black; */
+  grid-column: 5/6;
   padding: 0 10px;
   gap: 10px;
   display: flex;
