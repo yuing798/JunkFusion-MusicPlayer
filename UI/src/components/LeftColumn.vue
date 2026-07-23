@@ -179,7 +179,7 @@ function isSelected(id: number): boolean {
 
 .scroll-content {
   /* 底部留白，对应 C++ resized() 中 height 计算公式末尾的 +60 */
-  padding-bottom: 60px;
+  padding-bottom: 100px;
 }
 
 .logo-area {

@@ -26,6 +26,7 @@ function changePlayBack() {
   if (props.song.songId !== playBackStore.currentSongId) {
     playBackStore.currentSongId = props.song.songId;
     playBackStore.isPlaying = true;
+    playBackStore.setCurrentSongId(playBackStore.currentSongId);
   } else {
     if (playBackStore.isPlaying === false) {
       playBackStore.isPlaying = true;

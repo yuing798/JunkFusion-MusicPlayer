@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 
-import { B_getAllSongCount, B_songImport, B_songInfo } from '@/bridge/bridge.generated.ts';
+import { B_getAllSongCount, B_songImport } from '@/bridge/bridge.generated.ts';
 import { IconArrowBigDownFilled, IconArrowBigUpFilled } from '@tabler/icons-vue';
-import { useSongStore, type SongInfo } from '@/store/songStore';
+import { useSongStore } from '@/store/songStore';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import EachSong from '../cell/eachSong.vue';
 import { getNativeFunction } from 'juce-framework-frontend-mirror';
 import { showInfoWindow } from '../other/infoWindow.vue';
+import { usePlayBackStore } from '@/store/playBackStore.ts';
 
 const songCount = ref(0);
 
@@ -113,6 +114,7 @@ const virtualizer = useVirtualizer(
     overscan: 10,
   })),
 );
+const playbackStore = usePlayBackStore();
 
 onMounted(() => {
   //初始化升降序
@@ -126,6 +128,7 @@ onMounted(() => {
     selectedSort.value = 0;
   }
   refreshSongCount(); //获得歌曲总数
+  playbackStore.restoreCurrentSongId();
 });
 </script>
 
@@ -175,7 +178,10 @@ onMounted(() => {
 
     <div style="flex: 1; overflow-y: auto" ref="scrollContainerRef">
       <!-- 外层视口 -->
-      <div :style="{ height: `${virtualizer.getTotalSize()}px` }" style="position: relative">
+      <div
+        :style="{ height: `${virtualizer.getTotalSize()}px` }"
+        style="position: relative; padding-bottom: 100px"
+      >
         <!-- 内层viewport ，因为v-bind需要传进来一个js对象，所以必须使用花括号-->
         <EachSong
           v-for="virtualRow in virtualizer.getVirtualItems()"
