@@ -6,7 +6,11 @@ import {
   IconArrowsShuffle,
   IconHeart,
   IconHeartFilled,
+  IconListFilled,
   IconMessageCircleQuestion,
+  IconPlayerPlayFilled,
+  IconSquareArrowLeft,
+  IconSquareArrowRight,
 } from '@tabler/icons-vue';
 import listCircle from '@/assets/image/listCircle.svg';
 import singleCircle from '@/assets/image/singleCircle.svg';
@@ -21,6 +25,13 @@ const info = computed(() => {
   const id = playBackStore.currentSongId;
   return songStore.songs.find((s) => s.songId === id);
 });
+function playPauseChange() {
+  if (playBackStore.isPlaying) {
+    playBackStore.isPlaying = false;
+  } else {
+    playBackStore.isPlaying = true;
+  }
+}
 </script>
 
 <template>
@@ -56,26 +67,36 @@ const info = computed(() => {
       </PopupWindow>
     </div>
     <div class="mid-area">
-      <div @click.stop="playBackStore.playmodeChange()">
-        <IconArrowsRight
-          v-if="playBackStore.playMode === 0"
-          class="svg-icon"
-          title="顺序播放"
-        ></IconArrowsRight>
-        <img
-          v-else-if="playBackStore.playMode === 1"
-          :src="listCircle"
-          class="svg-icon"
-          title="列表循环"
-        />
-        <img
-          v-else-if="playBackStore.playMode === 2"
-          :src="singleCircle"
-          class="svg-icon"
-          title="单曲循环"
-        />
-        <IconArrowsShuffle v-else class="svg-icon" title="随机播放"></IconArrowsShuffle>
-      </div>
+      <IconArrowsRight
+        v-if="playBackStore.playMode === 0"
+        class="svg-icon"
+        title="顺序播放"
+        @click.stop="playBackStore.playmodeChange()"
+      ></IconArrowsRight>
+      <img
+        v-else-if="playBackStore.playMode === 1"
+        :src="listCircle"
+        class="svg-icon"
+        title="列表循环"
+        @click.stop="playBackStore.playmodeChange()"
+      />
+      <img
+        v-else-if="playBackStore.playMode === 2"
+        :src="singleCircle"
+        class="svg-icon"
+        title="单曲循环"
+        @click.stop="playBackStore.playmodeChange()"
+      />
+      <IconArrowsShuffle
+        v-else
+        class="svg-icon"
+        title="随机播放"
+        @click.stop="playBackStore.playmodeChange()"
+      ></IconArrowsShuffle>
+      <IconSquareArrowLeft class="svg-icon"></IconSquareArrowLeft>
+      <IconPlayerPlayFilled class="svg-icon"></IconPlayerPlayFilled>
+      <IconSquareArrowRight class="svg-icon"></IconSquareArrowRight>
+      <IconListFilled class="svg-icon"></IconListFilled>
     </div>
     <div class="right-area"></div>
   </div>
@@ -150,9 +171,9 @@ const info = computed(() => {
   height: 32px;
   color: var(--color-text-main);
 }
-.svg-icon:hover {
+/* .svg-icon:hover {
   background: var(--color-super-stress);
-}
+} */
 
 .mid-area {
   grid-column: 3/4;
