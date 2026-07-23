@@ -69,8 +69,12 @@ function changePlayBack() {
          垂直堆叠：上行 = 歌名 下行 = 艺术家名
          ═══════════════════════════════════════════════════════════ -->
     <div class="song-name-artist">
-      <span class="song-artist-name">{{ props.song.title ?? '' }}</span>
-      <span class="song-artist-name">{{ props.song.artist ?? '未知' }}</span>
+      <span style="color: var(--color-text-main); font-size: var(--mid-font)">{{
+        props.song.title
+      }}</span>
+      <span style="color: var(--color-text-second); font-size: var(--little-font)">{{
+        props.song.artist ?? '未知'
+      }}</span>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -196,6 +200,7 @@ function changePlayBack() {
    ════════════════════════════════════════════════════════════════ */
 
 .song-name-artist {
+  display: flex;
   flex-direction: column;
   /* 将主轴方向从水平（默认）改为垂直。 */
   align-items: flex-start;
@@ -269,23 +274,5 @@ function changePlayBack() {
 .cell-like:hover,
 .cell-more:hover {
   background-color: var(--color-hover);
-}
-
-/* ════════════════════════════════════════════════════════════════
-   弹出窗内容区域 — 歌曲详情
-   由 PopupWindow 的 #popup-window-component 插槽投射
-   ════════════════════════════════════════════════════════════════ */
-
-.song-other-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 560px;
-}
-
-.song-detail-info {
-  font-size: var(--mid-font);
-  color: var(--color-text-main);
-  white-space: pre-line;
 }
 </style>

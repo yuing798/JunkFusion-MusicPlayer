@@ -69,10 +69,13 @@ export const useSongStore = defineStore('allSongs', {
   }),
 
   getters: {
-
+    //这里放置响应式计算方法，纯依赖，不依赖外部传参
   },
 
   actions: {
+    getSongInfo(songId :number):SongInfo|undefined{
+      return this.songs.find(s => s.songId === songId);
+    },
 
     async getAllSongs(){//把数据库里面的所有歌曲拿出来放到内存中
       const result =  await getNativeFunction(B_getAllSongs.name)();
