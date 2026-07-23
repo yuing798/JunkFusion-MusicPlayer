@@ -24,9 +24,8 @@ const songStore = useSongStore();
 
 function changePlayBack() {
   if (props.song.songId !== playBackStore.currentSongId) {
-    playBackStore.currentSongId = props.song.songId;
     playBackStore.isPlaying = true;
-    playBackStore.setCurrentSongId(playBackStore.currentSongId);
+    playBackStore.setCurrentSongId(props.song.songId);
   } else {
     if (playBackStore.isPlaying === false) {
       playBackStore.isPlaying = true;
@@ -69,9 +68,11 @@ function changePlayBack() {
          垂直堆叠：上行 = 歌名 下行 = 艺术家名
          ═══════════════════════════════════════════════════════════ -->
     <div class="song-name-artist">
-      <span style="color: var(--color-text-main); font-size: var(--mid-font)">{{
-        props.song.title
-      }}</span>
+      <span
+        style="color: var(--color-text-main); font-size: var(--mid-font)"
+        :title="props.song.title"
+        >{{ props.song.title }}</span
+      >
       <span style="color: var(--color-text-second); font-size: var(--little-font)">{{
         props.song.artist ?? '未知'
       }}</span>

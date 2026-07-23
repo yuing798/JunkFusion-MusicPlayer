@@ -5,10 +5,14 @@ import { IconHeart, IconHeartFilled, IconMessageCircleQuestion } from '@tabler/i
 import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
 import PopupWindow from './other/popupWindow.vue';
 import SongDetailInfo from './cell/songDetailInfo.vue';
+import { computed } from 'vue';
 
 const playBackStore = usePlayBackStore();
 const songStore = useSongStore();
-const info = songStore.getSongInfo(playBackStore.currentSongId!);
+const info = computed(() => {
+  const id = playBackStore.currentSongId;
+  return songStore.songs.find((s) => s.songId === id);
+});
 </script>
 
 <template>
@@ -16,9 +20,11 @@ const info = songStore.getSongInfo(playBackStore.currentSongId!);
     <div class="left-area">
       <img :src="getBackendResourceAddress(`songId/${playBackStore.currentSongId}/image/50x50`)" />
       <div class="song-name-artist">
-        <span style="color: var(--color-text-main); font-size: var(--mid-font)">{{
-          info?.title
-        }}</span>
+        <span
+          :title="info?.title"
+          style="color: var(--color-text-main); font-size: var(--mid-font)"
+          >{{ info?.title }}</span
+        >
         <span style="color: var(--color-text-second); font-size: var(--little-font)">{{
           info?.artist ?? '未知'
         }}</span>
@@ -37,7 +43,7 @@ const info = songStore.getSongInfo(playBackStore.currentSongId!);
         </template>
 
         <template #popup-window-component>
-          <SongDetailInfo :song="info!"></SongDetailInfo>
+          <SongDetailInfo v-if="info" :song="info"></SongDetailInfo>
         </template>
       </PopupWindow>
     </div>
@@ -57,7 +63,7 @@ const info = songStore.getSongInfo(playBackStore.currentSongId!);
   background: var(--color-hover);
   padding: 10px 30px;
   display: grid;
-  grid-template-columns: 330px 1fr 330px 1fr 330px;
+  grid-template-columns: 500px 1fr 330px 1fr 330px;
 }
 
 .left-area {
@@ -65,16 +71,16 @@ const info = songStore.getSongInfo(playBackStore.currentSongId!);
   padding: 0 10px;
   gap: 10px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 
 .song-name-artist {
-  width: 200px;
   display: flex;
   flex-direction: column;
   /* 将主轴方向从水平（默认）改为垂直。 */
   align-items: flex-start;
+  /* align开头的是交叉轴，justify开头的是主轴 */
   /* 靠左对齐 */
   justify-content: center;
   gap: 2px;
@@ -117,16 +123,16 @@ const info = songStore.getSongInfo(playBackStore.currentSongId!);
 }
 
 .mid-area {
-  grid-column: 3/4;
   padding: 0 10px;
   gap: 10px;
   display: flex;
 }
 
 .right-area {
-  grid-column: 5/6;
   padding: 0 10px;
   gap: 10px;
   display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 </style>
