@@ -185,7 +185,7 @@ onMounted(() => {
             height: `${virtualRow.size}px`,
           }"
           style="position: absolute; top: 0; left: 0"
-          :song="songStore.songs[virtualRow.index]!"
+          :song="sortSongs[virtualRow.index]!"
         >
           <!-- 虚拟滚动情景使用transform对GPU更友好 -->
         </EachSong>
