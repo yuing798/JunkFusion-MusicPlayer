@@ -9,13 +9,13 @@ UseTab: Never
 ColumnLimit: 100          # 改成 100 更实用，LLVM 默认是 80
 
 # 指针风格（LLVM 默认是 Right）
-PointerAlignment: Right
-ReferenceAlignment: Right
+PointerAlignment: Left
+ReferenceAlignment: Left
 
 # 其他常用调整
-AccessModifierOffset: -4
-NamespaceIndentation: Inner
-BreakBeforeBraces: Attach
-AllowShortIfStatementsOnASingleLine: WithoutElse
-MaxEmptyLinesToKeep: 1
-SortIncludes: true
+AccessModifierOffset: -4 #控制 public:、private:、protected: 相对于 class/struct 的缩进偏移量
+NamespaceIndentation: All #命名空间内的代码也会缩进
+BreakBeforeBraces: Attach #决定 { 是写在同一行还是换行
+AllowShortIfStatementsOnASingleLine: WithoutElse #控制短的 if 语句是否允许写在一行
+MaxEmptyLinesToKeep: 1 #最大能够保留几行空行
+SortIncludes: true #clang-format 会自动帮你把 #include 按照一定规则排序，保存文件时自动整理

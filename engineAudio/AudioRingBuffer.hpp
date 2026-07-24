@@ -1,14 +1,11 @@
 #include "juce_audio_basics/juce_audio_basics.h"
-class AudioRingBuffer
-{
+class AudioRingBuffer {
 public:
-    AudioRingBuffer() = default;
+    // 传参：这个缓冲区设置为多少毫秒
+    AudioRingBuffer(double bufferMs);
 
-    // 初始化：分配足够的空间，通常建议为 1~2 秒的音频长度
-    void setSize(int numChannels, int totalNumSamples);
-
-    // 重置状态（例如切歌或 Seek 时调用）
-    void reset();
+    // 传参：通道数，采样率
+    void prepareToPlay(int, double);
 
     // 获取当前缓冲中可读取的采样数,noexcept是绝对不抛出异常的意思
     int getNumReady() const noexcept { return fifo.getNumReady(); }
@@ -26,6 +23,7 @@ public:
 private:
     juce::AbstractFifo fifo{0};
     juce::AudioBuffer<float> buffer;
-    
+    double mBufferMs{0.0};
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioRingBuffer)
 };
