@@ -150,10 +150,12 @@ MainComponent::MainComponent(){
                         complete(juce::var(obj));
                         logger->info("歌曲导入完成:导入总数{},成功数目{}",numAll,numSuccess);
                         if(!errorFiles.isEmpty()){
-                            logger->warn("导入失败曲目:\n");
+                            std::string str{"导入失败曲目:\n"};
+                            
                             for(auto& errorFile : errorFiles){
-                                logger->warn("{}\n",errorFile.toStdString());
+                                str+=errorFile.toStdString()+"\n";
                             }
+                            logger->warn(str);
                         }
                         return ;
 

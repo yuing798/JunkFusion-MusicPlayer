@@ -1,0 +1,21 @@
+---
+# 基于哪个预设风格（必须写）
+BasedOnStyle: LLVM
+
+# ================== 自定义调整（方便测试） ==================
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100          # 改成 100 更实用，LLVM 默认是 80
+
+# 指针风格（LLVM 默认是 Right）
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# 其他常用调整
+AccessModifierOffset: -4
+NamespaceIndentation: Inner
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: WithoutElse
+MaxEmptyLinesToKeep: 1
+SortIncludes: true
