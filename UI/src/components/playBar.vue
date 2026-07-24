@@ -8,6 +8,7 @@ import {
   IconHeartFilled,
   IconListFilled,
   IconMessageCircleQuestion,
+  IconPlayerPauseFilled,
   IconPlayerPlayFilled,
   IconSquareArrowLeft,
   IconSquareArrowRight,
@@ -17,7 +18,7 @@ import singleCircle from '@/assets/image/singleCircle.svg';
 import { getBackendResourceAddress } from 'juce-framework-frontend-mirror';
 import PopupWindow from './other/popupWindow.vue';
 import SongDetailInfo from './cell/songDetailInfo.vue';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 const playBackStore = usePlayBackStore();
 const songStore = useSongStore();
@@ -32,6 +33,18 @@ function playPauseChange() {
     playBackStore.isPlaying = true;
   }
 }
+
+function playmodeChange() {
+  playBackStore.playMode++;
+  if (playBackStore.playMode === 4) {
+    playBackStore.playMode -= 4;
+  }
+}
+
+// watch(
+//   () => playBackStore.currentSongId,
+//   (newValue) => {},
+// );
 </script>
 
 <template>
@@ -71,30 +84,39 @@ function playPauseChange() {
         v-if="playBackStore.playMode === 0"
         class="svg-icon"
         title="顺序播放"
-        @click.stop="playBackStore.playmodeChange()"
+        @click.stop="playmodeChange()"
       ></IconArrowsRight>
       <img
         v-else-if="playBackStore.playMode === 1"
         :src="listCircle"
         class="svg-icon"
         title="列表循环"
-        @click.stop="playBackStore.playmodeChange()"
+        @click.stop="playmodeChange()"
       />
       <img
         v-else-if="playBackStore.playMode === 2"
         :src="singleCircle"
         class="svg-icon"
         title="单曲循环"
-        @click.stop="playBackStore.playmodeChange()"
+        @click.stop="playmodeChange()"
       />
       <IconArrowsShuffle
         v-else
         class="svg-icon"
         title="随机播放"
-        @click.stop="playBackStore.playmodeChange()"
+        @click.stop="playmodeChange()"
       ></IconArrowsShuffle>
       <IconSquareArrowLeft class="svg-icon"></IconSquareArrowLeft>
-      <IconPlayerPlayFilled class="svg-icon"></IconPlayerPlayFilled>
+      <IconPlayerPlayFilled
+        class="svg-icon"
+        v-if="!playBackStore.isPlaying"
+        @click="playPauseChange()"
+      ></IconPlayerPlayFilled>
+      <IconPlayerPauseFilled
+        class="svg-icon"
+        v-else
+        @click="playPauseChange()"
+      ></IconPlayerPauseFilled>
       <IconSquareArrowRight class="svg-icon"></IconSquareArrowRight>
       <IconListFilled class="svg-icon"></IconListFilled>
     </div>
