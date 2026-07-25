@@ -8,7 +8,11 @@
 #include <string>
 #include <utility>
 extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/dict.h>
 #include <libavutil/error.h> //负责日志信息
+#include <libavutil/samplefmt.h>
 }
 
 /*

@@ -32,7 +32,7 @@ struct SongInfo {
     int64_t bitRate = 0; // 比特率（kbps）
     int sampleRate{0};   // 采样率（Hz）ffmpeg只能读取整数采样率，
     // 实际上也基本都是整数采样率，processBlock中用double采样率是为了计算精度平衡
-    int numChannels = 0;                  // 通道数
+    juce::String channelLayout;           // 通道布局(通道布局是一定有的)
     int bitDepth = 0;                     // 位深
     std::optional<std::string> codecName; // 编码器名称//因为编码器名称不一定有，但是编码器ID一定有
 
@@ -79,7 +79,7 @@ struct SongInfo {
         // ── 3. FFmpeg 解码层 ──
         obj->setProperty(B_songInfo::bitRate, song.bitRate);
         obj->setProperty(B_songInfo::sampleRate, song.sampleRate);
-        obj->setProperty(B_songInfo::numChannels, song.numChannels);
+        obj->setProperty(B_songInfo::channelLayout, song.channelLayout);
         obj->setProperty(B_songInfo::bitDepth, song.bitDepth);
         obj->setProperty(B_songInfo::codecName, optStr(song.codecName));
 
@@ -127,7 +127,8 @@ inline const char* createSongsTableSQL = R"(
         bitRate            INTEGER,
         bitDepth           INTEGER,
         sampleRate         INTEGER,
-        numChannels        INTEGER,
+        channelLayoutMask INTEGER,
+        numChannels INYEGER,
         codecId INTEGER, 
         codecName TEXT, 
         aiGenre            TEXT,

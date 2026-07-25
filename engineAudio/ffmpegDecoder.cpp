@@ -2,8 +2,10 @@
 #include "constants.h"
 #include "dbManager.hpp"
 #include "juce_core/juce_core.h"
+#include "otherUtils.hpp"
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
+#include <libavutil/channel_layout.h>
 #include <spdlog/spdlog.h>
 
 extern "C" {
@@ -36,6 +38,41 @@ void FFmpegDecoder::prepareToPlayNewSong(int64_t id) { currentSongId = id; }
 void FFmpegDecoder::run() {
     // 这里可以放置只属于该线程的 FFmpeg 局部变量初始化逻辑...
 
+#ifdef JUCE_DEBUG
+    av_log_set_level(AV_LOG_DEBUG);
+#else
+    av_log_set_level(AV_LOG_ERROR);
+#endif
+
+    AVFormatContext* inputContext;
+    auto info{dbManager::getInstance().getSongsManager().getPlayInfoBySongId(currentSongId)};
+    if (!info.has_value()) {
+        // 弹出错误弹窗
+        auto log = spdlog::get(LogAudioID);
+        log->error("获取播放信息失败");
+    }
+    int result = avformat_open_input(&inputContext, info->path.c_str(), NULL, NULL);
+    if (result < 0) {
+        auto log = spdlog::get(LogAudioID);
+        log->error("打开音频文件失败，通知用户检查原始文件:{},失败原因:{}", info->path,
+                   ffmpegErrorOutput(result));
+        avformat_close_input(&inputContext);
+        return;
+    }
+    result = avformat_find_stream_info(inputContext, nullptr);
+    if (result < 0) {
+        auto log = spdlog::get(LogAudioID);
+        log->error("获取流失败，通知用户检查原始文件:{},失败原因:{}", info->path,
+                   ffmpegErrorOutput(result));
+        avformat_close_input(&inputContext);
+        return;
+    }
+
+    AVChannelLayout outputChannelLayout;
+    av_channel_layout_default(&outputChannelLayout, numChannels);
+    AVChannelLayout originalChannelLayout;
+    av_channel_layout_default(&originalChannelLayout, info->originalNumChannels);
+
     // JUCE 规范：必须使用 threadShouldExit() 作为死循环的唯一判断条件
     while (!threadShouldExit()) {
         // 一次解码大约需要 4096 个采样的空间
@@ -49,14 +86,6 @@ void FFmpegDecoder::run() {
         // ====================================================
         // 执行 FFmpeg 解码与重采样逻辑
         // ====================================================
-
-        AVFormatContext* inputContext;
-        auto path{dbManager::getInstance().getSongsManager().getPlayInfoBySongId(currentSongId)};
-        int result = avformat_open_input(&inputContext, path.c_str(), NULL, NULL);
-        if (result < 0) {
-            auto log = spdlog::get(LogAudioID);
-            log->error("打开音频文件失败，通知用户检查原始文件:{}");
-        }
     }
 
     // 线程即将退出，这里可以放置 FFmpeg 上下文的安全销毁逻辑 (avcodec_free_context 等)

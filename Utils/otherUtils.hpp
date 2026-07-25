@@ -3,13 +3,13 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Exception.h>
+#include <cstdint>
 #include <memory>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
-
 
 class logSystem {
 private:

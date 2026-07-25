@@ -11,6 +11,7 @@
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
+#include <libavutil/channel_layout.h>
 #include <memory>
 #include <optional>
 #include <sha1.h>
@@ -90,7 +91,26 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
     info.sampleRate = decoderPar->sample_rate;
 
     // 通道数
-    info.numChannels = decoderPar->ch_layout.nb_channels;
+    uint64_t channelLayoutMask{0}; // 通道布局掩码
+    int numChannels{0};            // 这两个先判断掩码是否有，没有再改用通道数
+    if (decoderPar->ch_layout.order == AV_CHANNEL_ORDER_NATIVE) {
+        channelLayoutMask = decoderPar->ch_layout.u.mask;
+    }
+    if (channelLayoutMask == 0) { // 掩码为0说明是不正常文件
+        numChannels = decoderPar->ch_layout.nb_channels;
+        info.channelLayout = juce::String(numChannels) + "声道";
+    } else {
+        AVChannelLayout layout;
+        av_channel_layout_from_mask(&layout, channelLayoutMask);
+        char buffer[64] = {0};
+        int result = av_channel_layout_describe(&layout, buffer, sizeof(buffer));
+        if (result > 0) {
+            info.channelLayout = juce::String(buffer);
+        } else {
+            numChannels = decoderPar->ch_layout.nb_channels;
+            info.channelLayout = juce::String(numChannels) + "声道";
+        }
+    }
 
     // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
     int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(decoderPar->format));
@@ -188,7 +208,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
 
         // ── 必选字段 ──
         stmt.bind(":filePath", filePath);
-        stmt.bind(":fileSize", static_cast<int64_t>(fileSize));
+        stmt.bind(":fileSize", fileSize);
         stmt.bind(":lastModifiedTime", lastModifiedTime);
         stmt.bind(":duration", info.duration);
         stmt.bind(":title", info.title);
@@ -196,7 +216,11 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         stmt.bind(":bitRate", info.bitRate);
         stmt.bind(":bitDepth", info.bitDepth);
         stmt.bind(":sampleRate", info.sampleRate);
-        stmt.bind(":numChannels", info.numChannels);
+        if (channelLayoutMask != 0) {
+            stmt.bind(":channelLayoutMask", static_cast<int64_t>(channelLayoutMask));
+        } else {
+            stmt.bind(":numChannels", numChannels);
+        }
         stmt.bind(":codecId", codecID);
 
         bindOptStr(":artist", info.artist);
@@ -227,8 +251,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
                 std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
 
                 // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
-                if (static_cast<int64_t>(fileSize) == existingSize &&
-                    lastModifiedTime == existingTime) {
+                if (fileSize == existingSize && lastModifiedTime == existingTime) {
                     return std::nullopt;
                 }
             }
@@ -247,7 +270,8 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
                     "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = "
                     ":year, composer = :composer, "
                     "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
-                    "sampleRate = :sampleRate, numChannels = :numChannels, codecName = :codecName "
+                    "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, codecName = "
+                    ":codecName, numChannels = :numChannels "
                     ", codecId = :codecId"
                     "WHERE songId = :songId");
 
@@ -263,11 +287,11 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
                 db, "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                     "duration, title, artist, album, albumArtist, codecId, "
                     "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
-                    "sampleRate, numChannels, codecName, hash) "
+                    "sampleRate, channelLayoutMask, numChannels, codecName, hash) "
                     "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, "
                     ":album, :albumArtist, :codecId, "
                     ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
-                    ":sampleRate, :numChannels, :codecName, :hash)");
+                    ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash)");
 
             bindSongFields(insertSong);
             insertSong.exec();
@@ -301,7 +325,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             SELECT songId, 
             duration, title, artist, album, albumArtist, 
             genre, trackNumber, discNumber, year, composer, 
-            bitRate, bitDepth, sampleRate, numChannels, codecName, 
+            bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
             aiGenre, bpm, key, aiProcessed, 
             isMyLike, comment, playNum
             FROM songs 
@@ -346,7 +370,22 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             info.bitRate = query.getColumn("bitRate").getInt64();
             info.bitDepth = query.getColumn("bitDepth").getInt();
             info.sampleRate = query.getColumn("sampleRate").getInt();
-            info.numChannels = query.getColumn("numChannels").getInt();
+
+            auto channelLayoutMask = query.getColumn("channelLayoutMask").getInt64();
+            int numChannels = query.getColumn("numChannels").getInt();
+            if (channelLayoutMask == 0) {
+                info.channelLayout = juce::String(numChannels) + "声道";
+            } else {
+                AVChannelLayout layout;
+                av_channel_layout_from_mask(&layout, channelLayoutMask);
+                char buffer[64] = {0};
+                int result = av_channel_layout_describe(&layout, buffer, sizeof(buffer));
+                if (result > 0) {
+                    info.channelLayout = juce::String(buffer);
+                } else {
+                    info.channelLayout = juce::String(numChannels) + "声道";
+                }
+            }
             info.codecName = optStrCol("codecName");
 
             // ── AI 分析 ──
@@ -373,7 +412,8 @@ std::optional<playInfo> SongsManage::getPlayInfoBySongId(int64_t songId) {
     playInfo info{};
     try {
         SQLite::Statement sql(db,
-                              R"("SELECT filePath, duration, bitRate, bitDepth,
+                              R"(
+            "SELECT filePath, duration, bitRate, bitDepth,
             sampleRate, numChannels, codecId
             FROM songs WHERE songId = :songId")");
         sql.bind(":songId", songId);
