@@ -1,8 +1,10 @@
 #include "./ffmpegDecoder.hpp"
+#include "constants.h"
 #include "dbManager.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Statement.h>
-
+#include <cstdint>
+#include <spdlog/spdlog.h>
 
 extern "C" {
 #include "libavformat/avio.h"     //文件读取和输出
@@ -29,11 +31,7 @@ void FFmpegDecoder::prepareToPlay(int n, double s) {
     sampleRate = s;
 }
 
-std::string FFmpegDecoder::getPathBySongId(int64_t songId) {
-    try {
-        dbManager::
-    }
-}
+void FFmpegDecoder::setCurrentSongId(int64_t id) { currentSongId = id; }
 
 void FFmpegDecoder::run() {
     // 这里可以放置只属于该线程的 FFmpeg 局部变量初始化逻辑...
@@ -52,13 +50,13 @@ void FFmpegDecoder::run() {
         // 执行 FFmpeg 解码与重采样逻辑
         // ====================================================
 
-        // 1. av_read_frame
-        // 2. avcodec_send_packet / avcodec_receive_frame
-        // 3. swr_convert (重采样到目标采样率)
-        // 4. 将 planar float 数据推入环形缓冲区
-        // ringBuffer.pushAudioData(tempDecodedBuffer);
-
         AVFormatContext* inputContext;
+        auto path{dbManager::getInstance().getSongsManager().getPathBySongId(currentSongId)};
+        int result = avformat_open_input(&inputContext, path.c_str(), NULL, NULL);
+        if (result < 0) {
+            auto log = spdlog::get(LogAudioID);
+            log->error("打开音频文件失败，通知用户检查原始文件:{}");
+        }
     }
 
     // 线程即将退出，这里可以放置 FFmpeg 上下文的安全销毁逻辑 (avcodec_free_context 等)

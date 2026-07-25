@@ -47,15 +47,15 @@ struct SongInfo {
     int playNum{0};                     // 已经播放了多少次
 
     // 将songInfo转化为var，才能推送给js端
-    static juce::var toVar(const SongInfo &song) {
+    static juce::var toVar(const SongInfo& song) {
         auto obj{new juce::DynamicObject()};
 
         // ── 辅助：optional<string> → juce::var ──
         // has_value → juce::String, nullopt → juce::var() (JS 端为 undefined)
-        auto optStr = [](const std::optional<std::string> &v) -> juce::var {
+        auto optStr = [](const std::optional<std::string>& v) -> juce::var {
             return v.has_value() ? juce::var(juce::String(v.value())) : juce::var();
         };
-        auto optInt = [](const std::optional<int> &v) -> juce::var {
+        auto optInt = [](const std::optional<int>& v) -> juce::var {
             return v.has_value() ? juce::var(v.value()) : juce::var();
         };
 
@@ -98,9 +98,9 @@ struct SongInfo {
         // 这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     } // 将songInfo转化为var，才能推送给js端
 
-    static juce::var vector2VarArray(const std::vector<SongInfo> &lists) {
+    static juce::var vector2VarArray(const std::vector<SongInfo>& lists) {
         juce::Array<juce::var> array;
-        for (const auto &song : lists) {
+        for (const auto& song : lists) {
             array.add(toVar(song));
         }
         return juce::var(array);
@@ -108,7 +108,7 @@ struct SongInfo {
 };
 
 // songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
-inline const char *createSongsTableSQL = R"(
+inline const char* createSongsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songs (
         songId             INTEGER PRIMARY KEY AUTOINCREMENT,
         filePath           TEXT    UNIQUE NOT NULL,

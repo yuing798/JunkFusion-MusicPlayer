@@ -3,15 +3,15 @@
 #include "juce_graphics/juce_graphics.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <SQLiteCpp/Exception.h>
-#include <spdlog/spdlog.h>
+#include <memory>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
-#include <memory>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 
-class logSystem
-{
+
+class logSystem {
 private:
     static constexpr size_t numLogs{7};
 
@@ -31,6 +31,7 @@ private:
     std::shared_ptr<spdlog::logger> vstLogger;
     std::shared_ptr<spdlog::logger> crashLogger;
     std::shared_ptr<spdlog::logger> allLogger;
+
 public:
     logSystem();
     // void sqlError(SQLite::Exception&);
@@ -38,15 +39,14 @@ public:
     void init();
 };
 
-//输出错误码
+// 输出错误码
 std::string ffmpegErrorOutput(int result);
 
-//转化字符串为UTF8
-inline juce::String utf8(const char* name){
-    return juce::String::fromUTF8(name);
-};
+// 转化字符串为UTF8
+inline juce::String utf8(const char* name) { return juce::String::fromUTF8(name); };
 
-std::vector<std::byte> loadFile2ByteVector (const juce::File& file);
+std::vector<std::byte> loadFile2ByteVector(const juce::File& file);
 
-//异步打开文件选择框，支持多选，回调返回选中的文件数组
-void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>,juce::Component* parentComponent = nullptr);
+// 异步打开文件选择框，支持多选，回调返回选中的文件数组
+void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)>,
+                             juce::Component* parentComponent = nullptr);
