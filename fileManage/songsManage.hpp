@@ -14,18 +14,17 @@
 #include <string>
 #include <vector>
 
-
 class SongsManage {
 private:
-    SQLite::Database &db;
+    SQLite::Database& db;
 
     const int scrollPageRows = std::stoi(B_other::scrollPageRows); // 滚动分页方式每一页的页数
 
 public:
-    explicit SongsManage(SQLite::Database &d);
+    explicit SongsManage(SQLite::Database& d);
     ~SongsManage();
 
-    std::optional<SongInfo> insertSong(const juce::File &path);
+    std::optional<SongInfo> insertSong(const juce::File& path);
 
     /** 获取歌曲总数 */
     std::optional<int> getTotalSongCount();
@@ -35,11 +34,13 @@ public:
 
     bool reverseMyLike(int64_t id);
     std::string getImageHashBySongId(int64_t id);
+    std::string getPathBySongId(int64_t songId); // 根据ID获得原始文件路径
+    bool deleteSongId(int64_t songId);           // 删除songId对应的条目
     void saveComment(juce::String text, int64_t songId);
 };
 
 class songsManageBuilder : public juce::OptionsBuilder<juce::WebBrowserComponent::Options> {
 public:
     juce::WebBrowserComponent::Options
-    buildOptions(const juce::WebBrowserComponent::Options &initial) override;
+    buildOptions(const juce::WebBrowserComponent::Options& initial) override;
 };

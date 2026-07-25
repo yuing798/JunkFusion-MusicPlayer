@@ -18,19 +18,17 @@
 #include <utility>
 #include <vector>
 
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/dict.h>
 #include <libavutil/samplefmt.h>
-
 }
 
-SongsManage::SongsManage(SQLite::Database &d) : db(d) {
+SongsManage::SongsManage(SQLite::Database& d) : db(d) {
     try {
         db.exec(createSongsTableSQL);
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
         auto logger = spdlog::get(LogAllID);
         if (logger)
@@ -39,7 +37,7 @@ SongsManage::SongsManage(SQLite::Database &d) : db(d) {
     }
 }
 
-std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
+std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
     SongInfo info{};
     std::string filePath = path.getFullPathName().toStdString();
     int64_t fileSize = path.getSize();
@@ -50,7 +48,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
 
     // ffmpeg解码层信息
     int result{0}; // 解码层结果，一般成功返回零
-    AVFormatContext *inputContext{nullptr};
+    AVFormatContext* inputContext{nullptr};
     result = avformat_open_input(&inputContext, filePath.c_str(), nullptr, nullptr);
     if (result != 0) {
         // 非多媒体文件也会返回AVERROR
@@ -76,8 +74,8 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
 
     auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)};
 
-    auto *pAudioStream = inputContext->streams[currentIndex];
-    auto *decoderPar = pAudioStream->codecpar;
+    auto* pAudioStream = inputContext->streams[currentIndex];
+    auto* decoderPar = pAudioStream->codecpar;
     int codecID = decoderPar->codec_id;
     info.codecName = avcodec_get_name(decoderPar->codec_id);
 
@@ -101,15 +99,15 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
         info.bitDepth = decoderPar->bits_per_coded_sample;
     }
     // 提取文件层面的标签数据
-    AVDictionary *pTags = inputContext->metadata;
-    AVDictionaryEntry *pEntry = nullptr;
+    AVDictionary* pTags = inputContext->metadata;
+    AVDictionaryEntry* pEntry = nullptr;
 
     if ((pEntry = av_dict_get(pTags, "title", nullptr, 0))) {
         info.title = pEntry->value;
     } else {
         info.title = juce::File(filePath).getFileNameWithoutExtension().toStdString();
     }
-    auto safeToInt = [](const char *str) -> int {
+    auto safeToInt = [](const char* str) -> int {
         try {
             return std::stoi(str);
         } catch (...) {
@@ -135,7 +133,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
     coverPacket.size = 0;
     SHA1 sha1;
     for (size_t i = 0; i < inputContext->nb_streams; i++) {
-        auto *stream{inputContext->streams[i]};
+        auto* stream{inputContext->streams[i]};
         auto type{stream->codecpar->codec_type};
         if (type == AVMEDIA_TYPE_ATTACHMENT ||
             (type == AVMEDIA_TYPE_VIDEO && (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))) {
@@ -171,16 +169,16 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
     avformat_close_input(&inputContext);
 
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
-    auto bindSongFields = [&](SQLite::Statement &stmt) {
+    auto bindSongFields = [&](SQLite::Statement& stmt) {
         // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
-        auto bindOptStr = [&](const char *name, const std::optional<std::string> &v) {
+        auto bindOptStr = [&](const char* name, const std::optional<std::string>& v) {
             if (v.has_value())
                 stmt.bind(name, v.value());
             else
                 stmt.bind(name); // 无第二个参数 → SQL NULL
         };
         // ── 可选 int 字段 ──
-        auto bindOptInt = [&](const char *name, const std::optional<int> &v) {
+        auto bindOptInt = [&](const char* name, const std::optional<int>& v) {
             if (v.has_value())
                 stmt.bind(name, v.value());
             else
@@ -279,7 +277,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File &path) {
 
         // ── 全部成功，提交事务 ──
         transaction.commit();
-    } catch (const SQLite::Exception &e) {
+    } catch (const SQLite::Exception& e) {
         if (logger) logger->error("insert song error:{}", e.what());
         return std::nullopt;
     }
@@ -311,7 +309,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
         SQLite::Statement query(db, sql);
 
         // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
-        auto optStrCol = [&](const char *colName) -> std::optional<std::string> {
+        auto optStrCol = [&](const char* colName) -> std::optional<std::string> {
             auto col = query.getColumn(colName);
             if (col.isNull()) return std::nullopt;
             std::string s = col.getString();
@@ -322,7 +320,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             }
         };
         // ── 辅助：读取可能为 NULL 的 int 列 → std::optional<int> ──
-        auto optIntCol = [&](const char *colName) -> std::optional<int> {
+        auto optIntCol = [&](const char* colName) -> std::optional<int> {
             if (query.getColumn(colName).isNull()) return std::nullopt;
             return query.getColumn(colName).getInt();
         };
@@ -362,12 +360,28 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
 
             result.push_back(std::move(info));
         }
-    } catch (const SQLite::Exception &e) {
+    } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogUiID);
         logger->error("getAllSongs发生失败:{}", e.what());
     }
 
     return result;
+}
+
+std::string SongsManage::getPathBySongId(int64_t songId) {
+    std::string path;
+    try {
+        SQLite::Statement sql(db, "SELECT filePath FROM songs WHERE songId = :songId");
+        sql.bind(":songId", songId);
+        if (sql.executeStep()) {
+            path = sql.getColumn("filePath").getString();
+        }
+        return path;
+    } catch (const SQLite::Exception& e) {
+        auto logger{spdlog::get(LogAudioID)};
+        logger->error("SongsManage::getPathBySongId(int64_t songId)发生错误:{}", e.what());
+        return "";
+    }
 }
 
 bool SongsManage::reverseMyLike(int64_t id) {
@@ -382,7 +396,7 @@ bool SongsManage::reverseMyLike(int64_t id) {
         } else {
             return false;
         }
-    } catch (const SQLite::Exception &e) {
+    } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogUiID)};
         logger->error("[我喜欢]状态更新失败，请重试:{}", e.what());
         return false;
@@ -391,12 +405,12 @@ bool SongsManage::reverseMyLike(int64_t id) {
 
 std::string SongsManage::getImageHashBySongId(int64_t id) {
     try {
-        SQLite::Statement sql(db, "SELECT hash FROM songs WHERE songs.songId = :songId");
+        SQLite::Statement sql(db, "SELECT hash FROM songs WHERE songId = :songId");
         sql.bind(":songId", id);
         if (sql.executeStep()) {
             return sql.getColumn("hash").getString();
         }
-    } catch (const SQLite::Exception &e) {
+    } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogUiID);
         logger->error("获取歌曲封面哈希值失败:{}", e.what());
     }
@@ -409,7 +423,7 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
         sql.bind(":comment", text.toStdString());
         sql.bind(":songId", songId);
         sql.exec();
-    } catch (const SQLite::Exception &e) {
+    } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogUiID)};
         logger->error("id号{}:评论更新失败:{}", songId, e.what());
     }
@@ -418,11 +432,11 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
 SongsManage::~SongsManage() {}
 
 juce::WebBrowserComponent::Options
-songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options &initial) {
+songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options& initial) {
     return initial
         .withNativeFunction(         // 得到总歌曲数目
             B_getAllSongCount::name, // 得到总歌曲数目
-            [](const auto &args, auto complete) {
+            [](const auto& args, auto complete) {
                 dbManager::getInstance().runOnRead([complete = std::move(complete)] {
                     auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
                     auto obj{new juce::DynamicObject()};
@@ -439,7 +453,7 @@ songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options &initi
             })
         .withNativeFunction(
             B_toggleMyLike::name, // 将我喜欢的歌曲状态翻转
-            [](const juce::Array<juce::var> &args,
+            [](const juce::Array<juce::var>& args,
                juce::WebBrowserComponent::NativeFunctionCompletion complete) {
                 dbManager::getInstance().runOnWrite([args, complete = std::move(complete)] {
                     // const不能执行移动操作
@@ -459,7 +473,7 @@ songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options &initi
             })
         .withNativeFunction(     // 得到所有歌曲信息
             B_getAllSongs::name, // 参数：当前页码,升降序，排序方法，
-            [](const juce::Array<juce::var> &args, auto complete) {
+            [](const juce::Array<juce::var>& args, auto complete) {
                 dbManager::getInstance().runOnRead([complete = std::move(complete)] {
                     std::vector<SongInfo> songs =
                         dbManager::getInstance().getSongsManager().getAllSongs();
@@ -472,7 +486,7 @@ songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options &initi
             })
         .withNativeFunction(
             B_saveComment::name, // 保存对单首歌曲的评论
-            [](const juce::Array<juce::var> &args, auto complete) {
+            [](const juce::Array<juce::var>& args, auto complete) {
                 juce::String text{args[0][B_saveComment::text].toString()};
                 int64_t songId{args[0][B_saveComment::songId]};
                 dbManager::getInstance().runOnWrite([text, songId, complete = std::move(complete)] {

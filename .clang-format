@@ -19,3 +19,4 @@ BreakBeforeBraces: Attach #决定 { 是写在同一行还是换行
 AllowShortIfStatementsOnASingleLine: WithoutElse #控制短的 if 语句是否允许写在一行
 MaxEmptyLinesToKeep: 1 #最大能够保留几行空行
 SortIncludes: true #clang-format 会自动帮你把 #include 按照一定规则排序，保存文件时自动整理
+IndentExternBlock: Indent #Extern中的内容是否缩进

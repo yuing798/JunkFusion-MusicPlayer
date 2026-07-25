@@ -1,10 +1,21 @@
 
+#include "./AudioRingBuffer.hpp"
 #include "constants.h"
-class FFmpegDecoder {
-private:
-    void prepareToPlay(int, double);
+#include "juce_core/juce_core.h"
+#include <cstdint>
+#include <string>
 
-public:
+class FFmpegDecoder : public juce::Thread {
+private:
     int numChannels{2};
     double sampleRate{defaultSampleRate};
+    std::string path; // 文件路径
+    AudioRingBuffer& ringBuffer;
+
+public:
+    void prepareToPlay(int, double);
+    void run() override;
+    std::string getPathBySongId(int64_t songId);
+    FFmpegDecoder(AudioRingBuffer&);
+    ~FFmpegDecoder();
 };
