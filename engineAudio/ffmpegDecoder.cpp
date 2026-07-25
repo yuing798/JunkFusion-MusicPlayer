@@ -31,7 +31,7 @@ void FFmpegDecoder::prepareToPlay(int n, double s) {
     sampleRate = s;
 }
 
-void FFmpegDecoder::setCurrentSongId(int64_t id) { currentSongId = id; }
+void FFmpegDecoder::prepareToPlayNewSong(int64_t id) { currentSongId = id; }
 
 void FFmpegDecoder::run() {
     // 这里可以放置只属于该线程的 FFmpeg 局部变量初始化逻辑...
@@ -51,7 +51,7 @@ void FFmpegDecoder::run() {
         // ====================================================
 
         AVFormatContext* inputContext;
-        auto path{dbManager::getInstance().getSongsManager().getPathBySongId(currentSongId)};
+        auto path{dbManager::getInstance().getSongsManager().getPlayInfoBySongId(currentSongId)};
         int result = avformat_open_input(&inputContext, path.c_str(), NULL, NULL);
         if (result < 0) {
             auto log = spdlog::get(LogAudioID);

@@ -1,4 +1,5 @@
 #include "songsManage.hpp"
+#include "../engineAudio/model.h"
 #include "./dbManager.hpp"
 #include "BridgeNames.h"
 #include "constants.h"
@@ -368,19 +369,30 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
     return result;
 }
 
-std::string SongsManage::getPathBySongId(int64_t songId) {
-    std::string path;
+std::optional<playInfo> SongsManage::getPlayInfoBySongId(int64_t songId) {
+    playInfo info{};
     try {
-        SQLite::Statement sql(db, "SELECT filePath FROM songs WHERE songId = :songId");
+        SQLite::Statement sql(db,
+                              R"("SELECT filePath, duration, bitRate, bitDepth,
+            sampleRate, numChannels, codecId
+            FROM songs WHERE songId = :songId")");
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
-            path = sql.getColumn("filePath").getString();
+            info.path = sql.getColumn("filePath").getString();
+            info.bitDepth = sql.getColumn("bitDepth").getInt();
+            info.bitRate = sql.getColumn("bitRate").getInt64();
+            info.originalSampleRate = sql.getColumn("sampleRate").getDouble();
+            info.originalNumChannels = sql.getColumn("numChannels").getInt();
+            info.duration = sql.getColumn("duration").getDouble();
+            info.codecId = sql.getColumn("codecId").getInt();
+        } else {
+            throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        return path;
+        return info;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogAudioID)};
-        logger->error("SongsManage::getPathBySongId(int64_t songId)发生错误:{}", e.what());
-        return "";
+        logger->error("SongsManage::getPlayInfoBySongId(int64_t songId)发生错误:{}", e.what());
+        return std::nullopt;
     }
 }
 
