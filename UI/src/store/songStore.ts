@@ -33,7 +33,7 @@ export interface SongInfo {//interface指的是自定义类型
   /** 采样率（Hz） */
   sampleRate: number
   /** 通道数 */
-  numChannels: number
+  channelLayout:string
   /** 位深 */
   bitDepth: number
   /** 编码器名称，C++ 端为 std::optional */

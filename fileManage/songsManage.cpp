@@ -11,7 +11,6 @@
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
-#include <libavutil/channel_layout.h>
 #include <memory>
 #include <optional>
 #include <sha1.h>
@@ -379,8 +378,8 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
                 AVChannelLayout layout;
                 av_channel_layout_from_mask(&layout, channelLayoutMask);
                 char buffer[64] = {0};
-                int result = av_channel_layout_describe(&layout, buffer, sizeof(buffer));
-                if (result > 0) {
+                int rst = av_channel_layout_describe(&layout, buffer, sizeof(buffer));
+                if (rst > 0) {
                     info.channelLayout = juce::String(buffer);
                 } else {
                     info.channelLayout = juce::String(numChannels) + "声道";
@@ -414,7 +413,7 @@ std::optional<playInfo> SongsManage::getPlayInfoBySongId(int64_t songId) {
         SQLite::Statement sql(db,
                               R"(
             "SELECT filePath, duration, bitRate, bitDepth,
-            sampleRate, numChannels, codecId
+            sampleRate, channelLayoutMask, numChannels, codecId
             FROM songs WHERE songId = :songId")");
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
@@ -423,6 +422,8 @@ std::optional<playInfo> SongsManage::getPlayInfoBySongId(int64_t songId) {
             info.bitRate = sql.getColumn("bitRate").getInt64();
             info.originalSampleRate = sql.getColumn("sampleRate").getDouble();
             info.originalNumChannels = sql.getColumn("numChannels").getInt();
+            info.originalChannelLayoutMask =
+                static_cast<uint64_t>(sql.getColumn("channelLayoutMask").getInt64());
             info.duration = sql.getColumn("duration").getDouble();
             info.codecId = sql.getColumn("codecId").getInt();
         } else {

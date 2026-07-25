@@ -27,7 +27,7 @@ const techInfoArray = computed(() => [
   { label: '时长', value: convert2String(songStore.formatDuration(s.duration)) },
   { label: '采样率', value: convert2String(s.sampleRate) + 'Hz' },
   { label: '比特率', value: convert2String(s.bitRate) + 'Kbps' },
-  { label: '通道数', value: convert2String(s.numChannels) },
+  { label: '通道布局', value: s.channelLayout },
   { label: '位深', value: convert2String(s.bitDepth) },
   { label: '解码器', value: s.codecName },
 ]);
