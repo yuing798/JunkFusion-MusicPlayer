@@ -1,4 +1,6 @@
 #include "juce_audio_basics/juce_audio_basics.h"
+
+// 中转站类
 class AudioRingBuffer {
 public:
     // 传参：这个缓冲区设置为多少毫秒

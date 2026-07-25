@@ -1,4 +1,5 @@
 #include "./AudioRingBuffer.hpp"
+#include "juce_core/system/juce_PlatformDefs.h"
 
 AudioRingBuffer::AudioRingBuffer(double bufferMs) : mBufferMs(bufferMs) {}
 
@@ -10,9 +11,11 @@ void AudioRingBuffer::prepareToPlay(int numChannels, double sampleRate) {
     fifo.setTotalSize(totalNumSamples);
 }
 
-void AudioRingBuffer::pushAudioData(const juce::AudioBuffer<float>& decodedData) {
-    const int numChannels = juce::jmin(decodedData.getNumChannels(), buffer.getNumChannels());
-    const int numSamples = decodedData.getNumSamples();
+void AudioRingBuffer::pushAudioData(const juce::AudioBuffer<float>& data) {
+    jassert(data.getNumChannels() == buffer.getNumChannels());
+
+    const int numSamples = data.getNumSamples();
+    const int numChannels{data.getNumChannels()};
 
     int start1, size1, start2, size2;
     // 准备写入，fifo 会计算出环形数组折返时的两段内存区域
@@ -20,18 +23,19 @@ void AudioRingBuffer::pushAudioData(const juce::AudioBuffer<float>& decodedData)
 
     if (size1 > 0) {
         for (int ch = 0; ch < numChannels; ++ch)
-            buffer.copyFrom(ch, start1, decodedData, ch, 0, size1);
+            buffer.copyFrom(ch, start1, data, ch, 0, size1);
     }
     if (size2 > 0) {
         for (int ch = 0; ch < numChannels; ++ch)
-            buffer.copyFrom(ch, start2, decodedData, ch, size1, size2);
+            buffer.copyFrom(ch, start2, data, ch, size1, size2);
     }
 
     // 更新写指针
     fifo.finishedWrite(size1 + size2);
 }
 void AudioRingBuffer::popAudioData(juce::AudioBuffer<float>& destBuffer) {
-    const int numChannels = juce::jmin(destBuffer.getNumChannels(), buffer.getNumChannels());
+    jassert(destBuffer.getNumChannels() == buffer.getNumChannels());
+    const int numChannels = destBuffer.getNumChannels();
     const int numSamples = destBuffer.getNumSamples();
 
     int start1, size1, start2, size2;
@@ -52,7 +56,7 @@ void AudioRingBuffer::popAudioData(juce::AudioBuffer<float>& destBuffer) {
     // 更新读指针
     fifo.finishedRead(totalRead);
 
-    // 如果发生 Underrun（解码速度跟不上播放速度），剩余部分必须填充静音以免爆音！
+    // 如果发生 Underrun（解码速度跟不上播放速度），剩余部分必须填充静音以免爆音
     if (totalRead < numSamples) {
         for (int ch = 0; ch < numChannels; ++ch)
             destBuffer.clear(ch, totalRead, numSamples - totalRead);
