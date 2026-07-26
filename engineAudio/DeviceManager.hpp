@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GodProcessor.hpp"
 #include "constants.h"
 #include "juce_audio_devices/juce_audio_devices.h"
+#include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_audio_utils/juce_audio_utils.h"
 #include "juce_events/juce_events.h"
 class DeviceManager : public juce::ChangeListener {
@@ -15,7 +15,7 @@ public:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     // 连接processor
-    void connectProcessor(GodProcessor* p);
+    void connectProcessor(juce::AudioProcessor* p);
 
     // 断开processor的连接
     void disconnectProcessor();

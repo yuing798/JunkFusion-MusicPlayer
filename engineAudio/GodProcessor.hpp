@@ -1,12 +1,18 @@
 #pragma once
 
+#include "AudioRingBuffer.hpp"
 #include "constants.h"
+#include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
 class GodProcessor : public juce::AudioProcessor {
 private:
+    AudioRingBuffer decoderRingBuffer;
+    FFmpegDecoder decoder;
+
 public:
+    GodProcessor();
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;
     void releaseResources() override;

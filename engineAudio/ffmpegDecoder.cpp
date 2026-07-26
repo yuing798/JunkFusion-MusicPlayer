@@ -1,6 +1,7 @@
 #include "./ffmpegDecoder.hpp"
 #include "constants.h"
 #include "dbManager.hpp"
+#include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
 #include <SQLiteCpp/Statement.h>
@@ -28,9 +29,40 @@ FFmpegDecoder::~FFmpegDecoder() {
     stopThread(2000);
 }
 
-void FFmpegDecoder::prepareToPlay(int n, double s) {
-    numChannels = n;
+void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet layout, double s) {
+
     sampleRate = s;
+    auto mapJuceSpeakerToFFmpegMask = [](juce::AudioChannelSet::ChannelType juceType) -> uint64_t {
+        switch (juceType) {
+        case juce::AudioChannelSet::left: return AV_CH_FRONT_LEFT;                   // 0x00000001
+        case juce::AudioChannelSet::right: return AV_CH_FRONT_RIGHT;                 // 0x00000002
+        case juce::AudioChannelSet::centre: return AV_CH_FRONT_CENTER;               // 0x00000004
+        case juce::AudioChannelSet::LFE: return AV_CH_LOW_FREQUENCY;                 // 0x00000008
+        case juce::AudioChannelSet::leftSurround: return AV_CH_BACK_LEFT;            // 0x00000010
+        case juce::AudioChannelSet::rightSurround: return AV_CH_BACK_RIGHT;          // 0x00000020
+        case juce::AudioChannelSet::leftCentre: return AV_CH_FRONT_LEFT_OF_CENTER;   // 0x00000040
+        case juce::AudioChannelSet::rightCentre: return AV_CH_FRONT_RIGHT_OF_CENTER; // 0x00000080
+        case juce::AudioChannelSet::centreSurround: return AV_CH_BACK_CENTER;        // 0x00000100
+        case juce::AudioChannelSet::leftSurroundSide: return AV_CH_SIDE_LEFT;        // 0x00000200
+        case juce::AudioChannelSet::rightSurroundSide: return AV_CH_SIDE_RIGHT;      // 0x00000400
+        case juce::AudioChannelSet::topMiddle: return AV_CH_TOP_CENTER;              // 0x00000800
+        case juce::AudioChannelSet::topFrontLeft: return AV_CH_TOP_FRONT_LEFT;       // 0x00001000
+        case juce::AudioChannelSet::topFrontCentre: return AV_CH_TOP_FRONT_CENTER;   // 0x00002000
+        case juce::AudioChannelSet::topFrontRight: return AV_CH_TOP_FRONT_RIGHT;     // 0x00004000
+        case juce::AudioChannelSet::topRearLeft: return AV_CH_TOP_BACK_LEFT;         // 0x00008000
+        case juce::AudioChannelSet::topRearCentre: return AV_CH_TOP_BACK_CENTER;     // 0x00010000
+        case juce::AudioChannelSet::topRearRight: return AV_CH_TOP_BACK_RIGHT;       // 0x00020000
+        case juce::AudioChannelSet::LFE2: return AV_CH_LOW_FREQUENCY_2; // 0x0000000800000000ULL
+        case juce::AudioChannelSet::leftSurroundRear: return AV_CH_BACK_LEFT;
+        case juce::AudioChannelSet::rightSurroundRear: return AV_CH_BACK_RIGHT;
+        case juce::AudioChannelSet::wideLeft: return AV_CH_WIDE_LEFT;   // 0x0000000080000000ULL
+        case juce::AudioChannelSet::wideRight: return AV_CH_WIDE_RIGHT; // 0x0000000100000000ULL
+        case juce::AudioChannelSet::topSideLeft: return AV_CH_TOP_SIDE_LEFT;
+        case juce::AudioChannelSet::topSideRight: return AV_CH_TOP_SIDE_RIGHT;
+
+        default: return 0; // 无法识别的空间位置
+        }
+    };
 }
 
 void FFmpegDecoder::prepareToPlayNewSong(int64_t id) { currentSongId = id; }
