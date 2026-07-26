@@ -102,13 +102,9 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         AVChannelLayout layout;
         av_channel_layout_from_mask(&layout, channelLayoutMask);
         char buffer[64] = {0};
-        int result = av_channel_layout_describe(&layout, buffer, sizeof(buffer));
-        if (result > 0) {
-            info.channelLayout = juce::String(buffer);
-        } else {
-            numChannels = decoderPar->ch_layout.nb_channels;
-            info.channelLayout = juce::String(numChannels) + "声道";
-        }
+        av_channel_layout_describe(&layout, buffer, sizeof(buffer));
+
+        info.channelLayout = juce::String(buffer);
     }
 
     // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
@@ -378,12 +374,8 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
                 AVChannelLayout layout;
                 av_channel_layout_from_mask(&layout, channelLayoutMask);
                 char buffer[64] = {0};
-                int rst = av_channel_layout_describe(&layout, buffer, sizeof(buffer));
-                if (rst > 0) {
-                    info.channelLayout = juce::String(buffer);
-                } else {
-                    info.channelLayout = juce::String(numChannels) + "声道";
-                }
+                av_channel_layout_describe(&layout, buffer, sizeof(buffer));
+                info.channelLayout = juce::String(buffer);
             }
             info.codecName = optStrCol("codecName");
 

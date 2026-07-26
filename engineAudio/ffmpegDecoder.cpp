@@ -68,10 +68,13 @@ void FFmpegDecoder::run() {
         return;
     }
 
-    AVChannelLayout outputChannelLayout;
-    av_channel_layout_default(&outputChannelLayout, numChannels);
     AVChannelLayout originalChannelLayout;
-    av_channel_layout_default(&originalChannelLayout, info->originalNumChannels);
+
+    if (info->originalChannelLayoutMask != 0) {
+        av_channel_layout_from_mask(&originalChannelLayout, info->originalChannelLayoutMask);
+    } else {
+        av_channel_layout_default(&originalChannelLayout, info->originalNumChannels);
+    }
 
     // JUCE 规范：必须使用 threadShouldExit() 作为死循环的唯一判断条件
     while (!threadShouldExit()) {
