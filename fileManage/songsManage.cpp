@@ -1,5 +1,4 @@
 #include "songsManage.hpp"
-#include "../engineAudio/model.h"
 #include "./dbManager.hpp"
 #include "BridgeNames.h"
 #include "constants.h"
@@ -33,8 +32,10 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d) {
         // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
         auto logger = spdlog::get(LogAllID);
         if (logger)
-            logger->critical("无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}",
-                             e.what());
+            logger->critical(
+                "无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}",
+                e.what()
+            );
     }
 }
 
@@ -55,8 +56,10 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         // 非多媒体文件也会返回AVERROR
         // SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
         if (logger)
-            logger->warn("多媒体文件无法打开或者打开的是非多媒体文件:{}",
-                         ffmpegErrorOutput(result));
+            logger->warn(
+                "多媒体文件无法打开或者打开的是非多媒体文件:{}",
+                ffmpegErrorOutput(result)
+            );
         avformat_close_input(&inputContext);
         return std::nullopt;
     }
@@ -77,7 +80,6 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
 
     auto* pAudioStream = inputContext->streams[currentIndex];
     auto* decoderPar = pAudioStream->codecpar;
-    int codecID = decoderPar->codec_id;
     info.codecName = avcodec_get_name(decoderPar->codec_id);
 
     // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
@@ -216,7 +218,6 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         } else {
             stmt.bind(":numChannels", numChannels);
         }
-        stmt.bind(":codecId", codecID);
 
         bindOptStr(":artist", info.artist);
         bindOptStr(":album", info.album);
@@ -237,7 +238,8 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         {
             SQLite::Statement checkQuery(
                 db,
-                "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath");
+                "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath"
+            );
             checkQuery.bind(":filePath", filePath);
 
             if (checkQuery.executeStep()) {
@@ -258,17 +260,18 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         if (existingId >= 0) {
             // ── 文件已变更：更新 songs 记录 ──
             SQLite::Statement updateSong(
-                db, "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
-                    "lastModifiedTime = :lastModifiedTime, "
-                    "duration = :duration, title = :title, artist = :artist, album = :album, "
-                    "albumArtist = :albumArtist, "
-                    "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = "
-                    ":year, composer = :composer, "
-                    "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
-                    "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, codecName = "
-                    ":codecName, numChannels = :numChannels "
-                    ", codecId = :codecId"
-                    "WHERE songId = :songId");
+                db,
+                "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
+                "lastModifiedTime = :lastModifiedTime, "
+                "duration = :duration, title = :title, artist = :artist, album = :album, "
+                "albumArtist = :albumArtist, "
+                "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = "
+                ":year, composer = :composer, "
+                "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
+                "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, codecName = "
+                ":codecName, numChannels = :numChannels "
+                "WHERE songId = :songId"
+            );
 
             bindSongFields(updateSong);
             updateSong.bind(":songId", existingId);
@@ -279,14 +282,16 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         } else {
             // ── 新文件：插入 songs 记录 ──
             SQLite::Statement insertSong(
-                db, "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
-                    "duration, title, artist, album, albumArtist, codecId, "
-                    "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
-                    "sampleRate, channelLayoutMask, numChannels, codecName, hash) "
-                    "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, "
-                    ":album, :albumArtist, :codecId, "
-                    ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
-                    ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash)");
+                db,
+                "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
+                "duration, title, artist, album, albumArtist, "
+                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
+                "sampleRate, channelLayoutMask, numChannels, codecName, hash) "
+                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, "
+                ":album, :albumArtist, "
+                ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
+                ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash)"
+            );
 
             bindSongFields(insertSong);
             insertSong.exec();
@@ -399,41 +404,36 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
     return result;
 }
 
-std::optional<playInfo> SongsManage::getPlayInfoBySongId(int64_t songId) {
-    playInfo info{};
+std::string SongsManage::getPathBySongId(int64_t songId) {
+    std::string path;
     try {
-        SQLite::Statement sql(db,
-                              R"(
-            "SELECT filePath, duration, bitRate, bitDepth,
-            sampleRate, channelLayoutMask, numChannels, codecId
-            FROM songs WHERE songId = :songId")");
+        SQLite::Statement sql(
+            db,
+            R"(
+            "SELECT filePath
+            FROM songs WHERE songId = :songId")"
+        );
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
-            info.path = sql.getColumn("filePath").getString();
-            info.bitDepth = sql.getColumn("bitDepth").getInt();
-            info.bitRate = sql.getColumn("bitRate").getInt64();
-            info.originalSampleRate = sql.getColumn("sampleRate").getDouble();
-            info.originalNumChannels = sql.getColumn("numChannels").getInt();
-            info.originalChannelLayoutMask =
-                static_cast<uint64_t>(sql.getColumn("channelLayoutMask").getInt64());
-            info.duration = sql.getColumn("duration").getDouble();
-            info.codecId = sql.getColumn("codecId").getInt();
+            path = sql.getColumn("filePath").getString();
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        return info;
+        return path;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogAudioID)};
         logger->error("SongsManage::getPlayInfoBySongId(int64_t songId)发生错误:{}", e.what());
-        return std::nullopt;
+        return "";
     }
 }
 
 bool SongsManage::reverseMyLike(int64_t id) {
 
     try {
-        SQLite::Statement sql(db,
-                              "UPDATE songs SET isMyLike = 1 - isMyLike WHERE songId = :songId");
+        SQLite::Statement sql(
+            db,
+            "UPDATE songs SET isMyLike = 1 - isMyLike WHERE songId = :songId"
+        );
         sql.bind(":songId", id);
 
         if (sql.exec() > 0) {

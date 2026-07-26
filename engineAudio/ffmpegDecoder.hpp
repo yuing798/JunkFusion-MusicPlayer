@@ -3,7 +3,6 @@
 #include "constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
-#include "model.h"
 #include <cstdint>
 extern "C" {
 #include <libavutil/channel_layout.h>
@@ -16,7 +15,7 @@ private:
     AVChannelLayout outputChannelLayout;
     double sampleRate{defaultSampleRate}; // 输出采样率
     int64_t currentSongId{0};
-    playInfo mPlayInfo; // 原始音频的播放信息
+    std::string path;
     AudioRingBuffer& ringBuffer;
 
 public:
