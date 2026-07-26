@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
@@ -14,4 +15,13 @@ public:
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int index) override { return; }
+    const juce::String getProgramName(int index) override { return "JunkFusion"; }
+    void changeProgramName(int index, const juce::String& newName) override { return; }
+    void setStateInformation(const void* data, int sizeInBytes) override;
+    void getStateInformation(juce::MemoryBlock& destData) override;
+
+    DONT_COPY_AND_MOVE(GodProcessor)
 };

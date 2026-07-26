@@ -11,3 +11,12 @@ void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
         }
     }
 }
+
+void DeviceManager::connectProcessor(GodProcessor* p) {
+    player.setProcessor(p);
+    manager.addAudioCallback(&player);
+}
+void DeviceManager::disconnectProcessor() {
+    manager.removeAudioCallback(&player);
+    player.setProcessor(nullptr);
+}
