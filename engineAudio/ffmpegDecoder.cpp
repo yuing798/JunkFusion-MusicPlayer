@@ -6,17 +6,19 @@
 #include "otherUtils.hpp"
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
-#include <libavutil/channel_layout.h>
+
+#include <libavutil/samplefmt.h>
 #include <spdlog/spdlog.h>
 
 extern "C" {
-#include "libavformat/avio.h"     //文件读取和输出
-#include "libavutil/audio_fifo.h" //环形缓冲区提供
 #include "libavutil/avutil.h"
-#include "libswresample/swresample.h" //重采样
-#include <libavcodec/avcodec.h>       //负责编解码
-#include <libavformat/avformat.h>     // 负责解封装
-#include <libavutil/log.h>            //负责日志信息
+#include <libavcodec/avcodec.h> //负责编解码
+#include <libavcodec/codec.h>
+#include <libavcodec/codec_id.h>
+#include <libavformat/avformat.h> // 负责解封装
+#include <libavutil/channel_layout.h>
+#include <libavutil/log.h> //负责日志信息
+#include <libswresample/swresample.h>
 }
 
 FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b) : juce::Thread("Decoder"), ringBuffer(b) {
@@ -29,7 +31,7 @@ FFmpegDecoder::~FFmpegDecoder() {
     stopThread(2000);
 }
 
-void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet layout, double s) {
+void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet juceLayout, double s) {
 
     sampleRate = s;
     auto mapJuceSpeakerToFFmpegMask = [](juce::AudioChannelSet::ChannelType juceType) -> uint64_t {
@@ -63,6 +65,18 @@ void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet layout, double s) {
         default: return 0; // 无法识别的空间位置
         }
     };
+
+    uint64_t outputChannelLayoutMask{0};
+
+    for (auto& type : juceLayout.getChannelTypes()) {
+        outputChannelLayoutMask |= mapJuceSpeakerToFFmpegMask(type);
+    }
+
+    if (outputChannelLayoutMask == 0) {
+        av_channel_layout_default(&outputChannelLayout, juceLayout.getChannelTypes().size());
+    } else {
+        av_channel_layout_from_mask(&outputChannelLayout, outputChannelLayoutMask);
+    }
 }
 
 void FFmpegDecoder::prepareToPlayNewSong(int64_t id) { currentSongId = id; }
@@ -83,19 +97,30 @@ void FFmpegDecoder::run() {
         auto log = spdlog::get(LogAudioID);
         log->error("获取播放信息失败");
     }
-    int result = avformat_open_input(&inputContext, info->path.c_str(), NULL, NULL);
+    int result = avformat_open_input(
+        &inputContext,
+        info->path.c_str(),
+        NULL,
+        NULL
+    ); // 这个函数会同时进行内存分配
     if (result < 0) {
         auto log = spdlog::get(LogAudioID);
-        log->error("打开音频文件失败，通知用户检查原始文件:{},失败原因:{}", info->path,
-                   ffmpegErrorOutput(result));
+        log->error(
+            "打开音频文件失败，通知用户检查原始文件:{},失败原因:{}",
+            info->path,
+            ffmpegErrorOutput(result)
+        );
         avformat_close_input(&inputContext);
         return;
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if (result < 0) {
         auto log = spdlog::get(LogAudioID);
-        log->error("获取流失败，通知用户检查原始文件:{},失败原因:{}", info->path,
-                   ffmpegErrorOutput(result));
+        log->error(
+            "获取流失败，通知用户检查原始文件:{},失败原因:{}",
+            info->path,
+            ffmpegErrorOutput(result)
+        );
         avformat_close_input(&inputContext);
         return;
     }
@@ -107,6 +132,26 @@ void FFmpegDecoder::run() {
     } else {
         av_channel_layout_default(&originalChannelLayout, info->originalNumChannels);
     }
+
+    auto* codec = avcodec_find_decoder(static_cast<AVCodecID>(info->codecId));
+    auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)};
+
+    auto* decoderPar = inputContext->streams[currentIndex]->codecpar;
+    auto* decoderContext = avcodec_alloc_context3(codec);
+    avcodec_parameters_to_context(decoderContext, decoderPar); // 连接参数和上下文
+    avcodec_open2(decoderContext, codec, nullptr);             // 解码器初始化
+    SwrContext* swrContext{nullptr};
+    swr_alloc_set_opts2( // 下面初始化重采样器
+        &swrContext, 
+        &outputChannelLayout, 
+        AV_SAMPLE_FMT_FLTP,//float 且平面结构 
+        sampleRate, 
+        &originalChannelLayout,
+        static_cast<AVSampleFormat>(decoderPar->format), 
+        info->originalSampleRate, 
+        0, 
+        nullptr
+    );
 
     // JUCE 规范：必须使用 threadShouldExit() 作为死循环的唯一判断条件
     while (!threadShouldExit()) {

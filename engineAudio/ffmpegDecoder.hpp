@@ -5,11 +5,15 @@
 #include "juce_core/juce_core.h"
 #include "model.h"
 #include <cstdint>
+extern "C" {
+#include <libavutil/channel_layout.h>
+}
+#include <optional>
 #include <string>
 
 class FFmpegDecoder : public juce::Thread {
 private:
-    uint64_t outputChannelLayoutMask{0};  // 输出通道布局掩码
+    AVChannelLayout outputChannelLayout;
     double sampleRate{defaultSampleRate}; // 输出采样率
     int64_t currentSongId{0};
     playInfo mPlayInfo; // 原始音频的播放信息
