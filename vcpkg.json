@@ -1,12 +1,26 @@
 {
   "name": "junk-fusion",
   "version-string": "0.1.0",
-  "builtin-baseline": "32305df7d0b9a308e6ac454dd98ebfe550342c09",
+  "builtin-baseline": "6d9d7df564a1ccdaa994e4ad39ccd4a32360867b",
   "dependencies": [
-    
-    "ffmpeg",
+    {
+      "name": "ffmpeg",
+      "version>=": "8.1.2",
+      "default-features": false,
+      "features": ["avcodec", "avformat", "swresample"]
+    },
     "spdlog",
     "sqlitecpp",
-    "hash-library"
+    "hash-library",
+    {
+      "name": "qtbase",
+      "version>=": "6.8.0",
+      "default-features": false,
+      "features": ["gui"]
+    },
+    {
+      "name": "qtdeclarative",
+      "version>=": "6.8.0"
+    }
   ]
 }

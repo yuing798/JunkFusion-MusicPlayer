@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 # 定义你的项目名称和版本
-project(JunkFusion VERSION 0.0.1)
+project(JunkFusion VERSION 0.0.2)
 
 # ==============================================================================
 # 1. 引入 JUCE 框架
@@ -18,17 +18,14 @@ find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
-# find_package(PkgConfig REQUIRED)
-# find_package(unofficial-webview2 CONFIG REQUIRED)
-
-# 使用 pkg-config 查找 ICU（i18n 依赖 uc，但 pkg_check_modules 不会传递 Requires.private，
-# 所以显式列出两个模块确保链接正确的 .lib）
-# pkg_check_modules(ICU IMPORTED_TARGET REQUIRED icu-i18n icu-uc)
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
     add_compile_options(/utf-8)
 endif()
+
+# 统一输出目录到构建根目录下的 bin（必须在 target 创建之前设置）
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ==============================================================================
 # 2. 定义 GUI App 目标
@@ -39,14 +36,14 @@ juce_add_gui_app(JunkFusion
     PRODUCT_NAME "JunkFusion"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/image/JunkFusion.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/JunkFusion.png"
-    NEEDS_WEB_BROWSER TRUE
-    NEEDS_WEBVIEW2 TRUE
+    NEEDS_WEB_BROWSER FALSE
+    NEEDS_WEBVIEW2 FALSE
 )
 
-if (WIN32)
-    # 指定使用 WebView2 后端，并设置 NEEDS_WEBVIEW2 选项[reference:6][reference:7]
-    target_compile_definitions(JunkFusion PRIVATE JUCE_USE_WIN_WEBVIEW2=1)
-endif()
+# if (WIN32)
+#     # 指定使用 WebView2 后端，并设置 NEEDS_WEBVIEW2 选项[reference:6][reference:7]
+#     target_compile_definitions(JunkFusion PRIVATE JUCE_USE_WIN_WEBVIEW2=1)
+# endif()
 
 target_sources(JunkFusion
     PRIVATE
@@ -57,21 +54,17 @@ target_sources(JunkFusion
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
 add_subdirectory(image)
+add_subdirectory(QtUI)
 
-# add_custom_command 是 CMake 中用来在构建过程中插入自定义操作的核心指令
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/BridgeNames.h  # 输出文件,这条流水线生产出来的东西是什么
-    COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/UI/generateBridge.cjs  # 执行的命令:具体执行什么操作
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/UI/bridgeDefs.json ${CMAKE_CURRENT_SOURCE_DIR}/UI/generateBridge.cjs#:生产这个东西依赖什么输入
-    COMMENT "Generating BridgeNames.h from bridgeDefs.json..."
-)#在build之前自动执行
+# JUCE 内部会覆盖输出目录到 JunkFusion_artefacts，这里强制改回统一目录
+set_target_properties(JunkFusion PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
 # ==============================================================================
 target_compile_definitions(JunkFusion
     PRIVATE
-        JUCE_WEB_BROWSER=1
+        JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         
         # --- VST 宿主核心开关 (必须打开，否则无法加载第三方 VST 插件) ---

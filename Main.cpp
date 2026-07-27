@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string>
 
-
 //==============================================================================
 class GuiAppApplication final : public juce::JUCEApplication {
 public:
@@ -31,10 +30,10 @@ public:
         // std::cout <<
         // juce::String(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getFullPathName()).toStdString();
 
-#ifdef JUCE_DEBUG
-        _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
-                  "--auto-open-devtools-for-tabs"); // 这一行的作用是打开webview2的控制台
-#endif
+        // #ifdef JUCE_DEBUG
+        //         _putenv_s("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+        //                   "--auto-open-devtools-for-tabs"); // 这一行的作用是打开webview2的控制台
+        // #endif
 
         if (!LocalDirId.exists()) LocalDirId.createDirectory(); // 整个应用的数据文件夹
         if (!imageDirId.exists()) imageDirId.createDirectory(); // 里面放置所有的用户图像信息
@@ -79,8 +78,10 @@ public:
             : DocumentWindow(
                   name,
                   juce::Colour(
-                      0xfff0f0f0), // 与 web UI --colorMain 一致，避免 WebView2 加载前的黑屏闪烁
-                  allButtons) {
+                      0xfff0f0f0
+                  ), // 与 web UI --colorMain 一致，避免 WebView2 加载前的黑屏闪烁
+                  allButtons
+              ) {
             setUsingNativeTitleBar(true);
 
             // 先全屏，再创建内容组件。

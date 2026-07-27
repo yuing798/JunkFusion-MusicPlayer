@@ -4,3 +4,4 @@ build/
 .opencode/
 Utils/BridgeNames.h
 vcpkg_installed/
+UI/

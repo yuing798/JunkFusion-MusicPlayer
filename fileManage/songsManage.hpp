@@ -39,8 +39,8 @@ public:
     void saveComment(juce::String text, int64_t songId);
 };
 
-class songsManageBuilder : public juce::OptionsBuilder<juce::WebBrowserComponent::Options> {
-public:
-    juce::WebBrowserComponent::Options
-    buildOptions(const juce::WebBrowserComponent::Options& initial) override;
-};
+// class songsManageBuilder : public juce::OptionsBuilder<juce::WebBrowserComponent::Options> {
+// public:
+//     juce::WebBrowserComponent::Options
+//     buildOptions(const juce::WebBrowserComponent::Options& initial) override;
+// };
