@@ -40,11 +40,6 @@ juce_add_gui_app(JunkFusion
     NEEDS_WEBVIEW2 FALSE
 )
 
-# if (WIN32)
-#     # 指定使用 WebView2 后端，并设置 NEEDS_WEBVIEW2 选项[reference:6][reference:7]
-#     target_compile_definitions(JunkFusion PRIVATE JUCE_USE_WIN_WEBVIEW2=1)
-# endif()
-
 target_sources(JunkFusion
     PRIVATE
         Main.cpp
