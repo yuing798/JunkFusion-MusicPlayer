@@ -1,20 +1,80 @@
-find_package(Qt6 6.8 REQUIRED COMPONENTS 
-    Core 
+# ==============================================================================
+# Qt 前端构建配置
+# JunkFusionUI.exe —— 负责显示 QML 界面并管理 JUCE 后端进程
+# ==============================================================================
+
+# find_package 是 CMake 的"找包"命令
+# REQUIRED 意味着找不到这个包就直接报错停止配置（而不是默默跳过）
+# COMPONENTS 列出我们需要 Qt 的哪些模块：
+#   Core    → 最基本的非 GUI 功能（信号槽、事件循环、QString、QObject 等）
+#   Quick   → QML 引擎 + 2D 渲染器（包含 QQmlApplicationEngine、QQuickView）
+#   Qml     → QML 语言运行时（解析 .qml 文件、类型系统、JS 引擎）
+find_package(Qt6 6.8 REQUIRED COMPONENTS
+    Core
     Quick
     Qml
 )
+
+# qt_standard_project_setup() 是 Qt 6.3+ 引入的一键初始化函数
+# 它会自动做三件事：
+# 1. 启用 AUTOMOC（扫描头文件中带 Q_OBJECT 宏的类，自动生成元对象代码）
+# 2. 启用 AUTORCC（自动编译 .qrc 资源文件）
+# 3. 启用 AUTOUIC（自动编译 .ui 文件，这与 QWidgets 相关，此处不影响）
+# 我们之前在 CMakePresets.json 中手动设置了 AUTOMOC/AUTORCC，
+# 但这个调用会确保 Qt 相关的所有默认配置到位
 qt_standard_project_setup()
+
+# qt_add_executable 是 Qt 提供的替代 CMake 原生 add_executable 的函数
+# 它会额外处理 Qt 特有的编译需求（如自动链接 platform 插件）
 qt_add_executable(JunkFusionUI)
 
+# ==============================================================================
+# QML 模块定义 — qt_add_qml_module
+# 这是 Qt 6.2+ 推荐的 QML 管理方式，替代过去手写 .qrc 文件
+#
+# 参数说明：
+#   URI        → QML 模块的唯一标识符（类比 Java 的包名 com.company.module）
+#                在 QML 代码中通过 import JunkFusion 来使用这个模块
+#   VERSION    → 模块版本号，QML import 时可以指定版本
+#   QML_FILES  → 模块包含的所有 .qml 文件
+#
+# 这个命令会自动：
+# - 生成 .qrc 资源文件（不需要手写 qml.qrc）
+# - 注册 QML 类型（让 QML 引擎能找到这些文件）
+# - 设置正确的 qrc 路径
+#
+# 加载方式（在 C++ 中）：
+#   engine.loadFromModule("JunkFusion", "main");
+#   → 加载模块 JunkFusion 中的 main.qml 文件
+# ==============================================================================
+qt_add_qml_module(JunkFusionUI
+    URI "JunkFusion"
+    VERSION 1.0
+    QML_FILES
+        main.qml
+        LeftColumn.qml
+        AllMusicPage.qml
+)
+
+# 指定 C++ 源文件
+# 这里只有 mainUI.cpp 一个文件（Qt 程序入口 + JuceProcessManager 头文件）
 target_sources(JunkFusionUI PRIVATE
-    main.cpp)
+    mainUI.cpp
+)
 
-# add_custom_command(TARGET JunkFusionUI POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E echo "[Paths]" > "$<TARGET_FILE_DIR:JunkFusionUI>/qt.conf"
-#     COMMAND ${CMAKE_COMMAND} -E echo "Plugins = ../build/debug/vcpkg_installed/x64-windows/$<CONFIG>/Qt6/plugins" >> "$<TARGET_FILE_DIR:JunkFusionUI>/qt.conf"
-#     COMMENT "Generating qt.conf → vcpkg plugin discovery"
-# )
-
+# ==============================================================================
+# 链接 Qt 库
+#
+# PRIVATE 意味着这些库只在 JunkFusionUI 内部使用，
+# 不暴露给依赖 JunkFusionUI 的其他目标
+#
+# Qt6::Core   → QObject、QString、信号槽、事件循环
+# Qt6::Quick  → QML 渲染引擎、Scene Graph
+# Qt6::Qml    → QML 语言解析、JS 引擎
+#
+# 注：不需要显式链接 Qt6::QmlIntegration，
+#     因为 qt_add_qml_module 已自动处理导入路径和资源编译
+# ==============================================================================
 target_link_libraries(JunkFusionUI
     PRIVATE
     Qt6::Core

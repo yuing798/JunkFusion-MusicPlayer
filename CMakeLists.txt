@@ -30,21 +30,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # ==============================================================================
 # 2. 定义 GUI App 目标
 # ==============================================================================
-juce_add_gui_app(JunkFusion
+juce_add_gui_app(JunkFusionBackend
     VERSION ${PROJECT_VERSION}
     COMPANY_NAME "YusekX"
-    PRODUCT_NAME "JunkFusion"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/image/JunkFusion.png"
-    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/image/JunkFusion.png"
+    PRODUCT_NAME "JunkFusionBackend"
     NEEDS_WEB_BROWSER FALSE
     NEEDS_WEBVIEW2 FALSE
 )
 
-target_sources(JunkFusion
+target_sources(JunkFusionBackend
     PRIVATE
         Main.cpp
-        MainComponent.h
-        MainComponent.cpp
 )
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
@@ -52,12 +48,12 @@ add_subdirectory(image)
 add_subdirectory(QtUI)
 
 # JUCE 内部会覆盖输出目录到 JunkFusion_artefacts，这里强制改回统一目录
-set_target_properties(JunkFusion PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(JunkFusionBackend PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # ==============================================================================
 # 4. 预编译宏定义 (核心配置区)
 # ==============================================================================
-target_compile_definitions(JunkFusion
+target_compile_definitions(JunkFusionBackend
     PRIVATE
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
@@ -67,22 +63,22 @@ target_compile_definitions(JunkFusion
         JUCE_PLUGINHOST_VST3=1  # 开启 VST3 插件加载支持
         JUCE_PLUGINHOST_AU=1    # 开启苹果 AU 插件加载支持 (在 Mac 上编译时生效)
         
-        JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:JunkFusion,JUCE_PRODUCT_NAME>"
-        JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:JunkFusion,JUCE_VERSION>"
+        JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:JunkFusionBackend,JUCE_PRODUCT_NAME>"
+        JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:JunkFusionBackend,JUCE_VERSION>"
 )
 
 # ==============================================================================
 # 5. 链接库依赖 (JUCE 模块与第三方库)
 # ==============================================================================
-target_include_directories(JunkFusion
+target_include_directories(JunkFusionBackend
     PRIVATE
         ${FFMPEG_INCLUDE_DIRS}
 )
-target_link_directories(JunkFusion
+target_link_directories(JunkFusionBackend
     PRIVATE
         ${FFMPEG_LIBRARY_DIRS}
 )
-target_link_libraries(JunkFusion
+target_link_libraries(JunkFusionBackend
     PRIVATE
         # --- 项目内部库 ---
         JunkFusionBinaryData
@@ -91,8 +87,8 @@ target_link_libraries(JunkFusion
         juce::juce_audio_utils       # 包含底层声卡设备管理
         juce::juce_audio_processors  # 包含 AudioProcessorGraph 和 VST 宿主类!
         juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
-        juce::juce_gui_extra         # 包含高级 UI 组件
-        juce::juce_gui_basics#基础UI组件
+        # juce::juce_gui_extra         # 包含高级 UI 组件
+        # juce::juce_gui_basics#基础UI组件
         
         # 第三方库
         ${FFMPEG_LIBRARIES}#解码层和重采样层
@@ -108,4 +104,4 @@ target_link_libraries(JunkFusion
         juce::juce_recommended_warning_flags#推荐的警告级别
 )
 
-juce_generate_juce_header(JunkFusion)
+juce_generate_juce_header(JunkFusionBackend)
