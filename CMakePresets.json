@@ -14,7 +14,9 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_AUTOMOC":"ON",
-        "CMAKE_AUTORCC":"ON"
+        "CMAKE_AUTORCC":"ON",
+        "VCPKG_CLEAN_BUILDTREES_AFTER_BUILD": "ON",
+        "VCPKG_INSTALLED_DIR":"$env{VCPKG_INSTALLED_DIR}"
       }
     },
     {
@@ -23,8 +25,7 @@
       "displayName": "Debug",
       "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "VCPKG_INSTALL_OPTIONS": "--x-buildtrees-root=J:/vcpkg-blds"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     }
   ],

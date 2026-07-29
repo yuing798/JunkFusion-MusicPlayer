@@ -57,7 +57,7 @@ import QtQuick.Controls  // Qt Quick 控件组件（Button, ComboBox, ScrollView
 // ════════════════════════════════════════════════════════════════════
 ApplicationWindow {
     id: root  // id 是 QML 中的唯一标识符，类似 HTML 的 id 属性，
-              // 但更强：任何地方都可以通过 root 来访问这个对象的所有属性
+    // 但更强：任何地方都可以通过 root 来访问这个对象的所有属性
 
     // ── 窗口基本属性 ──
     visible: true                           // 窗口是否可见（必须设为 true）
@@ -82,58 +82,103 @@ ApplicationWindow {
 
     Rectangle {
         id: titleBar
-        height: 48
-        color: "#2C2C2C"
+        height: 40
+        color: theme.colorMain
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
 
-        // DAW 图标和标题（可选）
-        Row {
-            anchors.left: parent.left
-            anchors.leftMargin: 16
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 8
-            Text { text: "🎵"; color: "#FF6B35"; font.pixelSize: 20 }
-            Text { text: "JunkFusion"; color: "white"; font.pixelSize: 14; font.weight: Font.Bold }
-        }
-
         // ===== 三个窗口控制按钮（靠右放置） =====
         Row {
-            id: windowControls
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            spacing: 0  // 按钮紧挨着，没有间距
 
             // ---------- 1. 最小化按钮 ----------
-            TitleBarButton {
-                iconText: "─"  // 减号符号
-                onClicked: {
-                    mainWindow.showMinimized()  // 👈 最小化主窗口
+            Rectangle {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: 55
+                color: miniMa.containsMouse ? "#3A3A3A" : "transparent"
+                //containsMouse用来指示当前鼠标是否悬停在某个MouseArea上面
+                Text {
+                    anchors.centerIn: parent
+                    text: "-"
+                    color: theme.colorTextMain
+                }
+                MouseArea {
+                    id: miniMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: {
+                        Window.window.showMinimized();
+                    }
+                }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150   // 毫秒，相当于 CSS transition-duration: 0.15s
+                        easing.type: Easing.InOutQuad  // 缓动曲线，相当于 CSS ease-in-out
+                    }
                 }
             }
 
             // ---------- 2. 最大化/还原按钮 ----------
-            TitleBarButton {
-                id: maxBtn
-                // 根据窗口是否最大化，动态切换图标
-                iconText: mainWindow.visibility === Window.Maximized ? "❐" : "☐"
-                onClicked: {
-                    if (mainWindow.visibility === Window.Maximized) {
-                        mainWindow.showNormal()    // 👈 从全屏还原为普通大小
-                    } else {
-                        mainWindow.showMaximized() // 👈 最大化窗口
+            Rectangle {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: 55
+                color: normalManMa.containsMouse ? theme.colorHover : "transparent"
+                //containsMouse用来指示当前鼠标是否悬停在某个MouseArea上面
+                Text {
+                    anchors.centerIn: parent
+                    text: Window.window.visibility === Window.Maximized ? "❐" : "☐"
+                    color: theme.colorTextMain
+                }
+                MouseArea {
+                    id: normalManMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: {
+                        if (Window.window.visibility === Window.Maximized) {
+                            Window.window.showNormal();   // 最大 -> 还原
+                        } else {
+                            Window.window.showMaximized(); // 非最大 -> 最大化
+                        }
+                    }
+                }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150   // 毫秒，相当于 CSS transition-duration: 0.15s
+                        easing.type: Easing.InOutQuad  // 缓动曲线，相当于 CSS ease-in-out
                     }
                 }
             }
 
             // ---------- 3. 关闭按钮 ----------
-            TitleBarButton {
-                iconText: "✕"
-                hoverColor: "#E81123"  // Windows 经典关闭红
-                onClicked: {
-                    mainWindow.close()  // 👈 关闭窗口，触发 aboutToQuit 等清理钩子
+            Rectangle {
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: 55
+                color: xMa.containsMouse ? theme.colorHover : "transparent"
+                //containsMouse用来指示当前鼠标是否悬停在某个MouseArea上面
+                Text {
+                    anchors.centerIn: parent
+                    text: "X"
+                    color: theme.colorTextMain
+                }
+                MouseArea {
+                    id: xMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: {
+                        Window.window.close();
+                    }
+                }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150   // 毫秒，相当于 CSS transition-duration: 0.15s
+                        easing.type: Easing.InOutQuad  // 缓动曲线，相当于 CSS ease-in-out
+                    }
                 }
             }
         }
@@ -214,7 +259,7 @@ ApplicationWindow {
             easeTime: root.easeTime
 
             // ── 导航点击回调 ──
-            onPageSelected: function(pageId) {
+            onPageSelected: function (pageId) {
                 root.currentPageId = pageId;
             }
         }
@@ -256,7 +301,7 @@ ApplicationWindow {
                     // ── 信号连接：子组件请求显示信息弹窗 ──
                     // AllMusicPage 发射 showInfoRequest 信号时，
                     // 调用 infoPopup.showInfo() 来显示弹窗
-                    onShowInfoRequest: function(message, holdTime) {
+                    onShowInfoRequest: function (message, holdTime) {
                         infoPopup.showInfo(message, holdTime);
                     }
                 }
@@ -392,7 +437,8 @@ ApplicationWindow {
         // QML 中的 function 定义可调用的方法
         // C++ 或 QML 其他组件可以通过 infoPopup.showInfo("消息") 调用
         function showInfo(message, holdTime) {
-            if (holdTime === undefined) holdTime = 3000;  // 默认保持 3 秒
+            if (holdTime === undefined)
+                holdTime = 3000;  // 默认保持 3 秒
             popupMessage.text = message;
             open();  // Popup 内置 open() 方法，显示弹窗
 
