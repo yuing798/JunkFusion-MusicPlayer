@@ -1,5 +1,5 @@
-target_include_directories(JunkFusion PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(JunkFusion PRIVATE
+target_include_directories(JunkFusionBackecd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_sources(JunkFusionBackend PRIVATE
     AudioRingBuffer.cpp
     DeviceManager.cpp 
     ffmpegDecoder.cpp

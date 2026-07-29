@@ -25,14 +25,16 @@
 //   JuceProcessManager → 管理 JunkFusionBackend.exe 子进程
 // ==============================================================================
 
-#include "juceProcessorManager.hpp"  // JUCE 后端进程管理器（同一目录下）
-#include <QGuiApplication>           // Qt GUI 应用程序基类
-#include <QQmlApplicationEngine>     // QML 引擎（加载 .qml 文件并渲染 UI）
-#include <QQmlContext>               // QML 上下文（用于向 QML 注入 C++ 对象）
-#include <QIcon>                     // 应用图标
+#include "bridge/juceProcessorManager.hpp"
+#include <QDir>
+#include <QGuiApplication>       // Qt GUI 应用程序基类
+#include <QIcon>                 // 应用图标
+#include <QQmlApplicationEngine> // QML 引擎（加载 .qml 文件并渲染 UI）
+#include <QQmlContext>           // QML 上下文（用于向 QML 注入 C++ 对象）
+#include <QSettings>
+#include <QStandardPaths>
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     // ════════════════════════════════════════════════════════════════
     // 第 1 步：创建 Qt 应用程序对象
     // ════════════════════════════════════════════════════════════════
@@ -50,9 +52,17 @@ int main(int argc, char* argv[])
     QGuiApplication app(argc, argv);
 
     // ── 设置应用程序元信息（显示在任务管理器/关于窗口中） ──
-    app.setApplicationName("JunkFusion");           // 程序名
-    app.setApplicationVersion("0.0.2");              // 版本号
-    app.setOrganizationName("YusekX");               // 组织名（影响 QSettings 存储路径）
+    app.setApplicationName("JunkFusion"); // 程序名
+    app.setApplicationVersion("0.0.2");   // 版本号
+    app.setOrganizationName("YusekX");    // 组织名（影响 QSettings 存储路径）
+
+    QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QDir dir;
+    if (!dir.exists(configDir)) {
+        dir.mkpath(configDir);
+    }
+    QString settingsPath = configDir + "/forntendSettings.ini";
+    QSettings settings(settingsPath, QSettings::IniFormat);
 
     // ════════════════════════════════════════════════════════════════
     // 第 2 步：创建 JUCE 后端进程管理器，并启动后端
@@ -61,12 +71,12 @@ int main(int argc, char* argv[])
     // JuceProcessManager 负责 JunkFusionBackend.exe 的完整生命周期。
     // 构造时：注册了 aboutToQuit 钩子（Qt 退出前自动 kill JUCE）
     // startDaemon()：异步启动 JUCE 进程（不阻塞 UI）
-    //
+    // 钩子是一种“框架留出的插槽”，允许你在程序生命周期的特定关键时刻（如启动、关闭、空闲时）插入你自己的自定义代码。
     // 这里把它定义为 app 下面的栈变量，生命周期覆盖整个 main()：
     //   - app.exec() 返回前，manager 一直存活
     //   - app.exec() 返回后，manager 析构 → m_process 析构 → JUCE 被 kill
     JuceProcessManager juceManager;
-    juceManager.startDaemon();  // 启动 JUCE 音频引擎
+    juceManager.startDaemon(); // 启动 JUCE 音频引擎
 
     // ════════════════════════════════════════════════════════════════
     // 第 3 步：创建 QML 引擎并加载主界面
@@ -79,6 +89,7 @@ int main(int argc, char* argv[])
     QQmlApplicationEngine engine;
 
     // ── 向 QML 注入 C++ 对象 ──
+    // rootContext():所有加载到该引擎里的 QML 文件（无论嵌套多深）都会自动继承这个根上下文里的内容
     // setContextProperty() 让 QML 代码可以直接访问 C++ 对象
     // 语法：setContextProperty("QML中的名字", 指向C++对象的指针)
     // QML 端使用方式：
