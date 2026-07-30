@@ -1,29 +1,3 @@
-/// ════════════════════════════════════════════════════════════════
-/// main.dart — 应用入口文件
-///
-/// 对应原 Vue 项目 main.ts：
-///   import { createApp } from 'vue'
-///   import App from './App.vue'
-///   import { createPinia } from 'pinia'
-///   const pinia = createPinia()
-///   createApp(App).use(pinia).mount('#app')
-///
-/// Dart/Flutter 入口概念：
-/// - `main()` 函数是 Dart 程序的入口点（相当于 C 的 main() / JS 的全局脚本）
-/// - `void main()` 表示 main 函数没有返回值
-/// - `runApp()` 是 Flutter 的函数，接收一个 Widget 并将其填满整个屏幕
-/// - `MyApp` 继承自 `StatelessWidget`（无状态组件），是 Flutter 的根 widget
-///
-/// Provider 注入：
-/// - `MultiProvider` 是 provider 包的 widget，可以同时注入多个 ChangeNotifier
-/// - `ChangeNotifierProvider` 包装单个 ChangeNotifier 使其在 Widget Tree 中可用
-/// - `create: (_) => SongProvider()` 延迟创建 Provider 实例
-/// - `_` 是 Dart 的惯用写法，表示"这个参数我不关心"
-///   这里它接收 BuildContext，但在 create 中用不到
-/// ════════════════════════════════════════════════════════════════
-
-// `import` 引入依赖
-// `package:flutter/material.dart` — Flutter Material Design 组件库
 import 'package:flutter/material.dart';
 
 // provider 包：状态管理
@@ -34,14 +8,7 @@ import 'package:provider/provider.dart';
 import 'app.dart'; // 根组件
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
-import 'theme/app_theme.dart';
 
-/// main() — 程序入口函数
-///
-/// Dart 语法说明：
-/// - `void main()` 返回类型 void + 函数名 + 参数列表（这里为空）
-/// - `runApp(...)` 启动 Flutter 应用的函数
-/// - 花括号 `{}` 定义函数体（和 C/Java/JS 一样）
 void main() {
   // `runApp` 接收一个 Widget 参数，把它设为屏幕上显示的根 widget
   // Flutter 会接管该 widget 的生命周期和渲染
@@ -65,6 +32,7 @@ class JunkFusionApp extends StatelessWidget {
   /// const 构造函数
   ///
   /// `{super.key}` 语法糖：把命名参数 key 直接传递给父类
+  /// //这个 super 指的就是父类
   /// 等价于手动写: JunkFusionApp({Key? key}) : super(key: key);
   const JunkFusionApp({super.key});
 
@@ -77,6 +45,9 @@ class JunkFusionApp extends StatelessWidget {
   /// - `@override` 注解表示覆盖父类方法（虽然不是必须但强烈推荐）
   /// - `Widget` 是返回类型
   /// - `BuildContext context`：构建上下文，包含了 Widget 在树中的位置信息
+  /// build函数：返回你想要显示在屏幕上的那棵 UI 组件树（Widget 树）
+  /// 纯函数就是“给什么参数，就返回什么结果，绝不搞小动作（副作用），而且只要参数不变，返回的结果永远一样”的函数。
+  /// build函数必须是纯函数
   @override
   Widget build(BuildContext context) {
     // MultiProvider — 同时注入多个 Provider 到 Widget Tree
@@ -88,6 +59,7 @@ class JunkFusionApp extends StatelessWidget {
     // 原理：MultiProvider 在 Widget Tree 的根部注入 Provider，
     // 其下的任何 Widget 都能通过 context.read/watch 访问这些 Provider
     return MultiProvider(
+      //圆括号里面的name: value 是命名参数赋值
       // `providers` 参数接受一个列表
       providers: [
         // ChangeNotifierProvider 是 provider 包的核心 Widget
@@ -100,10 +72,7 @@ class JunkFusionApp extends StatelessWidget {
       // `child` 是 Provider 包裹的子 widget
       child: MaterialApp(
         // `title`：应用标题（显示在任务管理器中）
-        title: 'Junk Fusion',
-
-        // `theme`：Material Design 主题
-        theme: AppTheme.lightTheme,
+        title: 'JunkFusion',
 
         // `debugShowCheckedModeBanner`：关闭右上角 DEBUG 标签
         debugShowCheckedModeBanner: false,
@@ -115,17 +84,3 @@ class JunkFusionApp extends StatelessWidget {
     );
   }
 }
-
-/// ════════════════════════════════════════════════════════════════
-/// 关键概念：
-///
-/// Flutter 中一切都是 Widget：
-/// - StatelessWidget：无内部可变状态，数据完全由外部传入
-/// - StatefulWidget：有内部可变状态，通过 setState 触发重建
-/// - InheritedWidget：沿 widget tree 向下传递数据（provider 的底层原理）
-///
-/// Provider 的工作流程：
-/// 1. ChangeNotifierProvider 创建并持有 ChangeNotifier 实例
-/// 2. 子 Widget 通过 context.watch<T>() 获取实例并订阅
-/// 3. ChangeNotifier.notifyListeners() 触发所有订阅者重建
-/// ════════════════════════════════════════════════════════════════
