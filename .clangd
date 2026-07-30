@@ -4,4 +4,4 @@ Diagnostics:
     - -Wunused-const-variable
 
 CompileFlags:
-    CompilationDatabase: "build/debug"  # 如果切到了 release，需要改成 build/release，这一句话是为了防止clangd报错
+  CompilationDatabase: "build/vscode-debug"

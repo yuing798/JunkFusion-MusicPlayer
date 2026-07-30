@@ -24,9 +24,6 @@ if (MSVC)
     add_compile_options(/utf-8)
 endif()
 
-# 统一输出目录到构建根目录下的 bin（必须在 target 创建之前设置）
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
 # ==============================================================================
 # 2. 定义 GUI App 目标
 # ==============================================================================
@@ -45,8 +42,6 @@ target_sources(JunkFusionBackend
 add_subdirectory(Utils)
 add_subdirectory(fileManage)
 add_subdirectory(image)
-add_subdirectory(QtUI)
-
 # JUCE 内部会覆盖输出目录到 JunkFusion_artefacts，这里强制改回统一目录
 set_target_properties(JunkFusionBackend PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
@@ -62,9 +57,6 @@ target_compile_definitions(JunkFusionBackend
         JUCE_PLUGINHOST_VST=0   # VST2 已经淘汰，直接关闭
         JUCE_PLUGINHOST_VST3=1  # 开启 VST3 插件加载支持
         JUCE_PLUGINHOST_AU=1    # 开启苹果 AU 插件加载支持 (在 Mac 上编译时生效)
-        
-        JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:JunkFusionBackend,JUCE_PRODUCT_NAME>"
-        JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:JunkFusionBackend,JUCE_VERSION>"
 )
 
 # ==============================================================================

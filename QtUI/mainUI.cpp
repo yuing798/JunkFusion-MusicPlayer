@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     //
     // 等价于旧写法：
     //   engine.load(QUrl("qrc:/qt/qml/JunkFusion/main.qml"));
-    engine.loadFromModule("JunkFusion", "main");
+    engine.loadFromModule("JunkFusion", "Main");
 
     // ── 检查 QML 是否加载成功 ──
     // engine.rootObjects() 返回 QML 创建的所有顶层对象（通常是一个 ApplicationWindow）

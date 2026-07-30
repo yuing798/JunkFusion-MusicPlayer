@@ -1,6 +1,6 @@
 // Theme.qml
 pragma Singleton                          // 👈 这行声明它是全局单例
-import QtQuick 2.15
+import QtQuick
 
 QtObject {
     // ════════════════════════════════════════════════════════════════

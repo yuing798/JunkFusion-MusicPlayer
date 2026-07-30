@@ -11,18 +11,15 @@
         "CMAKE_CXX_STANDARD": "20",
         "CMAKE_CXX_STANDARD_REQUIRED": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_CLEAN_BUILDTREES_AFTER_BUILD": "ON",
-        "VCPKG_INSTALLED_DIR":"$env{VCPKG_INSTALLED_DIR}",
-        "CMAKE_RUNTIME_OUTPUT_DIRECTORY":"${sourceDir}/bin"
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY":"${sourceDir}/../bin"
       }
     },
     {
-      "name": "vscode-debug",
+      "name": "qtcreator-debug",
       "inherits": "windows-base",
-      "displayName": "vscode-debug",
-      "binaryDir": "${sourceDir}/build/vscode-debug",
+      "displayName": "qtcreator-debug",
+      "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -30,8 +27,8 @@
   ],
   "buildPresets": [
     {
-      "name": "vscode-debug",
-      "configurePreset": "vscode-debug"
+      "name": "qtcreator-debug",
+      "configurePreset": "qtcreator-debug"
     }
   ]
 }

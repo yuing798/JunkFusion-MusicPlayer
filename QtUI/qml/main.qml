@@ -64,149 +64,28 @@ ApplicationWindow {
     width: Screen.width                     // 窗口宽度 = 屏幕宽度（全屏宽）
     height: Screen.height                   // 窗口高度 = 屏幕高度（全屏高）
     title: "JunkFusion"                     // 窗口标题（显示在任务栏）
-    color: colorMain                        // 窗口背景色（引用下面定义的主题变量）
+    color: Theme.colorMain
+
+    TitleBar {
+        anchors.right: parent.right
+        anchors.left: parent.left
+        anchors.top: parent.top
+    }
 
     // ── 窗口样式 ──
     // Qt.FramelessWindowHint 去掉标题栏和边框，实现全屏无边框效果
     // 配合 width/height = 屏幕尺寸，实现"伪全屏"
     // 注：真正的全屏用 visibility: Window.FullScreen
     flags: Qt.Window | Qt.FramelessWindowHint
-    // Qt.Window —— 窗口类型（告诉系统：我是一个独立的主窗口）
-    // Qt.Window含义：指明该窗口是一个顶级窗口（Top-Level Window）。
-    // 效果：这个窗口会在操作系统的任务栏（Windows 任务栏 / macOS Dock 栏）中显示一个独立的图标。用户可以像切换 Chrome 或 Excel 一样通过任务栏切换到这个窗口。
-    // 对比：如果不写 Qt.Window，而写成 Qt.Dialog（对话框），任务栏就不会有这个图标，且默认会置顶于父窗口之上（类似于软件的“关于本机”弹窗）。
-    // Qt.FramelessWindowHint —— 窗口提示（告诉系统：别给我画边框）
-    // 含义：这是一个窗口提示（Hint），向操作系统发出请求：“不要绘制标题栏、边框、以及系统默认的最小化/最大化/关闭按钮”。
 
-    // 效果：窗口将变成一块“纯画布”（只有客户区），原本属于标题栏的区域现在完全由你的 QML 代码控制。
-
-    Rectangle {
-        id: titleBar
-        height: 40
-        color: theme.colorMain
-        anchors.top: parent.top
+    TitleBar{
+        anchors.top:parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-
-        // ===== 三个窗口控制按钮（靠右放置） =====
-        Row {
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-
-            // ---------- 1. 最小化按钮 ----------
-            Rectangle {
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: 55
-                color: miniMa.containsMouse ? "#3A3A3A" : "transparent"
-                //containsMouse用来指示当前鼠标是否悬停在某个MouseArea上面
-                Text {
-                    anchors.centerIn: parent
-                    text: "-"
-                    color: theme.colorTextMain
-                }
-                MouseArea {
-                    id: miniMa
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        Window.window.showMinimized();
-                    }
-                }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150   // 毫秒，相当于 CSS transition-duration: 0.15s
-                        easing.type: Easing.InOutQuad  // 缓动曲线，相当于 CSS ease-in-out
-                    }
-                }
-            }
-
-            // ---------- 2. 最大化/还原按钮 ----------
-            Rectangle {
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: 55
-                color: normalManMa.containsMouse ? theme.colorHover : "transparent"
-                //containsMouse用来指示当前鼠标是否悬停在某个MouseArea上面
-                Text {
-                    anchors.centerIn: parent
-                    text: Window.window.visibility === Window.Maximized ? "❐" : "☐"
-                    color: theme.colorTextMain
-                }
-                MouseArea {
-                    id: normalManMa
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        if (Window.window.visibility === Window.Maximized) {
-                            Window.window.showNormal();   // 最大 -> 还原
-                        } else {
-                            Window.window.showMaximized(); // 非最大 -> 最大化
-                        }
-                    }
-                }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150   // 毫秒，相当于 CSS transition-duration: 0.15s
-                        easing.type: Easing.InOutQuad  // 缓动曲线，相当于 CSS ease-in-out
-                    }
-                }
-            }
-
-            // ---------- 3. 关闭按钮 ----------
-            Rectangle {
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: 55
-                color: xMa.containsMouse ? theme.colorHover : "transparent"
-                //containsMouse用来指示当前鼠标是否悬停在某个MouseArea上面
-                Text {
-                    anchors.centerIn: parent
-                    text: "X"
-                    color: theme.colorTextMain
-                }
-                MouseArea {
-                    id: xMa
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        Window.window.close();
-                    }
-                }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150   // 毫秒，相当于 CSS transition-duration: 0.15s
-                        easing.type: Easing.InOutQuad  // 缓动曲线，相当于 CSS ease-in-out
-                    }
-                }
-            }
-        }
-
-        // ===== 窗口拖拽移动功能（点击标题栏空白区域拖动） =====
-        MouseArea {
-            id: dragArea
-            anchors.left: parent.left
-            anchors.right: windowControls.left  // 只占据标题栏空白区域，不覆盖按钮
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-
-            // Qt 6.5+ 推荐写法：直接调用系统原生拖拽
-            onPressed: mainWindow.startSystemMove()
-
-            // 如果是旧版 Qt（6.5 以下），请使用下面的手动计算方式：
-            /*
-            property point clickPos: "0,0"
-            onPressed: (mouse) => clickPos = Qt.point(mouse.x, mouse.y)
-            onPositionChanged: (mouse) => {
-                if (pressed) {
-                    mainWindow.x += mouse.x - clickPos.x
-                    mainWindow.y += mouse.y - clickPos.y
-                }
-            }
-            */
-        }
+        height: 50
     }
+
+    // 效果：窗口将变成一块“纯画布”（只有客户区），原本属于标题栏的区域现在完全由你的 QML 代码控制。
 
     // ── 当前选中的页面 ID（对应 App.vue 的 currentPageId） ──
     // 0=所有音乐, 1=我喜欢, 2=最近播放, 3=作者, 4=专辑, 5=歌单
@@ -247,16 +126,6 @@ ApplicationWindow {
             //
             //   Vue:  <LeftColumn :color-nav="colorNav" />
             //          → props 传值，语法不同但思想一致
-            colorNav: root.colorNav
-            colorEdge: root.colorEdge
-            colorHover: root.colorHover
-            colorTextMain: root.colorTextMain
-            colorStress: root.colorStress
-            colorSuperStress: root.colorSuperStress
-            bigFontSize: root.bigFontSize
-            midFontSize: root.midFontSize
-            borderRadius: root.borderRadius
-            easeTime: root.easeTime
 
             // ── 导航点击回调 ──
             onPageSelected: function (pageId) {
@@ -282,21 +151,6 @@ ApplicationWindow {
                 // ── 页面 0：所有音乐 ──
                 AllMusicPage {
                     id: allMusicPage
-
-                    // ── 传递主题色和字体 ──
-                    // 子 QML 文件无法直接访问 main.qml 的 root id，
-                    // 必须通过属性绑定将数据"注入"到子组件
-                    colorMain: root.colorMain
-                    colorHover: root.colorHover
-                    colorClicked: root.colorClicked
-                    colorTextMain: root.colorTextMain
-                    colorTextSecond: root.colorTextSecond
-                    colorEdge: root.colorEdge
-                    bigFontSize: root.bigFontSize
-                    midFontSize: root.midFontSize
-                    littleFontSize: root.littleFontSize
-                    borderRadius: root.borderRadius
-                    easeTime: root.easeTime
 
                     // ── 信号连接：子组件请求显示信息弹窗 ──
                     // AllMusicPage 发射 showInfoRequest 信号时，

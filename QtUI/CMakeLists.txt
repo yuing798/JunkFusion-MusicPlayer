@@ -1,7 +1,12 @@
 # ==============================================================================
-# Qt 前端构建配置
+# Qt 前端 — 独立 CMake 项目
 # JunkFusion.exe —— 负责显示 QML 界面并管理 JUCE 后端进程
+#
+# 在 Qt Creator 中打开 QtUI/ 目录即可，与后端项目完全分离。
 # ==============================================================================
+cmake_minimum_required(VERSION 3.22)
+
+project(JunkFusionUI VERSION 0.0.2)
 
 # find_package 是 CMake 的"找包"命令
 # REQUIRED 意味着找不到这个包就直接报错停止配置（而不是默默跳过）
@@ -28,37 +33,7 @@ qt_standard_project_setup()
 # 它会额外处理 Qt 特有的编译需求（如自动链接 platform 插件）
 qt_add_executable(JunkFusion)
 
-# ==============================================================================
-# QML 模块定义 — qt_add_qml_module
-# 这是 Qt 6.2+ 推荐的 QML 管理方式，替代过去手写 .qrc 文件
-#
-# 参数说明：
-#   URI        → QML 模块的唯一标识符（类比 Java 的包名 com.company.module）
-#                在 QML 代码中通过 import JunkFusion 来使用这个模块
-#   VERSION    → 模块版本号，QML import 时可以指定版本
-#   QML_FILES  → 模块包含的所有 .qml 文件
-#
-# 这个命令会自动：
-# - 生成 .qrc 资源文件（不需要手写 qml.qrc）
-# - 注册 QML 类型（让 QML 引擎能找到这些文件）
-# - 设置正确的 qrc 路径
-#
-# 加载方式（在 C++ 中）：
-#   engine.loadFromModule("JunkFusion", "main");
-#   → 加载模块 JunkFusion 中的 main.qml 文件
-# ==============================================================================
-
-qt_add_qml_module(JunkFusion
-    URI "JunkFusion"
-    VERSION 1.0
-    QML_FILES
-        qml/theme.qml
-        qml/main.qml
-        qml/LeftColumn.qml
-        qml/AllMusicPage.qml
-    RESOURCES
-        qml/qmldir
-)
+add_subdirectory(qml)
 # CMake 参数	用途	示例
 # QML_FILES	专门放 .qml 文件。CMake 会对其进行类型检查、缓存编译，并自动支持 import。	QML_FILES main.qml TrackStrip.qml
 # RESOURCES	放非 QML 资源：图片（.png）、字体（.ttf）、音频素材等。它们不会被注册为 QML 类型，只能通过 file:/// 或 qrc:/ 路径引用。
