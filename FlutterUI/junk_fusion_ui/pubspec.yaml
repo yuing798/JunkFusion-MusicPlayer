@@ -35,6 +35,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Provider — 状态管理库（等价于 Vue 的 Pinia）
+  # 用于在 Widget Tree 中注入和访问 ChangeNotifier
+  provider: ^6.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
