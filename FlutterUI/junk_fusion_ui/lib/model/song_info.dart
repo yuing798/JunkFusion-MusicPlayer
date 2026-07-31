@@ -5,7 +5,7 @@ part 'song_info.g.dart'; // 用于 JSON
 
 // SongInfo — 单首歌曲的完整元数据
 @freezed
-class SongInfo with _$SongInfo {
+abstract class SongInfo with _$SongInfo {
   //with _$SongInfo 是 Dart 中 “混入（Mixin）” 的语法，它的核心作用是：
   //将自动生成的 _$SongInfo 类里的所有具体方法（copyWith、==、hashCode 等）“混入”到你手写的 SongInfo 类中，让它们合二为一。
   // 3. 核心：只写这一个工厂构造函数
@@ -14,12 +14,10 @@ class SongInfo with _$SongInfo {
   // factory 关键字不强制创建新对象，它的职责是 “决定返回什么”。它可以在函数体里返回一个缓存的对象、
   // 返回一个子类对象，或者（在这里）将请求转发给另一个构造函数。
   const factory SongInfo({
-    // 必填字段（加 required）
     required int songId,
     required int duration,
     required String title,
 
-    // 可空字段（直接用 ?）
     String? artist,
     String? album,
     String? albumArtist,
@@ -52,10 +50,4 @@ class SongInfo with _$SongInfo {
 
   factory SongInfo.fromJson(Map<String, dynamic> json) =>
       _$SongInfoFromJson(json);
-
-  @override
-  Map<String, dynamic> toJson() => _$SongInfoToJson(this);
-  //在 Dart 中，factory 关键字只能用来修饰构造函数（返回类的新实例）。
-  //toJson 不创建新对象，它只是读取当前已存在的 this 对象的数据并转换成 Map，所以它是一个普通的实例方法，绝对不能用 factory。
-  //在 Dart 中，factory 关键字的唯一合法用途就是修饰构造函数。它绝对不能用于修饰普通函数、实例方法（如 toJson）或静态变量。
 }

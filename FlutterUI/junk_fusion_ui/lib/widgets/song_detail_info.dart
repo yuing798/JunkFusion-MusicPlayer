@@ -16,7 +16,7 @@
 /// ════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
-import '../models/song_info.dart';
+import '../model/song_info.dart';
 import '../theme/app_theme.dart';
 
 /// SongDetailInfo — 歌曲详情面板（在弹窗中使用）

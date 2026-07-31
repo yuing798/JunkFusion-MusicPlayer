@@ -15,9 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SongInfo {
 
-// 必填字段（加 required）
- int get songId; int get duration; String get title;// 可空字段（直接用 ?）
- String? get artist; String? get album; String? get albumArtist; String? get genre; int? get trackNumber; int? get discNumber; int? get year; String? get composer; int get bitRate; int get sampleRate; String get channelLayout; int get bitDepth; String? get codecName; String? get aiGenre; int? get bpm; String? get key; bool get isMyLike; String? get comment; int get playNum;
+ int get songId; int get duration; String get title; String? get artist; String? get album; String? get albumArtist; String? get genre; int? get trackNumber; int? get discNumber; int? get year; String? get composer; int get bitRate; int get sampleRate; String get channelLayout; int get bitDepth; String? get codecName; String? get aiGenre; int? get bpm; String? get key; bool get isMyLike; String? get comment; int get playNum;
 /// Create a copy of SongInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -235,11 +233,9 @@ class _SongInfo implements SongInfo {
   const _SongInfo({required this.songId, required this.duration, required this.title, this.artist, this.album, this.albumArtist, this.genre, this.trackNumber, this.discNumber, this.year, this.composer, required this.bitRate, required this.sampleRate, required this.channelLayout, required this.bitDepth, this.codecName, this.aiGenre, this.bpm, this.key, required this.isMyLike, this.comment, required this.playNum});
   factory _SongInfo.fromJson(Map<String, dynamic> json) => _$SongInfoFromJson(json);
 
-// 必填字段（加 required）
 @override final  int songId;
 @override final  int duration;
 @override final  String title;
-// 可空字段（直接用 ?）
 @override final  String? artist;
 @override final  String? album;
 @override final  String? albumArtist;
