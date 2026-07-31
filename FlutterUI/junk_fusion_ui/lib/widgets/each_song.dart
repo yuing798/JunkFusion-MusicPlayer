@@ -37,10 +37,7 @@ class EachSong extends StatelessWidget {
   /// 歌曲数据
   final SongInfo song;
 
-  const EachSong({
-    super.key,
-    required this.song,
-  });
+  const EachSong({super.key, required this.song});
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +51,7 @@ class EachSong extends StatelessWidget {
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppTheme.colorEdge, width: 3),
-        ),
+        border: Border(bottom: BorderSide(color: AppTheme.colorEdge, width: 3)),
       ),
       child: Row(
         children: [
@@ -77,16 +72,10 @@ class EachSong extends StatelessWidget {
           const SizedBox(width: 4),
 
           // ── 第 3 列：专辑 (150px) ──
-          SizedBox(
-            width: 150,
-            child: _buildEllipsisText(song.album ?? '未知'),
-          ),
+          SizedBox(width: 150, child: _buildEllipsisText(song.album ?? '未知')),
 
           // ── 第 4 列：AI 分类 (120px) ──
-          SizedBox(
-            width: 120,
-            child: _buildEllipsisText(song.aiGenre ?? ''),
-          ),
+          SizedBox(width: 120, child: _buildEllipsisText(song.aiGenre ?? '')),
 
           // ── 第 5 列：播放次数 (80px) ──
           SizedBox(
@@ -100,20 +89,15 @@ class EachSong extends StatelessWidget {
           ),
 
           // ── 第 6 列：喜欢按钮 (40px) ──
-          SizedBox(
-            width: 40,
-            child: _buildLikeButton(context),
-          ),
+          SizedBox(width: 40, child: _buildLikeButton(context)),
 
           // ── 第 7 列：歌曲详情弹窗 (40px) ──
           SizedBox(
             width: 40,
             child: PopupWindow(
               title: '歌曲详情',
-              triggerBuilder: (open) => _CircleIconButton(
-                icon: Icons.info_outline,
-                onTap: open,
-              ),
+              triggerBuilder: (open) =>
+                  _CircleIconButton(icon: Icons.info_outline, onTap: open),
               contentBuilder: () => SongDetailInfo(song: song),
             ),
           ),
@@ -197,9 +181,7 @@ class EachSong extends StatelessWidget {
     return Center(
       child: Text(
         text,
-        style: AppTheme.midTextStyle.copyWith(
-          color: AppTheme.colorTextSecond,
-        ),
+        style: AppTheme.midTextStyle.copyWith(color: AppTheme.colorTextSecond),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -238,11 +220,7 @@ class _CircleIconButton extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? iconColor;
 
-  const _CircleIconButton({
-    required this.icon,
-    this.onTap,
-    this.iconColor,
-  });
+  const _CircleIconButton({required this.icon, this.onTap, this.iconColor});
 
   @override
   Widget build(BuildContext context) {
@@ -253,11 +231,7 @@ class _CircleIconButton extends StatelessWidget {
         height: 36,
         // `BoxShape.circle` 创建圆形（替代 borderRadius 半径设置）
         decoration: const BoxDecoration(shape: BoxShape.circle),
-        child: Icon(
-          icon,
-          size: 28,
-          color: iconColor ?? AppTheme.colorTextMain,
-        ),
+        child: Icon(icon, size: 28, color: iconColor ?? AppTheme.colorTextMain),
       ),
     );
   }

@@ -44,19 +44,13 @@ class PlayBar extends StatelessWidget {
       child: Row(
         children: [
           // ── 左区：500px（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
-          SizedBox(
-            width: 500,
-            child: _buildLeftArea(context),
-          ),
+          SizedBox(width: 500, child: _buildLeftArea(context)),
 
           // 弹性空间
           const Expanded(child: SizedBox()),
 
           // ── 中区：330px（播放控制） ──
-          SizedBox(
-            width: 330,
-            child: _buildMidArea(context),
-          ),
+          SizedBox(width: 330, child: _buildMidArea(context)),
 
           // 弹性空间
           const Expanded(child: SizedBox()),
@@ -125,16 +119,11 @@ class PlayBar extends StatelessWidget {
                 child: Container(
                   width: 36,
                   height: 36,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle),
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
                   child: Icon(
-                    info.isMyLike
-                        ? Icons.favorite
-                        : Icons.favorite_border,
+                    info.isMyLike ? Icons.favorite : Icons.favorite_border,
                     size: 28,
-                    color: info.isMyLike
-                        ? Colors.red
-                        : AppTheme.colorTextMain,
+                    color: info.isMyLike ? Colors.red : AppTheme.colorTextMain,
                   ),
                 ),
               ),
@@ -150,8 +139,7 @@ class PlayBar extends StatelessWidget {
                   child: Container(
                     width: 36,
                     height: 36,
-                    decoration: const BoxDecoration(
-                        shape: BoxShape.circle),
+                    decoration: const BoxDecoration(shape: BoxShape.circle),
                     child: const Icon(
                       Icons.info_outline,
                       size: 28,
@@ -159,8 +147,7 @@ class PlayBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                contentBuilder: () =>
-                    SongDetailInfo(song: info),
+                contentBuilder: () => SongDetailInfo(song: info),
               ),
           ],
         );
@@ -196,14 +183,15 @@ class PlayBar extends StatelessWidget {
           },
           color: AppTheme.colorTextMain,
           padding: EdgeInsets.zero,
-          constraints:
-              const BoxConstraints(minWidth: 32, minHeight: 32),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
 
         // 播放 / 暂停
         IconButton(
           icon: Icon(
-            playback.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+            playback.isPlaying
+                ? Icons.pause_circle_filled
+                : Icons.play_circle_filled,
             size: 40,
           ),
           onPressed: () {
@@ -211,8 +199,7 @@ class PlayBar extends StatelessWidget {
           },
           color: AppTheme.colorTextMain,
           padding: EdgeInsets.zero,
-          constraints:
-              const BoxConstraints(minWidth: 40, minHeight: 40),
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         ),
 
         // 下一首
@@ -223,8 +210,7 @@ class PlayBar extends StatelessWidget {
           },
           color: AppTheme.colorTextMain,
           padding: EdgeInsets.zero,
-          constraints:
-              const BoxConstraints(minWidth: 32, minHeight: 32),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
 
         const SizedBox(width: 10),
@@ -237,8 +223,7 @@ class PlayBar extends StatelessWidget {
           },
           color: AppTheme.colorTextMain,
           padding: EdgeInsets.zero,
-          constraints:
-              const BoxConstraints(minWidth: 32, minHeight: 32),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
       ],
     );

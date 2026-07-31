@@ -109,17 +109,15 @@ class _PageRow extends StatelessWidget {
             // `switch` 配合 sealed class 实现类型安全的模式匹配
             return switch (item) {
               PageItemPage(:final page) => _PageButton(
-                  label: '$page',
-                  isActive: page == currentPage,
-                  onTap: () => onPageChange(page),
-                ),
+                label: '$page',
+                isActive: page == currentPage,
+                onTap: () => onPageChange(page),
+              ),
               PageItemEllipsis() => const SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Center(
-                    child: Text('...', style: AppTheme.midTextStyle),
-                  ),
-                ),
+                width: 40,
+                height: 40,
+                child: Center(child: Text('...', style: AppTheme.midTextStyle)),
+              ),
             };
           }),
 
@@ -257,25 +255,27 @@ class _JumpRowState extends State<_JumpRow> {
                 hintStyle: AppTheme.littleTextStyle.copyWith(
                   color: AppTheme.colorTextSecond.withAlpha(153),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                   borderSide: const BorderSide(
-                      color: AppTheme.colorEdge, width: 3),
+                    color: AppTheme.colorEdge,
+                    width: 3,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                   borderSide: const BorderSide(
-                      color: AppTheme.colorEdge, width: 3),
+                    color: AppTheme.colorEdge,
+                    width: 3,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                   borderSide: const BorderSide(
-                      color: AppTheme.colorStress, width: 3),
+                    color: AppTheme.colorStress,
+                    width: 3,
+                  ),
                 ),
                 isDense: true,
               ),
@@ -286,10 +286,7 @@ class _JumpRowState extends State<_JumpRow> {
           const SizedBox(width: 5),
 
           // go 按钮
-          _PageButton(
-            label: 'go',
-            onTap: _go,
-          ),
+          _PageButton(label: 'go', onTap: _go),
         ],
       ),
     );
@@ -323,7 +320,8 @@ class _PageButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive
-              ? AppTheme.colorTextSecond // 激活态：深灰背景
+              ? AppTheme
+                    .colorTextSecond // 激活态：深灰背景
               : AppTheme.colorMain, // 默认态：主背景色
           borderRadius: BorderRadius.circular(AppTheme.borderRadius),
         ),
@@ -331,10 +329,11 @@ class _PageButton extends StatelessWidget {
           label,
           style: AppTheme.midTextStyle.copyWith(
             color: isActive
-                ? Colors.white // 激活态：白色文字
+                ? Colors
+                      .white // 激活态：白色文字
                 : (enabled
-                    ? AppTheme.colorTextMain
-                    : AppTheme.colorTextSecond.withAlpha(77)), // 禁用态
+                      ? AppTheme.colorTextMain
+                      : AppTheme.colorTextSecond.withAlpha(77)), // 禁用态
           ),
         ),
       ),

@@ -269,15 +269,9 @@ class _PlaceholderContent extends StatelessWidget {
         // `mainAxisAlignment` 控制主轴（垂直）对齐方式
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            '主内容区域',
-            style: AppTheme.midTextStyle,
-          ),
+          Text('主内容区域', style: AppTheme.midTextStyle),
           const SizedBox(height: 8), // 间距
-          Text(
-            '（选择左侧导航以查看页面）',
-            style: AppTheme.littleTextStyle,
-          ),
+          Text('（选择左侧导航以查看页面）', style: AppTheme.littleTextStyle),
         ],
       ),
     );

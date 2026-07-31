@@ -44,9 +44,7 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
     super.initState();
 
     // 初始化备注文本（现有备注或空字符串）
-    _remarkController = TextEditingController(
-      text: widget.song.comment ?? '',
-    );
+    _remarkController = TextEditingController(text: widget.song.comment ?? '');
 
     // `addListener` 注册监听回调
     // 当焦点丢失时自动保存备注
@@ -101,9 +99,7 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
             const SizedBox(width: 10),
 
             // ── 右侧列：详细信息 ──
-            Expanded(
-              child: _buildRightColumn(s),
-            ),
+            Expanded(child: _buildRightColumn(s)),
           ],
         ),
       ),
@@ -212,22 +208,18 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
       if (s.key != null) (label: '调性', value: s.key!),
       if (s.genre != null) (label: '体裁(原始)', value: s.genre!),
       if (s.aiGenre != null) (label: '体裁(AI分析)', value: s.aiGenre!),
-      if (s.trackNumber != null)
-        (label: '轨道号', value: '${s.trackNumber}'),
-      if (s.discNumber != null)
-        (label: '碟片号', value: '${s.discNumber}'),
+      if (s.trackNumber != null) (label: '轨道号', value: '${s.trackNumber}'),
+      if (s.discNumber != null) (label: '碟片号', value: '${s.discNumber}'),
       if (s.year != null) (label: '发行年份', value: '${s.year}'),
       if (s.composer != null) (label: '作曲家', value: s.composer!),
-      if (s.albumArtist != null)
-        (label: '专辑艺术家', value: s.albumArtist!),
+      if (s.albumArtist != null) (label: '专辑艺术家', value: s.albumArtist!),
     ];
   }
 
   /// 构建元数据 grid（3 列等宽）
   ///
   /// 对应原 Vue .meta-grid: display: grid; grid-template-columns: repeat(3, 1fr);
-  Widget _buildMetaGrid(
-      List<({String label, String value})> items) {
+  Widget _buildMetaGrid(List<({String label, String value})> items) {
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Padding(
@@ -239,19 +231,12 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
           for (int i = 0; i < items.length; i += 3)
             Row(
               children: [
-                for (int j = i;
-                    j < i + 3 && j < items.length;
-                    j++)
+                for (int j = i; j < i + 3 && j < items.length; j++)
                   Expanded(
-                    child: _buildLabelValue(
-                      items[j].label,
-                      items[j].value,
-                    ),
+                    child: _buildLabelValue(items[j].label, items[j].value),
                   ),
                 // 填充空位（保持 3 列对齐）
-                for (int j = items.length - i;
-                    j < 3;
-                    j++)
+                for (int j = items.length - i; j < 3; j++)
                   const Expanded(child: SizedBox()),
               ],
             ),
@@ -302,13 +287,11 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
         hintText: '点击输入备注',
         hintStyle: AppTheme.littleTextStyle,
         border: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(AppTheme.borderRadius),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(AppTheme.borderRadius),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
           borderSide: const BorderSide(color: AppTheme.colorEdge),
         ),
         contentPadding: const EdgeInsets.all(8),

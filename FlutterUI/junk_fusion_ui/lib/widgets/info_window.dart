@@ -63,7 +63,8 @@ abstract class InfoWindow {
   ///
   /// 如果使用 Overlay 模式，需要持有一个 GlobalKey<NavigatorState>
   /// 来获取 Overlay 的 context
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   /// 显示通知弹窗
   ///
@@ -153,10 +154,7 @@ class _InfoWindowWidget extends StatefulWidget {
   final String message;
   final VoidCallback onClose; // VoidCallback = void Function() 的类型别名
 
-  const _InfoWindowWidget({
-    required this.message,
-    required this.onClose,
-  });
+  const _InfoWindowWidget({required this.message, required this.onClose});
 
   @override
   State<_InfoWindowWidget> createState() => _InfoWindowWidgetState();
@@ -189,9 +187,10 @@ class _InfoWindowWidgetState extends State<_InfoWindowWidget>
 
     // `Tween` 定义动画值的范围（从 0 到 1）
     // `animate` 把 Tween 绑定到 AnimationController
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     // 启动淡入动画
     _controller.forward();

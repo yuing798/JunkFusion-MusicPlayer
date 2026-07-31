@@ -157,8 +157,7 @@ class _PopupWindowState extends State<PopupWindow> {
                   constraints: const BoxConstraints(maxWidth: 960),
                   decoration: BoxDecoration(
                     color: AppTheme.colorHover,
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.borderRadius),
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x40000000),
@@ -176,9 +175,7 @@ class _PopupWindowState extends State<PopupWindow> {
                       // --- 内容区域 ---
                       // 对应原 Vue: <div class="popup-body">
                       //              <slot name="popup-window-component" />
-                      Flexible(
-                        child: widget.contentBuilder(),
-                      ),
+                      Flexible(child: widget.contentBuilder()),
                     ],
                   ),
                 ),
@@ -219,10 +216,7 @@ class _PopupWindowState extends State<PopupWindow> {
                 icon: const Icon(Icons.close, size: 18),
                 onPressed: _close,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 24,
-                  minHeight: 24,
-                ),
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
               ),
             ),
           ),

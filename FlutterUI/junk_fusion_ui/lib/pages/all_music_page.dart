@@ -193,20 +193,27 @@ class _AllMusicPageState extends State<AllMusicPage> {
       case SortMode.byAddTime:
         // 按 songId 排序（id 越大 = 越新添加）
         copy.sort(
-            (a, b) => _isAscending ? a.songId.compareTo(b.songId) : b.songId.compareTo(a.songId));
-        // `compareTo` 是 Comparable 接口的方法，返回 -1/0/1
+          (a, b) => _isAscending
+              ? a.songId.compareTo(b.songId)
+              : b.songId.compareTo(a.songId),
+        );
+      // `compareTo` 是 Comparable 接口的方法，返回 -1/0/1
 
       case SortMode.byName:
         // 按歌曲名排序（使用字符串的 compareTo）
-        copy.sort((a, b) => _isAscending
-            ? a.title.compareTo(b.title)
-            : b.title.compareTo(a.title));
+        copy.sort(
+          (a, b) => _isAscending
+              ? a.title.compareTo(b.title)
+              : b.title.compareTo(a.title),
+        );
 
       case SortMode.byPlayTimes:
         // 按播放次数排序
-        copy.sort((a, b) => _isAscending
-            ? a.playNum.compareTo(b.playNum)
-            : b.playNum.compareTo(a.playNum));
+        copy.sort(
+          (a, b) => _isAscending
+              ? a.playNum.compareTo(b.playNum)
+              : b.playNum.compareTo(a.playNum),
+        );
     }
 
     return copy;
@@ -234,9 +241,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
         // ── 第 3 部分：歌曲列表（虚拟滚动，填充剩余空间） ──
         Expanded(
           child: sortedSongs.isEmpty
-              ? const Center(
-                  child: Text('暂无歌曲',
-                      style: AppTheme.midTextStyle))
+              ? const Center(child: Text('暂无歌曲', style: AppTheme.midTextStyle))
               : ListView.builder(
                   controller: _scrollController,
                   // `itemCount` 等于列表长度
@@ -269,10 +274,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
       height: 50,
       child: Row(
         children: [
-          Text(
-            '所有音乐',
-            style: AppTheme.bigTextStyle,
-          ),
+          Text('所有音乐', style: AppTheme.bigTextStyle),
           const SizedBox(width: 15),
           Text(
             '共 $_songCount 首', // `$_songCount` 字符串插值
@@ -320,8 +322,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
             backgroundColor: AppTheme.colorClicked,
             foregroundColor: AppTheme.colorTextMain,
             shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(AppTheme.borderRadius),
+              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
             ),
             minimumSize: const Size(180, 40),
             textStyle: AppTheme.midTextStyle,
@@ -354,10 +355,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
             style: AppTheme.midTextStyle,
             // `items` 定义下拉选项
             items: SortMode.values.map((mode) {
-              return DropdownMenuItem(
-                value: mode,
-                child: Text(mode.label),
-              );
+              return DropdownMenuItem(value: mode, child: Text(mode.label));
             }).toList(),
             // `onChanged` 选中变化回调
             onChanged: (SortMode? newMode) {
@@ -376,9 +374,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
         // ── 升降序切换按钮 ──
         IconButton(
           icon: Icon(
-            _isAscending
-                ? Icons.arrow_upward
-                : Icons.arrow_downward,
+            _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
             size: 28,
           ),
           onPressed: _toggleAscending,
