@@ -117,6 +117,8 @@ class _AppState extends State<App> {
     // 等价于 Vue 中修改 ref 值触发模板重渲染
     setState(() {
       _currentPageId = id;
+      //setState：局部刷新。只会调用当前 State 对象的 build 方法，只重绘这一个 Widget 及其子树。其他页面、其他组件完全不受影响。
+      // notifyListeners()：全局广播。所有通过 Provider.of<T>(context) 或 Consumer<T> 监听该 ChangeNotifier 的 Widget，全部会收到通知并重绘。
     });
   }
 

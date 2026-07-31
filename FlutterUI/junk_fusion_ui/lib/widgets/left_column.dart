@@ -151,46 +151,18 @@ class _LeftColumnState extends State<LeftColumn> {
       child: Container(
         width: double.infinity, // 撑满父容器宽度
         height: 40,
-        margin: const EdgeInsets.all(4),
         alignment: Alignment.center,
 
         // `AnimatedContainer` — 带动画的容器
         // 在属性改变时会自动过渡（duration + curve）
         // 对应 Vue CSS transition
-        decoration: isActive ? _activeDecoration() : null,
+        color: isActive ? AppTheme.colorStress : null,
         child: Text(
           button.text,
-          style: AppTheme.midTextStyle.copyWith(
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-          ),
+          style: TextStyle(color: AppTheme.colorTextMain),
         ),
       ),
     );
-  }
-
-  /// 构建激活态按钮的装饰（八角形 + 渐变 + 发光）
-  ///
-  /// 对应原 Vue .nav-button.active 及其 ::before / ::after 伪元素
-  BoxDecoration _activeDecoration() {
-    return BoxDecoration(
-      // 渐变背景（对应 CSS background-image 多层渐变）
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppTheme.colorStress, AppTheme.colorSuperStress],
-      ),
-      // 外发光（对应 ::after 的 filter: blur(8px)）
-      // Flutter 的 BoxShadow 可以直接模拟外发光
-      boxShadow: [
-        BoxShadow(
-          color: AppTheme.colorStress.withAlpha(153), // 60% 透明度
-          blurRadius: 8,
-        ),
-      ],
-    );
-
-    // 注意：八角形裁剪路径在实际运行时用 ClipPath 实现
-    // 此处简化为圆角矩形，完整八角形实现见 _OctagonClipper
   }
 }
 

@@ -1,27 +1,5 @@
-/// ════════════════════════════════════════════════════════════════
-/// each_song.dart — 单首歌曲行组件
-///
-/// 对应原 Vue 项目 components/cell/eachSong.vue
-///
-/// 7 列 Grid 布局：
-///   1. 封面/播放状态 (50px)
-///   2. 歌名 + 艺术家 (flex: 1)
-///   3. 专辑名称 (150px)
-///   4. AI 分类标签 (120px)
-///   5. 播放次数 (80px)
-///   6. 喜欢按钮 (40px)
-///   7. 更多信息/歌曲详情 (40px)
-///
-/// Dart 语法说明：
-/// - `provider` 包的 `context.watch<T>()` 监听 Provider 变化
-/// - `InkWell` 是 Material Design 的涟漪效果包装器
-/// - `MouseRegion` 检测鼠标进入/离开（桌面端悬停效果）
-/// - `Expanded` 配合 `flex` 参数实现类似 CSS grid 的弹性列
-/// ════════════════════════════════════════════════════════════════
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/song_info.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
@@ -33,6 +11,14 @@ import 'song_detail_info.dart';
 /// 参数：
 /// - `song`：要显示的歌曲数据
 /// - `onPlayChanged`：播放状态变化回调（可选）
+/// /// 7 列 Grid 布局：
+///   1. 封面/播放状态 (50px)
+///   2. 歌名 + 艺术家 (flex: 1)
+///   3. 专辑名称 (150px)
+///   4. AI 分类标签 (120px)
+///   5. 播放次数 (80px)
+///   6. 喜欢按钮 (40px)
+///   7. 更多信息/歌曲详情 (40px)
 class EachSong extends StatelessWidget {
   /// 歌曲数据
   final SongInfo song;
@@ -236,24 +222,3 @@ class _CircleIconButton extends StatelessWidget {
     );
   }
 }
-
-/// ════════════════════════════════════════════════════════════════
-/// 关键概念对比：
-///
-/// CSS Grid (原 Vue) → Flutter Row + SizedBox/Expanded:
-///
-///   CSS:  display: grid;
-///         grid-template-columns: 50px 1fr 150px 120px 80px 40px 40px;
-///
-///   Flutter:
-///         Row
-///         ├── SizedBox(width: 50)
-///         ├── Expanded(flex: 1)
-///         ├── SizedBox(width: 150)
-///         ├── SizedBox(width: 120)
-///         ├── SizedBox(width: 80)
-///         ├── SizedBox(width: 40)
-///         └── SizedBox(width: 40)
-///
-/// Flutter 没有 CSS Grid 语义，用 Row（单行）+ 固定/弹性宽度替代。
-/// ════════════════════════════════════════════════════════════════
