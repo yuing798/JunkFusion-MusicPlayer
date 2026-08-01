@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:provider/provider.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
@@ -6,21 +7,22 @@ import '../theme/app_theme.dart';
 import 'popup_window.dart';
 import 'song_detail_info.dart';
 
-/// EachSong — 单首歌曲行
-///
-/// 参数：
-/// - `song`：要显示的歌曲数据
-/// - `onPlayChanged`：播放状态变化回调（可选）
-/// /// 7 列 Grid 布局：
-///   1. 封面/播放状态 (50px)
-///   2. 歌名 + 艺术家 (flex: 1)
-///   3. 专辑名称 (150px)
-///   4. AI 分类标签 (120px)
-///   5. 播放次数 (80px)
-///   6. 喜欢按钮 (40px)
-///   7. 更多信息/歌曲详情 (40px)
+// EachSong — 单首歌曲行
+//
+// 参数：
+// - `song`：要显示的歌曲数据
+// - `onPlayChanged`：播放状态变化回调（可选）
+// // 7 列 Grid 布局：
+//   1. 封面/播放状态 (50px)
+//   2. 歌名 + 艺术家 (flex: 1)
+//   3. 专辑名称 (150px)
+//   4. AI 分类标签 (120px)
+//   5. 播放次数 (80px)
+//   6. 喜欢按钮 (40px)
+//   7. 更多信息/歌曲详情 (40px)
+// //StatefulWidget 拥有可以“随时间变化”的内部状态（State），而 StatelessWidget 的所有数据都是外部传入且永远不变的。
 class EachSong extends StatelessWidget {
-  /// 歌曲数据
+  // 歌曲数据
   final SongInfo song;
 
   const EachSong({super.key, required this.song});
@@ -29,22 +31,54 @@ class EachSong extends StatelessWidget {
   Widget build(BuildContext context) {
     // 监听播放状态（当前播放歌曲变化时刷新）
     final playback = context.watch<PlaybackProvider>();
-    final isCurrentSong = song.songId == playback.currentSongId;
-    final isPlaying = isCurrentSong && playback.isPlaying;
+    //context.watch<T>()：获取 + 订阅。当数据变化时，调用它的 Widget 会自动重绘
+    //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
+    final isCurrentSong = playback.currentSongId == song.songId;
 
-    // 整行是一个 material 容器
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppTheme.colorEdge, width: 3)),
-      ),
+      color: isCurrentSong ? AppTheme.colorHover : AppTheme.colorCell,
       child: Row(
         children: [
           // ── 第 1 列：封面/播放状态 (50px) ──
-          _buildPlaybackArea(
-            isCurrentSong: isCurrentSong,
-            isPlaying: isPlaying,
+          SizedBox(
+            //sizedBox只能标注尺寸功能
+            width: 50,
+            height: 50,
+            child: GestureDetector(
+              onTap: () => {
+                if (isCurrentSong)
+                  {playback.isPlaying = !playback.isPlaying;}
+                else
+                  {},
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 封面图（非当前歌曲时显示）
+                  if (!isCurrentSong) ...[
+                    // TODO: 桥接层 - 从后端资源地址加载图片
+                    // 原 Vue: <img :src="getBackendResourceAddress(`songId/${songId}/image/50x50`)" />
+                    Container(
+                      width: 50,
+                      height: 50,
+                      color: AppTheme.colorEdge, // 占位色，实际图片加载后替代
+                      child: const Icon(Icons.music_note, size: 30),
+                    ),
+                    // 悬浮时的播放覆盖图标
+                    const Icon(Icons.play_arrow, size: 32, color: Colors.white),
+                  ] else ...[
+                    // 当前歌曲：显示播放/暂停状态
+                    Icon(
+                      isPlaying ? Icons.pause : Icons.play_arrow,
+                      size: 32,
+                      color: AppTheme.colorTextMain,
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
 
           const SizedBox(width: 4),
@@ -92,50 +126,9 @@ class EachSong extends StatelessWidget {
     );
   }
 
-  /// 构建第 1 列：封面/播放状态
-  ///
-  /// 对应原 Vue 的 .playback-image-area
-  Widget _buildPlaybackArea({
-    required bool isCurrentSong,
-    required bool isPlaying,
-  }) {
-    return SizedBox(
-      width: 50,
-      height: 50,
-      child: GestureDetector(
-        onTap: () => _changePlayback(isCurrentSong),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 封面图（非当前歌曲时显示）
-            if (!isCurrentSong) ...[
-              // TODO: 桥接层 - 从后端资源地址加载图片
-              // 原 Vue: <img :src="getBackendResourceAddress(`songId/${songId}/image/50x50`)" />
-              Container(
-                width: 50,
-                height: 50,
-                color: AppTheme.colorEdge, // 占位色，实际图片加载后替代
-                child: const Icon(Icons.music_note, size: 30),
-              ),
-              // 悬浮时的播放覆盖图标
-              const Icon(Icons.play_arrow, size: 32, color: Colors.white),
-            ] else ...[
-              // 当前歌曲：显示播放/暂停状态
-              Icon(
-                isPlaying ? Icons.pause : Icons.play_arrow,
-                size: 32,
-                color: AppTheme.colorTextMain,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建第 2 列：歌名 + 艺术家
-  ///
-  /// 对应原 Vue .song-name-artist
+  // 构建第 2 列：歌名 + 艺术家
+  //
+  // 对应原 Vue .song-name-artist
   Widget _buildSongNameArtist() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,9 +153,9 @@ class EachSong extends StatelessWidget {
     );
   }
 
-  /// 构建溢出省略文本
-  ///
-  /// 对应原 Vue .ellipsis-text
+  // 构建溢出省略文本
+  //
+  // 对应原 Vue .ellipsis-text
   Widget _buildEllipsisText(String text) {
     return Center(
       child: Text(
@@ -174,9 +167,9 @@ class EachSong extends StatelessWidget {
     );
   }
 
-  /// 构建喜欢按钮
-  ///
-  /// 对应原 Vue .cell-like
+  // 构建喜欢按钮
+  //
+  // 对应原 Vue .cell-like
   Widget _buildLikeButton(BuildContext context) {
     return _CircleIconButton(
       icon: song.isMyLike ? Icons.favorite : Icons.favorite_border,
@@ -187,20 +180,12 @@ class EachSong extends StatelessWidget {
       },
     );
   }
-
-  /// 处理播放状态变化
-  ///
-  /// 对应原 Vue changePlayBack()
-  void _changePlayback(bool isCurrentSong) {
-    // 需要通过 context 访问 PlaybackProvider
-    // 这里返回的是一个回调，实际 build 时已绑定了 context
-  }
 }
 
-/// _CircleIconButton — 圆形图标按钮（复用组件）
-///
-/// 对应原 Vue .cell-like 和 .cell-more：
-///   36×36 圆形区域，悬浮时背景变色
+// _CircleIconButton — 圆形图标按钮（复用组件）
+//
+// 对应原 Vue .cell-like 和 .cell-more：
+//   36×36 圆形区域，悬浮时背景变色
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;

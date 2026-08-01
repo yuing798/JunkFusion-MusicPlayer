@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
   freezed_annotation: ^3.1.0 # 运行时需要用到的注解
   json_annotation: ^4.12.0 # 👈 新增：用于 JSON 的注解
+  tabler_icons: ^2.5.0+1 #svg图标支持
+  shared_preferences: ^2.5.0 #和localStorage一样，做轻量数据存储
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

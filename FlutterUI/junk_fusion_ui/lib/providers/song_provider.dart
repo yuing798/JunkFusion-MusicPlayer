@@ -34,11 +34,6 @@ class SongProvider extends ChangeNotifier {
   // - `(s) => s.songId == songId` 是 lambda/匿名函数
   // 按 ID 查找歌曲
   SongInfo? getSongInfo(int songId) {
-    // `where()` 返回符合条件的所有元素（惰性求值）
-    // `(s) => s.songId == songId` 是匿名函数（arrow function）：
-    //   s 是参数（列表中每个元素）
-    //   => 后面是返回值（bool 表达式）
-    // `firstOrNull` 取第一个结果，如果没有结果就返回 null
     return _songs.where((s) => s.songId == songId).firstOrNull;
   }
 
@@ -210,13 +205,3 @@ class SongProvider extends ChangeNotifier {
 //   },
 // )
 // ```
-//
-// ## 对比 Vue Pinia:
-//
-// | 操作        | Vue Pinia                      | Flutter Provider                       |
-// |------------|-------------------------------|----------------------------------------|
-// | 读取状态    | `store.songs`                  | `context.watch<SongProvider>().songs`  |
-// | 修改状态    | `store.songs = [...]`         | provider.setSongs([...]) + notifyListeners |
-// | 异步操作    | `async` actions               | `Future<void>` methods + async/await   |
-// | 乐观更新    | 直接改 state + try/catch回滚   | 直接改 _songs + try/catch回滚          |
-// ════════════════════════════════════════════════════════════════
