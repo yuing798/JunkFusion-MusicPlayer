@@ -47,26 +47,23 @@ class EachSong extends StatelessWidget {
             width: 50,
             height: 50,
             child: GestureDetector(
-              onTap: () => {
-                if (isCurrentSong)
-                  {playback.isPlaying = !playback.isPlaying;}
-                else
-                  {},
+              onTap: () {
+                //箭头函数后面只能接上一句表达式
+                if (isCurrentSong) {
+                  playback.togglePlayPause();
+                } else {
+                  playback.setPlayState(song.songId);
+                }
               },
               child: Stack(
+                //Stack 是 Flutter 中的层叠布局（Stack Layout）组件，它允许你将子组件重叠放置，
+                //像叠罗汉一样，后添加的子组件会覆盖在先添加的上面。
                 alignment: Alignment.center,
                 children: [
                   // 封面图（非当前歌曲时显示）
                   if (!isCurrentSong) ...[
                     // TODO: 桥接层 - 从后端资源地址加载图片
                     // 原 Vue: <img :src="getBackendResourceAddress(`songId/${songId}/image/50x50`)" />
-                    Container(
-                      width: 50,
-                      height: 50,
-                      color: AppTheme.colorEdge, // 占位色，实际图片加载后替代
-                      child: const Icon(Icons.music_note, size: 30),
-                    ),
-                    // 悬浮时的播放覆盖图标
                     const Icon(Icons.play_arrow, size: 32, color: Colors.white),
                   ] else ...[
                     // 当前歌曲：显示播放/暂停状态

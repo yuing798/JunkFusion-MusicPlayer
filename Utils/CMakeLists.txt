@@ -1,4 +1,16 @@
-target_include_directories(JunkFusionBackend PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(JunkFusionBackend PRIVATE
-    otherUtils.cpp
+target_include_directories(JunkFusionBackend
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_sources(JunkFusionBackend
+    PRIVATE
+        otherUtils.cpp
+)
+target_include_directories(JunkFusionDLL
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_sources(JunkFusionDLL
+    PRIVATE
+        otherUtils.cpp
 )

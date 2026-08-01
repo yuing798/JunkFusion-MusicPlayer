@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BridgeNames.h"
 #include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_extra/juce_gui_extra.h"
@@ -18,7 +17,7 @@ class SongsManage {
 private:
     SQLite::Database& db;
 
-    const int scrollPageRows = std::stoi(B_other::scrollPageRows); // 滚动分页方式每一页的页数
+    const int scrollPageRows = 200; // 滚动分页方式每一页的页数
 
 public:
     explicit SongsManage(SQLite::Database& d);

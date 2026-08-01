@@ -11,16 +11,6 @@
     },
     "spdlog",
     "sqlitecpp",
-    "hash-library",
-    {
-      "name": "qtbase",
-      "version>=": "6.8.0",
-      "default-features": false,
-      "features": ["gui"]
-    },
-    {
-      "name": "qtdeclarative",
-      "version>=": "6.8.0"
-    }
+    "hash-library"
   ]
 }

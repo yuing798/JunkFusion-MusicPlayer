@@ -1,9 +1,8 @@
 #pragma once
+#include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_core/juce_core.h"
-#include <JuceHeader.h>
 
 // 此处放置所有模块都需要用到的常量定义
-static constexpr int bufferSize{1024};
 static constexpr float two_pi{2.0f * 3.14159265358979323846f};
 static constexpr float pi{3.14159265358979323846f};
 static constexpr float half_pi{1.57079632679f};
@@ -32,7 +31,7 @@ static const juce::File LocalDirId{juce::File::getSpecialLocation(
 #else
                                        juce::File::SpecialLocationType::userApplicationDataDirectory
 #endif
-                                       )
+)
                                        .getChildFile("JunkFusion")};
 static const juce::File imageDirId{LocalDirId.getChildFile("image")};
 static const juce::File songImageDirId{imageDirId.getChildFile("songs")};

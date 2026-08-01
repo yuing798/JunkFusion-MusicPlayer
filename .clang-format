@@ -27,3 +27,5 @@ BinPackParameters: false
 BinPackArguments: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowAllArgumentsOnNextLine: false
+
+IndentPPDirectives: BeforeHash #预处理命令正确缩进

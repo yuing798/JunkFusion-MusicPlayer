@@ -17,20 +17,25 @@ private:
 public:
     explicit dbManager() {
         juce::File dbFile{LocalDirId.getChildFile("JunkFusion.db")};
-        db = std::make_unique<SQLite::Database>(dbFile.getFullPathName().toStdString(),
-                                                SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+        db = std::make_unique<SQLite::Database>(
+            dbFile.getFullPathName().toStdString(),
+            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
+        );
 
         // 把 db 指针或引用传给各表
         songs = std::make_unique<SongsManage>(*db);
+
+        db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
+        db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
     }
 
-    static dbManager &getInstance() {
+    static dbManager& getInstance() {
         static dbManager instance;
         return instance;
     } // 单例模式
     DONT_COPY_AND_MOVE(dbManager)
 
-    template <typename F> void runOnWrite(F &&fn) { // 万能引用
+    template <typename F> void runOnWrite(F&& fn) { // 万能引用
         // 不要把这个包装函数删除，因为以后想在入队前打印日志，改这一个函数就行
         writeWorker.addJob(std::forward<F>(fn));
         // std::forward<F>(fn) 的作用就是“按原样转发”：如果 F 推导为左值引用，它就返回左值；
@@ -39,7 +44,7 @@ public:
         //  它让 C++ 的模板代码既能保持极高的性能（减少拷贝），又能正确调用重载函数
     }
 
-    template <typename F> void runOnRead(F &&fn) { readWorker.addJob(std::forward<F>(fn)); }
+    template <typename F> void runOnRead(F&& fn) { readWorker.addJob(std::forward<F>(fn)); }
 
-    SongsManage &getSongsManager() { return *songs; }
+    SongsManage& getSongsManager() { return *songs; }
 };

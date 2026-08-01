@@ -6,3 +6,4 @@ Utils/BridgeNames.h
 vcpkg_installed/
 UI/
 QtUI/
+bin/

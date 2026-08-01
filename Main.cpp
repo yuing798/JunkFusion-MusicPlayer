@@ -1,8 +1,5 @@
 #include "MainComponent.h"
 #include "Utils/constants.h"
-#include "fileManage/dbManager.hpp"
-#include "fileManage/serial.hpp"
-#include "fileManage/songsManage.hpp"
 #include "image/ImageManager.hpp"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
@@ -36,8 +33,6 @@ public:
         if (!logInfoDirId.exists()) logInfoDirId.createDirectory();     // 日志文件夹
 
         mLogSystem.init(); // spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
-
-        dbManager::getInstance();
 
         // mainWindow.reset(new MainWindow(getApplicationName()));
     }

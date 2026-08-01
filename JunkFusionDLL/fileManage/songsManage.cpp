@@ -541,3 +541,6 @@ SongsManage::~SongsManage() {}
 //                 });
 //             });
 // }
+// extern "C" {
+//     LIB_EXPORT
+// }

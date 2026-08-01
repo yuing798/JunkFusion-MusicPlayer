@@ -47,6 +47,12 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setPlayState(int songId) {
+    //把某首歌设置为播放状态
+    _currentSongId = songId;
+    _isPlaying = true;
+  }
+
   // 切换播放模式（循环 0 → 1 → 2 → 3 → 0 → ...）
   //0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
   void cyclePlayMode() {
