@@ -14,15 +14,14 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_CLEAN_BUILDTREES_AFTER_BUILD": "ON",
-        "VCPKG_INSTALLED_DIR":"$env{VCPKG_INSTALLED_DIR}",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY":"${sourceDir}/bin"
       }
     },
     {
-      "name": "vscode-debug",
+      "name": "debug",
       "inherits": "windows-base",
-      "displayName": "vscode-debug",
-      "binaryDir": "${sourceDir}/build/vscode-debug",
+      "displayName": "debug",
+      "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -30,8 +29,8 @@
   ],
   "buildPresets": [
     {
-      "name": "vscode-debug",
-      "configurePreset": "vscode-debug"
+      "name": "debug",
+      "configurePreset": "debug"
     }
   ]
 }
