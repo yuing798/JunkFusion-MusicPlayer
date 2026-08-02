@@ -1,8 +1,10 @@
 #include "songsManage.hpp"
+#include "../libExport.h"
 #include "./dbManager.hpp"
 #include "BridgeNames.h"
 #include "constants.h"
 #include "dbModel.hpp"
+#include "dllUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "otherUtils.hpp"
@@ -479,43 +481,6 @@ SongsManage::~SongsManage() {}
 // juce::WebBrowserComponent::Options
 // songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options& initial) {
 //     return initial
-//         .withNativeFunction(         // 得到总歌曲数目
-//             B_getAllSongCount::name, // 得到总歌曲数目
-//             [](const auto& args, auto complete) {
-//                 dbManager::getInstance().runOnRead([complete = std::move(complete)] {
-//                     auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
-//                     auto obj{new juce::DynamicObject()};
-//                     if (count.has_value()) {
-//                         obj->setProperty(B_getAllSongCount::count, count.value());
-//                         complete(obj);
-//                         return;
-//                     } else {
-//                         obj->setProperty(B_getAllSongCount::count, 0);
-//                         complete(obj);
-//                         return;
-//                     }
-//                 });
-//             })
-//         .withNativeFunction(
-//             B_toggleMyLike::name, // 将我喜欢的歌曲状态翻转
-//             [](const juce::Array<juce::var>& args,
-//                juce::WebBrowserComponent::NativeFunctionCompletion complete) {
-//                 dbManager::getInstance().runOnWrite([args, complete = std::move(complete)] {
-//                     // const不能执行移动操作
-//                     int64_t id{0};
-//                     if (args.size() >= 1) id = args[0];
-//                     if (dbManager::getInstance().getSongsManager().reverseMyLike(id)) {
-//                         complete(juce::var());
-//                         return;
-//                     } else {
-//                         auto error{new juce::DynamicObject()};
-//                         error->setProperty(B_event::fullError,
-//                                            utf8("[我喜欢]状态更新失败，请重试"));
-//                         complete(juce::var(error));
-//                         return;
-//                     }
-//                 });
-//             })
 //         .withNativeFunction(     // 得到所有歌曲信息
 //             B_getAllSongs::name, // 参数：当前页码,升降序，排序方法，
 //             [](const juce::Array<juce::var>& args, auto complete) {
@@ -541,6 +506,36 @@ SongsManage::~SongsManage() {}
 //                 });
 //             });
 // }
-// extern "C" {
-//     LIB_EXPORT
-// }
+extern "C" {
+    LIB_EXPORT void getAllSongCount(int64_t dartPortId) {
+        dbManager::getInstance().runOnRead([dartPortId] {
+            auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
+            auto obj{new juce::DynamicObject()};
+            if (count.has_value()) {
+                obj->setProperty(B_getAllSongCount::count, count.value());
+            } else {
+                obj->setProperty(B_getAllSongCount::count, 0);
+            }
+            asyncSendJuceVar2Dart(dartPortId, juce::var(obj));
+        });
+    }
+    LIB_EXPORT void toggleMyLike(int64_t dartPortId, int64_t songId) {
+        dbManager::getInstance().runOnWrite([dartPortId, songId] {
+            if (dbManager::getInstance().getSongsManager().reverseMyLike(songId)) {
+                asyncSendJuceVar2Dart(dartPortId, juce::var());
+                return;
+            } else {
+                auto error{new juce::DynamicObject()};
+                error->setProperty(B_event::fullError, utf8("[我喜欢]状态更新失败，请重试"));
+                asyncSendJuceVar2Dart(dartPortId, juce::var(error));
+                return;
+            }
+        });
+    }
+    LIB_EXPORT void getAllSongs(int64_t dartPortId) {
+        dbManager::getInstance().runOnRead([dartPortId] {
+            std::vector<SongInfo> songs = dbManager::getInstance().getSongsManager().getAllSongs();
+            asyncSendJuceVar2Dart(dartPortId, SongInfo::vector2VarArray(songs));
+        });
+    }
+}

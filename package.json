@@ -1,0 +1,26 @@
+{
+  "name": "junk-fusion",
+  "version": "1.0.0",
+  "description": "JunkFusion脚本",
+  "homepage": "https://github.com/yuing798/JunkFusion-MusicPlayer#readme",
+  "bugs": {
+    "url": "https://github.com/yuing798/JunkFusion-MusicPlayer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuing798/JunkFusion-MusicPlayer.git"
+  },
+  "license": "ISC",
+  "author": "YusekX",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  }
+}

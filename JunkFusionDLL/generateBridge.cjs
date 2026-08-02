@@ -11,7 +11,7 @@ const defsPath = path.resolve(__dirname, 'bridgeDefs.jsonc');
 const defs = jsonc.parse(fs.readFileSync(defsPath, 'utf-8'));
 
 //生成 TypeScript 文件 (UI/src/bridge/bridge.generated.dart)
-const dartOutputPath = path.resolve(__dirname, 'dllBridge.dart');//vue端的桥接函数名称
+const dartOutputPath = path.resolve(__dirname, '../FlutterUI/junk_fusion_ui/lib/bridge/dll/dllBridgeName.dart');//vue端的桥接函数名称
 // ./ 表示“当前目录”，../ 表示“上一级目录（父目录）”
 const dartLines = []
 dartLines.push(`// ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.`);
@@ -19,14 +19,14 @@ dartLines.push(`// ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.`);
 dartLines.push(`// Generated from bridgeDefs.json\n`)
 
 for(const key of Object.keys(defs)){
-  dartLines.push(`class B_${key} = {`);
+  dartLines.push(`class B_${key}{`);
   dartLines.push(`  static const String name = '${key}';`);
   const obj = defs[key];
   for (const name of Object.keys(obj)) {
     if(obj[name] === ""){
-      dartLines.push(`  static const String ${name}: '${name}';`);//空的话直接把名称赋给value
+      dartLines.push(`  static const String ${name} = '${name}';`);//空的话直接把名称赋给value
     }else{
-      dartLines.push(`  static const String ${name}: '${obj[name]}';`);
+      dartLines.push(`  static const String ${name} = '${obj[name]}';`);
     }
     
   }
@@ -38,7 +38,7 @@ fs.writeFileSync(dartOutputPath, dartContent);
 
 // 3. 生成 C++ 头文件 (BridgeNames.h) 
 //    注意：这个文件最终需要被 C++ 项目包含。
-const hppOutputPath = path.resolve(__dirname, '../Utils/BridgeNames.h');
+const hppOutputPath = path.resolve(__dirname, 'dllBridgeName.hpp');
 const hppLines = []
 hppLines.push('//warning:this file will be generated auto,dont modify it by yourself\n');
 hppLines.push('#pragma once')
@@ -64,4 +64,4 @@ console.log('✅ Bridge files generated successfully!');
 console.log(`   - dart: ${dartOutputPath}`);
 console.log(`   - C++: ${hppOutputPath}`);
 
-//node UI/generateBridge.cjs执行
+//node D:/audio_develop/Junk-Fusion/JunkFusionDLL/generateBridge.cjs执行

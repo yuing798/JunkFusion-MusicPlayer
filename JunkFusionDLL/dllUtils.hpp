@@ -7,4 +7,4 @@
 #include <string>
 
 // 异步返回给dart端使用
-void send_object_to_dart(int64_t dart_port, const juce::var& data);
+void asyncSendJuceVar2Dart(int64_t dart_port, const juce::var& data);

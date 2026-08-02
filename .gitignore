@@ -2,8 +2,9 @@ build/
 .vs/
 .vscode/
 .opencode/
-Utils/BridgeNames.h
+JunkFusionDLL/dllBridgeName.hpp
 vcpkg_installed/
 UI/
 QtUI/
 bin/
+node_modules/
