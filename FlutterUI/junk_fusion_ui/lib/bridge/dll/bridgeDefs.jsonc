@@ -1,0 +1,62 @@
+{
+  //函数定义：键名为函数名称，后面为返回值，因为前端接收到的是对象，后端接收到的是数组，数组不需要写键值对
+  //node UI/generateBridge.cjs执行
+
+  //注意这里面写的字符串是为了跨端传输的，不要什么字符串都往里面写！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+
+  "songImport":{
+      "numImport":"",//导入的文件总数
+      "numSuccess":"",//成功导入的歌曲数
+      "songs":"",//返回的歌曲数组
+      "errorFiles":""//导入失败的文件
+  },
+  "toggleMyLike":{
+  },
+  "getAllSongCount":{
+      //数据库里总共有多少首歌曲
+      "count":"count"//返回歌曲总数
+  },
+  "getAllSongs":{
+
+    "songsList":"songsList",
+    "nothing":""//数据库中没有歌曲
+  },
+
+  "saveComment":{
+    "text":"",
+    "songId":""
+  },
+  "event":{//这些事件都需要弹窗警告
+    "fullError":"fullError",//发生了完全的错误，需要全部回滚，通常为短小快速且涉及用户交互的事件
+    "partError":"partError",//发生了部分错误，比如导入5000个文件有3个文件发生错误
+    "fullSuccess":"fullSuccess"//事件完全通过，并且需要弹窗报告成功
+  },
+  "other":{
+    "scrollPageRows":200//滚动分页每一页的页数
+  },
+
+  "songInfo":{
+    "songId":"",
+    "duration":"",
+    "title":"",
+    "artist":"",
+    "album":"",
+    "albumArtist":"",
+    "genre":"genre",
+    "trackNumber":"",
+    "discNumber":"",
+    "year":"",
+    "composer":"",
+    "bitRate":"",
+    "sampleRate":"",
+    "channelLayout":"",
+    "bitDepth":"",
+    "codecName":"",
+    "aiGenre":"",
+    "bpm":"",
+    "key":"",
+    "isMyLike":"",
+    "comment":"",
+    "playNum":""
+  }
+}//node UI/generateBridge.cjs执行
