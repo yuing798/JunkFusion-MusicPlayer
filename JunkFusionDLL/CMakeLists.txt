@@ -24,5 +24,15 @@ target_include_directories(JunkFusionDLL
         ${FFMPEG_INCLUDE_DIRS}
 )
 
+target_sources(JunkFusionDLL
+    PRIVATE
+        dllUtils.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        FILES
+            dllUtils.hpp
+            libExport.h
+)
+
 add_subdirectory(DartApi)
 add_subdirectory(fileManage)

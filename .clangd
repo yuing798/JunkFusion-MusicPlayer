@@ -4,4 +4,4 @@ Diagnostics:
     - -Wunused-const-variable
 
 CompileFlags:
-  CompilationDatabase: "build/vscode-debug"
+  CompilationDatabase: "build/debug"
