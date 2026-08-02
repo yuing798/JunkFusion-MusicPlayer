@@ -1,7 +1,6 @@
 #include "songsManage.hpp"
 #include "../libExport.h"
 #include "./dbManager.hpp"
-#include "BridgeNames.h"
 #include "constants.h"
 #include "dbModel.hpp"
 #include "dllUtils.hpp"
@@ -478,64 +477,30 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
 
 SongsManage::~SongsManage() {}
 
-// juce::WebBrowserComponent::Options
-// songsManageBuilder::buildOptions(const juce::WebBrowserComponent::Options& initial) {
-//     return initial
-//         .withNativeFunction(     // 得到所有歌曲信息
-//             B_getAllSongs::name, // 参数：当前页码,升降序，排序方法，
-//             [](const juce::Array<juce::var>& args, auto complete) {
-//                 dbManager::getInstance().runOnRead([complete = std::move(complete)] {
-//                     std::vector<SongInfo> songs =
-//                         dbManager::getInstance().getSongsManager().getAllSongs();
-//                     if (!songs.empty()) {
-//                         complete(SongInfo::vector2VarArray(songs));
-//                     } else {
-//                         complete(B_getAllSongs::nothing);
-//                     }
-//                 });
-//             })
-//         .withNativeFunction(
-//             B_saveComment::name, // 保存对单首歌曲的评论
-//             [](const juce::Array<juce::var>& args, auto complete) {
-//                 juce::String text{args[0][B_saveComment::text].toString()};
-//                 int64_t songId{args[0][B_saveComment::songId]};
-//                 dbManager::getInstance().runOnWrite([text, songId, complete =
-//                 std::move(complete)] {
-//                     dbManager::getInstance().getSongsManager().saveComment(text, songId);
-//                     complete(juce::var());
-//                 });
-//             });
-// }
 extern "C" {
-    LIB_EXPORT void getAllSongCount(int64_t dartPortId) {
-        dbManager::getInstance().runOnRead([dartPortId] {
-            auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
-            auto obj{new juce::DynamicObject()};
-            if (count.has_value()) {
-                obj->setProperty(B_getAllSongCount::count, count.value());
-            } else {
-                obj->setProperty(B_getAllSongCount::count, 0);
-            }
-            asyncSendJuceVar2Dart(dartPortId, juce::var(obj));
-        });
+    void dbInit() { dbManager::getInstance(); }
+    LIB_EXPORT int getAllSongCount() {
+        auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
+        if (count.has_value()) {
+            return count.value();
+        } else {
+            return 0;
+        }
     }
-    LIB_EXPORT void toggleMyLike(int64_t dartPortId, int64_t songId) {
-        dbManager::getInstance().runOnWrite([dartPortId, songId] {
-            if (dbManager::getInstance().getSongsManager().reverseMyLike(songId)) {
-                asyncSendJuceVar2Dart(dartPortId, juce::var());
-                return;
-            } else {
-                auto error{new juce::DynamicObject()};
-                error->setProperty(B_event::fullError, utf8("[我喜欢]状态更新失败，请重试"));
-                asyncSendJuceVar2Dart(dartPortId, juce::var(error));
-                return;
-            }
-        });
+    LIB_EXPORT bool toggleMyLike(int64_t songId) {
+        return dbManager::getInstance().getSongsManager().reverseMyLike(songId);
     }
-    LIB_EXPORT void getAllSongs(int64_t dartPortId) {
-        dbManager::getInstance().runOnRead([dartPortId] {
-            std::vector<SongInfo> songs = dbManager::getInstance().getSongsManager().getAllSongs();
-            asyncSendJuceVar2Dart(dartPortId, SongInfo::vector2VarArray(songs));
-        });
+    LIB_EXPORT const char* getAllSongs() {
+        std::vector<SongInfo> songs = dbManager::getInstance().getSongsManager().getAllSongs();
+        auto obj{new juce::DynamicObject()};
+        obj->setProperty(B_getAllSongs::songsList, juce::var(SongInfo::vector2VarArray(songs)));
+        return object2Uint8t(obj);
+    }
+    LIB_EXPORT void saveComment(const char* str) {
+        juce::DynamicObject obj{uint8t2Object(str)};
+        auto text{juce::String(obj.getProperty(B_saveComment::text).toString())};
+        int64_t songId{obj.getProperty(B_saveComment::songId)};
+        dbManager::getInstance().getSongsManager().saveComment(text, songId);
+        return;
     }
 }

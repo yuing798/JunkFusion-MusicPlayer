@@ -27,11 +27,6 @@ target_include_directories(JunkFusionDLL
 target_sources(JunkFusionDLL
     PRIVATE
         dllUtils.cpp
-    PUBLIC
-        FILE_SET HEADERS
-        FILES
-            dllUtils.hpp
-            libExport.h
 )
 
 add_subdirectory(DartApi)

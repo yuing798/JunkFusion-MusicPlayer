@@ -7,4 +7,10 @@
 #include <string>
 
 // 异步返回给dart端使用
-void asyncSendJuceVar2Dart(int64_t dart_port, const juce::var& data);
+// void asyncSendJuceVar2Dart(int64_t dart_port, const juce::var& data);
+
+// 把const char*转换为对象
+juce::DynamicObject uint8t2Object(const char* str);
+
+// 把对象转换为const char*
+const char* object2Uint8t(juce::DynamicObject::Ptr obj);

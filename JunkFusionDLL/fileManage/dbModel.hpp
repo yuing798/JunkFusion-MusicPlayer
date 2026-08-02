@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BridgeNames.h"
+#include "dllBridgeName.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
 #include <optional>
@@ -97,12 +97,12 @@ struct SongInfo {
         // 这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     } // 将songInfo转化为var，才能推送给js端
 
-    static juce::var vector2VarArray(const std::vector<SongInfo>& lists) {
+    static juce::Array<juce::var> vector2VarArray(const std::vector<SongInfo>& lists) {
         juce::Array<juce::var> array;
         for (const auto& song : lists) {
             array.add(toVar(song));
         }
-        return juce::var(array);
+        return array;
     }
 };
 

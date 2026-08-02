@@ -3,6 +3,7 @@
 #include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_extra/juce_gui_extra.h"
+#include "libExport.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <SQLiteCpp/Transaction.h>
@@ -38,8 +39,10 @@ public:
     void saveComment(juce::String text, int64_t songId);
 };
 
-// class songsManageBuilder : public juce::OptionsBuilder<juce::WebBrowserComponent::Options> {
-// public:
-//     juce::WebBrowserComponent::Options
-//     buildOptions(const juce::WebBrowserComponent::Options& initial) override;
-// };
+extern "C" {
+    LIB_EXPORT void dbInit();
+    LIB_EXPORT int getAllSongCount();
+    LIB_EXPORT bool toggleMyLike(int64_t songId);
+    LIB_EXPORT const char* getAllSongs();
+    LIB_EXPORT void saveComment(const char* str);
+}
