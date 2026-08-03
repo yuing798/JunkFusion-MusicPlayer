@@ -1,5 +1,4 @@
 #include "songsManage.hpp"
-#include "../libExport.h"
 #include "./dbManager.hpp"
 #include "constants.h"
 #include "dbModel.hpp"
@@ -476,33 +475,3 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
 }
 
 SongsManage::~SongsManage() {}
-
-extern "C" {
-    void dbInit() { dbManager::getInstance(); }
-    int getAllSongCount() {
-        auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
-        if (count.has_value()) {
-            return count.value();
-        } else {
-            return 0;
-        }
-    }
-    bool toggleMyLike(int64_t songId) {
-        return dbManager::getInstance().getSongsManager().reverseMyLike(songId);
-    }
-    const char* getAllSongs() {
-        std::vector<SongInfo> songs = dbManager::getInstance().getSongsManager().getAllSongs();
-        auto obj{new juce::DynamicObject()};
-        obj->setProperty(B_getAllSongs::songsList, juce::var(SongInfo::vector2VarArray(songs)));
-        return object2Uint8t(obj);
-    }
-    void saveComment(int64_t songId, const char* commentText) {
-        dbManager::getInstance().getSongsManager().saveComment(commentText, songId);
-        return;
-    }
-    void freeString(const char* str) {
-        if (!str) {
-            free(const_cast<char*>(str));
-        }
-    }
-}

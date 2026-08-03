@@ -3,7 +3,6 @@
 #include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_gui_extra/juce_gui_extra.h"
-#include "libExport.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <SQLiteCpp/Transaction.h>
@@ -38,12 +37,3 @@ public:
     bool deleteSongId(int64_t songId);           // 删除songId对应的条目
     void saveComment(juce::String text, int64_t songId);
 };
-
-extern "C" {
-    LIB_EXPORT void dbInit();
-    LIB_EXPORT int getAllSongCount();
-    LIB_EXPORT bool toggleMyLike(int64_t songId);
-    LIB_EXPORT const char* getAllSongs();
-    LIB_EXPORT void saveComment(int64_t songId, const char* commentText);
-    LIB_EXPORT void freeString(const char* str);
-}
