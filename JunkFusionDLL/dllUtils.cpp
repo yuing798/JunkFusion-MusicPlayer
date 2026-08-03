@@ -1,6 +1,9 @@
 #include "./dllUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 
 // void asyncSendJuceVar2Dart(int64_t dart_port, const juce::DynamicObject::Ptr& data) {
 
@@ -35,8 +38,13 @@ const char* object2Uint8t(juce::DynamicObject::Ptr obj) {
     juce::var varObj(obj);
 
     // 2. 转换为 JSON 字符串（无多余空格，紧凑格式）
-    juce::String jsonStr = juce::JSON::toString(varObj);
+    auto jsonStr = juce::JSON::toString(varObj).toRawUTF8();
 
-    // 3. 获取 const char*
-    return jsonStr.toRawUTF8();
+    // 申请堆内存
+    size_t length{strlen(jsonStr)};
+    char* cString{static_cast<char*>(malloc(length + 1))};
+    if (cString) {
+        memcpy(cString, jsonStr, length + 1);
+    }
+    return cString;
 }

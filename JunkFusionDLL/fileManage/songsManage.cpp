@@ -479,7 +479,7 @@ SongsManage::~SongsManage() {}
 
 extern "C" {
     void dbInit() { dbManager::getInstance(); }
-    LIB_EXPORT int getAllSongCount() {
+    int getAllSongCount() {
         auto count{dbManager::getInstance().getSongsManager().getTotalSongCount()};
         if (count.has_value()) {
             return count.value();
@@ -487,20 +487,22 @@ extern "C" {
             return 0;
         }
     }
-    LIB_EXPORT bool toggleMyLike(int64_t songId) {
+    bool toggleMyLike(int64_t songId) {
         return dbManager::getInstance().getSongsManager().reverseMyLike(songId);
     }
-    LIB_EXPORT const char* getAllSongs() {
+    const char* getAllSongs() {
         std::vector<SongInfo> songs = dbManager::getInstance().getSongsManager().getAllSongs();
         auto obj{new juce::DynamicObject()};
         obj->setProperty(B_getAllSongs::songsList, juce::var(SongInfo::vector2VarArray(songs)));
         return object2Uint8t(obj);
     }
-    LIB_EXPORT void saveComment(const char* str) {
-        juce::DynamicObject obj{uint8t2Object(str)};
-        auto text{juce::String(obj.getProperty(B_saveComment::text).toString())};
-        int64_t songId{obj.getProperty(B_saveComment::songId)};
-        dbManager::getInstance().getSongsManager().saveComment(text, songId);
+    void saveComment(int64_t songId, const char* commentText) {
+        dbManager::getInstance().getSongsManager().saveComment(commentText, songId);
         return;
+    }
+    void freeString(const char* str) {
+        if (!str) {
+            free(const_cast<char*>(str));
+        }
     }
 }

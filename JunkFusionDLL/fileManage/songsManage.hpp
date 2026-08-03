@@ -44,5 +44,6 @@ extern "C" {
     LIB_EXPORT int getAllSongCount();
     LIB_EXPORT bool toggleMyLike(int64_t songId);
     LIB_EXPORT const char* getAllSongs();
-    LIB_EXPORT void saveComment(const char* str);
+    LIB_EXPORT void saveComment(int64_t songId, const char* commentText);
+    LIB_EXPORT void freeString(const char* str);
 }
