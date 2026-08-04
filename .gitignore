@@ -2,7 +2,6 @@ build/
 .vs/
 .vscode/
 .opencode/
-JunkFusionDLL/dllBridgeName.hpp
 vcpkg_installed/
 UI/
 QtUI/
