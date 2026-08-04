@@ -51,7 +51,7 @@ class _TaskResponse {
 }
 
 Future<SendPort> _isolateSendPort = () async {
-  final completer = Completer<SendPort>();
+  final initCompleter = Completer<SendPort>();
 
   // Receive port on the main isolate to receive messages from the helper.
   // We receive two types of messages:
@@ -61,14 +61,13 @@ Future<SendPort> _isolateSendPort = () async {
     ..listen((dynamic data) {
       if (data is SendPort) {
         // The helper isolate sent us the port on which we can sent it requests.
-        completer.complete(data);
+        initCompleter.complete(data);
         return;
       }
-      if (data is _SumResponse) {
+      if (data is _TaskResponse) {
         // The helper isolate sent us a response to a request we sent.
-        final Completer<int> completer = _sumRequests[data.id]!;
-        _sumRequests.remove(data.id);
-        completer.complete(data.result);
+        final completer = Completer<Map<String, Object?>>();
+        completer.complete(data.results);
         return;
       }
       throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
@@ -133,5 +132,5 @@ Future<SendPort> _isolateSendPort = () async {
   //第一个回调函数只会在第一次初始化的时候执行一次
   //Isolate.spawn参数：(入口函数, 初始消息);
 
-  return completer.future;
+  return initCompleter.future;
 }();
