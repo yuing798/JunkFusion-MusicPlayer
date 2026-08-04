@@ -26,7 +26,7 @@ extern "C" {
         return;
     }
     void freeString(char* str) {
-        if (!str) {
+        if (str) {
             free(str);
         }
     }

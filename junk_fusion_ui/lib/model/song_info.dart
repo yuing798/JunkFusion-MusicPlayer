@@ -5,6 +5,9 @@ part 'song_info.g.dart'; // 用于 JSON
 
 // SongInfo — 单首歌曲的完整元数据
 @freezed
+// abstract（抽象类）在这里的作用
+// 含义：标记该类不能被直接实例化（不能 new SongInfo()）。
+// 为什么这里要用？ 在 freezed 的设计中，SongInfo 只是一个“接口定义”（定义有哪些属性）。真正的实现类（比如 _SongInfo）是隐藏的、由生成器自动创建的。
 abstract class SongInfo with _$SongInfo {
   //with _$SongInfo 是 Dart 中 “混入（Mixin）” 的语法，它的核心作用是：
   //将自动生成的 _$SongInfo 类里的所有具体方法（copyWith、==、hashCode 等）“混入”到你手写的 SongInfo 类中，让它们合二为一。
@@ -51,3 +54,5 @@ abstract class SongInfo with _$SongInfo {
   factory SongInfo.fromJson(Map<String, dynamic> json) =>
       _$SongInfoFromJson(json);
 }
+
+//flutter pub run build_runner build --delete-conflicting-outputs

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
@@ -7,6 +8,7 @@ import 'package:ffi/ffi.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/native_bindings_generated.dart';
+import 'package:junk_fusion_ui/model/song_info.dart';
 
 final DynamicLibrary _lib = () {
   final libName = Platform.isWindows
@@ -82,19 +84,43 @@ Future<SendPort> _isolateSendPort = () async {
           final params = data.params;
           Map<String, Object?> results = {}; //Map为空和NULL是两种东西
           if (name == B_getAllSongs.name) {
-            Pointer<Char> cPtr = bindings.getAllSongs();
-            String dartString = cPtr.cast<Utf8>().toDartString(); //解码
+            final cPtr = bindings.getAllSongs();
+            final dartString = cPtr.cast<Utf8>().toDartString(); //解码
+            Map<String, dynamic> obj = jsonDecode(dartString);
+            //Object? 是“类型安全的未知类型”（你暂时不知道它是什么，但编译器会管着你）；
+            //dynamic 是“彻底关闭类型检查的万能类型”（你爱怎么用就怎么用，编译器完全听你的，出错了运行时才报错）。
             bindings.freeString(cPtr);
+            assert(obj.containsKey(B_getAllSongs.songsList));
+            final songs =
+                obj[B_getAllSongs.songsList] as List<Map<String, dynamic>>;
+            List<SongInfo> songsList = [];
+            for (int i = 0; i < songs.length; i++) {
+              final song = songs[i];
+              songsList[i] = SongInfo.fromJson(song);
+            }
+            results[B_getAllSongs.songsList] = songsList;
           } else if (name == B_getAllSongCount.name) {
             final count = bindings.getAllSongCount();
             results[B_getAllSongCount.count] = count;
-          } else if (name == "dbInit") {
+          } else if (name == B_dbInit.name) {
             bindings.dbInit();
           } else if (name == B_toggleMyLike.name) {
             assert(params.containsKey(B_toggleMyLike.songId));
             final songId = params[B_toggleMyLike.songId] as int; // 强制转换为 int
             bool result = bindings.toggleMyLike(songId) == 1;
-            results["state"] = result;
+            results[B_toggleMyLike.successOrError] = result;
+          } else if (name == B_saveComment.name) {
+            assert(
+              params.containsKey(B_saveComment.songId) &&
+                  params.containsKey(B_saveComment.text),
+            );
+            final songId = params[B_saveComment.songId] as int;
+            final commentText = params[B_saveComment.text] as String;
+            final cPtr = commentText.toNativeUtf8().cast<Char>();
+            bindings.saveComment(songId, cPtr);
+            calloc.free(
+              cPtr,
+            ); //因为这个c指针是dart的内存管理器分配在堆上面的，所以需要使用dart的calloc.free释放内存
           }
           sendPort.send(_TaskResponse(name, results));
         }

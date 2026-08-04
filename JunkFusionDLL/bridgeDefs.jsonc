@@ -10,6 +10,8 @@
       "songs":"",//返回的歌曲数组
       "errorFiles":""//导入失败的文件
   },
+  "dbInit":{
+  },
   "toggleMyLike":{
     "songId":"",
     "successOrError":""
@@ -19,9 +21,7 @@
       "count":"count"//返回歌曲总数
   },
   "getAllSongs":{
-
-    "songsList":"songsList",
-    "nothing":""//数据库中没有歌曲
+    "songsList":"songsList"
   },
 
   "saveComment":{

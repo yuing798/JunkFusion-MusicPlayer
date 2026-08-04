@@ -9,6 +9,10 @@ class B_songImport{
   static const String errorFiles = 'errorFiles';
 }
 
+class B_dbInit{
+  static const String name = 'dbInit';
+}
+
 class B_toggleMyLike{
   static const String name = 'toggleMyLike';
   static const String songId = 'songId';
@@ -23,7 +27,6 @@ class B_getAllSongCount{
 class B_getAllSongs{
   static const String name = 'getAllSongs';
   static const String songsList = 'songsList';
-  static const String nothing = 'nothing';
 }
 
 class B_saveComment{

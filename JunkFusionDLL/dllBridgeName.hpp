@@ -9,6 +9,10 @@ struct B_songImport{
     static constexpr const char* errorFiles = "errorFiles" ;
 };
 
+struct B_dbInit{
+    static constexpr const char* name = "dbInit" ;
+};
+
 struct B_toggleMyLike{
     static constexpr const char* name = "toggleMyLike" ;
     static constexpr const char* songId = "songId" ;
@@ -23,7 +27,6 @@ struct B_getAllSongCount{
 struct B_getAllSongs{
     static constexpr const char* name = "getAllSongs" ;
     static constexpr const char* songsList = "songsList" ;
-    static constexpr const char* nothing = "nothing" ;
 };
 
 struct B_saveComment{
