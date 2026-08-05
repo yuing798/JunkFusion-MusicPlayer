@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/widgets/info_window.dart';
 
 // ════════════════════════════════════════════════════════════════
 // song_provider.dart — 歌曲列表状态管理
@@ -17,25 +18,11 @@ class SongProvider extends ChangeNotifier {
   }
 
   Future<void> getAllSongs() async {
-    final results = await sendTask(B_getAllSongs.name, {});
-    //   notifyListeners();
-
-    // 当前为空实现，songs 保持初始空列表
+    final results = await sendDLLIsolateTask(B_getAllSongs.name, {});
+    _songs = results[B_getAllSongs.songsList] as List<SongInfo>;
+    notifyListeners();
   }
 
-  // 切换"我喜欢"状态（乐观更新 + 回滚）
-  //
-  // 对应原 Vue: async toggleMyLike(songId: number)
-  //
-  // 乐观更新流程：
-  // 1. 立即翻转 UI 中的 isMyLike 状态（用户立刻看到反馈）
-  // 2. 异步调用后端接口
-  // 3. 如果后端返回错误，恢复原始状态（回滚）
-  //
-  // Dart 语法说明：
-  // - `Future<void>` 异步方法
-  // - `try { ... } catch (e) { ... }` 异常处理，等价于 JS 的 try/catch
-  // - `where(...)` 返回 Iterable，`.firstOrNull` 配合使用高效
   Future<void> toggleMyLike(int songId) async {
     // 找到目标歌曲在列表中的索引
     final index = _songs.indexWhere((s) => s.songId == songId);
@@ -49,34 +36,16 @@ class SongProvider extends ChangeNotifier {
     notifyListeners(); // 通知 UI 刷新（UI 立刻看到变化）
 
     // --- 异步调用后端 ---
-    try {
-      // TODO: 桥接层 - 调用原生函数切换喜欢状态
-      // 原 Vue 代码:
-      //   await getNativeFunction(B_toggleMyLike.name)(songId);
-      //
-      // Flutter 中未来桥接层的实现大致是:
-      //   await NativeBridge.call('toggleMyLike', {'songId': songId});
-
-      // 如果到这里还没抛出异常，说明后端操作成功
-    } catch (e) {
+    final results = await sendDLLIsolateTask(B_toggleMyLike.name, {
+      B_toggleMyLike.songId: songId,
+    });
+    final successOrError = results[B_toggleMyLike.successOrError] as bool;
+    if (!successOrError) {
+      InfoWindow.show("切换我喜欢状态发生错误，请重试");
       // --- 失败回滚：恢复原始状态 ---
       _songs[index] = originSong;
-
-      // TODO: 桥接层 - 显示错误提示
-      // 原 Vue 代码: showInfoWindow(error)
-      // Flutter 中应该是: InfoWindow.show(e);
-
       notifyListeners(); // 通知 UI 刷新回原始状态
     }
-  }
-
-  // 直接设置歌曲列表（用于初始化或外部数据注入）
-  //
-  // Dart 语法：
-  // - `void setSongs(...)` 设置私有字段并通知监听者
-  void setSongs(List<SongInfo> newSongs) {
-    _songs = newSongs;
-    notifyListeners();
   }
 
   // 追加歌曲到列表末尾（用于导入等操作）

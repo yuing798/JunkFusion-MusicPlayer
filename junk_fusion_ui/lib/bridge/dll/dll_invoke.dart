@@ -21,7 +21,7 @@ final DynamicLibrary _lib = () {
 
 final bindings = JunkFusionDLLBindings(_lib);
 
-Future<Map<String, Object?>> sendTask(
+Future<Map<String, Object?>> sendDLLIsolateTask(
   String funcName,
   Map<String, dynamic> params,
 ) async {
