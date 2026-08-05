@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SongInfo {
 
- int get songId; int get duration; String get title; String? get artist; String? get album; String? get albumArtist; String? get genre; int? get trackNumber; int? get discNumber; int? get year; String? get composer; int get bitRate; int get sampleRate; String get channelLayout; int get bitDepth; String? get codecName; String? get aiGenre; int? get bpm; String? get key; bool get isMyLike; String? get comment; int get playNum;
+ int get songId; double get duration; String get title; String? get artist; String? get album; String? get albumArtist; String? get genre; int? get trackNumber; int? get discNumber; int? get year; String? get composer; int get bitRate; int get sampleRate; String get channelLayout; int get bitDepth; String? get codecName; String? get aiGenre; int? get bpm; String? get key; bool get isMyLike; String? get comment; int get playNum;
 /// Create a copy of SongInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $SongInfoCopyWith<$Res>  {
   factory $SongInfoCopyWith(SongInfo value, $Res Function(SongInfo) _then) = _$SongInfoCopyWithImpl;
 @useResult
 $Res call({
- int songId, int duration, String title, String? artist, String? album, String? albumArtist, String? genre, int? trackNumber, int? discNumber, int? year, String? composer, int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, String? aiGenre, int? bpm, String? key, bool isMyLike, String? comment, int playNum
+ int songId, double duration, String title, String? artist, String? album, String? albumArtist, String? genre, int? trackNumber, int? discNumber, int? year, String? composer, int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, String? aiGenre, int? bpm, String? key, bool isMyLike, String? comment, int playNum
 });
 
 
@@ -69,7 +69,7 @@ class _$SongInfoCopyWithImpl<$Res>
   return _then(_self.copyWith(
 songId: null == songId ? _self.songId : songId // ignore: cast_nullable_to_non_nullable
 as int,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
-as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as double,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,artist: freezed == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
 as String?,album: freezed == album ? _self.album : album // ignore: cast_nullable_to_non_nullable
 as String?,albumArtist: freezed == albumArtist ? _self.albumArtist : albumArtist // ignore: cast_nullable_to_non_nullable
@@ -174,7 +174,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int songId,  int duration,  String title,  String? artist,  String? album,  String? albumArtist,  String? genre,  int? trackNumber,  int? discNumber,  int? year,  String? composer,  int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  String? aiGenre,  int? bpm,  String? key,  bool isMyLike,  String? comment,  int playNum)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int songId,  double duration,  String title,  String? artist,  String? album,  String? albumArtist,  String? genre,  int? trackNumber,  int? discNumber,  int? year,  String? composer,  int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  String? aiGenre,  int? bpm,  String? key,  bool isMyLike,  String? comment,  int playNum)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SongInfo() when $default != null:
 return $default(_that.songId,_that.duration,_that.title,_that.artist,_that.album,_that.albumArtist,_that.genre,_that.trackNumber,_that.discNumber,_that.year,_that.composer,_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.aiGenre,_that.bpm,_that.key,_that.isMyLike,_that.comment,_that.playNum);case _:
@@ -195,7 +195,7 @@ return $default(_that.songId,_that.duration,_that.title,_that.artist,_that.album
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int songId,  int duration,  String title,  String? artist,  String? album,  String? albumArtist,  String? genre,  int? trackNumber,  int? discNumber,  int? year,  String? composer,  int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  String? aiGenre,  int? bpm,  String? key,  bool isMyLike,  String? comment,  int playNum)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int songId,  double duration,  String title,  String? artist,  String? album,  String? albumArtist,  String? genre,  int? trackNumber,  int? discNumber,  int? year,  String? composer,  int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  String? aiGenre,  int? bpm,  String? key,  bool isMyLike,  String? comment,  int playNum)  $default,) {final _that = this;
 switch (_that) {
 case _SongInfo():
 return $default(_that.songId,_that.duration,_that.title,_that.artist,_that.album,_that.albumArtist,_that.genre,_that.trackNumber,_that.discNumber,_that.year,_that.composer,_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.aiGenre,_that.bpm,_that.key,_that.isMyLike,_that.comment,_that.playNum);case _:
@@ -215,7 +215,7 @@ return $default(_that.songId,_that.duration,_that.title,_that.artist,_that.album
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int songId,  int duration,  String title,  String? artist,  String? album,  String? albumArtist,  String? genre,  int? trackNumber,  int? discNumber,  int? year,  String? composer,  int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  String? aiGenre,  int? bpm,  String? key,  bool isMyLike,  String? comment,  int playNum)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int songId,  double duration,  String title,  String? artist,  String? album,  String? albumArtist,  String? genre,  int? trackNumber,  int? discNumber,  int? year,  String? composer,  int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  String? aiGenre,  int? bpm,  String? key,  bool isMyLike,  String? comment,  int playNum)?  $default,) {final _that = this;
 switch (_that) {
 case _SongInfo() when $default != null:
 return $default(_that.songId,_that.duration,_that.title,_that.artist,_that.album,_that.albumArtist,_that.genre,_that.trackNumber,_that.discNumber,_that.year,_that.composer,_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.aiGenre,_that.bpm,_that.key,_that.isMyLike,_that.comment,_that.playNum);case _:
@@ -234,7 +234,7 @@ class _SongInfo implements SongInfo {
   factory _SongInfo.fromJson(Map<String, dynamic> json) => _$SongInfoFromJson(json);
 
 @override final  int songId;
-@override final  int duration;
+@override final  double duration;
 @override final  String title;
 @override final  String? artist;
 @override final  String? album;
@@ -289,7 +289,7 @@ abstract mixin class _$SongInfoCopyWith<$Res> implements $SongInfoCopyWith<$Res>
   factory _$SongInfoCopyWith(_SongInfo value, $Res Function(_SongInfo) _then) = __$SongInfoCopyWithImpl;
 @override @useResult
 $Res call({
- int songId, int duration, String title, String? artist, String? album, String? albumArtist, String? genre, int? trackNumber, int? discNumber, int? year, String? composer, int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, String? aiGenre, int? bpm, String? key, bool isMyLike, String? comment, int playNum
+ int songId, double duration, String title, String? artist, String? album, String? albumArtist, String? genre, int? trackNumber, int? discNumber, int? year, String? composer, int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, String? aiGenre, int? bpm, String? key, bool isMyLike, String? comment, int playNum
 });
 
 
@@ -310,7 +310,7 @@ class __$SongInfoCopyWithImpl<$Res>
   return _then(_SongInfo(
 songId: null == songId ? _self.songId : songId // ignore: cast_nullable_to_non_nullable
 as int,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
-as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as double,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,artist: freezed == artist ? _self.artist : artist // ignore: cast_nullable_to_non_nullable
 as String?,album: freezed == album ? _self.album : album // ignore: cast_nullable_to_non_nullable
 as String?,albumArtist: freezed == albumArtist ? _self.albumArtist : albumArtist // ignore: cast_nullable_to_non_nullable

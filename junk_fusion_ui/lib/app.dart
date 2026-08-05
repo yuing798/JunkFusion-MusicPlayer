@@ -194,7 +194,6 @@ class _AppState extends State<App> {
                 // 左侧导航栏（固定 220px 宽）
                 // AppTheme.leftColumnWidth = 220.0
                 SizedBox(
-                  width: AppTheme.leftColumnWidth,
                   child: LeftColumn(
                     // `onSelectionChanged` 是 callback 参数：
                     // 父组件传入一个函数，子组件在选中变化时调用它

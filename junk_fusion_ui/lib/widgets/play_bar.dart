@@ -36,7 +36,7 @@ class PlayBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: AppTheme.playBarHeight, // 90px
+      height: 90,
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
       color: AppTheme.colorHover,
 

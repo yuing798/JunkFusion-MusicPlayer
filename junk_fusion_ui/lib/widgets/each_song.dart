@@ -67,11 +67,6 @@ class EachSong extends StatelessWidget {
                     const Icon(Icons.play_arrow, size: 32, color: Colors.white),
                   ] else ...[
                     // 当前歌曲：显示播放/暂停状态
-                    Icon(
-                      isPlaying ? Icons.pause : Icons.play_arrow,
-                      size: 32,
-                      color: AppTheme.colorTextMain,
-                    ),
                   ],
                 ],
               ),

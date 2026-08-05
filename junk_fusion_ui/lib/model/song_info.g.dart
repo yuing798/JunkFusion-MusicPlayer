@@ -8,7 +8,7 @@ part of 'song_info.dart';
 
 _SongInfo _$SongInfoFromJson(Map<String, dynamic> json) => _SongInfo(
   songId: (json['songId'] as num).toInt(),
-  duration: (json['duration'] as num).toInt(),
+  duration: (json['duration'] as num).toDouble(),
   title: json['title'] as String,
   artist: json['artist'] as String?,
   album: json['album'] as String?,

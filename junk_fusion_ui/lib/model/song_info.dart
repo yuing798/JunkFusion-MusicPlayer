@@ -18,7 +18,7 @@ abstract class SongInfo with _$SongInfo {
   // 返回一个子类对象，或者（在这里）将请求转发给另一个构造函数。
   const factory SongInfo({
     required int songId,
-    required int duration,
+    required double duration,
     required String title,
 
     String? artist,

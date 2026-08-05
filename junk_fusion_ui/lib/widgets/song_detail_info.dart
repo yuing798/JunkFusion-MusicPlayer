@@ -16,6 +16,7 @@
 /// ════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/providers/song_provider.dart';
 import '../model/song_info.dart';
 import '../theme/app_theme.dart';
 
@@ -130,7 +131,6 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
-            decoration: AppTheme.shinyBtnDecoration(),
             child: const Text(
               '联网自动获取补全元数据',
               style: TextStyle(
@@ -187,7 +187,7 @@ class _SongDetailInfoState extends State<SongDetailInfo> {
   /// 对应原 Vue techInfoArray
   List<({String label, String value})> _buildTechInfoList(SongInfo s) {
     return [
-      (label: '时长', value: SongInfo.formatDuration(s.duration)),
+      (label: '时长', value: SongProvider.formatDuration(s.duration)),
       (label: '采样率', value: '${s.sampleRate}Hz'),
       (label: '比特率', value: '${s.bitRate}Kbps'),
       (label: '通道布局', value: s.channelLayout),

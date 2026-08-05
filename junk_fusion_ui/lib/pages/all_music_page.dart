@@ -24,7 +24,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/song_info.dart';
+import '../model/song_info.dart';
 import '../providers/song_provider.dart';
 import '../providers/playback_provider.dart';
 import '../theme/app_theme.dart';

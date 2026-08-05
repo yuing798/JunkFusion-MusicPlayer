@@ -1,66 +1,23 @@
 import 'package:flutter/foundation.dart';
+import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
+import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 
 // ════════════════════════════════════════════════════════════════
 // song_provider.dart — 歌曲列表状态管理
-//
-// 对应原 Vue 项目 store/songStore.ts (Pinia store: 'allSongs')
-//
-// Dart/Flutter 关键概念：
-// - `ChangeNotifier` 是 Flutter 基础库提供的可监听对象
-// - `notifyListeners()` 触发所有依赖此 provider 的 widget 重建
-// - `async` / `await` 用于处理异步操作（网络请求、原生调用等）
-// - `Future<T>` 表示一个将在未来完成的异步操作，T 是返回值类型
 // ════════════════════════════════════════════════════════════════
 class SongProvider extends ChangeNotifier {
   List<SongInfo> _songs = [];
 
-  // 对外暴露的只读 getter
-  //
-  // Dart 的 getter 语法：`返回类型 get 名称 => 表达式`
-  // 调用时像属性一样：`provider.songs`，不是 `provider.songs()`
-  //外界可以通过 对象.songs 来获取 _songs 的值，但不能直接对这个属性赋值（因为没有配套的 set）
   List<SongInfo> get songs => _songs;
 
-  // 按 ID 查找歌曲
-  //
-  // 对应原 Vue: getSongInfo(songId: number): SongInfo | undefined
-  //
-  // Dart 语法说明：
-  // - `SongInfo?` 返回类型（注意 `?`），表示可能返回 null
-  // - `_songs.where(...)` 过滤列表，返回 lazy iterable
-  // - `.firstOrNull` 是 Dart 3.x 新增的便捷方法，
-  //   返回第一个匹配项，无匹配返回 null
-  // - `(s) => s.songId == songId` 是 lambda/匿名函数
   // 按 ID 查找歌曲
   SongInfo? getSongInfo(int songId) {
     return _songs.where((s) => s.songId == songId).firstOrNull;
   }
 
-  // 获取所有歌曲（从后端数据库）
-  //
-  // 对应原 Vue: async getAllSongs() — 通过 JUCE 桥接调用 C++ 原生函数
-  //
-  // Dart 语法说明：
-  // - `Future<void>` 异步方法，返回一个 Future（承诺未来完成），没有实际返回值
-  // - `async` 标记该方法包含异步操作
-  // - `await` 等待一个 Future 完成并取结果
   Future<void> getAllSongs() async {
-    // TODO: 桥接层 - 调用原生函数获取所有歌曲
-    // 原 Vue 代码:
-    //   const result = await getNativeFunction(B_getAllSongs.name)();
-    //   if (Array.isArray(result)) {
-    //     this.songs = result as SongInfo[];
-    //     return;
-    //   } else if (typeof result === 'string' && result === B_getAllSongs.nothing) {
-    //     return; // 空数据库
-    //   }
-    //
-    // Flutter 中未来桥接层的实现大致是:
-    //   final result = await NativeBridge.call('getAllSongs');
-    //   if (result is List) {
-    //     _songs = result.map((e) => SongInfo(...)).toList();
-    //   }
+    final results = await sendTask(B_getAllSongs.name, {});
     //   notifyListeners();
 
     // 当前为空实现，songs 保持初始空列表
