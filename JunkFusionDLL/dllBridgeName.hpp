@@ -3,8 +3,7 @@
 #pragma once
 struct B_songImport{
     static constexpr const char* name = "songImport" ;
-    static constexpr const char* numImport = "numImport" ;
-    static constexpr const char* numSuccess = "numSuccess" ;
+    static constexpr const char* filePaths = "filePaths" ;
     static constexpr const char* songs = "songs" ;
     static constexpr const char* errorFiles = "errorFiles" ;
 };

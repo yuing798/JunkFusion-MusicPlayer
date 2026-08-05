@@ -30,7 +30,7 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d) {
         db.exec(createSongsTableSQL);
     } catch (const std::exception& e) {
         // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
-        auto logger = spdlog::get(LogAllID);
+        auto logger = spdlog::get(LogSchedulerID);
         if (logger)
             logger->critical(
                 "无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}",

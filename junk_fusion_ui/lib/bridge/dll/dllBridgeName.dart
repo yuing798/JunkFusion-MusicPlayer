@@ -3,8 +3,7 @@
 
 class B_songImport{
   static const String name = 'songImport';
-  static const String numImport = 'numImport';
-  static const String numSuccess = 'numSuccess';
+  static const String filePaths = 'filePaths';
   static const String songs = 'songs';
   static const String errorFiles = 'errorFiles';
 }

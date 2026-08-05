@@ -53,10 +53,16 @@ void logSystem::init() {
         // ── 0: player_audio.log — 音频流水线 (Error, async) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/player_audio.log", kAudioMaxSize, kAudioMaxFiles);
+                logDirPath + "/player_audio.log",
+                kAudioMaxSize,
+                kAudioMaxFiles
+            );
             audioLogger = std::make_shared<spdlog::async_logger>(
-                LogAudioID, std::move(sink), spdlog::thread_pool(),
-                spdlog::async_overflow_policy::block);
+                LogAudioID,
+                std::move(sink),
+                spdlog::thread_pool(),
+                spdlog::async_overflow_policy::block
+            );
             audioLogger->set_pattern(pattern);
             audioLogger->set_level(spdlog::level::err);
             spdlog::register_logger(audioLogger);
@@ -68,7 +74,10 @@ void logSystem::init() {
         // ── 1: player_scheduler.log — 多线程调度与队列 (Info) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/player_scheduler.log", kSchedulerMaxSize, kSchedulerMaxFiles);
+                logDirPath + "/player_scheduler.log",
+                kSchedulerMaxSize,
+                kSchedulerMaxFiles
+            );
             schedulerLogger = std::make_shared<spdlog::logger>(LogSchedulerID, std::move(sink));
             schedulerLogger->set_pattern(pattern);
             schedulerLogger->set_level(spdlog::level::info);
@@ -81,7 +90,10 @@ void logSystem::init() {
         // ── 2: player_ui.log — 用户行为与操作 (Info) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/player_ui.log", kUiMaxSize, kUiMaxFiles);
+                logDirPath + "/player_ui.log",
+                kUiMaxSize,
+                kUiMaxFiles
+            );
             uiLogger = std::make_shared<spdlog::logger>(LogUiID, std::move(sink));
             uiLogger->set_pattern(pattern);
             uiLogger->set_level(spdlog::level::info);
@@ -94,10 +106,16 @@ void logSystem::init() {
         // ── 3: ai_worker.log — AI 跨进程 IPC (Info, async) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/ai_worker.log", kAiMaxSize, kAiMaxFiles);
-            aiLogger = std::make_shared<spdlog::async_logger>(LogAiID, std::move(sink),
-                                                              spdlog::thread_pool(),
-                                                              spdlog::async_overflow_policy::block);
+                logDirPath + "/ai_worker.log",
+                kAiMaxSize,
+                kAiMaxFiles
+            );
+            aiLogger = std::make_shared<spdlog::async_logger>(
+                LogAiID,
+                std::move(sink),
+                spdlog::thread_pool(),
+                spdlog::async_overflow_policy::block
+            );
             aiLogger->set_pattern(pattern);
             aiLogger->set_level(spdlog::level::info);
             spdlog::register_logger(aiLogger);
@@ -109,7 +127,10 @@ void logSystem::init() {
         // ── 4: vst_host.log — VST/AU 插件宿主 (Warn) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/vst_host.log", kVstMaxSize, kVstMaxFiles);
+                logDirPath + "/vst_host.log",
+                kVstMaxSize,
+                kVstMaxFiles
+            );
             vstLogger = std::make_shared<spdlog::logger>(LogVSTID, std::move(sink));
             vstLogger->set_pattern(pattern);
             vstLogger->set_level(spdlog::level::warn);
@@ -122,7 +143,10 @@ void logSystem::init() {
         // ── 5: crash.log — 全进程崩溃转储 (Fatal) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/crash.log", kCrashMaxSize, kCrashMaxFiles);
+                logDirPath + "/crash.log",
+                kCrashMaxSize,
+                kCrashMaxFiles
+            );
             crashLogger = std::make_shared<spdlog::logger>(LogCrashID, std::move(sink));
             crashLogger->set_pattern(pattern);
             crashLogger->set_level(spdlog::level::critical);
@@ -137,10 +161,16 @@ void logSystem::init() {
         // ── 6: all.log — 全量汇聚 (Debug, async, release 关闭) ──
         {
             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                logDirPath + "/all.log", kAllMaxSize, kAllMaxFiles);
+                logDirPath + "/all.log",
+                kAllMaxSize,
+                kAllMaxFiles
+            );
             allLogger = std::make_shared<spdlog::async_logger>(
-                LogAllID, std::move(sink), spdlog::thread_pool(),
-                spdlog::async_overflow_policy::block);
+                LogAllID,
+                std::move(sink),
+                spdlog::thread_pool(),
+                spdlog::async_overflow_policy::block
+            );
             allLogger->set_pattern(pattern);
 #ifdef NDEBUG
             allLogger->set_level(spdlog::level::off); // release 关闭
@@ -193,31 +223,30 @@ std::vector<std::byte> loadFile2ByteVector(const juce::File& file) {
     return buffer;
 }
 
-void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)> onFileSelected,
-                             juce::Component* parentComponent) {
-    // 1. 构建过滤器字符串（用分号分隔）
-    juce::String filters = "*";
+// void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)> onFileSelected,
+//                              juce::Component* parentComponent) {
+//     // 1. 构建过滤器字符串（用分号分隔）
+//     juce::String filters = "*";
 
-    // 2. 创建 FileChooser 对象（使用 shared_ptr 管理生命周期）
-    auto chooser = std::make_shared<juce::FileChooser>(
-        juce::String::fromUTF8("请选择多媒体文件（音频或视频）"),      // 对话框标题
-        juce::File::getSpecialLocation(juce::File::userHomeDirectory), // 初始目录
-        filters,                                                       // 过滤器字符串
-        true,                                                          // 使用原生对话框（外观更好）
-        false,                                                         // 不将包视为目录
-        parentComponent                                                // 父组件（实现模态）
-    );
+//     // 2. 创建 FileChooser 对象（使用 shared_ptr 管理生命周期）
+//     auto chooser = std::make_shared<juce::FileChooser>(
+//         juce::String::fromUTF8("请选择多媒体文件（音频或视频）"),      // 对话框标题
+//         juce::File::getSpecialLocation(juce::File::userHomeDirectory), // 初始目录
+//         filters,                                                       // 过滤器字符串
+//         true,                                                          //
+//         使用原生对话框（外观更好） false, // 不将包视为目录 parentComponent // 父组件（实现模态）
+//     );
 
-    // 3. 异步启动对话框
-    chooser->launchAsync(
-        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
-            juce::FileBrowserComponent::canSelectMultipleItems, // 支持多选
-        [chooser, onFileSelected](const juce::FileChooser&) {
-            juce::Array<juce::File> selected = chooser->getResults();
+//     // 3. 异步启动对话框
+//     chooser->launchAsync(
+//         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
+//             juce::FileBrowserComponent::canSelectMultipleItems, // 支持多选
+//         [chooser, onFileSelected](const juce::FileChooser&) {
+//             juce::Array<juce::File> selected = chooser->getResults();
 
-            // 调用回调，传递文件列表
-            if (onFileSelected) { // 这个地方是在检查 std::function 这个“对象”是否为空
-                onFileSelected(selected);
-            }
-        });
-}
+//             // 调用回调，传递文件列表
+//             if (onFileSelected) { // 这个地方是在检查 std::function 这个“对象”是否为空
+//                 onFileSelected(selected);
+//             }
+//         });
+// }

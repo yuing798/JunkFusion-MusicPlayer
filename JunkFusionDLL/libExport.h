@@ -17,6 +17,7 @@ extern "C" {
     LIB_EXPORT const char* getAllSongs();
     LIB_EXPORT void saveComment(long long songId, const char* commentText);
     LIB_EXPORT void freeString(char* str);
+    LIB_EXPORT const char* someImport(const char*);
 
 #ifdef __cplusplus
 }

@@ -72,6 +72,19 @@ class JunkFusionDLLBindings {
   late final _saveComment = _saveCommentPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  ffi.Pointer<ffi.Char> someImport(ffi.Pointer<ffi.Char> arg0) {
+    return _someImport(arg0);
+  }
+
+  late final _someImportPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('someImport');
+  late final _someImport = _someImportPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   int toggleMyLike(int songId) {
     return _toggleMyLike(songId);
   }

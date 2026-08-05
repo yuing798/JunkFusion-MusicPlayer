@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
@@ -48,15 +51,35 @@ class SongProvider extends ChangeNotifier {
     }
   }
 
-  // 追加歌曲到列表末尾（用于导入等操作）
-  //
-  // Dart 语法：
-  // - `addAll()` 把一个列表的所有元素追加到另一个列表末尾
-  // - `...`（展开运算符）在 Dart 中不在列表字面量中使用，
-  //   而是用 `addAll` 方法实现同样功能
-  void addSongs(List<SongInfo> newSongs) {
-    _songs.addAll(newSongs);
-    notifyListeners();
+  // 导入歌曲
+  Future<void> songsImport() async {
+    // 调用 pickFiles，传入配置参数
+    FilePickerResult? result = await FilePicker.pickFiles(
+      dialogTitle: '请选择音视频文件',
+      initialDirectory: _getExeDirectory(),
+      allowMultiple: true,
+      lockParentWindow: true,
+      cancelUploadOnWindowBlur: false, //失焦时自动取消导入窗口
+    );
+
+    if (result != null) {
+      // 获取选中的文件路径（绝对路径）
+      List<String> filePaths = result.files
+          .map((e) => e.path) // 转换为 Iterable<String?>
+          .whereType<String>() // 过滤掉 null，转换为 Iterable<String>
+          .toList(); // 转为 List<String>
+
+      // 接下来，把这个 filePath 通过 Isolate 或直接传给 DLL
+      // sendTask('processAudioFile', {'path': filePath});
+    }
+  }
+
+  String _getExeDirectory() {
+    // 1. 获取 exe 的绝对路径（解析符号链接）
+    final String exePath = Platform.resolvedExecutable;
+    // 2. 获取该文件所在的父级目录
+    final Directory exeDir = File(exePath).parent;
+    return exeDir.path;
   }
 
   // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串

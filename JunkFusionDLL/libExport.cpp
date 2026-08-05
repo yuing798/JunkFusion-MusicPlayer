@@ -30,4 +30,5 @@ extern "C" {
             free(str);
         }
     }
+    const char* someImport(const char*) { return ""; }
 }

@@ -132,6 +132,28 @@ Future<SendPort> isolateSendPort = () async {
             calloc.free(
               cPtr,
             ); //因为这个c指针是dart的内存管理器分配在堆上面的，所以需要使用dart的calloc.free释放内存
+          } else if (name == B_songImport.name) {
+            assert(params.containsKey(B_songImport.filePaths));
+            String jsonStr = jsonEncode(params);
+            final cPtr = jsonStr.toNativeUtf8().cast<Char>();
+            final resultPtr = bindings.someImport(cPtr);
+            final resultJsonString = resultPtr.cast<Utf8>().toDartString();
+            bindings.freeString(resultPtr);
+            calloc.free(cPtr);
+
+            final resultObj =
+                jsonDecode(resultJsonString) as Map<String, Object?>;
+
+            final songs =
+                resultObj[B_songImport.songs] as List<Map<String, dynamic>>;
+            final errorFiles =
+                resultObj[B_songImport.errorFiles] as List<String>;
+            List<SongInfo> songsList = [];
+            for (int i = 0; i < songs.length; i++) {
+              songsList[i] = SongInfo.fromJson(songs[i]);
+            }
+            results[B_songImport.songs] = songsList;
+            results[B_songImport.errorFiles] = errorFiles;
           }
           sendPort.send(_TaskResponse(data.id, results));
         }

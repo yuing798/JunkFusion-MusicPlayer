@@ -27,10 +27,6 @@
 //     //     juce::WebBrowserComponent::Options options;
 //     //     options =
 //     //         options.withBackend(juce::WebBrowserComponent::Options::Backend::webview2)
-//     //             .withNativeIntegrationEnabled(true)
-//     //             .withWinWebView2Options(
-//     //                 juce::WebBrowserComponent::Options::WinWebView2{}.withUserDataFolder(
-//     //                     LocalDirId)) // windows需要有专门的存储路径，放置应用web缓存
 
 //     //             // 下面放置的是后端需要直接和前端交互的函数
 //     //             .withResourceProvider(
@@ -186,21 +182,3 @@
 //     //                         },
 //     //                         web.get());
 //     //                 });
-
-//     //     web = std::make_unique<juce::WebBrowserComponent>(options);
-//     //     addAndMakeVisible(*web);
-//     // #ifdef JUCE_DEBUG
-//     //     web->goToURL("http://localhost:5173/");
-//     // #else
-//     //     web->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
-//     // // 这里到时候放置release版本的二进制资源打包，因为http://127.0.0.1:5173是开发者专用的
-//     // #endif
-// }
-
-// void MainComponent::resized() {
-//     // web->setBounds(getLocalBounds());
-// }
-
-// void MainComponent::paint(juce::Graphics& g) { g.fillAll(juce::Colour(0xfff0f0f0)); }
-
-// MainComponent::~MainComponent() {}
