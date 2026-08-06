@@ -25,14 +25,10 @@ static constexpr const char* LogAllID{"all"};
 
 // 文件路径操作
 
-static const juce::File LocalDirId{juce::File::getSpecialLocation(
-#ifdef WIN32
-                                       juce::File::SpecialLocationType::windowsLocalAppData
-#else
-                                       juce::File::SpecialLocationType::userApplicationDataDirectory
-#endif
-)
-                                       .getChildFile("JunkFusion")};
+static const juce::File LocalDirId{
+    juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory)
+        .getChildFile("JunkFusion")
+};
 static const juce::File imageDirId{LocalDirId.getChildFile("image")};
 static const juce::File songImageDirId{imageDirId.getChildFile("songs")};
 static const juce::File logInfoDirId{LocalDirId.getChildFile("logInfo")};

@@ -50,6 +50,7 @@
     "key":"",
     "isMyLike":"",
     "comment":"",
-    "playNum":""
+    "playNum":"",
+    "hash":""
   }
 }//node D:/audio_develop/Junk-Fusion/JunkFusionDLL/generateBridge.cjs执行

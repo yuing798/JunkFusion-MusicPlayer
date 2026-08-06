@@ -146,7 +146,6 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
 
     // 这里进行封面提取
     AVPacket coverPacket;
-    std::string hash;
     coverPacket.data = nullptr;
     coverPacket.size = 0;
     SHA1 sha1;
@@ -163,10 +162,11 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
 
     if (coverPacket.data && coverPacket.size > 0) {
         do {
-            hash = sha1(coverPacket.data, coverPacket.size);
+            info.hash = sha1(coverPacket.data, coverPacket.size);
 
-            juce::File hashImageDir{songImageDirId.getChildFile(hash)};
-            // 直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
+            juce::File hashImageDir{songImageDirId.getChildFile(info.hash.value())};
+            // data存在说明一定有图片，所以直接使用.value()就行了
+            //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
 
             if (hashImageDir.exists()) {
                 break;
@@ -228,7 +228,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         bindOptInt(":year", info.year);
         bindOptStr(":composer", info.composer);
         bindOptStr(":codecName", info.codecName);
-        bindOptStr(":hash", hash);
+        bindOptStr(":hash", info.hash);
     };
 
     try {
@@ -327,7 +327,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             genre, trackNumber, discNumber, year, composer, 
             bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
             aiGenre, bpm, key, aiProcessed, 
-            isMyLike, comment, playNum
+            isMyLike, comment, playNum, hash
             FROM songs 
         )"; // 按照顺序查询的sql语句
 
@@ -393,6 +393,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
             info.comment = optStrCol("comment");
             info.playNum = query.getColumn("playNum").getInt();
+            info.hash = optStrCol("hash");
 
             result.push_back(std::move(info));
         }
@@ -448,19 +449,19 @@ bool SongsManage::reverseMyLike(int64_t id) {
     }
 }
 
-std::string SongsManage::getImageHashBySongId(int64_t id) {
-    try {
-        SQLite::Statement sql(db, "SELECT hash FROM songs WHERE songId = :songId");
-        sql.bind(":songId", id);
-        if (sql.executeStep()) {
-            return sql.getColumn("hash").getString();
-        }
-    } catch (const SQLite::Exception& e) {
-        auto logger = spdlog::get(LogUiID);
-        logger->error("获取歌曲封面哈希值失败:{}", e.what());
-    }
-    return "";
-}
+// std::string SongsManage::getImageHashBySongId(int64_t id) {
+//     try {
+//         SQLite::Statement sql(db, "SELECT hash FROM songs WHERE songId = :songId");
+//         sql.bind(":songId", id);
+//         if (sql.executeStep()) {
+//             return sql.getColumn("hash").getString();
+//         }
+//     } catch (const SQLite::Exception& e) {
+//         auto logger = spdlog::get(LogUiID);
+//         logger->error("获取歌曲封面哈希值失败:{}", e.what());
+//     }
+//     return "";
+// }
 
 void SongsManage::saveComment(juce::String text, int64_t songId) {
     try {
@@ -474,4 +475,4 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
     }
 }
 
-SongsManage::~SongsManage() {}
+// SongsManage::~SongsManage() {}

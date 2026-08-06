@@ -45,9 +45,11 @@ struct SongInfo {
     std::optional<std::string> comment; // 备注(用户写进去的)
     int playNum{0};                     // 已经播放了多少次
 
+    std::optional<std::string> hash;
+
     // 将songInfo转化为var，才能推送给js端
     static juce::var toVar(const SongInfo& song) {
-        auto obj{new juce::DynamicObject()};
+        juce::DynamicObject::Ptr obj{new juce::DynamicObject()};
 
         // ── 辅助：optional<string> → juce::var ──
         // has_value → juce::String, nullopt → juce::var() (JS 端为 undefined)
@@ -91,7 +93,8 @@ struct SongInfo {
         obj->setProperty(B_songInfo::isMyLike, song.isMyLike);
         obj->setProperty(B_songInfo::comment, optStr(song.comment));
         obj->setProperty(B_songInfo::playNum, song.playNum);
-        // 图片哈希值不用传给前端
+
+        obj->setProperty(B_songInfo::hash, optStr(song.hash));
 
         return juce::var(obj);
         // 这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete

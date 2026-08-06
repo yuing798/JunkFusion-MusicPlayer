@@ -1,5 +1,6 @@
 #include "./libExport.h"
 #include "./fileManage/dbManager.hpp"
+#include "constants.h"
 #include "dllBridgeName.hpp"
 #include "dllUtils.hpp"
 #include "fileManage/dbModel.hpp"
@@ -53,4 +54,5 @@ extern "C" {
         resultObj->setProperty(B_songImport::errorFiles, errorFiles);
         return object2Uint8t(resultObj);
     }
+    const char* getCacheDir() { return LocalDirId.getFullPathName().toRawUTF8(); }
 }

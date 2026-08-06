@@ -58,4 +58,5 @@ struct B_songInfo{
     static constexpr const char* isMyLike = "isMyLike" ;
     static constexpr const char* comment = "comment" ;
     static constexpr const char* playNum = "playNum" ;
+    static constexpr const char* hash = "hash" ;
 };
