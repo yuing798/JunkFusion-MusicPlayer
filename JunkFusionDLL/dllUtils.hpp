@@ -14,3 +14,5 @@ juce::DynamicObject uint8t2Object(const char* str);
 
 // 把对象转换为const char*
 const char* object2Uint8t(juce::DynamicObject::Ptr obj);
+
+juce::DynamicObject::Ptr charPtr2object(const char* ptr);

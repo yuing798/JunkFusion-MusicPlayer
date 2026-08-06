@@ -48,3 +48,13 @@ const char* object2Uint8t(juce::DynamicObject::Ptr obj) {
     }
     return cString;
 }
+
+juce::DynamicObject::Ptr charPtr2object(const char* ptr) {
+    // 1. 解析 JSON
+    juce::var parsed = juce::JSON::parse(juce::String(ptr));
+
+    // 2. 获取 DynamicObject
+    juce::DynamicObject::Ptr obj = parsed.getDynamicObject();
+
+    return obj;
+}

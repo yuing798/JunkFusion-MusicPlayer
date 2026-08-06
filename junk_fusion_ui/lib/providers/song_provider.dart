@@ -59,7 +59,7 @@ class SongProvider extends ChangeNotifier {
       initialDirectory: _getExeDirectory(),
       allowMultiple: true,
       lockParentWindow: true,
-      cancelUploadOnWindowBlur: false, //失焦时自动取消导入窗口
+      // cancelUploadOnWindowBlur: false, //失焦时自动取消导入窗口，这个只在web中有用
     );
 
     if (result != null) {

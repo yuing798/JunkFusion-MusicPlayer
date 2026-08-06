@@ -1,6 +1,10 @@
 #include "./libExport.h"
 #include "./fileManage/dbManager.hpp"
+#include "dllBridgeName.hpp"
 #include "dllUtils.hpp"
+#include "fileManage/dbModel.hpp"
+#include "juce_core/juce_core.h"
+#include <vector>
 
 extern "C" {
     void dbInit() { dbManager::getInstance(); }
@@ -30,5 +34,23 @@ extern "C" {
             free(str);
         }
     }
-    const char* someImport(const char*) { return ""; }
+    const char* someImport(const char* jsonStr) {
+        auto obj = charPtr2object(jsonStr);
+        juce::Array<juce::var> filePaths = obj->getProperty(B_songImport::filePaths);
+        std::vector<SongInfo> songs;
+        juce::Array<juce::var> errorFiles;
+        for (auto& filePath : filePaths) {
+            auto path = juce::File(filePath.toString());
+            auto result = dbManager::getInstance().getSongsManager().insertSong(path);
+            if (result.has_value()) {
+                songs.push_back(result.value());
+            } else {
+                errorFiles.add(path.getFileName());
+            }
+        }
+        juce::DynamicObject::Ptr resultObj{new juce::DynamicObject()};
+        resultObj->setProperty(B_songImport::songs, SongInfo::vector2VarArray(songs));
+        resultObj->setProperty(B_songImport::errorFiles, errorFiles);
+        return object2Uint8t(resultObj);
+    }
 }
