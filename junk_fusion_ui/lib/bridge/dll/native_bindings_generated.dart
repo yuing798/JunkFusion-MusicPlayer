@@ -59,6 +59,17 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  ffi.Pointer<ffi.Char> getCacheDir() {
+    return _getCacheDir();
+  }
+
+  late final _getCacheDirPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getCacheDir',
+      );
+  late final _getCacheDir = _getCacheDirPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
     return _saveComment(songId, commentText);
   }

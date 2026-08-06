@@ -58,4 +58,5 @@ class B_songInfo{
   static const String isMyLike = 'isMyLike';
   static const String comment = 'comment';
   static const String playNum = 'playNum';
+  static const String hash = 'hash';
 }

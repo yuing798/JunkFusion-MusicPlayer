@@ -56,18 +56,13 @@ class EachSong extends StatelessWidget {
                 }
               },
               child: Stack(
-                //Stack 是 Flutter 中的层叠布局（Stack Layout）组件，它允许你将子组件重叠放置，
-                //像叠罗汉一样，后添加的子组件会覆盖在先添加的上面。
+                //Stack 是 Flutter 中的层叠布局（Stack Layout）组件，后添加的子组件会覆盖在先添加的上面。
                 alignment: Alignment.center,
                 children: [
                   // 封面图（非当前歌曲时显示）
                   if (!isCurrentSong) ...[
-                    // TODO: 桥接层 - 从后端资源地址加载图片
-                    // 原 Vue: <img :src="getBackendResourceAddress(`songId/${songId}/image/50x50`)" />
-                    const Icon(Icons.play_arrow, size: 32, color: Colors.white),
-                  ] else ...[
-                    // 当前歌曲：显示播放/暂停状态
-                  ],
+
+                  ]
                 ],
               ),
             ),
