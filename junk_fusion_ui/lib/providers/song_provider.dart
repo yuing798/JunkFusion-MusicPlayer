@@ -71,6 +71,27 @@ class SongProvider extends ChangeNotifier {
 
       // 接下来，把这个 filePath 通过 Isolate 或直接传给 DLL
       // sendTask('processAudioFile', {'path': filePath});
+      final results = await sendDLLIsolateTask(B_songImport.name, {
+        B_songImport.filePaths: filePaths,
+      });
+      final errorFiles = results[B_songImport.errorFiles] as List<String>;
+      final songsList = results[B_songImport.songs] as List<SongInfo>;
+      _songs.addAll(songsList);
+      if (errorFiles.isEmpty) {
+        InfoWindow.show("全部歌曲导入成功，总计${songsList.length}首歌曲", 3000);
+      } else {
+        final buffer = StringBuffer()
+          ..write(
+            '歌曲导入完成，总共导入${songsList.length + errorFiles.length}首，成功${songsList.length}首\n失败文件:\n',
+          );
+
+        for (final file in errorFiles) {
+          buffer.writeln(file); // writeln 会自动加上换行符
+        }
+
+        final message = buffer.toString();
+        InfoWindow.show(message, 30000);
+      }
     }
   }
 
