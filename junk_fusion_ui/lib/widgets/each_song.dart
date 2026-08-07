@@ -5,7 +5,7 @@ import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
-import 'package:tabler_icons/tabler_icons.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
@@ -36,6 +36,7 @@ class EachSong extends StatelessWidget {
   Widget build(BuildContext context) {
     // 监听播放状态（当前播放歌曲变化时刷新）
     final playback = context.watch<PlaybackProvider>();
+    final songprovi = context.watch<SongProvider>();
     //context.watch<T>()：获取 + 订阅。当数据变化时，调用它的 Widget 会自动重绘
     //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
     final isCurrentSong = playback.currentSongId == song.songId;
@@ -57,10 +58,22 @@ class EachSong extends StatelessWidget {
             (!isCurrentSong)
                 ? HoverPlayButton(hash: song.hash)
                 : (playback.isPlaying)
-                ? createIcon(TablerIcons.player_pause_filled)
-                : createIcon(TablerIcons.player_play_filled),
+                ? createIcon(TablerIcons.playerPauseFilled)
+                : createIcon(TablerIcons.playerPlayFilled),
           ],
         ),
+      );
+    }
+
+    // 构建喜欢按钮
+    Widget buildLikeButton() {
+      return GestureDetector(
+        onTap: () async {
+          await songprovi.toggleMyLike(song.songId);
+        },
+        child: (song.isMyLike)
+            ? Icon(TablerIcons.heartFilled, color: Colors.red)
+            : Icon(TablerIcons.heart),
       );
     }
 
@@ -102,7 +115,7 @@ class EachSong extends StatelessWidget {
           ),
 
           // ── 第 6 列：喜欢按钮 (40px) ──
-          SizedBox(width: 40, child: _buildLikeButton(context)),
+          SizedBox(width: 40, child: buildLikeButton()),
 
           // ── 第 7 列：歌曲详情弹窗 (40px) ──
           SizedBox(
@@ -110,7 +123,11 @@ class EachSong extends StatelessWidget {
             child: PopupWindow(
               title: '歌曲详情',
               triggerBuilder: (open) =>
-                  _CircleIconButton(icon: Icons.info_outline, onTap: open),
+                  //   _CircleIconButton(icon: Icons.info_outline, onTap: open),
+                  GestureDetector(
+                    onTap: open,
+                    child: Icon(TablerIcons.infoHexagonFilled),
+                  ),
               contentBuilder: () => SongDetailInfo(song: song),
             ),
           ),
@@ -157,20 +174,6 @@ class EachSong extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-    );
-  }
-
-  // 构建喜欢按钮
-  //
-  // 对应原 Vue .cell-like
-  Widget _buildLikeButton(BuildContext context) {
-    return _CircleIconButton(
-      icon: song.isMyLike ? Icons.favorite : Icons.favorite_border,
-      iconColor: song.isMyLike ? Colors.red : AppTheme.colorTextMain,
-      onTap: () {
-        // 调用 SongProvider 的 toggleMyLike
-        context.read<SongProvider>().toggleMyLike(song.songId);
-      },
     );
   }
 }
@@ -238,38 +241,12 @@ class _HoverPlayButtonState extends State<HoverPlayButton> {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: createIcon(TablerIcons.player_play_filled),
+                  child: createIcon(TablerIcons.playerPlayFilled),
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// _CircleIconButton — 圆形图标按钮（复用组件）
-//
-// 对应原 Vue .cell-like 和 .cell-more：
-//   36×36 圆形区域，悬浮时背景变色
-class _CircleIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  final Color? iconColor;
-
-  const _CircleIconButton({required this.icon, this.onTap, this.iconColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        // `BoxShape.circle` 创建圆形（替代 borderRadius 半径设置）
-        decoration: const BoxDecoration(shape: BoxShape.circle),
-        child: Icon(icon, size: 28, color: iconColor ?? AppTheme.colorTextMain),
       ),
     );
   }

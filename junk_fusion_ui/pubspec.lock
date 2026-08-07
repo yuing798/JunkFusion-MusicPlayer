@@ -669,14 +669,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.4.1"
-  tabler_icons:
+  tabler_icons_plus:
     dependency: "direct main"
     description:
-      name: tabler_icons
-      sha256: "66f228edf680cddf36d1879d622f789ed314fedc6f6e9101d7d1d916ed537a29"
+      name: tabler_icons_plus
+      sha256: "6c3a1e987d87a063597b20810b080fe8202c5d48f2eb0a5c793fcd4c72566f29"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.5.0+1"
+    version: "3.44.0"
   term_glyph:
     dependency: transitive
     description:

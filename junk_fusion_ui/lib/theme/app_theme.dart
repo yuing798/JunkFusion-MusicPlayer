@@ -44,8 +44,8 @@ abstract class AppTheme {
   /// 中等字号 — 18px（对应 --mid-font）
   static const double midFont = 18.0;
 
-  /// 小字号 — 15px（对应 --little-font）
-  static const double littleFont = 15.0;
+  /// 小字号 — 16px（对应 --little-font）
+  static const double littleFont = 16.0;
 
   /// 圆角半径（对应 --border-radius: 6px）
   static const double borderRadius = 6.0;
