@@ -44,6 +44,7 @@ abstract class SongInfo with _$SongInfo {
 
     String? comment,
     required int playNum,
+    String? hash,
   }) = _SongInfo;
 
   // 4. 关键：从 JSON 创建对象的工厂方法（用于接收 C++ 数据）
@@ -55,4 +56,4 @@ abstract class SongInfo with _$SongInfo {
       _$SongInfoFromJson(json);
 }
 
-//flutter pub run build_runner build --delete-conflicting-outputs
+//dart run build_runner build --delete-conflicting-outputs

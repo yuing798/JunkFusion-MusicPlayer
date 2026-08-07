@@ -29,6 +29,7 @@ _SongInfo _$SongInfoFromJson(Map<String, dynamic> json) => _SongInfo(
   isMyLike: json['isMyLike'] as bool,
   comment: json['comment'] as String?,
   playNum: (json['playNum'] as num).toInt(),
+  hash: json['hash'] as String?,
 );
 
 Map<String, dynamic> _$SongInfoToJson(_SongInfo instance) => <String, dynamic>{
@@ -54,4 +55,5 @@ Map<String, dynamic> _$SongInfoToJson(_SongInfo instance) => <String, dynamic>{
   'isMyLike': instance.isMyLike,
   'comment': instance.comment,
   'playNum': instance.playNum,
+  'hash': instance.hash,
 };

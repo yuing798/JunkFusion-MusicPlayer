@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:tabler_icons/tabler_icons.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
@@ -35,38 +40,39 @@ class EachSong extends StatelessWidget {
     //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
     final isCurrentSong = playback.currentSongId == song.songId;
 
+    Widget buildCoverAndPlayState() {
+      return GestureDetector(
+        onTap: () {
+          //箭头函数后面只能接上一句表达式
+          if (isCurrentSong) {
+            playback.togglePlayPause();
+          } else {
+            playback.setPlayState(song.songId);
+          }
+        },
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 封面图（非当前歌曲时显示）
+            (!isCurrentSong)
+                ? HoverPlayButton(hash: song.hash)
+                : (playback.isPlaying)
+                ? createIcon(TablerIcons.player_pause_filled)
+                : createIcon(TablerIcons.player_play_filled),
+          ],
+        ),
+      );
+    }
+
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       color: isCurrentSong ? AppTheme.colorHover : AppTheme.colorCell,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // ── 第 1 列：封面/播放状态 (50px) ──
-          SizedBox(
-            //sizedBox只能标注尺寸功能
-            width: 50,
-            height: 50,
-            child: GestureDetector(
-              onTap: () {
-                //箭头函数后面只能接上一句表达式
-                if (isCurrentSong) {
-                  playback.togglePlayPause();
-                } else {
-                  playback.setPlayState(song.songId);
-                }
-              },
-              child: Stack(
-                //Stack 是 Flutter 中的层叠布局（Stack Layout）组件，后添加的子组件会覆盖在先添加的上面。
-                alignment: Alignment.center,
-                children: [
-                  // 封面图（非当前歌曲时显示）
-                  if (!isCurrentSong) ...[
-
-                  ]
-                ],
-              ),
-            ),
-          ),
+          SizedBox(width: 50, height: 50, child: buildCoverAndPlayState()),
 
           const SizedBox(width: 4),
 
@@ -165,6 +171,80 @@ class EachSong extends StatelessWidget {
         // 调用 SongProvider 的 toggleMyLike
         context.read<SongProvider>().toggleMyLike(song.songId);
       },
+    );
+  }
+}
+
+class HoverPlayButton extends StatefulWidget {
+  final String? hash; //图片哈希值
+  const HoverPlayButton({super.key, required this.hash});
+
+  @override
+  State<HoverPlayButton> createState() => _HoverPlayButtonState();
+}
+
+class _HoverPlayButtonState extends State<HoverPlayButton> {
+  bool _isHovered = false; // 悬停状态
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: SizedBox(
+        width: 50,
+        height: 50,
+        child: Stack(
+          fit: StackFit.expand, // 让子组件撑满 SizedBox
+          children: [
+            // 1. 底层图片（带透明度变化）
+            AnimatedOpacity(
+              opacity: _isHovered ? 0.5 : 1.0, // 悬停时变为半透明（变暗效果）
+              duration: const Duration(milliseconds: 300),
+              child: (widget.hash != null)
+                  ? Image.file(
+                      File('$cacheDir/image/songs/${widget.hash}/original.jpg'),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      cacheHeight: 50,
+                      cacheWidth: 50,
+                    )
+                  : Image.asset(
+                      "assets/JunkFusion.png",
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      cacheHeight: 50,
+                      cacheWidth: 50,
+                    ),
+            ),
+            // 2. 半透明遮罩（让图片变暗更明显）
+            AnimatedOpacity(
+              opacity: _isHovered ? 0.4 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                color: Colors.black, // 黑色遮罩，与图片叠加后变暗
+              ),
+            ),
+            // 3. 上层播放图标（悬停时淡入）
+            Center(
+              child: AnimatedOpacity(
+                opacity: _isHovered ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: createIcon(TablerIcons.player_play_filled),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -176,3 +176,10 @@ Future<SendPort> isolateSendPort = () async {
 // complete(value)	方法	成功完成：将数据塞进 Future，所有等待的 await 会立即拿到 value。
 // completeError(error, [stackTrace])	方法	失败完成：让 Future 抛出异常，触发 catchError。
 // isCompleted	Getter（属性）	检查遥控器是否已经按过（无论成功还是失败），返回 bool。
+
+final cacheDir = () {
+  final dirPtr = bindings.getCacheDir();
+  final dirString = dirPtr.cast<Utf8>().toDartString();
+  bindings.freeString(dirPtr);
+  return dirString;
+}();
