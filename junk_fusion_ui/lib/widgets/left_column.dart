@@ -139,6 +139,14 @@ class _LeftColumnState extends State<LeftColumn> {
   /// 构建分组标签
   Widget _buildGroupLabel(String label) {
     return Container(
+      // margin: const EdgeInsets.symmetric(horizontal: 15.0),
+      margin: const EdgeInsets.symmetric(horizontal: 15.0),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: AppTheme.colorEdge, width: 3.0),
+          bottom: BorderSide(color: AppTheme.colorEdge, width: 3.0),
+        ),
+      ),
       height: 50,
       alignment: Alignment.center,
       child: Text(label, style: AppTheme.bigTextStyle),
@@ -154,6 +162,7 @@ class _LeftColumnState extends State<LeftColumn> {
     return GestureDetector(
       onTap: () => _handleSelect(button.id),
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 15.0),
         width: double.infinity, // 撑满父容器宽度
         height: 40,
         alignment: Alignment.center,
@@ -162,10 +171,7 @@ class _LeftColumnState extends State<LeftColumn> {
         // 在属性改变时会自动过渡（duration + curve）
         // 对应 Vue CSS transition
         color: isActive ? AppTheme.colorStress : null,
-        child: Text(
-          button.text,
-          style: TextStyle(color: AppTheme.colorTextMain),
-        ),
+        child: Text(button.text, style: AppTheme.midTextStyle),
       ),
     );
   }

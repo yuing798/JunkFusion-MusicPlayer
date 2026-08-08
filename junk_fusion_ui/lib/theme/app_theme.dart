@@ -39,7 +39,7 @@ abstract class AppTheme {
   static const Color colorError = Color(0xFF991F1F);
 
   /// 大字号 — 25px（对应 --big-font）
-  static const double bigFont = 25.0;
+  static const double bigFont = 23.0;
 
   /// 中等字号 — 18px（对应 --mid-font）
   static const double midFont = 18.0;
