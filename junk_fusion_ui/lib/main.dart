@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // provider 包：状态管理
 // 需要在 pubspec.yaml 中添加: provider: ^6.1.2
@@ -76,6 +77,10 @@ class JunkFusionApp extends StatelessWidget {
 
         // `debugShowCheckedModeBanner`：关闭右上角 DEBUG 标签
         debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          fontFamily: "OpenSans",
+          fontFamilyFallback: ["NotoSansSC"],
+        ),
 
         // `home`：应用的首页 widget
         // `const App()` 创建 App widget 的编译期常量实例
