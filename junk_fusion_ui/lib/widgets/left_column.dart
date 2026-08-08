@@ -8,8 +8,6 @@ class LeftColumn extends StatefulWidget {
   // const：值必须在编译时就确定死。比如 const pi = 3.14159; —— 在代码写出来的时候，编译器就已经算好这个数字了
 
   const LeftColumn({super.key, required this.onSelectionChanged});
-  //（定义构造函数）里看不到 参数名: 值 是完全正常的，因为参数名: 值 这种写法只出现在“调用”该构造函数的地方。
-  //required:“调用函数时必须显式写出参数名并传值
 
   @override
   State<LeftColumn> createState() {
@@ -24,11 +22,14 @@ class LeftColumn extends StatefulWidget {
 //一个以 _（下划线）开头的类，意味着它是“库私有（Library Private）
 class _LeftColumnState extends State<LeftColumn> {
   /// 当前选中的按钮 ID
-  ///
-  /// 对应原 Vue: const selectedId = ref(0)
-  /// //late:这个变量我现在不初始化，但在我第一次使用它之前，绝对会赋值。出了事我负责
-  /// 相当于!非空断言
   int _selectedId = 0;
+  final _scrollController = ScrollController(); //使得滚动条平滑移动的控制器
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   static const List<_NavSection> _sections = [
     _NavSection(
@@ -82,11 +83,15 @@ class _LeftColumnState extends State<LeftColumn> {
 
       // Scrollbar — 滚动条（thumb 颜色使用强调色）
       child: Scrollbar(
+        controller: _scrollController,
         thumbVisibility: true, // 始终显示滚动条滑块
+        interactive: true,
         child: ListView(
           // `padding` 是列表整体内边距
           // `EdgeInsets.only(bottom: 100)` 仅底部留 100px（对应原 CSS padding-bottom: 100px）
           padding: const EdgeInsets.only(bottom: 100),
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
 
           children: [
             // ── Logo 区域 ──
@@ -108,7 +113,7 @@ class _LeftColumnState extends State<LeftColumn> {
       child: Image.asset(
         // td: 添加 Logo 资源文件到 pubspec.yaml 的 assets 中
         // 原 Vue 代码: import logoImage from '@/assets/image/junk-fusion.png'
-        'assets/image/junk-fusion.png',
+        'assets/image/JunkFusionLong.png',
 
         // `fit: BoxFit.contain` 保持宽高比缩放，完整放入容器
         // 对应 CSS object-fit: contain

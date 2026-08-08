@@ -107,9 +107,9 @@ class PlayBar extends StatelessWidget {
               // ── 歌曲详情弹窗──
               PopupWindow(
                 title: '歌曲详情',
-                triggerBuilder: (open) => GestureDetector(
-                  onTap: open,
-                  child: Icon(TablerIcons.infoHexagonFilled),
+                triggerBuilder: (open) => IconButton(
+                  onPressed: open,
+                  icon: createIcon(TablerIcons.infoHexagonFilled),
                 ),
                 contentBuilder: () => SongDetailInfo(song: song),
               ),

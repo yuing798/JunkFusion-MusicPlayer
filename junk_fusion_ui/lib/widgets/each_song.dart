@@ -67,13 +67,11 @@ class EachSong extends StatelessWidget {
 
     // 构建喜欢按钮
     Widget buildLikeButton() {
-      return GestureDetector(
-        onTap: () async {
-          await songprovi.toggleMyLike(song.songId);
-        },
-        child: (song.isMyLike)
+      return IconButton(
+        icon: (song!.isMyLike)
             ? Icon(TablerIcons.heartFilled, color: Colors.red)
             : Icon(TablerIcons.heart),
+        onPressed: () => context.read<SongProvider>().toggleMyLike(song.songId),
       );
     }
 
