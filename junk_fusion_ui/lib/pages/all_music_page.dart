@@ -236,22 +236,28 @@ class _AllMusicPageState extends State<AllMusicPage> {
   Widget _buildImportButton(BuildContext context) {
     return SizedBox(
       height: 40,
-      child: ElevatedButton(
+      child: TextButton(
         onPressed: _isImporting
             ? null
             : () {
                 _songImport(context);
               },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.colorStress,
+        style: TextButton.styleFrom(
+          backgroundColor: AppTheme.colorHover,
           foregroundColor: AppTheme.colorTextMain,
+          // shape: RoundedRectangleBorder(
+          //   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+          // ),
+          // minimumSize: const Size(180, 40),
+          // textStyle: AppTheme.midTextStyle,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+            borderRadius: BorderRadius.zero, // 👈 直角矩形
           ),
-          minimumSize: const Size(180, 40),
-          textStyle: AppTheme.midTextStyle,
         ),
-        child: Text(_isImporting ? '导入中...' : '导入文件/扫描文件夹'),
+        child: Text(
+          _isImporting ? '导入中...' : '导入文件/扫描文件夹',
+          style: AppTheme.midTextStyle,
+        ),
       ),
     );
   }
@@ -269,11 +275,12 @@ class _AllMusicPageState extends State<AllMusicPage> {
             items: SortMode.values,
             itemBuilder: (mode) =>
                 Text(mode.label, style: AppTheme.comboTextStyle),
-            onChanged: (mode) {
+            onChanged: (mode) async {
               setState(() {
                 _selectedSort = mode;
               });
-              // TODO: 桥接层 - 持久化排序方式
+              final frontCache = await AppCache.frontCache;
+              frontCache.setInt("sortWays", mode.value);
             },
           ),
         ),
