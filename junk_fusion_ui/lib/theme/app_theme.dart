@@ -14,9 +14,6 @@ abstract class AppTheme {
   /// 单元格背景色（对应 --color-cell: #f2fcff）
   static const Color colorCell = Color(0xFFF2FCFF);
 
-  /// 鼠标按下去时的颜色（对应 --color-clicked: #b0c4de）
-  static const Color colorClicked = Color(0xFFB0C4DE);
-
   /// 边框颜色（对应 --color-edge: #b2b1b1）
   static const Color colorEdge = Color(0xFFB2B1B1);
 
@@ -37,6 +34,15 @@ abstract class AppTheme {
 
   /// 错误提示文字颜色（对应 --color-error: #991f1f）
   static const Color colorError = Color(0xFF991F1F);
+
+  //获得焦点的边框的颜色
+  static const Color colorFocus = colorStress;
+  //comboBox的背景以及每个comboBox的下拉菜单单元格的背景色
+  static const Color colorComboBox = colorHover;
+  //comboBox的菜单中鼠标悬浮或者按下的时候的颜色
+  static const colorComboMenuSelected = colorEdge;
+  //comboBox中的字体风格
+  static const comboTextStyle = midTextStyle;
 
   /// 大字号 — 25px（对应 --big-font）
   static const double bigFont = 23.0;

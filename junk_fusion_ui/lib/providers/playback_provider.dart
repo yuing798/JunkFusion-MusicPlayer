@@ -55,9 +55,11 @@ class PlaybackProvider extends ChangeNotifier {
 
   // 切换播放模式（循环 0 → 1 → 2 → 3 → 0 → ...）
   //0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
-  void cyclePlayMode() {
+  void cyclePlayMode() async {
     _playMode = (_playMode + 1) % 4;
     notifyListeners();
+    final localStorage = await SharedPreferences.getInstance();
+    await localStorage.setInt("cycleMode", _playMode);
   }
 
   // 重置所有播放状态
