@@ -23,7 +23,9 @@
 /// ════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../model/song_info.dart';
 import '../providers/song_provider.dart';
 import '../providers/playback_provider.dart';
@@ -351,7 +353,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
             // `underline` 去掉底部下划线
             underline: const SizedBox(),
             // `icon` 自定义下拉箭头
-            icon: const Icon(Icons.arrow_drop_down),
+            icon: const Icon(TablerIcons.caretDownFilled),
             style: AppTheme.midTextStyle,
             // `items` 定义下拉选项
             items: SortMode.values.map((mode) {
@@ -373,9 +375,10 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
         // ── 升降序切换按钮 ──
         IconButton(
-          icon: Icon(
-            _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-            size: 28,
+          icon: createIcon(
+            _isAscending
+                ? TablerIcons.arrowBigDownLineFilled
+                : TablerIcons.arrowBigUpLineFilled,
           ),
           onPressed: _toggleAscending,
           tooltip: _isAscending ? '升序' : '降序',

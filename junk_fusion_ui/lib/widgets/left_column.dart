@@ -91,8 +91,8 @@ class _LeftColumnState extends State<LeftColumn> {
           // `EdgeInsets.only(bottom: 100)` 仅底部留 100px（对应原 CSS padding-bottom: 100px）
           padding: const EdgeInsets.only(bottom: 100),
           controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
 
+          // physics: const ClampingScrollPhysics(),
           children: [
             // ── Logo 区域 ──
             _buildLogoArea(),
