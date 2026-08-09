@@ -16,3 +16,35 @@ Widget createIcon(
 }) {
   return Icon(svg, size: size_, color: color_);
 }
+
+class RectIconButton extends StatelessWidget {
+  final IconData iconData;
+  final VoidCallback onPressed;
+
+  final String? tooltip;
+  final Color? hoverColor;
+
+  // 3. 构造函数（使用 super.key 支持 Key）
+  const RectIconButton({
+    super.key,
+    required this.iconData,
+    required this.onPressed,
+    this.tooltip,
+    this.hoverColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: createIcon(iconData),
+      onPressed: onPressed,
+      tooltip: tooltip, // 如果为 null，IconButton 会自动忽略 tooltip
+      style: IconButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero, // 矩形
+        ),
+        hoverColor: hoverColor ?? AppTheme.colorHover,
+      ),
+    );
+  }
+}

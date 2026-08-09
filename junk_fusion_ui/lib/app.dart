@@ -90,14 +90,17 @@ class _AppState extends State<App> {
                 // Expanded 让主内容区占据剩余的所有宽度
                 Expanded(
                   child: ColoredBox(
+                    //能够单独设置颜色的组件
                     color: AppTheme.colorMain,
                     child: Column(
                       children: [
                         const TitleBar(),
-                        if (pageWidget != null)
-                          Expanded(child: pageWidget)
-                        else
-                          Expanded(child: const SizedBox()),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: pageWidget ?? const SizedBox(),
+                          ),
+                        ),
                       ],
                     ),
                   ),

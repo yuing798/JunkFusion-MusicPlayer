@@ -36,10 +36,11 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90,
+      height: 50,
       color: Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end, //优先靠右对齐
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // ── 中间空白区域：支持拖拽 ──
           // DragToMoveArea 是 拖动窗口的组件
@@ -52,17 +53,16 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
           ),
 
           // ──右侧控制按钮区 ──
-          IconButton(
-            icon: createIcon(TablerIcons.minus),
+          RectIconButton(
+            iconData: TablerIcons.minus,
             onPressed: () => windowManager.minimize(), // 最小化
             tooltip: "最小化",
           ),
-          IconButton(
-            icon: createIcon(
-              _isMaximized
-                  ? TablerIcons.windowMinimize
-                  : TablerIcons.windowMaximize,
-            ),
+          RectIconButton(
+            iconData: _isMaximized
+                ? TablerIcons.windowMinimize
+                : TablerIcons.windowMaximize,
+
             tooltip: _isMaximized ? "向下还原" : "最大化",
             onPressed: () async {
               // 切换最大化/向下还原
@@ -73,8 +73,8 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
               }
             },
           ),
-          IconButton(
-            icon: createIcon(TablerIcons.x),
+          RectIconButton(
+            iconData: TablerIcons.x,
             hoverColor: Colors.red, // 鼠标悬浮关闭按钮时变红
             onPressed: () => windowManager.close(), // 关闭窗口
           ),
