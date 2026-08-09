@@ -56,6 +56,7 @@ dev_dependencies:
   json_serializable: ^6.8.0 # 👈 新增：用于生成 JSON 解析代码
   ffigen: ^21.0.0
   rename_app: ^1.6.6 #用来改变APP名称的依赖包
+  flutter_launcher_icons: ^0.14.4 #用来修改应用图标
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -67,14 +68,28 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
+flutter_launcher_icons:
+  image_path: "assets/image/JunkFusion.png"
+  windows:
+    generate: true
+    icon_size: 256
+  macos:
+    generate: true
+
 flutter:
   assets:
     - assets/image/
   fonts:
     - family: OpenSans
       fonts:
-        - asset: assets/fonts/Open_Sans/OpenSans-VariableFont_wdth,wght.ttf
+        - asset: assets/fonts/OpenSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/OpenSans-Bold.ttf
+          weight: 700
 
     - family: NotoSansSC
       fonts:
-        - asset: assets/fonts/Noto_Sans_SC/NotoSansSC-VariableFont_wght.ttf
+        - asset: assets/fonts/NotoSansSC-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansSC-Bold.ttf
+          weight: 700

@@ -58,6 +58,9 @@ class JunkFusionApp extends StatelessWidget {
           fontFamily: "OpenSans",
           fontFamilyFallback: ["NotoSansSC"],
         ),
+        // 关闭桌面端自带的拼写检查 — 否则中文全被标黄色双下划线
+        // spellCheckConfiguration:
+        //     SpellCheckConfiguration.disabled(),
 
         // `home`：应用的首页 widget
         // `const App()` 创建 App widget 的编译期常量实例

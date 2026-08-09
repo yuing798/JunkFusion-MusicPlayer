@@ -75,37 +75,45 @@ class _AppState extends State<App> {
       (provider) => provider.currentSongId != null,
     );
 
-    return Column(
-      children: [
-        // --- 主内容区域（占满剩余空间） ---
-        Expanded(
-          child: Row(
-            children: [
-              SizedBox(
-                child: LeftColumn(onSelectionChanged: _handlePageChange),
-              ),
-
-              // 右侧主内容区
-              // Expanded 让主内容区占据剩余的所有宽度
-              Expanded(
-                child: Column(
-                  children: [
-                    const TitleBar(),
-                    pageWidget ?? Expanded(child: const SizedBox()),
-                  ],
+    return Scaffold(
+      body: Column(
+        children: [
+          // --- 主内容区域（占满剩余空间） ---
+          Expanded(
+            child: Row(
+              children: [
+                SizedBox(
+                  child: LeftColumn(onSelectionChanged: _handlePageChange),
                 ),
-              ),
-            ],
-          ),
-        ),
 
-        // --- 底部播放栏（带动画） ---
-        // AnimatedSlide + AnimatedOpacity 组合实现滑动淡入淡出
-        if (hasCurrentSong)
-          const PlayBar()
-        else
-          const SizedBox.shrink(), // 不占用任何空间
-      ],
+                // 右侧主内容区
+                // Expanded 让主内容区占据剩余的所有宽度
+                Expanded(
+                  child: ColoredBox(
+                    color: AppTheme.colorMain,
+                    child: Column(
+                      children: [
+                        const TitleBar(),
+                        if (pageWidget != null)
+                          Expanded(child: pageWidget)
+                        else
+                          Expanded(child: const SizedBox()),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- 底部播放栏（带动画） ---
+          // AnimatedSlide + AnimatedOpacity 组合实现滑动淡入淡出
+          if (hasCurrentSong)
+            const PlayBar()
+          else
+            const SizedBox.shrink(), // 不占用任何空间
+        ],
+      ),
     );
   }
 }

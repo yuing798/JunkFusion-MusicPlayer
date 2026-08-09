@@ -173,7 +173,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
               : ListView.builder(
                   controller: _scrollController,
                   // `itemCount` 等于列表长度
-                  itemCount: sortedSongs.length,
+                  itemCount: context.read<SongProvider>().songCount,
                   // `itemExtent` 固定每个 item 高度（性能优化）
                   // 对应原 Vue 虚拟滚动的 estimateSize: () => 80
                   itemExtent: 80,
