@@ -11,8 +11,8 @@ import 'package:junk_fusion_ui/theme/app_theme.dart';
 /// =============================================================================
 Widget createIcon(
   IconData svg, {
-  double s = 32,
-  Color c = AppTheme.colorTextMain,
+  double size_ = 32,
+  Color color_ = AppTheme.colorTextMain,
 }) {
-  return Icon(svg, size: s, color: c);
+  return Icon(svg, size: size_, color: color_);
 }

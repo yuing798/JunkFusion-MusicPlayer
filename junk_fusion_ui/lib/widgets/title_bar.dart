@@ -37,7 +37,7 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
   Widget build(BuildContext context) {
     return Container(
       height: 90,
-      color: AppTheme.colorMain,
+      color: Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end, //优先靠右对齐
         children: [

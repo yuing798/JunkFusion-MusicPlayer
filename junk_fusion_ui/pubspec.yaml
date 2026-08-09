@@ -55,6 +55,7 @@ dev_dependencies:
   freezed: ^3.2.5
   json_serializable: ^6.8.0 # 👈 新增：用于生成 JSON 解析代码
   ffigen: ^21.0.0
+  rename_app: ^1.6.6 #用来改变APP名称的依赖包
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

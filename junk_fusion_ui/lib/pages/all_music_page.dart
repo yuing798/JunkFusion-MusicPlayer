@@ -245,17 +245,12 @@ class _AllMusicPageState extends State<AllMusicPage> {
         style: TextButton.styleFrom(
           backgroundColor: AppTheme.colorHover,
           foregroundColor: AppTheme.colorTextMain,
-          // shape: RoundedRectangleBorder(
-          //   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-          // ),
-          // minimumSize: const Size(180, 40),
-          // textStyle: AppTheme.midTextStyle,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // 👈 直角矩形
+            borderRadius: BorderRadius.zero, //  直角矩形
           ),
         ),
         child: Text(
-          _isImporting ? '导入中...' : '导入文件/扫描文件夹',
+          _isImporting ? '导入中...' : '导入文件',
           style: AppTheme.midTextStyle,
         ),
       ),
