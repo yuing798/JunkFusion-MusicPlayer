@@ -69,13 +69,12 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     // 计算要显示的页面 Widget
     final pageWidget = _resolvePage(_currentPageId);
-    // 只有在 currentSongId 变化时才重建
+
+    // 只有当表达式的值（即 bool 结果）发生改变时才会重建
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
       (provider) => provider.currentSongId != null,
     );
 
-    // Scaffold — Material Design 布局脚手架
-    // 提供 appBar, body, bottomNavigationBar 等标准布局区域
     return Column(
       children: [
         // --- 主内容区域（占满剩余空间） ---

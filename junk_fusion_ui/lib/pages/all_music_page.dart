@@ -202,9 +202,11 @@ class _AllMusicPageState extends State<AllMusicPage> {
         children: [
           Text('所有音乐', style: AppTheme.bigTextStyle),
           const SizedBox(width: 15),
-          Text(
-            '共 ${context.read<SongProvider>().getAllSongCount()} 首',
-            style: AppTheme.littleTextStyle,
+          Selector<SongProvider, int>(
+            builder: (_, value, _) {
+              return Text('共 $value 首', style: AppTheme.littleTextStyle);
+            },
+            selector: (_, songProvi) => songProvi.songCount,
           ),
         ],
       ),

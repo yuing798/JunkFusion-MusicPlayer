@@ -20,7 +20,7 @@ class SongProvider extends ChangeNotifier {
     return _songs.where((s) => s.songId == songId).firstOrNull;
   }
 
-  int getAllSongCount() => _songs.length;
+  int get songCount => _songs.length;
 
   Future<void> getAllSongs() async {
     final results = await sendDLLIsolateTask(B_getAllSongs.name, {});
@@ -94,6 +94,7 @@ class SongProvider extends ChangeNotifier {
         final message = buffer.toString();
         InfoWindow.show(message, 30000);
       }
+      notifyListeners();
     }
   }
 

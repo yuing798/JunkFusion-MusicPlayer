@@ -1,8 +1,6 @@
 // ════════════════════════════════════════════════════════════════
 // play_bar.dart — 底部播放栏
 //
-// 对应原 Vue 项目 components/playBar.vue
-//
 // 布局（固定底部 90px）：
 //   Grid 三区: left-area (500px) | spacer | mid-area (330px) | spacer | right-area (550px)
 //   简化为 Row: left | Expanded | center | Expanded | right
@@ -10,18 +8,13 @@
 // 左区：封面 50×50 + 歌名/艺术家 + 喜欢按钮 + 歌曲详情弹窗
 // 中区：播放模式切换 + 上一首 + 播放/暂停 + 下一首 + 播放列表
 // 右区：（预留，当前为空）
-//
-// Dart 语法说明：
-// - `Consumer<PlaybackProvider>` 局部监听 Provider，只重建必要部分
-// - `context.watch` 在 build 中监听多个 Provider
-// - 图标使用 Flutter 内置 Material Icons 替代 @tabler/icons-vue
-// - 播放模式 0-3 循环切换
 // ════════════════════════════════════════════════════════════════
 
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
+import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -37,176 +30,178 @@ class PlayBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SongProvider, PlaybackProvider>(
-      builder: (context, songProvi, playback, child) {
-        //child: 可选的静态子组件（不随数据变化重建，用于性能优化）
-        final song = songProvi.getSongInfo(playback.currentSongId!);
-        assert(song != null);
+    final playback = context.watch<PlaybackProvider>();
 
-        Widget buildLikeButton() {
-          return IconButton(
-            icon: (song!.isMyLike)
-                ? Icon(TablerIcons.heartFilled, color: Colors.red)
-                : Icon(TablerIcons.heart),
-            onPressed: () =>
-                context.read<SongProvider>().toggleMyLike(song.songId),
-          );
-        }
+    // 安全地获取当前歌曲（如果 currentId 为空，返回 null）
+    final song = context.read<SongProvider>().getSongInfo(
+      playback.currentSongId!,
+    );
 
-        // 构建左区：封面 + 歌名/艺术家 + 喜欢 + 详情弹窗
-        Widget buildLeftArea() {
-          return Row(
-            children: [
-              (song!.hash != null)
-                  ? Image.file(
-                      File('$cacheDir/image/songs/${song.hash}/original.jpg'),
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      cacheHeight: 50,
-                      cacheWidth: 50,
-                    )
-                  : Image.asset(
-                      "assets/JunkFusion.png",
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      cacheHeight: 50,
-                      cacheWidth: 50,
-                    ),
+    assert(song != null);
 
-              const SizedBox(width: 10),
+    if (song == null) return SizedBox.shrink();
 
-              // ── 歌名 + 艺术家 ──
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      song.title,
-                      style: AppTheme.midTextStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      song.artist ?? '未知',
-                      style: AppTheme.littleTextStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+    Widget buildLikeButton() {
+      return IconButton(
+        icon: (song.isMyLike)
+            ? Icon(TablerIcons.heartFilled, color: Colors.red)
+            : Icon(TablerIcons.heart),
+        onPressed: () => context.read<SongProvider>().toggleMyLike(song.songId),
+      );
+    }
+
+    // 构建左区：封面 + 歌名/艺术家 + 喜欢 + 详情弹窗
+    Widget buildLeftArea() {
+      return Row(
+        children: [
+          (song.hash != null)
+              ? Image.file(
+                  File('$cacheDir/image/songs/${song.hash}/original.jpg'),
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  cacheHeight: 50,
+                  cacheWidth: 50,
+                )
+              : Image.asset(
+                  "assets/JunkFusion.png",
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  cacheHeight: 50,
+                  cacheWidth: 50,
                 ),
-              ),
 
-              const SizedBox(width: 10),
+          const SizedBox(width: 10),
 
-              // ── 喜欢按钮
-              buildLikeButton(),
-
-              // ── 歌曲详情弹窗──
-              PopupWindow(
-                title: '歌曲详情',
-                triggerBuilder: (open) => IconButton(
-                  onPressed: open,
-                  icon: createIcon(TablerIcons.infoHexagonFilled),
+          // ── 歌名 + 艺术家 ──
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  song.title,
+                  style: AppTheme.midTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                contentBuilder: () => SongDetailInfo(song: song),
-              ),
-            ],
-          );
-        }
-
-        // 构建中区：播放模式 + 播放控制
-        Widget buildMidArea() {
-          // `Row` 的子元素之间用 gap（间距）
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 播放模式按钮
-              _PlayModeIcon(
-                mode: playback.playMode,
-                onTap: () {
-                  context.read<PlaybackProvider>().cyclePlayMode();
-                },
-              ),
-
-              const SizedBox(width: 10),
-
-              // 上一首
-              IconButton(
-                icon: createIcon(TablerIcons.squareArrowLeftFilled),
-                onPressed: () {
-                  // TODO: 桥接层 - 调用上一首
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-
-              // 播放 / 暂停
-              IconButton(
-                icon: createIcon(
-                  playback.isPlaying
-                      ? TablerIcons.playerPauseFilled
-                      : TablerIcons.playerPlayFilled,
+                Text(
+                  song.artist ?? '未知',
+                  style: AppTheme.littleTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                onPressed: () {
-                  context.read<PlaybackProvider>().togglePlayPause();
-                },
-                padding: EdgeInsets.zero,
-              ),
-
-              // 下一首
-              IconButton(
-                icon: createIcon(TablerIcons.squareArrowRightFilled),
-                onPressed: () {
-                  // TODO: 桥接层 - 调用下一首
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-
-              const SizedBox(width: 10),
-
-              // 播放列表
-              IconButton(
-                icon: createIcon(TablerIcons.listFilled),
-                onPressed: () {
-                  // TODO: 桥接层 - 打开播放列表
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-            ],
-          );
-        }
-
-        return Container(
-          height: 90,
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-          color: AppTheme.colorHover,
-
-          // Row 布局（简化为三区）
-          child: Row(
-            children: [
-              // ── 左区：550px（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
-              SizedBox(width: 550, child: buildLeftArea()),
-
-              // 弹性空间
-              const Expanded(child: SizedBox()),
-
-              // ── 中区：330px（播放控制） ──
-              SizedBox(width: 330, child: buildMidArea()),
-
-              // 弹性空间
-              const Expanded(child: SizedBox()),
-
-              // ── 右区：550px（预留） ──
-              const SizedBox(width: 550),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+
+          const SizedBox(width: 10),
+
+          // ── 喜欢按钮
+          buildLikeButton(),
+
+          // ── 歌曲详情弹窗──
+          PopupWindow(
+            title: '歌曲详情',
+            triggerBuilder: (open) => IconButton(
+              onPressed: open,
+              icon: createIcon(TablerIcons.infoHexagonFilled),
+            ),
+            contentBuilder: () => SongDetailInfo(song: song),
+          ),
+        ],
+      );
+    }
+
+    // 构建中区：播放模式 + 播放控制
+    Widget buildMidArea() {
+      // `Row` 的子元素之间用 gap（间距）
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 播放模式按钮
+          _PlayModeIcon(
+            mode: playback.playMode,
+            onTap: () {
+              context.read<PlaybackProvider>().cyclePlayMode();
+            },
+          ),
+
+          const SizedBox(width: 10),
+
+          // 上一首
+          IconButton(
+            icon: createIcon(TablerIcons.squareArrowLeftFilled),
+            onPressed: () {
+              // TODO: 桥接层 - 调用上一首
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+
+          // 播放 / 暂停
+          IconButton(
+            icon: createIcon(
+              playback.isPlaying
+                  ? TablerIcons.playerPauseFilled
+                  : TablerIcons.playerPlayFilled,
+            ),
+            onPressed: () {
+              context.read<PlaybackProvider>().togglePlayPause();
+            },
+            padding: EdgeInsets.zero,
+          ),
+
+          // 下一首
+          IconButton(
+            icon: createIcon(TablerIcons.squareArrowRightFilled),
+            onPressed: () {
+              // TODO: 桥接层 - 调用下一首
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+
+          const SizedBox(width: 10),
+
+          // 播放列表
+          IconButton(
+            icon: createIcon(TablerIcons.listFilled),
+            onPressed: () {
+              // TODO: 桥接层 - 打开播放列表
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+      color: AppTheme.colorHover,
+
+      // Row 布局（简化为三区）
+      child: Row(
+        children: [
+          // ── 左区：550px（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
+          SizedBox(width: 550, child: buildLeftArea()),
+
+          // 弹性空间
+          const Expanded(child: SizedBox()),
+
+          // ── 中区：330px（播放控制） ──
+          SizedBox(width: 330, child: buildMidArea()),
+
+          // 弹性空间
+          const Expanded(child: SizedBox()),
+
+          // ── 右区：550px（预留） ──
+          const SizedBox(width: 550),
+        ],
+      ),
     );
   }
 }
