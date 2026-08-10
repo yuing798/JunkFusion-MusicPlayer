@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
+import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 
 // provider 包：状态管理
 // 需要在 pubspec.yaml 中添加: provider: ^6.1.2
@@ -25,6 +27,11 @@ void main() async {
     await windowManager.show();
     await windowManager.focus();
   });
+
+  print("准备初始化dll");
+  bindings.dllInit();
+
+  // sendDLLIsolateTask(B_dllInit.name, {});
 
   // `runApp` 接收一个 Widget 参数，把它设为屏幕上显示的根 widget
   // Flutter 会接管该 widget 的生命周期和渲染

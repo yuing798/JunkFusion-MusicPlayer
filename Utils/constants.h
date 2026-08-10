@@ -17,7 +17,7 @@ using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachmen
 // 日志id
 static constexpr const char* LogAudioID{"audio"};
 static constexpr const char* LogSchedulerID{"scheduler"};
-static constexpr const char* LogUiID{"ui"};
+static constexpr const char* LogDllID{"dll"};
 static constexpr const char* LogAiID{"ai"};
 static constexpr const char* LogVSTID{"vst"};
 static constexpr const char* LogCrashID{"crash"};
@@ -25,13 +25,13 @@ static constexpr const char* LogAllID{"all"};
 
 // 文件路径操作
 
-static const juce::File LocalDirId{
-    juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory)
-        .getChildFile("JunkFusion")
-};
-static const juce::File imageDirId{LocalDirId.getChildFile("image")};
-static const juce::File songImageDirId{imageDirId.getChildFile("songs")};
-static const juce::File logInfoDirId{LocalDirId.getChildFile("logInfo")};
+// static const juce::File LocalDirId{
+//     juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory)
+//         .getChildFile("JunkFusion")
+// };
+// static const juce::File imageDirId{LocalDirId.getChildFile("image")};
+// static const juce::File songImageDirId{imageDirId.getChildFile("songs")};
+// static const juce::File logInfoDirId{LocalDirId.getChildFile("logInfo")};
 
 // 禁止拷贝和移动的宏
 #define DONT_COPY_AND_MOVE(ClassName)                                                              \

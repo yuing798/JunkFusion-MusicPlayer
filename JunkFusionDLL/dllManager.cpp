@@ -1,0 +1,44 @@
+#include "./dllManager.hpp"
+#include "juce_core/juce_core.h"
+
+dllManager::dllManager() {}
+
+void dllManager::init(const char* cacheDirId) {
+    cacheDir = juce::File{cacheDirId};
+    logInfoDir = cacheDir.getChildFile("log");
+    if (!logInfoDir.exists()) logInfoDir.createDirectory();
+    songImageDir = cacheDir.getChildFile("songImage");
+    if (!songImageDir.exists()) songImageDir.createDirectory();
+
+    const auto logDirPath = logInfoDir.getFullPathName().toStdString();
+    constexpr size_t kUiMaxSize = 5 * 1024 * 1024; // 5 MB
+    constexpr size_t kUiMaxFiles = 3;
+
+    // ──  player_dll.log — UI调用dll操作 (Info) ──
+    {
+        auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+            logDirPath + "/player_dll.log",
+            kUiMaxSize,
+            kUiMaxFiles
+        );
+        // 全局日志格式：时间戳 + 级别 + 线程ID + 消息体
+        const char* pattern = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v";
+        auto uiLogger = std::make_shared<spdlog::logger>(LogDllID, std::move(sink));
+        uiLogger->set_pattern(pattern);
+        uiLogger->set_level(spdlog::level::info);
+        spdlog::register_logger(uiLogger);
+    }
+
+    juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
+    // if(!dbFile.existsAsFile()) dbFile.cr  不用，因为SQLite::OPEN_CREATE会初始化文件
+    db = std::make_unique<SQLite::Database>(
+        dbFile.getFullPathName().toStdString(),
+        SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
+    );
+
+    // 把 db 指针或引用传给各表
+    songs = std::make_unique<SongsManage>(*db);
+
+    db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
+    db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
+}

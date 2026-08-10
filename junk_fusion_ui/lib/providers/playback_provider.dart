@@ -51,6 +51,7 @@ class PlaybackProvider extends ChangeNotifier {
     //把某首歌设置为播放状态
     _currentSongId = songId;
     _isPlaying = true;
+    notifyListeners();
   }
 
   // 切换播放模式（循环 0 → 1 → 2 → 3 → 0 → ...）

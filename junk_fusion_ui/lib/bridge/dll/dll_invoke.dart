@@ -73,7 +73,12 @@ Future<SendPort> isolateSendPort = () async {
         return;
       }
       if (data is _TaskResponse) {
-        // The helper isolate sent us a response to a request we sent.
+        // 把辅助隔离区中的异常打印到终端（否则静默崩溃无法调试）
+        // print("接收到回复消息");
+        if (data.results.containsKey('error')) {
+          print('❌ DLL Isolate 错误: ${data.results['error']}');
+          print('堆栈: ${data.results['stack']}');
+        }
         // 根据响应中的 id 取出对应的 Completer
         final completer = _pendingRequests.remove(data.id);
         if (completer != null && !completer.isCompleted) {
@@ -87,77 +92,112 @@ Future<SendPort> isolateSendPort = () async {
 
   // Start the helper isolate.
   await Isolate.spawn((SendPort sendPort) async {
+    final DynamicLibrary isolateLib = () {
+      final isolateLibName = Platform.isWindows
+          ? "JunkFusionDLL.dll"
+          : Platform.isMacOS
+          ? "JunkFusionDLL.dylib"
+          : "JunkFusionDLL.so";
+
+      return DynamicLibrary.open(isolateLibName);
+    }();
+
+    final isolateBindings = JunkFusionDLLBindings(isolateLib);
+
     final ReceivePort helperReceivePort = ReceivePort()
       ..listen((dynamic data) {
         // On the helper isolate listen to requests and respond to them.
+        // print("开始执行DLL隔离区函数");
         if (data is _TaskRequest) {
-          final name = data.funcName;
-          final params = data.params;
-          Map<String, Object?> results = {}; //Map为空和NULL是两种东西
-          if (name == B_getAllSongs.name) {
-            final cPtr = bindings.getAllSongs();
-            final dartString = cPtr.cast<Utf8>().toDartString(); //解码
-            Map<String, dynamic> obj = jsonDecode(dartString);
-            //Object? 是“类型安全的未知类型”（你暂时不知道它是什么，但编译器会管着你）；
-            //dynamic 是“彻底关闭类型检查的万能类型”（你爱怎么用就怎么用，编译器完全听你的，出错了运行时才报错）。
-            bindings.freeString(cPtr);
-            assert(obj.containsKey(B_getAllSongs.songsList));
-            final songs =
-                obj[B_getAllSongs.songsList] as List<Map<String, dynamic>>;
-            List<SongInfo> songsList = [];
-            for (int i = 0; i < songs.length; i++) {
-              final song = songs[i];
-              songsList[i] = SongInfo.fromJson(song);
+          try {
+            final name = data.funcName;
+            final params = data.params;
+            Map<String, Object?> results = {}; //Map为空和NULL是两种东西
+            if (name == B_getAllSongs.name) {
+              final cPtr = isolateBindings.getAllSongs();
+              final dartString = cPtr.cast<Utf8>().toDartString(); //解码
+              Map<String, dynamic> obj = jsonDecode(dartString);
+              //Object? 是“类型安全的未知类型”（你暂时不知道它是什么，但编译器会管着你）；
+              //dynamic 是“彻底关闭类型检查的万能类型”（你爱怎么用就怎么用，编译器完全听你的，出错了运行时才报错）。
+              isolateBindings.freeString(cPtr);
+              assert(obj.containsKey(B_getAllSongs.songsList));
+              final songs =
+                  obj[B_getAllSongs.songsList] as List<Map<String, dynamic>>;
+              List<SongInfo> songsList = [];
+              for (int i = 0; i < songs.length; i++) {
+                final song = songs[i];
+                songsList.add(SongInfo.fromJson(song));
+              }
+              results[B_getAllSongs.songsList] = songsList;
+            } else if (name == B_getAllSongCount.name) {
+              final count = isolateBindings.getAllSongCount();
+              results[B_getAllSongCount.count] = count;
+            } else if (name == B_dllInit.name) {
+              isolateBindings.dllInit();
+            } else if (name == B_toggleMyLike.name) {
+              assert(params.containsKey(B_toggleMyLike.songId));
+              final songId = params[B_toggleMyLike.songId] as int; // 强制转换为 int
+              bool result = isolateBindings.toggleMyLike(songId) == 1;
+              results[B_toggleMyLike.successOrError] = result;
+            } else if (name == B_saveComment.name) {
+              assert(
+                params.containsKey(B_saveComment.songId) &&
+                    params.containsKey(B_saveComment.text),
+              );
+              final songId = params[B_saveComment.songId] as int;
+              final commentText = params[B_saveComment.text] as String;
+              final cPtr = commentText.toNativeUtf8().cast<Char>();
+              isolateBindings.saveComment(songId, cPtr);
+              malloc.free(
+                cPtr,
+              ); //因为这个c指针是dart的内存管理器分配在堆上面的，所以需要使用dart的calloc.free释放内存
+            } else if (name == B_songImport.name) {
+              print("开始导入文件");
+              assert(params.containsKey(B_songImport.filePaths));
+              print("1");
+              String jsonStr = jsonEncode(params);
+              print("2");
+              final cPtr = jsonStr.toNativeUtf8().cast<Char>();
+              print("3");
+              final resultPtr = isolateBindings.someImport(cPtr);
+              print("4");
+              final resultJsonString = resultPtr.cast<Utf8>().toDartString();
+              print("5");
+              isolateBindings.freeString(resultPtr);
+              print("6");
+              malloc.free(cPtr);
+              print("导入成功");
+
+              final resultObj =
+                  jsonDecode(resultJsonString) as Map<String, Object?>;
+
+              final songs =
+                  resultObj[B_songImport.songs] as List<Map<String, dynamic>>;
+              final errorFiles =
+                  resultObj[B_songImport.errorFiles] as List<String>;
+              List<SongInfo> songsList = [];
+              for (int i = 0; i < songs.length; i++) {
+                songsList.add(SongInfo.fromJson(songs[i]));
+              }
+              results[B_songImport.songs] = songsList;
+              results[B_songImport.errorFiles] = errorFiles;
             }
-            results[B_getAllSongs.songsList] = songsList;
-          } else if (name == B_getAllSongCount.name) {
-            final count = bindings.getAllSongCount();
-            results[B_getAllSongCount.count] = count;
-          } else if (name == B_dbInit.name) {
-            bindings.dbInit();
-          } else if (name == B_toggleMyLike.name) {
-            assert(params.containsKey(B_toggleMyLike.songId));
-            final songId = params[B_toggleMyLike.songId] as int; // 强制转换为 int
-            bool result = bindings.toggleMyLike(songId) == 1;
-            results[B_toggleMyLike.successOrError] = result;
-          } else if (name == B_saveComment.name) {
-            assert(
-              params.containsKey(B_saveComment.songId) &&
-                  params.containsKey(B_saveComment.text),
+            print("准备发送回复消息");
+            sendPort.send(_TaskResponse(data.id, results));
+          } catch (e, stack) {
+            // print("堆栈错误");
+            sendPort.send(
+              _TaskResponse(data.id, {'error': '$e', 'stack': '$stack'}),
             );
-            final songId = params[B_saveComment.songId] as int;
-            final commentText = params[B_saveComment.text] as String;
-            final cPtr = commentText.toNativeUtf8().cast<Char>();
-            bindings.saveComment(songId, cPtr);
-            calloc.free(
-              cPtr,
-            ); //因为这个c指针是dart的内存管理器分配在堆上面的，所以需要使用dart的calloc.free释放内存
-          } else if (name == B_songImport.name) {
-            assert(params.containsKey(B_songImport.filePaths));
-            String jsonStr = jsonEncode(params);
-            final cPtr = jsonStr.toNativeUtf8().cast<Char>();
-            final resultPtr = bindings.someImport(cPtr);
-            final resultJsonString = resultPtr.cast<Utf8>().toDartString();
-            bindings.freeString(resultPtr);
-            calloc.free(cPtr);
-
-            final resultObj =
-                jsonDecode(resultJsonString) as Map<String, Object?>;
-
-            final songs =
-                resultObj[B_songImport.songs] as List<Map<String, dynamic>>;
-            final errorFiles =
-                resultObj[B_songImport.errorFiles] as List<String>;
-            List<SongInfo> songsList = [];
-            for (int i = 0; i < songs.length; i++) {
-              songsList[i] = SongInfo.fromJson(songs[i]);
-            }
-            results[B_songImport.songs] = songsList;
-            results[B_songImport.errorFiles] = errorFiles;
           }
-          sendPort.send(_TaskResponse(data.id, results));
+        } else {
+          // print("类型错误");
+          sendPort.send(
+            _TaskResponse(data.id, {
+              'error': 'Unsupported message type: ${data.runtimeType}',
+            }),
+          );
         }
-        throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
       });
 
     // Send the port to the main isolate on which we can receive requests.

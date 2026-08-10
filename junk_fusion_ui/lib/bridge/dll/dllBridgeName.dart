@@ -8,8 +8,8 @@ class B_songImport{
   static const String errorFiles = 'errorFiles';
 }
 
-class B_dbInit{
-  static const String name = 'dbInit';
+class B_dllInit{
+  static const String name = 'dllInit';
 }
 
 class B_toggleMyLike{

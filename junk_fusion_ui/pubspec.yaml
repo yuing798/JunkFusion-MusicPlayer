@@ -47,6 +47,7 @@ dependencies:
   # 用于在 Widget Tree 中注入和访问 ChangeNotifier
   provider: ^6.1.2
   window_manager: ^0.5.2
+  logger: ^2.7.0
 
 dev_dependencies:
   flutter_test:

@@ -9,7 +9,7 @@
       "songs":"",//成功返回的歌曲数组
       "errorFiles":""//导入失败的文件
   },
-  "dbInit":{
+  "dllInit":{
   },
   "toggleMyLike":{
     "songId":"",

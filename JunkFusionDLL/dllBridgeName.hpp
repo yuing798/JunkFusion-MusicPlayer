@@ -8,8 +8,8 @@ struct B_songImport{
     static constexpr const char* errorFiles = "errorFiles" ;
 };
 
-struct B_dbInit{
-    static constexpr const char* name = "dbInit" ;
+struct B_dllInit{
+    static constexpr const char* name = "dllInit" ;
 };
 
 struct B_toggleMyLike{

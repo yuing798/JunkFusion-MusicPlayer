@@ -11,14 +11,13 @@
 extern "C" {
 #endif
 
-    LIB_EXPORT void dbInit();
+    LIB_EXPORT void dllInit(const char* cacheDirId);
     LIB_EXPORT int getAllSongCount();
     LIB_EXPORT int toggleMyLike(long long songId);
     LIB_EXPORT const char* getAllSongs();
     LIB_EXPORT void saveComment(long long songId, const char* commentText);
     LIB_EXPORT void freeString(char* str);
     LIB_EXPORT const char* someImport(const char*);
-    LIB_EXPORT const char* getCacheDir();
 
 #ifdef __cplusplus
 }

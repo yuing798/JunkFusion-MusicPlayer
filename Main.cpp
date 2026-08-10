@@ -27,12 +27,12 @@ public:
         // std::cout <<
         // juce::String(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getFullPathName()).toStdString();
 
-        if (!LocalDirId.exists()) LocalDirId.createDirectory(); // 整个应用的数据文件夹
-        if (!imageDirId.exists()) imageDirId.createDirectory(); // 里面放置所有的用户图像信息
-        if (!songImageDirId.exists()) songImageDirId.createDirectory(); // 放置歌曲封面信息
-        if (!logInfoDirId.exists()) logInfoDirId.createDirectory();     // 日志文件夹
+        // if (!LocalDirId.exists()) LocalDirId.createDirectory(); // 整个应用的数据文件夹
+        // if (!imageDirId.exists()) imageDirId.createDirectory(); // 里面放置所有的用户图像信息
+        // if (!songImageDirId.exists()) songImageDirId.createDirectory(); // 放置歌曲封面信息
+        // if (!logInfoDirId.exists()) logInfoDirId.createDirectory();     // 日志文件夹
 
-        mLogSystem.init(); // spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
+        // mLogSystem.init(); // spdlog已经做好了全局唯一单例管理了，不需要自己再做一遍
 
         // mainWindow.reset(new MainWindow(getApplicationName()));
     }
@@ -58,7 +58,7 @@ public:
     }
 
 private:
-    logSystem mLogSystem;
+    // logSystem mLogSystem;
 };
 
 //==============================================================================

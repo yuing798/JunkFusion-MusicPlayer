@@ -1,5 +1,5 @@
 #include "songsManage.hpp"
-#include "./dbManager.hpp"
+#include "../dllManager.hpp"
 #include "constants.h"
 #include "dbModel.hpp"
 #include "dllUtils.hpp"
@@ -164,7 +164,9 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         do {
             info.hash = sha1(coverPacket.data, coverPacket.size);
 
-            juce::File hashImageDir{songImageDirId.getChildFile(info.hash.value())};
+            juce::File hashImageDir{
+                dllManager::getInstance().getSongImageDir().getChildFile(info.hash.value())
+            };
             // data存在说明一定有图片，所以直接使用.value()就行了
             //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
 
@@ -398,7 +400,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             result.push_back(std::move(info));
         }
     } catch (const SQLite::Exception& e) {
-        auto logger = spdlog::get(LogUiID);
+        auto logger = spdlog::get(LogDllID);
         logger->error("getAllSongs发生失败:{}", e.what());
     }
 
@@ -443,7 +445,7 @@ bool SongsManage::reverseMyLike(int64_t id) {
             return false;
         }
     } catch (const SQLite::Exception& e) {
-        auto logger{spdlog::get(LogUiID)};
+        auto logger{spdlog::get(LogDllID)};
         logger->error("[我喜欢]状态更新失败，请重试:{}", e.what());
         return false;
     }
@@ -470,7 +472,7 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
         sql.bind(":songId", songId);
         sql.exec();
     } catch (const SQLite::Exception& e) {
-        auto logger{spdlog::get(LogUiID)};
+        auto logger{spdlog::get(LogDllID)};
         logger->error("id号{}:评论更新失败:{}", songId, e.what());
     }
 }
