@@ -7,6 +7,7 @@
 #include "juce_core/juce_core.h"
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
+#include <string>
 #include <vector>
 
 extern "C" {
@@ -39,23 +40,37 @@ extern "C" {
     }
     const char* someImport(const char* jsonStr) {
         auto logger{spdlog::get(LogDllID)};
+        // logger->info("接收到的信息为：{}", jsonStr);
         logger->info("开始导入歌曲");
         auto obj = charPtr2object(jsonStr);
-        juce::Array<juce::var> filePaths = obj->getProperty(B_songImport::filePaths);
+        auto filePaths = obj->getProperty(B_songImport::filePaths).getArray();
         std::vector<SongInfo> songs;
         juce::Array<juce::var> errorFiles;
-        for (auto& filePath : filePaths) {
+        std::string errorFilesString;
+        // std::string successFilesString;
+        for (auto& filePath : *filePaths) {
             auto path = juce::File(filePath.toString());
             auto result = dllManager::getInstance().getSongsManager().insertSong(path);
             if (result.has_value()) {
                 songs.push_back(result.value());
+                // successFilesString += path.getFileName().toStdString() + "\n";
             } else {
-                errorFiles.add(path.getFileName());
+                auto pathStr = path.getFileName();
+                errorFiles.add(pathStr);
+                errorFilesString += path.getFileName().toStdString() + "\n";
             }
         }
         juce::DynamicObject::Ptr resultObj{new juce::DynamicObject()};
         resultObj->setProperty(B_songImport::songs, SongInfo::vector2VarArray(songs));
         resultObj->setProperty(B_songImport::errorFiles, errorFiles);
+        std::string resultStr{
+            "导入歌曲完成，成功" + std::to_string(songs.size()) + "首，失败" +
+            std::to_string(errorFiles.size()) + "首\n失败文件：\n" + errorFilesString
+            // + "成功文件" +
+            // successFilesString
+        };
+        // 这里准备加上失败原因
+        logger->info(resultStr);
         return object2Uint8t(resultObj);
     }
 }

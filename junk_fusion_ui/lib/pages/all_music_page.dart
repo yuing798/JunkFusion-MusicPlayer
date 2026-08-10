@@ -156,6 +156,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
   @override
   Widget build(BuildContext context) {
     final sortedSongs = _getSortedSongs(context);
+    context.watch<SongProvider>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

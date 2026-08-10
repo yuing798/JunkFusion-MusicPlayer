@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/widgets/info_window.dart';
 import 'package:path_provider/path_provider.dart';
 
 // provider 包：状态管理
@@ -36,8 +37,14 @@ void main() async {
 
   print("准备初始化dll");
   final cacheDir = getApplicationCacheDirectory();
+
   final cacheDirPath = await cacheDir;
+  if (!await cacheDirPath.exists()) {
+    cacheDirPath.createSync(recursive: true);
+  }
   AppCache.cacheDirString = cacheDirPath.path;
+  // print(AppCache.cacheDirString);
+  //C:\Users\sakuyayuing\AppData\Local\com.example\junk_fusion_ui
   final cPtr = AppCache.cacheDirString.toNativeUtf8().cast<dart_ffi.Char>();
   bindings.dllInit(cPtr); //dll初始化
   ffi.malloc.free(cPtr);
@@ -71,6 +78,7 @@ class JunkFusionApp extends StatelessWidget {
       child: MaterialApp(
         // `title`：应用标题（显示在任务管理器中）
         title: 'JunkFusion',
+        navigatorKey: InfoWindow.navigatorKey,
 
         // `debugShowCheckedModeBanner`：关闭右上角 DEBUG 标签
         debugShowCheckedModeBanner: false,

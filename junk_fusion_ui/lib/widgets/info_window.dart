@@ -67,12 +67,13 @@ abstract class InfoWindow {
 
     final message = msg.toString();
 
-    // 获取 Overlay 的 context
-    final context = navigatorKey.currentContext;
-    if (context == null) return; // 如果没有 context，无法显示
+    // 通过 NavigatorState 直接拿到 Overlay，而不是 Overlay.of(context)
+    // navigatorKey.currentContext 是 Navigator 自己的 context，
+    // Overlay.of() 从 context 往上找 → 跳过 Navigator 内部的 Overlay → 找不到
+    final overlay = navigatorKey.currentState?.overlay;
+    if (overlay == null) return;
 
     // 创建 OverlayEntry
-    // OverlayEntry 是 Overlay 系统中的一个"浮层条目"
     _overlayEntry = OverlayEntry(
       builder: (context) => _InfoWindowWidget(
         message: message,
@@ -84,10 +85,7 @@ abstract class InfoWindow {
     );
 
     // 插入 Overlay
-    // Overlay.of(context) 获取最近的 Overlay 实例
-    //通过 context 向上找到屏幕根部的 Overlay（悬浮层画布），然后把你的 _overlayEntry 挂载到画布上，让它立刻显示在屏幕最前面。
-    //Overlay 是 MaterialApp（或 WidgetsApp）在启动时自动创建的顶层组件，你完全不需要、也不应该自己去手动创建它。
-    Overlay.of(context).insert(_overlayEntry!);
+    overlay.insert(_overlayEntry!);
 
     // 设置自动消失定时器
     // `Timer` 是 Dart 的定时器类

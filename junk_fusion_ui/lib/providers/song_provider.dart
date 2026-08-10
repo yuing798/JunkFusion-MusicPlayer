@@ -76,9 +76,17 @@ class SongProvider extends ChangeNotifier {
       final results = await sendDLLIsolateTask(B_songImport.name, {
         B_songImport.filePaths: filePaths,
       });
+      print("完成隔离区函数");
       final errorFiles = results[B_songImport.errorFiles] as List<String>;
       final songsList = results[B_songImport.songs] as List<SongInfo>;
       _songs.addAll(songsList);
+
+      for (final song in _songs) {
+        print(song.songId);
+        print(song.title);
+        print("11111");
+      }
+
       if (errorFiles.isEmpty) {
         InfoWindow.show("全部歌曲导入成功，总计${songsList.length}首歌曲", 3000);
       } else {

@@ -38,7 +38,10 @@ const char* object2Uint8t(juce::DynamicObject::Ptr obj) {
     juce::var varObj(obj);
 
     // 2. 转换为 JSON 字符串（无多余空格，紧凑格式）
-    auto jsonStr = juce::JSON::toString(varObj).toRawUTF8();
+    //    必须用局部变量持有 juce::String，否则 .toRawUTF8() 指向临时对象的内部缓冲区，
+    //    分号执行完后临时 String 销毁 → 野指针 → 下游读到垃圾数据
+    juce::String json = juce::JSON::toString(varObj);
+    const char* jsonStr = json.toRawUTF8();
 
     // 申请堆内存
     size_t length{strlen(jsonStr)};
@@ -51,7 +54,7 @@ const char* object2Uint8t(juce::DynamicObject::Ptr obj) {
 
 juce::DynamicObject::Ptr charPtr2object(const char* ptr) {
     // 1. 解析 JSON
-    juce::var parsed = juce::JSON::parse(juce::String(ptr));
+    juce::var parsed = juce::JSON::parse(juce::String::fromUTF8(ptr));
 
     // 2. 获取 DynamicObject
     juce::DynamicObject::Ptr obj = parsed.getDynamicObject();
