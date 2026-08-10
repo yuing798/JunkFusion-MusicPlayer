@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -204,7 +205,9 @@ class _HoverPlayButtonState extends State<HoverPlayButton> {
               duration: const Duration(milliseconds: 300),
               child: (widget.hash != null)
                   ? Image.file(
-                      File('$cacheDir/image/songs/${widget.hash}/original.jpg'),
+                      File(
+                        '${AppCache.cacheDirString}/image/songs/${widget.hash}/original.jpg',
+                      ),
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,

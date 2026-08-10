@@ -19,14 +19,16 @@ class JunkFusionDLLBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  void dllInit() {
-    return _dllInit();
+  void dllInit(ffi.Pointer<ffi.Char> cacheDirId) {
+    return _dllInit(cacheDirId);
   }
 
-  late final _dllInitPtr = _lookup<ffi.NativeFunction<ffi.Void Function()>>(
-    'dllInit',
-  );
-  late final _dllInit = _dllInitPtr.asFunction<void Function()>();
+  late final _dllInitPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'dllInit',
+      );
+  late final _dllInit = _dllInitPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
   void freeString(ffi.Pointer<ffi.Char> str) {
     return _freeString(str);
@@ -57,17 +59,6 @@ class JunkFusionDLLBindings {
         'getAllSongs',
       );
   late final _getAllSongs = _getAllSongsPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function()>();
-
-  ffi.Pointer<ffi.Char> getCacheDir() {
-    return _getCacheDir();
-  }
-
-  late final _getCacheDirPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-        'getCacheDir',
-      );
-  late final _getCacheDir = _getCacheDirPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {

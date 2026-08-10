@@ -1,10 +1,16 @@
+import 'dart:ffi' as dart_ffi;
+
+import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
+import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:path_provider/path_provider.dart';
 
 // provider 包：状态管理
 // 需要在 pubspec.yaml 中添加: provider: ^6.1.2
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
 // 导入自己的文件（相对路径，不需要 package: 前缀）
@@ -29,7 +35,14 @@ void main() async {
   });
 
   print("准备初始化dll");
-  bindings.dllInit();
+  final cacheDir = getApplicationCacheDirectory();
+  final cacheDirPath = await cacheDir;
+  AppCache.cacheDirString = cacheDirPath.path;
+  final cPtr = AppCache.cacheDirString.toNativeUtf8().cast<dart_ffi.Char>();
+  bindings.dllInit(cPtr); //dll初始化
+  ffi.malloc.free(cPtr);
+
+  AppCache.frontCacheRef = await SharedPreferences.getInstance();
 
   // sendDLLIsolateTask(B_dllInit.name, {});
 

@@ -77,7 +77,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
   Future<void> _delayInit() async {
     // 读取数据（注意：如果获取不到，设置默认值）
-    final frontCache = await AppCache.frontCache;
+    final frontCache = AppCache.frontCacheRef;
     final isAscending = frontCache.getBool("isAscending") ?? true; // 默认升序
     final sortValue = frontCache.getInt("sortWays") ?? 0; // 默认值需与 SortMode 对应
     final sortMode = SortMode.values.firstWhere(
@@ -105,7 +105,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
       _isAscending = !_isAscending;
     });
 
-    final frontCache = await AppCache.frontCache;
+    final frontCache = AppCache.frontCacheRef;
     await frontCache.setBool("isAscending", _isAscending);
   }
 
@@ -276,7 +276,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
               setState(() {
                 _selectedSort = mode;
               });
-              final frontCache = await AppCache.frontCache;
+              final frontCache = AppCache.frontCacheRef;
               frontCache.setInt("sortWays", mode.value);
             },
           ),
