@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
-import 'package:junk_fusion_ui/widgets/info_window.dart';
+import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 // ════════════════════════════════════════════════════════════════
 // song_provider.dart — 歌曲列表状态管理
@@ -46,7 +46,7 @@ class SongProvider extends ChangeNotifier {
     });
     final successOrError = results[B_toggleMyLike.successOrError] as bool;
     if (!successOrError) {
-      InfoWindow.show("切换我喜欢状态发生错误，请重试");
+      DialogUtil.showInfoDialog("切换我喜欢状态发生错误，请重试");
       // --- 失败回滚：恢复原始状态 ---
       _songs[index] = originSong;
       notifyListeners(); // 通知 UI 刷新回原始状态
@@ -88,7 +88,7 @@ class SongProvider extends ChangeNotifier {
       }
 
       if (errorFiles.isEmpty) {
-        InfoWindow.show("全部歌曲导入成功，总计${songsList.length}首歌曲", 3000);
+        DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");
       } else {
         final buffer = StringBuffer()
           ..write(
@@ -100,7 +100,7 @@ class SongProvider extends ChangeNotifier {
         }
 
         final message = buffer.toString();
-        InfoWindow.show(message, 30000);
+        DialogUtil.showInfoDialog(message);
       }
       notifyListeners();
     }

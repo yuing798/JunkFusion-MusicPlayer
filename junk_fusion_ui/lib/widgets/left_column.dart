@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import '../theme/app_theme.dart';
 
 class LeftColumn extends StatefulWidget {
@@ -57,6 +58,17 @@ class _LeftColumnState extends State<LeftColumn> {
         _NavButton(id: 9, text: '均衡器'),
         _NavButton(id: 10, text: '音箱阵列'),
         _NavButton(id: 11, text: '设置'),
+        _NavButton(id: 12, text: "f22wf"),
+        _NavButton(id: 13, text: "fqqwf"),
+        _NavButton(id: 14, text: "f3gwf"),
+        _NavButton(id: 15, text: "fgrewf"),
+        _NavButton(id: 16, text: "fqrefwf"),
+        _NavButton(id: 17, text: "fqvrewf"),
+        _NavButton(id: 18, text: "fqqwf"),
+        _NavButton(id: 19, text: "fqqwf"),
+        _NavButton(id: 10, text: "fwdqqwwf"),
+        _NavButton(id: 21, text: "fqwdwf"),
+        _NavButton(id: 22, text: "fqdqwdf"),
       ],
     ),
   ];
@@ -82,15 +94,20 @@ class _LeftColumnState extends State<LeftColumn> {
       color: AppTheme.colorNav,
 
       // Scrollbar — 滚动条（thumb 颜色使用强调色）
-      child: Scrollbar(
-        controller: _scrollController,
-        thumbVisibility: true, // 始终显示滚动条滑块
-        interactive: true,
-        child: ListView(
-          // `padding` 是列表整体内边距
-          // `EdgeInsets.only(bottom: 100)` 仅底部留 100px（对应原 CSS padding-bottom: 100px）
+      child: DynMouseScroll(
+        // scrollController: _scrollController,
+        // enableCustomMouseWheelScrolling: true,
+        // enableKeyboardScrolling: true,
+        // enableMMBScrolling: true,
+        // customMouseWheelScrollConfig: const CustomMouseWheelScrollConfig(
+        //   scrollAmountMultiplier: 0.1, // 如果还是跳跃，把这个值调小（比如 1.5 或 2.0）
+        //   scrollDuration: Duration(milliseconds: 350), // 🌟 必须要有 duration 才能平滑
+        //   scrollCurve: Curves.easeOutQuart, // 推荐这个曲线，有很舒服的刹车感
+        // ),
+        builder: (_, controler_, physics_) => ListView(
           padding: const EdgeInsets.only(bottom: 100),
-          controller: _scrollController,
+          controller: controler_,
+          physics: physics_,
 
           // physics: const ClampingScrollPhysics(),
           children: [

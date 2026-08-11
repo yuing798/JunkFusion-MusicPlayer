@@ -10,7 +10,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
-import 'popup_window.dart';
+import 'ppp.dart';
 import 'song_detail_info.dart';
 
 // EachSong — 单首歌曲行
@@ -117,19 +117,19 @@ class EachSong extends StatelessWidget {
           SizedBox(width: 40, child: buildLikeButton()),
 
           // ── 第 7 列：歌曲详情弹窗 (40px) ──
-          SizedBox(
-            width: 40,
-            child: PopupWindow(
-              title: '歌曲详情',
-              triggerBuilder: (open) =>
-                  //   _CircleIconButton(icon: Icons.info_outline, onTap: open),
-                  GestureDetector(
-                    onTap: open,
-                    child: Icon(TablerIcons.infoHexagonFilled),
-                  ),
-              contentBuilder: () => SongDetailInfo(song: song),
-            ),
-          ),
+          // SizedBox(
+          //   width: 40,
+          //   child: PopupWindow(
+          //     title: '歌曲详情',
+          //     triggerBuilder: (open) =>
+          //         //   _CircleIconButton(icon: Icons.info_outline, onTap: open),
+          //         GestureDetector(
+          //           onTap: open,
+          //           child: Icon(TablerIcons.infoHexagonFilled),
+          //         ),
+          //     contentBuilder: () => SongDetailInfo(song: song),
+          //   ),
+          // ),
         ],
       ),
     );

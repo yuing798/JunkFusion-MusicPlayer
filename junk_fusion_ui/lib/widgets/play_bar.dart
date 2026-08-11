@@ -22,7 +22,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
-import 'popup_window.dart';
+import 'ppp.dart';
 import 'song_detail_info.dart';
 
 // PlayBar — 底部播放栏
@@ -105,14 +105,14 @@ class PlayBar extends StatelessWidget {
           buildLikeButton(),
 
           // ── 歌曲详情弹窗──
-          PopupWindow(
-            title: '歌曲详情',
-            triggerBuilder: (open) => IconButton(
-              onPressed: open,
-              icon: createIcon(TablerIcons.infoHexagonFilled),
-            ),
-            contentBuilder: () => SongDetailInfo(song: song),
-          ),
+          // PopupWindow(
+          //   title: '歌曲详情',
+          //   triggerBuilder: (open) => IconButton(
+          //     onPressed: open,
+          //     icon: createIcon(TablerIcons.infoHexagonFilled),
+          //   ),
+          //   contentBuilder: () => SongDetailInfo(song: song),
+          // ),
         ],
       );
     }

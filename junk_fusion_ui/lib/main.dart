@@ -6,7 +6,7 @@ import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
-import 'package:junk_fusion_ui/widgets/info_window.dart';
+import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 
 // provider 包：状态管理
@@ -36,7 +36,7 @@ void main() async {
     await windowManager.focus();
   });
 
-  print("准备初始化dll");
+  // print("准备初始化dll");
   final cacheDir = getApplicationCacheDirectory();
 
   final cacheDirPath = await cacheDir;
@@ -48,7 +48,7 @@ void main() async {
   bindings.dllInit(cPtr); //dll初始化
   ffi.malloc.free(cPtr);
 
-  AppCache.frontCacheRef = await SharedPreferences.getInstance();
+  AppCache.frontCacheRef = await SharedPreferences.getInstance(); //初始化前端缓存指针
 
   // `runApp` 接收一个 Widget 参数，把它设为屏幕上显示的根 widget
   // Flutter 会接管该 widget 的生命周期和渲染
