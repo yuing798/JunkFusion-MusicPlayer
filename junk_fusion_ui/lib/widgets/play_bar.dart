@@ -87,9 +87,9 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
       }
     }
     if (songId == null) return const SizedBox.shrink();
-    final song = context.read<SongProvider>().getSongInfo(songId);
-
-    assert(song != null);
+    final song = context.select<SongProvider, SongInfo?>(
+      (provider) => provider.getSongInfo(songId),
+    );
 
     if (song == null) return SizedBox.shrink();
 
