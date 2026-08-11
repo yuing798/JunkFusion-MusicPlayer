@@ -197,52 +197,43 @@ class _HoverPlayButtonState extends State<HoverPlayButton> {
         width: 50,
         height: 50,
         child: Stack(
-          fit: StackFit.expand, // 让子组件撑满 SizedBox
+          // 移除 fit: StackFit.expand，让子组件自然布局
           children: [
-            // 1. 底层图片（带透明度变化）
+            // 1. 图片（始终撑满）
             AnimatedOpacity(
-              opacity: _isHovered ? 0.5 : 1.0, // 悬停时变为半透明（变暗效果）
+              opacity: _isHovered ? 0.5 : 1.0,
               duration: const Duration(milliseconds: 300),
-              child: (widget.hash != null)
-                  ? Image.file(
-                      File(
-                        '${AppCache.cacheDirString}/image/songs/${widget.hash}/original.jpg',
+              child: SizedBox(
+                width: 50,
+                height: 50,
+                child: (widget.hash != null)
+                    ? Image.file(
+                        File(
+                          '${AppCache.cacheDirString}/songImage/${widget.hash}/original.jpg',
+                        ),
+                        fit: BoxFit.cover,
+                      )
+                    : Image.asset(
+                        "assets/image/JunkFusion.png",
+                        fit: BoxFit.cover,
                       ),
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      cacheHeight: 50,
-                      cacheWidth: 50,
-                    )
-                  : Image.asset(
-                      "assets/JunkFusion.png",
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      cacheHeight: 50,
-                      cacheWidth: 50,
-                    ),
+              ),
             ),
-            // 2. 半透明遮罩（让图片变暗更明显）
+            // 2. 遮罩（黑色半透明，加深图片）
             AnimatedOpacity(
               opacity: _isHovered ? 0.4 : 0.0,
               duration: const Duration(milliseconds: 300),
-              child: Container(
-                color: Colors.black, // 黑色遮罩，与图片叠加后变暗
-              ),
+              child: Container(color: Colors.black),
             ),
-            // 3. 上层播放图标（悬停时淡入）
+            // 3. 播放图标（居中，无背景圆形）
             Center(
               child: AnimatedOpacity(
-                opacity: _isHovered ? 1.0 : 0.0,
+                opacity: _isHovered ? 1.0 : 0.0, // 悬停时完全显示，不透明
                 duration: const Duration(milliseconds: 300),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: createIcon(TablerIcons.playerPlayFilled),
+                child: Icon(
+                  TablerIcons.playerPlayFilled,
+                  size: 32,
+                  color: Colors.white, // 白色图标，在暗色背景下清晰
                 ),
               ),
             ),

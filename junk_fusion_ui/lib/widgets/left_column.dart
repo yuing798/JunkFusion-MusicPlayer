@@ -24,13 +24,6 @@ class LeftColumn extends StatefulWidget {
 class _LeftColumnState extends State<LeftColumn> {
   /// 当前选中的按钮 ID
   int _selectedId = 0;
-  final _scrollController = ScrollController(); //使得滚动条平滑移动的控制器
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
 
   static const List<_NavSection> _sections = [
     _NavSection(
@@ -95,15 +88,6 @@ class _LeftColumnState extends State<LeftColumn> {
 
       // Scrollbar — 滚动条（thumb 颜色使用强调色）
       child: DynMouseScroll(
-        // scrollController: _scrollController,
-        // enableCustomMouseWheelScrolling: true,
-        // enableKeyboardScrolling: true,
-        // enableMMBScrolling: true,
-        // customMouseWheelScrollConfig: const CustomMouseWheelScrollConfig(
-        //   scrollAmountMultiplier: 0.1, // 如果还是跳跃，把这个值调小（比如 1.5 或 2.0）
-        //   scrollDuration: Duration(milliseconds: 350), // 🌟 必须要有 duration 才能平滑
-        //   scrollCurve: Curves.easeOutQuart, // 推荐这个曲线，有很舒服的刹车感
-        // ),
         builder: (_, controler_, physics_) => ListView(
           padding: const EdgeInsets.only(bottom: 100),
           controller: controler_,

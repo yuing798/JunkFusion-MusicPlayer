@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi' as dart_ffi;
 
 import 'package:ffi/ffi.dart' as ffi;
@@ -24,7 +25,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized(); //确保flutter绑定初始化
   await windowManager.ensureInitialized();
   WindowOptions options = const WindowOptions(
-    minimumSize: Size(1300, 850),
+    minimumSize: Size(1450, 850),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
@@ -52,13 +53,18 @@ void main() async {
 
   // `runApp` 接收一个 Widget 参数，把它设为屏幕上显示的根 widget
   // Flutter 会接管该 widget 的生命周期和渲染
-  runApp(const JunkFusionApp());
+
+  final songProvider = SongProvider();
+  songProvider.getAllSongs(); //全量获取歌曲元数据
+
+  runApp(JunkFusionApp(songProvider: songProvider));
 }
 
 /// JunkFusionApp — 应用根 Widget
 class JunkFusionApp extends StatelessWidget {
   //最外层，但没画布
-  const JunkFusionApp({super.key});
+  final SongProvider songProvider;
+  const JunkFusionApp({super.key, required this.songProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +72,7 @@ class JunkFusionApp extends StatelessWidget {
     return MultiProvider(
       //数据层，没画布
       providers: [
-        ChangeNotifierProvider(create: (_) => SongProvider()),
+        ChangeNotifierProvider<SongProvider>.value(value: songProvider),
         ChangeNotifierProvider(create: (_) => PlaybackProvider()),
       ],
 

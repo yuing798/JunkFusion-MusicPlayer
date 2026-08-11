@@ -81,11 +81,11 @@ class SongProvider extends ChangeNotifier {
       final songsList = results[B_songImport.songs] as List<SongInfo>;
       _songs.addAll(songsList);
 
-      for (final song in _songs) {
-        print(song.songId);
-        print(song.title);
-        print("11111");
-      }
+      // for (final song in _songs) {
+      //   print(song.songId);
+      //   print(song.title);
+      //   print("11111");
+      // }
 
       if (errorFiles.isEmpty) {
         DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");

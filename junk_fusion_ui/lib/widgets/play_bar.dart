@@ -26,17 +26,68 @@ import 'ppp.dart';
 import 'song_detail_info.dart';
 
 // PlayBar — 底部播放栏
-class PlayBar extends StatelessWidget {
+class PlayBar extends StatefulWidget {
   const PlayBar({super.key});
+
+  @override
+  State<StatefulWidget> createState() {
+    return PlayBarState();
+  }
+}
+
+class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slideAnimation;
+
+  int? _previousSongId; //缓存上一次的歌曲ID，防止重复触发动画
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化控制器
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350), // 动画时长
+    );
+
+    // 滑动动画：从向下偏移100%（完全隐藏）到偏移0%（完全显示）
+    _slideAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 1), // 向下移动自身高度的100%
+          end: const Offset(0, 0), // 原位
+        ).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeInOut, // 缓动曲线，更自然
+          ),
+        );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
 
     // 安全地获取当前歌曲（如果 currentId 为空，返回 null）
-    final song = context.read<SongProvider>().getSongInfo(
-      playback.currentSongId!,
-    );
+    // currentSongId 可能为 null：PlayBar 现在由 AnimatedSlide 始终渲染，
+    // 即使没有播放歌曲时也会构建（只是被推到屏幕外），所以必须判空
+    final songId = playback.currentSongId;
+    final shouldShow = songId != null;
+    if (songId != _previousSongId) {
+      _previousSongId = songId;
+      if (shouldShow) {
+        _controller.forward(); //滑入
+      } else {
+        _controller.reverse(); //滑出
+      }
+    }
+    if (songId == null) return const SizedBox.shrink();
+    final song = context.read<SongProvider>().getSongInfo(songId);
 
     assert(song != null);
 
@@ -58,7 +109,7 @@ class PlayBar extends StatelessWidget {
           (song.hash != null)
               ? Image.file(
                   File(
-                    '${AppCache.cacheDirString}/image/songs/${song.hash}/original.jpg',
+                    '${AppCache.cacheDirString}/songImage/${song.hash}/original.jpg',
                   ),
                   width: 50,
                   height: 50,
@@ -67,7 +118,7 @@ class PlayBar extends StatelessWidget {
                   cacheWidth: 50,
                 )
               : Image.asset(
-                  "assets/JunkFusion.png",
+                  "assets/image/JunkFusion.png",
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
@@ -181,29 +232,28 @@ class PlayBar extends StatelessWidget {
       );
     }
 
-    return Container(
-      height: 90,
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-      color: AppTheme.colorHover,
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Container(
+        height: 90,
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+        color: AppTheme.colorHover,
 
-      // Row 布局（简化为三区）
-      child: Row(
-        children: [
-          // ── 左区：550px（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
-          SizedBox(width: 550, child: buildLeftArea()),
+        // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
+        // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
+        child: Row(
+          children: [
+            // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
+            Expanded(flex: 5, child: buildLeftArea()),
 
-          // 弹性空间
-          const Expanded(child: SizedBox()),
+            // ── 中区（播放控制） ──
+            Expanded(flex: 4, child: buildMidArea()),
 
-          // ── 中区：330px（播放控制） ──
-          SizedBox(width: 330, child: buildMidArea()),
-
-          // 弹性空间
-          const Expanded(child: SizedBox()),
-
-          // ── 右区：550px（预留） ──
-          const SizedBox(width: 550),
-        ],
+            // ── 右区（预留） ──
+            // 和左区对称占位，后续放置音量/进度条等控件
+            const Spacer(flex: 5),
+          ],
+        ),
       ),
     );
   }
@@ -256,34 +306,3 @@ class _PlayModeIcon extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════
-// Consumer2 说明：
-//
-// `Consumer2<A, B>` 是 provider 包提供的便捷 Widget，
-// 可以同时监听两个 Provider 的变化。
-//
-// 一般形式：
-// ```dart
-// Consumer2<ProviderA, ProviderB>(
-//   builder: (context, a, b, child) {
-//     return Text('${a.value} ${b.value}');
-//   },
-// )
-// ```
-//
-// 等价于嵌套 Consumer:
-// ```dart
-// Consumer<ProviderA>(
-//   builder: (context, a, child) {
-//     return Consumer<ProviderB>(
-//       builder: (context, b, child) {
-//         return Text('${a.value} ${b.value}');
-//       },
-//     );
-//   },
-// )
-// ```
-//
-// Provider 包提供 Consumer 到 Consumer6（监听 1 到 6 个 Provider）。
-// ════════════════════════════════════════════════════════════════

@@ -30,7 +30,12 @@ class App extends StatefulWidget {
 }
 
 // _AppState — App 的内部状态类
+
 class _AppState extends State<App> {
+  // ──────────────────────────────────────────────────────────────
+  // 页面切换
+  // ──────────────────────────────────────────────────────────────
+
   // 当前选中的页面 ID（默认 0 = AllMusic）
   int? _currentPageId = 0;
 
@@ -70,16 +75,16 @@ class _AppState extends State<App> {
     // 计算要显示的页面 Widget
     final pageWidget = _resolvePage(_currentPageId);
 
-    // 只有当表达式的值（即 bool 结果）发生改变时才会重建
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.currentSongId != null,
-    );
-
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          // --- 主内容区域（占满剩余空间） ---
-          Expanded(
+          // --- 主内容区域（占满剩余空间，底部留 90px 给 PlayBar） ---
+          // Positioned 替代了原来的 Expanded：Stack 的子元素不支持 Expanded
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0, // 顶满整个 Stack
             child: Row(
               children: [
                 SizedBox(
@@ -109,12 +114,14 @@ class _AppState extends State<App> {
             ),
           ),
 
-          // --- 底部播放栏（带动画） ---
-          // AnimatedSlide + AnimatedOpacity 组合实现滑动淡入淡出
-          if (hasCurrentSong)
-            const PlayBar()
-          else
-            const SizedBox.shrink(), // 不占用任何空间
+          // --- 底部播放栏（对应 Vue <Transition name="slide-up">） ---
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 90,
+            child: const PlayBar(),
+          ),
         ],
       ),
     );

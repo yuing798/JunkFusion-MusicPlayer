@@ -27,6 +27,7 @@ import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../model/song_info.dart';
 import '../providers/song_provider.dart';
@@ -171,22 +172,28 @@ class _AllMusicPageState extends State<AllMusicPage> {
         Expanded(
           child: sortedSongs.isEmpty
               ? const Center(child: Text('暂无歌曲', style: AppTheme.midTextStyle))
-              : ListView.builder(
-                  controller: _scrollController,
-                  // `itemCount` 等于列表长度
-                  itemCount: context.read<SongProvider>().songCount,
-                  // `itemExtent` 固定每个 item 高度（性能优化）
-                  // 对应原 Vue 虚拟滚动的 estimateSize: () => 80
-                  itemExtent: 80,
-                  // itemBuilder 构建每个 item
-                  // `(context, index) => Widget`
-                  itemBuilder: (context, index) {
-                    final song = sortedSongs[index];
-                    return EachSong(
-                      key: ValueKey(song.songId),
-                      // `ValueKey` 基于值的唯一 Key，帮助 Flutter 识别
-                      // 列表项的身份（diff 算法优化）
-                      song: song,
+              : DynMouseScroll(
+                  builder: (_, controler_, physics_) {
+                    return ListView.builder(
+                      //ListView.builder是虚拟滚动的，而ListView是全量创建的
+                      controller: controler_,
+                      physics: physics_,
+                      // `itemCount` 等于列表长度
+                      itemCount: context.read<SongProvider>().songCount,
+                      // `itemExtent` 固定每个 item 高度（性能优化）
+                      // 对应原 Vue 虚拟滚动的 estimateSize: () => 80
+                      itemExtent: 80,
+                      // itemBuilder 构建每个 item
+                      // `(context, index) => Widget`
+                      itemBuilder: (context, index) {
+                        final song = sortedSongs[index];
+                        return EachSong(
+                          key: ValueKey(song.songId),
+                          // `ValueKey` 基于值的唯一 Key，帮助 Flutter 识别
+                          // 列表项的身份（diff 算法优化）
+                          song: song,
+                        );
+                      },
                     );
                   },
                 ),

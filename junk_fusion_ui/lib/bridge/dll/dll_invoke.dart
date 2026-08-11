@@ -114,6 +114,7 @@ Future<SendPort> isolateSendPort = () async {
             final params = data.params;
             Map<String, Object?> results = {}; //Map为空和NULL是两种东西
             if (name == B_getAllSongs.name) {
+              print("开始全量加载歌曲元数据");
               final cPtr = bindings.getAllSongs();
               final dartString = cPtr.cast<Utf8>().toDartString(); //解码
               Map<String, dynamic> obj = jsonDecode(dartString);
@@ -121,19 +122,13 @@ Future<SendPort> isolateSendPort = () async {
               //dynamic 是“彻底关闭类型检查的万能类型”（你爱怎么用就怎么用，编译器完全听你的，出错了运行时才报错）。
               bindings.freeString(cPtr);
               assert(obj.containsKey(B_getAllSongs.songsList));
-              final songs =
-                  obj[B_getAllSongs.songsList] as List<Map<String, dynamic>>;
+              final songs = obj[B_getAllSongs.songsList] as List<dynamic>;
               List<SongInfo> songsList = [];
               for (int i = 0; i < songs.length; i++) {
                 final song = songs[i];
-                songsList.add(SongInfo.fromJson(song));
+                songsList.add(SongInfo.fromJson(song as Map<String, dynamic>));
               }
               results[B_getAllSongs.songsList] = songsList;
-            } else if (name == B_getAllSongCount.name) {
-              final count = bindings.getAllSongCount();
-              results[B_getAllSongCount.count] = count;
-            } else if (name == B_dllInit.name) {
-              // bindings.dllInit();
             } else if (name == B_toggleMyLike.name) {
               assert(params.containsKey(B_toggleMyLike.songId));
               final songId = params[B_toggleMyLike.songId] as int; // 强制转换为 int

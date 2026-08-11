@@ -1,22 +1,8 @@
-// ════════════════════════════════════════════════════════════════
-// info_window.dart — 全局通知弹窗（单例模式）
-// 使用方式：
-// ```dart
-// import 'widgets/info_window.dart';
-//
-// // 在 try/catch 中
-// InfoWindow.show('操作成功');
-// InfoWindow.show('错误信息', holdTime: 5000);
-// InfoWindow.show(Exception('失败'));
-// InfoWindow.close(); // 手动关闭
-// ```
-// ════════════════════════════════════════════════════════════════
-
 import 'dart:async'; // Timer 类在此库中
 import 'package:flutter/material.dart';
-import 'package:flutter_improved_scrolling/flutter_improved_scrolling.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
+import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../theme/app_theme.dart';
 
@@ -29,7 +15,6 @@ class DialogUtil {
       barrierDismissible: true, // 点击灰色蒙版是否自动关闭（带默认退场动画）
       builder: (BuildContext context) {
         //当前弹窗组件自带的上下文
-        // 👇 这里直接返回你的弹窗内容 Widget
         return _InfoWindowWidget(
           message: message,
           // 关闭时调用 Navigator.pop，系统会自动执行淡出+缩放动画
@@ -72,9 +57,9 @@ class _InfoWindowWidgetState extends State<_InfoWindowWidget> {
       child: Material(
         type: MaterialType.transparency,
         child: Container(
-          width: 600,
-          // 高度约束：最小 400，最大 800
-          constraints: const BoxConstraints(minHeight: 400, maxHeight: 800),
+          width: 500,
+          // 高度约束：最小 400，最大 700
+          constraints: const BoxConstraints(minHeight: 400, maxHeight: 700),
           decoration: BoxDecoration(
             color: AppTheme.colorHover,
             borderRadius: BorderRadius.circular(AppTheme.borderRadius),
@@ -87,33 +72,31 @@ class _InfoWindowWidgetState extends State<_InfoWindowWidget> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                // 1. 可滚动的内容区域（填充整个Stack）
-                Positioned.fill(
-                  child: Padding(
-                    // 右边距留出空间给关闭按钮（按钮宽约24px，再加些间距）
-                    padding: const EdgeInsets.only(
-                      top: 10,
-                      bottom: 10,
-                      right: 40,
-                      left: 0,
-                    ),
-                    child: ImprovedScrolling(
-                      // 2. 使用 ImprovedScrollView 增强桌面滚动体验
-                      scrollController: _scrollController,
-                      enableMMBScrolling: true, // 开启鼠标中键（按下滚轮）拖拽滚动
-                      enableCustomMouseWheelScrolling: true, // 开启自定义鼠标滚轮平滑滚动
-                      enableKeyboardScrolling: true, //开启键盘键位滚动
-                      child: Text(
-                        widget.message,
-                        style: AppTheme.midTextStyle,
-                        textAlign: TextAlign.center,
+                DynMouseScroll(
+                  builder: (_, controler_, physics_) {
+                    return SingleChildScrollView(
+                      controller: controler_,
+                      physics: physics_,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 40,
+                          horizontal: 30,
+                        ),
+                        child: Text(
+                          widget.message,
+                          style: AppTheme.midTextStyle,
+                          textAlign: TextAlign.left,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
+                // ),
+
                 // 3. 关闭按钮（固定在右上角，不随内容滚动）
                 Positioned(
                   top: 6,
