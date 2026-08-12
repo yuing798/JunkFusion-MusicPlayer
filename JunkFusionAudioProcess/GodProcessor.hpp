@@ -10,9 +10,11 @@ class GodProcessor : public juce::AudioProcessor {
 private:
     AudioRingBuffer decoderRingBuffer;
     FFmpegDecoder decoder;
+    juce::File mCacheDir;
 
 public:
-    GodProcessor();
+    GodProcessor(juce::File cahceDir);
+    ~GodProcessor() = default;
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;
     void releaseResources() override;
@@ -28,6 +30,7 @@ public:
     void changeProgramName(int index, const juce::String& newName) override { return; }
     void setStateInformation(const void* data, int sizeInBytes) override;
     void getStateInformation(juce::MemoryBlock& destData) override;
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };

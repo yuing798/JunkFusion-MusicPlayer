@@ -1,8 +1,10 @@
 #include "./GodProcessor.hpp"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
-GodProcessor::GodProcessor() : decoderRingBuffer(1000), decoder(decoderRingBuffer) {}
+GodProcessor::GodProcessor(juce::File cacheDir)
+    : decoderRingBuffer(1000), decoder(decoderRingBuffer), mCacheDir(cacheDir) {}
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);

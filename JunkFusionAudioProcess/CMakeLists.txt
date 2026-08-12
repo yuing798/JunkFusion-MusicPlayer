@@ -18,6 +18,7 @@ target_sources(JunkFusionAudioProcess
         DeviceManager.cpp 
         ffmpegDecoder.cpp
         GodProcessor.cpp
+        AudioProcessWorker.cpp
 )
 
 target_compile_definitions(JunkFusionAudioProcess
