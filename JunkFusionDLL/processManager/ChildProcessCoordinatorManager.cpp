@@ -4,7 +4,7 @@
 #include <spdlog/spdlog.h>
 
 ChildProcessCoordinatorManager::ChildProcessCoordinatorManager(
-    juce::File& exeFile,
+    juce::File exeFile,
     juce::String workerId,
     int timeOutMs,
     int maxRestartTimes

@@ -1,4 +1,6 @@
 
+add_library(JunkFusionDLL SHARED)#编译为dll
+
 target_link_directories(JunkFusionDLL
     PRIVATE
         ${FFMPEG_LIBRARY_DIRS}

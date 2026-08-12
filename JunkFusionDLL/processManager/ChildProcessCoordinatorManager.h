@@ -6,7 +6,7 @@
 class ChildProcessCoordinatorManager : public juce::ChildProcessCoordinator {
 public:
     explicit ChildProcessCoordinatorManager(
-        juce::File& exeFile,
+        juce::File exeFile,
         juce::String workerId,
         int timeOutMs,
         int maxRestartTimes
@@ -22,7 +22,7 @@ public:
     virtual juce::DynamicObject::Ptr getArgs() const = 0;
 
     // 重启次数超限时的处理，由子类实现
-    virtual void onMaxRestartsExceeded() = 0;
+    virtual void onMaxRestartsExceeded() {};
 
     /** 可选：处理来自子进程的自定义消息 */
     virtual void handleMessageFromWorker(const juce::MemoryBlock& mb) override {

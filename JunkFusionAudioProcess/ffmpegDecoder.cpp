@@ -1,6 +1,5 @@
 #include "./ffmpegDecoder.hpp"
 #include "constants.h"
-#include "dbManager.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
@@ -87,7 +86,7 @@ void FFmpegDecoder::run() {
     av_log_set_level(AV_LOG_ERROR);
 
     AVFormatContext* inputContext;
-    path = dbManager::getInstance().getSongsManager().getPathBySongId(currentSongId);
+    // path = dbManager::getInstance().getSongsManager().getPathBySongId(currentSongId);
     if (path.empty()) {
         // 弹出错误弹窗
         auto log = spdlog::get(LogAudioID);
