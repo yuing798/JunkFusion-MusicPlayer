@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "fileManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
+#include "libExport.h"
 #include <SQLiteCpp/Database.h>
 #include <memory>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -15,6 +16,7 @@ private:
     juce::File cacheDir;                // 缓存文件夹
     juce::File logInfoDir;              // 日志文件夹
     juce::File songImageDir;            // 歌曲图片
+    // JunkFusionBackendProcessManager mBackendMaster; // 后端进程管理
 
 public:
     explicit dllManager();

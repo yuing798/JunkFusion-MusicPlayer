@@ -73,21 +73,21 @@ extern "C" {
         logger->info(resultStr);
         return object2Uint8t(resultObj);
     }
-    void RegisterExitCallback(BackendExitCallback callback) { g_onExitCallback = callback; }
-    bool StartBackendProcess(const char* backendPath, const char* cacheDir) {
-        std::lock_guard<std::mutex> lock(g_state.mtx);
-        // 如果已经在运行，则直接返回成功（幂等）
-        if (g_state.running) return true;
+    // void RegisterExitCallback(BackendExitCallback callback) { g_onExitCallback = callback; }
+    // bool StartBackendProcess(const char* backendPath, const char* cacheDir) {
+    //     std::lock_guard<std::mutex> lock(g_state.mtx);
+    //     // 如果已经在运行，则直接返回成功（幂等）
+    //     if (g_state.running) return true;
 
-        std::string path(backendPath ? backendPath : "");
-        std::string cache(cacheDir ? cacheDir : "");
-        if (path.empty() || cache.empty()) return false;
+    //     std::string path(backendPath ? backendPath : "");
+    //     std::string cache(cacheDir ? cacheDir : "");
+    //     if (path.empty() || cache.empty()) return false;
 
-        bool ok = PlatformStartProcess(path, cache);
-        if (ok) {
-            g_state.running = true;
-        }
-        return ok;
-    }
-    void StopBackendProcess() { PlatformStopProcess(); }
+    //     bool ok = PlatformStartProcess(path, cache);
+    //     if (ok) {
+    //         g_state.running = true;
+    //     }
+    //     return ok;
+    // }
+    // void StopBackendProcess() { PlatformStopProcess(); }
 }

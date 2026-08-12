@@ -1,8 +1,8 @@
-target_include_directories(JunkFusionBackend
+target_include_directories(JunkFusionAudioProcess
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
-target_sources(JunkFusionBackend
+target_sources(JunkFusionAudioProcess
     PRIVATE
         otherUtils.cpp
 )

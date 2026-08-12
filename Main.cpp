@@ -1,6 +1,5 @@
 #include "MainComponent.h"
 #include "Utils/constants.h"
-#include "image/ImageManager.hpp"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
 #include <memory>

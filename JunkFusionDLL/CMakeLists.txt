@@ -33,3 +33,4 @@ target_sources(JunkFusionDLL
 
 # add_subdirectory(DartApi)
 add_subdirectory(fileManage)
+add_subdirectory(processManager)
