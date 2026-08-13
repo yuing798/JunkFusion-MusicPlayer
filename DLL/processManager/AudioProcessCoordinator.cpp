@@ -12,7 +12,7 @@ AudioProcessCoordinator::AudioProcessCoordinator(juce::String cahceDir)
       ),
       mCacheDirStr(cahceDir) {}
 
-juce::DynamicObject::Ptr AudioProcessCoordinator::getArgs() const {
+juce::DynamicObject::Ptr AudioProcessCoordinator::getInitArgs() const {
     juce::DynamicObject::Ptr obj{new juce::DynamicObject()};
     obj->setProperty("cacheDir", mCacheDirStr);
     return obj;

@@ -19,6 +19,7 @@ target_sources(JunkFusionAudioProcess
         ffmpegDecoder.cpp
         GodProcessor.cpp
         AudioProcessWorker.cpp
+        AudioUtils.cpp
 )
 
 target_compile_definitions(JunkFusionAudioProcess

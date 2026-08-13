@@ -21,8 +21,8 @@ if (MSVC)
     add_compile_options(/utf-8)
 endif()
 
-add_subdirectory(JunkFusionDLL)
-add_subdirectory(JunkFusionAudioProcess)
+add_subdirectory(DLL)
+add_subdirectory(JAudioProcess)
 # JUCE 内部会覆盖输出目录到 JunkFusion_artefacts，这里强制改回统一目录
 add_subdirectory(Utils)
 

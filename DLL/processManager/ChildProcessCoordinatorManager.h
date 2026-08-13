@@ -19,7 +19,7 @@ public:
     // ============================================================
 
     /** 返回初始化参数（不含程序路径本身）这个函数不直接构造函数传参的原因是可能有动态参数传入 */
-    virtual juce::DynamicObject::Ptr getArgs() const = 0;
+    virtual juce::DynamicObject::Ptr getInitArgs() const = 0;
 
     // 重启次数超限时的处理，由子类实现
     virtual void onMaxRestartsExceeded() {};

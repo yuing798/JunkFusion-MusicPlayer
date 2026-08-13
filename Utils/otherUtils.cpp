@@ -47,27 +47,7 @@ extern "C" {
 
 //         // ── 3. 按表创建 7 个日志器 ──
 
-//         constexpr size_t kAudioMaxSize = 5 * 1024 * 1024; // 5 MB
-//         constexpr size_t kAudioMaxFiles = 3;
-
-//         // ── 0: player_audio.log — 音频流水线 (Error, async) ──
-//         {
-//             auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-//                 logDirPath + "/player_audio.log",
-//                 kAudioMaxSize,
-//                 kAudioMaxFiles
-//             );
-//             audioLogger = std::make_shared<spdlog::async_logger>(
-//                 LogAudioID,
-//                 std::move(sink),
-//                 spdlog::thread_pool(),
-//                 spdlog::async_overflow_policy::block
-//             );
-//             audioLogger->set_pattern(pattern);
-//             audioLogger->set_level(spdlog::level::err);
-//             spdlog::register_logger(audioLogger);
-//         }
-
+//
 //         constexpr size_t kSchedulerMaxSize = 5 * 1024 * 1024; // 5 MB
 //         constexpr size_t kSchedulerMaxFiles = 3;
 

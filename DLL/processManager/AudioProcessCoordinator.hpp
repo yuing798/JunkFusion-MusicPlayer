@@ -8,5 +8,5 @@ private:
 
 public:
     AudioProcessCoordinator(juce::String cacheDirStr);
-    juce::DynamicObject::Ptr getArgs() const override;
+    juce::DynamicObject::Ptr getInitArgs() const override;
 };

@@ -56,8 +56,9 @@ bool ChildProcessCoordinatorManager::launchProcess() {
         )) {
         auto logger{spdlog::get(LogDllID)};
         logger->info("{}进程开始启动", mExeFile.getFileName().toStdString());
+        getInitArgs()->setProperty(AudioDefs::connectSingal, "");
 
-        juce::String jsonStr = juce::JSON::toString(getArgs().get());
+        juce::String jsonStr = juce::JSON::toString(getInitArgs().get());
 
         // 将字符串转为 MemoryBlock（二进制块）并发送给子进程
         juce::MemoryBlock mb;
