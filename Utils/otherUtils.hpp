@@ -45,4 +45,6 @@ namespace Utils {
 
     // 将内存块转换成对象
     juce::DynamicObject::Ptr mb2object(const juce::MemoryBlock& mb);
+
+    void writeEmergencyLog(const char* message);
 } // namespace Utils

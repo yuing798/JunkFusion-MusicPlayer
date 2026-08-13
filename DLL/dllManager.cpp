@@ -31,12 +31,12 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         const char* pattern = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v";
         auto dllLogger = std::make_shared<spdlog::logger>(LogDllID, std::move(sink));
         dllLogger->set_pattern(pattern);
-        // #ifdef JF_DEBUG
-        //         dllLogger->set_level(spdlog::level::debug);
-        // #else
-        //         dllLogger->set_level(spdlog::level::info);
-        // #endif
+#ifdef JF_DEBUG
         dllLogger->set_level(spdlog::level::debug);
+#else
+        dllLogger->set_level(spdlog::level::info);
+#endif
+        // dllLogger->set_level(spdlog::level::debug);
         // dllLogger->flush_on(spdlog::level::debug);
 
         spdlog::register_logger(dllLogger);
