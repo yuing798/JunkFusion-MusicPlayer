@@ -29,7 +29,7 @@ void AudioUtils::initAudioLogger(std::string logFilePath) {
             spdlog::async_overflow_policy::block
         );
         audioLogger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v");
-#ifdef DEBUG
+#ifdef JF_DEBUG
         audioLogger->set_level(spdlog::level::debug);
 #else
         audioLogger->set_level(spdlog::level::err);

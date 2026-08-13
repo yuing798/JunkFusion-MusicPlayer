@@ -7,6 +7,6 @@ private:
     juce::String mCacheDirStr;
 
 public:
-    AudioProcessCoordinator(juce::String cacheDirStr);
+    AudioProcessCoordinator(juce::File cacheDir, juce::File exeDir);
     juce::DynamicObject::Ptr getInitArgs() const override;
 };

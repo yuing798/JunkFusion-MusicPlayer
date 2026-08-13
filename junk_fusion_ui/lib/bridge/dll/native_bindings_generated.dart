@@ -19,16 +19,23 @@ class JunkFusionDLLBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  void dllInit(ffi.Pointer<ffi.Char> cacheDirId) {
-    return _dllInit(cacheDirId);
+  void dllInit(
+    ffi.Pointer<ffi.Char> cacheDirId,
+    ffi.Pointer<ffi.Char> exeDirPtr,
+  ) {
+    return _dllInit(cacheDirId, exeDirPtr);
   }
 
   late final _dllInitPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
-        'dllInit',
-      );
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+        >
+      >('dllInit');
   late final _dllInit = _dllInitPtr
-      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+      .asFunction<
+        void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+      >();
 
   void freeString(ffi.Pointer<ffi.Char> str) {
     return _freeString(str);

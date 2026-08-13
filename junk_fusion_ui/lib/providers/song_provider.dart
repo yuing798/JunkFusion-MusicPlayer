@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 // ════════════════════════════════════════════════════════════════
@@ -58,7 +59,7 @@ class SongProvider extends ChangeNotifier {
     // 调用 pickFiles，传入配置参数
     FilePickerResult? result = await FilePicker.pickFiles(
       dialogTitle: '请选择音视频文件',
-      initialDirectory: _getExeDirectory(),
+      initialDirectory: AppCache.getExeDirectory(),
       allowMultiple: true,
       lockParentWindow: true,
       // cancelUploadOnWindowBlur: false, //失焦时自动取消导入窗口，这个只在web中有用
@@ -104,14 +105,6 @@ class SongProvider extends ChangeNotifier {
       }
       notifyListeners();
     }
-  }
-
-  String _getExeDirectory() {
-    // 1. 获取 exe 的绝对路径（解析符号链接）
-    final String exePath = Platform.resolvedExecutable;
-    // 2. 获取该文件所在的父级目录
-    final Directory exeDir = File(exePath).parent;
-    return exeDir.path;
   }
 
   // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串

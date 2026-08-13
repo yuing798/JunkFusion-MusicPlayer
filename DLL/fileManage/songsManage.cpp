@@ -58,7 +58,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         if (logger)
             logger->warn(
                 "多媒体文件无法打开或者打开的是非多媒体文件:{}",
-                ffmpegErrorOutput(result)
+                Utils ::ffmpegErrorOutput(result)
             );
         avformat_close_input(&inputContext);
         return std::nullopt;
@@ -66,7 +66,7 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
     result = avformat_find_stream_info(inputContext, nullptr);
     if (result < 0) {
         // SPDLOG:无法找到流信息
-        if (logger) logger->error("无法找到该文件的流信息:{}", ffmpegErrorOutput(result));
+        if (logger) logger->error("无法找到该文件的流信息:{}", Utils::ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
         return std::nullopt;
     }

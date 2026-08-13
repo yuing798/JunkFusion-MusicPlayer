@@ -38,16 +38,24 @@ void main() async {
   });
 
   // print("准备初始化dll");
-  final cacheDir = getApplicationCacheDirectory();
 
-  final cacheDirPath = await cacheDir;
+  final cacheDirPath = await getApplicationCacheDirectory();
   if (!await cacheDirPath.exists()) {
     cacheDirPath.createSync(recursive: true);
   }
   AppCache.cacheDirString = cacheDirPath.path;
-  final cPtr = AppCache.cacheDirString.toNativeUtf8().cast<dart_ffi.Char>();
-  bindings.dllInit(cPtr); //dll初始化
-  ffi.malloc.free(cPtr);
+  final cacheDirPtr = AppCache.cacheDirString
+      .toNativeUtf8()
+      .cast<dart_ffi.Char>();
+  print("exe所在目录和缓存目录分别为：");
+  print(AppCache.getExeDirectory());
+  print(AppCache.cacheDirString);
+  final exeDirPtr = AppCache.getExeDirectory()
+      .toNativeUtf8()
+      .cast<dart_ffi.Char>();
+  bindings.dllInit(cacheDirPtr, exeDirPtr); //dll初始化
+  ffi.malloc.free(cacheDirPtr);
+  ffi.malloc.free(exeDirPtr);
 
   AppCache.frontCacheRef = await SharedPreferences.getInstance(); //初始化前端缓存指针
 

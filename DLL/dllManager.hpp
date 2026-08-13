@@ -4,7 +4,9 @@
 #include "fileManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
 #include "libExport.h"
+#include "processManager/AudioProcessCoordinator.hpp"
 #include <SQLiteCpp/Database.h>
+#include <fstream>
 #include <memory>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <utility>
@@ -17,10 +19,11 @@ private:
     juce::File logInfoDir;              // 日志文件夹
     juce::File songImageDir;            // 歌曲图片
     // JunkFusionBackendProcessManager mBackendMaster; // 后端进程管理
+    std::unique_ptr<AudioProcessCoordinator> mAudioPorcessCoordinator;
 
 public:
     explicit dllManager();
-    void init(const char* cacheDirId);
+    void init(const char* cacheDirId, const char* exeDirPtr);
 
     juce::File& getSongImageDir() { return songImageDir; }
 
@@ -42,4 +45,22 @@ public:
     // template <typename F> void runOnRead(F&& fn) { readWorker.addJob(std::forward<F>(fn)); }
 
     SongsManage& getSongsManager() { return *songs; }
+
+    ~dllManager() {
+        // 写一个裸文件到你的缓存目录或 C 盘根目录
+        // 注意：路径最好写死一个绝对路径，避免工作目录漂移
+        // std::ofstream testFile("D:/audio_develop/text.txt");
+        // if (testFile.is_open()) {
+        //     testFile << "dllManager Destructor has been successfully called!" << std::endl;
+        //     testFile.close();
+        // }
+        spdlog::shutdown();
+
+        // 如果你坚持要用 spdlog 测试，必须立刻 flush
+        // auto logger = spdlog::get(LogDllID);
+        // if (logger) {
+        //     logger->info("dllManager 析构函数被调用！");
+        //     logger->flush();
+        // }
+    }
 };

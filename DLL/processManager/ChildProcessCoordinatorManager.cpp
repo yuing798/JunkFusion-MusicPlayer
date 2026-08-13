@@ -12,7 +12,10 @@ ChildProcessCoordinatorManager::ChildProcessCoordinatorManager(
 
 )
     : mExeFile(exeFile), mWorkerId(workerId), mTimeoutMs(timeOutMs),
-      mMaxRestartsTimes(maxRestartTimes) {}
+      mMaxRestartsTimes(maxRestartTimes) {
+    auto logger{spdlog::get(LogDllID)};
+    logger->debug("exeFile path is {}", exeFile.getFullPathName().toStdString());
+}
 
 void ChildProcessCoordinatorManager::handleConnectionLost() {
     isRunning = false;

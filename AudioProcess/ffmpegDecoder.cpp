@@ -100,7 +100,11 @@ void FFmpegDecoder::run() {
     ); // 这个函数会同时进行内存分配
     if (result < 0) {
         auto log = spdlog::get(LogAudioID);
-        log->error("打开多媒体文件失败:文件路径:{}:错误原因:{}", path, ffmpegErrorOutput(result));
+        log->error(
+            "打开多媒体文件失败:文件路径:{}:错误原因:{}",
+            path,
+            Utils::ffmpegErrorOutput(result)
+        );
         avformat_close_input(&inputContext);
         return;
     }
@@ -110,7 +114,7 @@ void FFmpegDecoder::run() {
         log->error(
             "获取流失败，通知用户检查原始文件:{},失败原因:{}",
             path,
-            ffmpegErrorOutput(result)
+            Utils::ffmpegErrorOutput(result)
         );
         avformat_close_input(&inputContext);
         return;

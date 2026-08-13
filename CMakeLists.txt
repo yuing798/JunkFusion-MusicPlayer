@@ -38,6 +38,16 @@ if(WIN32)
 set(FLUTTER_EXE_DIR "${CMAKE_SOURCE_DIR}/junk_fusion_ui/build/windows/x64/runner/$<CONFIG>")
 endif()
 
+# $<CONFIG> 是 CMake 中极其核心的一个生成器表达式（Generator Expression），它的含义非常直白：
+# 它会在构建（编译）时，被替换为当前激活的构建配置名称
+# 他对应的是当前的CMAKE_BUILD_TYPE
+target_compile_definitions(JunkFusionDLL PRIVATE
+    $<$<CONFIG:Debug>:JF_DEBUG>
+)
+target_compile_definitions(JunkFusionAudioProcess PRIVATE
+    $<$<CONFIG:Debug>:JF_DEBUG>
+)
+
 #将复制动作绑定到这个自定义目标上
 add_custom_command(TARGET DeployRuntime POST_BUILD
     COMMAND ${CMAKE_COMMAND}

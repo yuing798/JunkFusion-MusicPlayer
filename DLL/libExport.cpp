@@ -11,7 +11,9 @@
 #include <vector>
 
 extern "C" {
-    void dllInit(const char* cacheDirId) { dllManager::getInstance().init(cacheDirId); }
+    void dllInit(const char* cacheDirId, const char* exeDirPtr) {
+        dllManager::getInstance().init(cacheDirId, exeDirPtr);
+    }
     int getAllSongCount() {
         auto count{dllManager::getInstance().getSongsManager().getTotalSongCount()};
         if (count.has_value()) {

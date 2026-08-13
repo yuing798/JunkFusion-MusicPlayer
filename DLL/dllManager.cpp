@@ -1,9 +1,15 @@
 #include "./dllManager.hpp"
+#include "constants.h"
 #include "juce_core/juce_core.h"
+#include "processManager/AudioProcessCoordinator.hpp"
+#include <memory>
+#include <spdlog/common.h>
+#include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
 
 dllManager::dllManager() {}
 
-void dllManager::init(const char* cacheDirId) {
+void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     cacheDir = juce::File{cacheDirId};
     logInfoDir = cacheDir.getChildFile("log");
     if (!logInfoDir.exists()) logInfoDir.createDirectory();
@@ -23,11 +29,27 @@ void dllManager::init(const char* cacheDirId) {
         );
         // 全局日志格式：时间戳 + 级别 + 线程ID + 消息体
         const char* pattern = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v";
-        auto uiLogger = std::make_shared<spdlog::logger>(LogDllID, std::move(sink));
-        uiLogger->set_pattern(pattern);
-        uiLogger->set_level(spdlog::level::info);
-        spdlog::register_logger(uiLogger);
+        auto dllLogger = std::make_shared<spdlog::logger>(LogDllID, std::move(sink));
+        dllLogger->set_pattern(pattern);
+        // #ifdef JF_DEBUG
+        //         dllLogger->set_level(spdlog::level::debug);
+        // #else
+        //         dllLogger->set_level(spdlog::level::info);
+        // #endif
+        dllLogger->set_level(spdlog::level::debug);
+        // dllLogger->flush_on(spdlog::level::debug);
+
+        spdlog::register_logger(dllLogger);
+
+        // spdlog::flush_all();
     }
+
+    auto logger{spdlog::get(LogDllID)};
+    logger->debug("准备初始化音频进程");
+    mAudioPorcessCoordinator =
+        std::make_unique<AudioProcessCoordinator>(cacheDir, juce::File{exeDirPtr});
+    mAudioPorcessCoordinator->start();
+    logger->debug("已通知音频进程启动");
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
     // if(!dbFile.existsAsFile()) dbFile.cr  不用，因为SQLite::OPEN_CREATE会初始化文件
