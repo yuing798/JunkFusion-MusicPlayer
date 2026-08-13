@@ -43,5 +43,6 @@ namespace Utils {
 
     std::vector<std::byte> loadFile2ByteVector(const juce::File& file);
 
+    // 将内存块转换成对象
     juce::DynamicObject::Ptr mb2object(const juce::MemoryBlock& mb);
 } // namespace Utils

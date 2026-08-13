@@ -114,12 +114,10 @@ Future<SendPort> isolateSendPort = () async {
             final params = data.params;
             Map<String, Object?> results = {}; //Map为空和NULL是两种东西
             if (name == B_getAllSongs.name) {
-              print("开始全量加载歌曲元数据");
+              // print("开始全量加载歌曲元数据");
               final cPtr = bindings.getAllSongs();
               final dartString = cPtr.cast<Utf8>().toDartString(); //解码
               Map<String, dynamic> obj = jsonDecode(dartString);
-              //Object? 是“类型安全的未知类型”（你暂时不知道它是什么，但编译器会管着你）；
-              //dynamic 是“彻底关闭类型检查的万能类型”（你爱怎么用就怎么用，编译器完全听你的，出错了运行时才报错）。
               bindings.freeString(cPtr);
               assert(obj.containsKey(B_getAllSongs.songsList));
               final songs = obj[B_getAllSongs.songsList] as List<dynamic>;

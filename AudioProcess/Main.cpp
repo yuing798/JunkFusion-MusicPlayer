@@ -1,3 +1,4 @@
+#include "AudioDefs.hpp"
 #include "AudioProcessWorker.hpp"
 #include "AudioUtils.hpp"
 #include "GodProcessor.hpp"
@@ -5,16 +6,41 @@
 #include <juce_core/juce_core.h>
 #include <memory>
 #include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
+#include <string>
 
 int main(int argc, char* argv[]) {
-
-    juce::String commandLine = juce::StringArray(argv, argc).joinIntoString(" ");
-    AudioProcessWorker mAduioProcessWorker;
-    mAduioProcessWorker.initialiseFromCommandLine(commandLine, "JunkFusionAudioProcess", 3000);
     juce::ScopedJuceInitialiser_GUI juceInitialiser; // 消息队列初始化
+    juce::String commandLine = juce::StringArray(argv, argc).joinIntoString(" ");
+    AudioProcessWorker mAudioProcessWorker;
+    mAudioProcessWorker.initialiseFromCommandLine(commandLine, "JunkFusionAudioProcess", 3000);
     std::unique_ptr<GodProcessor> mGodProcessor;
-    std::shared_ptr<spdlog::logger> audioLogger;
-    AudioUtils::initAudioLogger(mGodProcessor.)
 
-        return 0;
+    juce::WaitableEvent initEvent; // 用于等待初始化参数的传入
+    juce::String mCacheDir;
+    bool initSuccess{false};
+
+    mAudioProcessWorker.onInit = [&mCacheDir, &initSuccess, &initEvent](juce::String cacheDir) {
+        mCacheDir = std::move(cacheDir);
+        initSuccess = true;
+        initEvent.signal();
+    };
+
+    initEvent.wait(3000);
+    if (initSuccess == false) {
+        // 这里通知调度者重启服务
+        return -1;
+    } // 这里链接正式完成
+    auto logPath = juce::File{mCacheDir}.getChildFile("log");
+    if (!logPath.exists()) logPath.createDirectory();
+    auto audioLogFile = logPath.getChildFile("audioProcess.log");
+    AudioUtils::initAudioLogger(audioLogFile.getFullPathName().toStdString());
+
+    auto logger{spdlog::get(AudioDefs::LogAudioId)};
+    logger->debug("音频进程开始阻塞");
+    juce::MessageManager::getInstance()->runDispatchLoop();
+
+    logger->debug("音频进程准备销毁");
+
+    return 0;
 }
