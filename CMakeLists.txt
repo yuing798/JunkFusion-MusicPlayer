@@ -22,7 +22,7 @@ if (MSVC)
 endif()
 
 add_subdirectory(DLL)
-add_subdirectory(JAudioProcess)
+add_subdirectory(AudioProcess)
 # JUCE 内部会覆盖输出目录到 JunkFusion_artefacts，这里强制改回统一目录
 add_subdirectory(Utils)
 

@@ -1,4 +1,5 @@
 #include "./ChildProcessCoordinatorManager.h"
+#include "AudioDefs.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
 #include <spdlog/spdlog.h>

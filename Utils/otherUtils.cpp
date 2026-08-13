@@ -158,14 +158,14 @@ extern "C" {
 //     }
 // }
 
-std::string ffmpegErrorOutput(int result) {
+std::string Utils::ffmpegErrorOutput(int result) {
     char errbuf[AV_ERROR_MAX_STRING_SIZE] = {0};
     // 将错误码ret转换为可读字符串存入errbuf
     av_strerror(result, errbuf, sizeof(errbuf));
     return std::string(errbuf);
 }
 
-std::vector<std::byte> loadFile2ByteVector(const juce::File& file) {
+std::vector<std::byte> Utils::loadFile2ByteVector(const juce::File& file) {
     // 确保文件真实存在
     if (!file.existsAsFile()) return {};
 
@@ -187,30 +187,19 @@ std::vector<std::byte> loadFile2ByteVector(const juce::File& file) {
     return buffer;
 }
 
-// void getMultiMediaFileChoose(std::function<void(const juce::Array<juce::File>&)> onFileSelected,
-//                              juce::Component* parentComponent) {
-//     // 1. 构建过滤器字符串（用分号分隔）
-//     juce::String filters = "*";
+juce::DynamicObject::Ptr Utils::mb2object(const juce::MemoryBlock& mb) {
+    // 1. 将 MemoryBlock 转换回 UTF-8 字符串
+    juce::String jsonStr = mb.toString();
 
-//     // 2. 创建 FileChooser 对象（使用 shared_ptr 管理生命周期）
-//     auto chooser = std::make_shared<juce::FileChooser>(
-//         juce::String::fromUTF8("请选择多媒体文件（音频或视频）"),      // 对话框标题
-//         juce::File::getSpecialLocation(juce::File::userHomeDirectory), // 初始目录
-//         filters,                                                       // 过滤器字符串
-//         true,                                                          //
-//         使用原生对话框（外观更好） false, // 不将包视为目录 parentComponent // 父组件（实现模态）
-//     );
+    // 2. 准备一个 juce::var 容器接收解析结果
+    juce::var parsedJson;
 
-//     // 3. 异步启动对话框
-//     chooser->launchAsync(
-//         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles |
-//             juce::FileBrowserComponent::canSelectMultipleItems, // 支持多选
-//         [chooser, onFileSelected](const juce::FileChooser&) {
-//             juce::Array<juce::File> selected = chooser->getResults();
-
-//             // 调用回调，传递文件列表
-//             if (onFileSelected) { // 这个地方是在检查 std::function 这个“对象”是否为空
-//                 onFileSelected(selected);
-//             }
-//         });
-// }
+    // 3. 使用带有 Result 返回值的 parse 函数进行安全解析
+    juce::Result parseResult = juce::JSON::parse(jsonStr, parsedJson);
+    if (parseResult.wasOk()) {
+        if (parsedJson.isObject()) {
+            return parsedJson.getDynamicObject();
+        }
+    }
+    return {};
+}

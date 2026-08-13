@@ -1,12 +1,13 @@
 //这个文件用来生成dll后后端进程链接的桥接定义
+//run node D:/audio_develop/Junk-Fusion/DLL/processManager/dllAndCppProcessBridge.cjs
 
 const fs = require('fs');
 const path = require('path');
 const jsonc = require('jsonc-parser');
 
 //这个放在对应的进程端
-const otherDllAndCppBridgesPaths = ["../../JAudioProcess/AudioDefs.hpp"];//其他生成文件的格式和上面那两个不同，所以分开
-const otherJsoncFilesPaths = ["../../JAudioProcess/AudioProcessAndDllBridge.jsonc"];
+const otherDllAndCppBridgesPaths = ["../../AudioProcess/AudioDefs.hpp"];//其他生成文件的格式和上面那两个不同，所以分开
+const otherJsoncFilesPaths = ["../../AudioProcess/AudioProcessAndDllBridge.jsonc"];
 
 //这个放在DLL端
 const dllBridgeHppPaths = ["AudioDefs.hpp"];
