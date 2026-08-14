@@ -23,15 +23,12 @@ static constexpr const char* LogVSTID{"vst"};
 static constexpr const char* LogCrashID{"crash"};
 static constexpr const char* LogAllID{"all"};
 
-// 文件路径操作
-
-// static const juce::File LocalDirId{
-//     juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory)
-//         .getChildFile("JunkFusion")
-// };
-// static const juce::File imageDirId{LocalDirId.getChildFile("image")};
-// static const juce::File songImageDirId{imageDirId.getChildFile("songs")};
-// static const juce::File logInfoDirId{LocalDirId.getChildFile("logInfo")};
+namespace defsStr {
+    static constexpr const char* PopupWindowType{"PopupWindowType"};
+    static constexpr const char* infoMsg{"info"};
+    static constexpr const char* errorMsg{"error"};
+    static constexpr const char* msg{"msg"};
+} // namespace defsStr
 
 // 禁止拷贝和移动的宏
 #define DONT_COPY_AND_MOVE(ClassName)                                                              \

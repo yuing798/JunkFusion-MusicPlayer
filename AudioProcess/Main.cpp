@@ -36,8 +36,6 @@ int main(int argc, char* argv[]) {
         Utils::writeEmergencyLog("zmq: 握手失败");
     }
 
-    std::unique_ptr<GodProcessor> mGodProcessor;
-
     auto logger{spdlog::get(AudioDefs::LogAudioId)};
     logger->debug("音频进程开始阻塞");
 

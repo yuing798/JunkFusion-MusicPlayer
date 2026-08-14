@@ -7,7 +7,8 @@
 #include <string>
 #include <zmq.hpp>
 
-AudioProcessWorker::AudioProcessWorker() : juce::Thread("AudioProcessListener") {}
+AudioProcessWorker::AudioProcessWorker()
+    : juce::Thread("AudioProcessListener"), mGodProcessor(mSocket) {}
 
 bool AudioProcessWorker::initialise(const std::string& endpoint) {
 
@@ -31,7 +32,6 @@ void AudioProcessWorker::run() {
         zmq::message_t request;
 
         try {
-            // recv 会阻塞，但最多只阻塞 500 毫秒
             auto res = mSocket.recv(request, zmq::recv_flags::none);
 
             // 如果收到数据（没有超时）
@@ -41,6 +41,8 @@ void AudioProcessWorker::run() {
 
                 auto obj{juce::JSON::parse(juce::String{msgStr})};
                 if (obj.getDynamicObject()->hasProperty(AudioDefs::songPath)) {
+                    auto songPath =
+                        obj.getDynamicObject()->getProperty(AudioDefs::songPath).toString();
                 }
             }
         } catch (const zmq::error_t& e) {

@@ -10,6 +10,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
+#include <zmq.hpp>
 
 // class logSystem {
 // private:
@@ -47,4 +48,8 @@ namespace Utils {
     juce::DynamicObject::Ptr mb2object(const juce::MemoryBlock& mb);
 
     void writeEmergencyLog(const char* message);
+
+    void sendPopupWindow(zmq::socket_t& socket, juce::var obj);
+    void sendErrorPopupWindow(zmq::socket_t& socket, juce::String errorMsg);
+    void sendInfoPopupWindow(zmq::socket_t& socket, juce::String infoMsg);
 } // namespace Utils

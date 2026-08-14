@@ -6,15 +6,17 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
+#include "zmq.hpp"
 #include <spdlog/logger.h>
+
 class GodProcessor : public juce::AudioProcessor {
 private:
     AudioRingBuffer decoderRingBuffer;
     FFmpegDecoder decoder;
-    juce::File mCacheDir;
+    zmq::socket_t& mSocket;
 
 public:
-    GodProcessor(juce::File cahceDir);
+    GodProcessor(zmq::socket_t& socket);
     ~GodProcessor() = default;
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;

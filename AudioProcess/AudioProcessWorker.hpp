@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GodProcessor.hpp"
 #include "juce_core/juce_core.h"
 #include "zmq.hpp"
 
@@ -14,5 +15,6 @@ public:
 
 private:
     zmq::context_t mContext{1}; // zmq 上下文
-    zmq::socket_t mSocket;      // REQ 套接字(工作者连接的一端)
+    zmq::socket_t mSocket;
+    GodProcessor mGodProcessor;
 };

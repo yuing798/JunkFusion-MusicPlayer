@@ -7,6 +7,8 @@
 #include <cstdint>
 
 #include <spdlog/spdlog.h>
+#include <string>
+#include <zmq.hpp>
 
 extern "C" {
 #include "libavutil/avutil.h"
@@ -21,19 +23,16 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b) : juce::Thread("Decoder"), ringBuffer(b) {
+FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b, zmq::socket_t& socket)
+    : juce::Thread("Decoder"), ringBuffer(b), mSocket(socket) {
     setPriority(juce::Thread::Priority::highest); // 最高优先级
 }
 
-FFmpegDecoder::~FFmpegDecoder() {
-    // 给予线程 2000 毫秒的时间完成当前的 while 循环并退出。
-    // 如果 2000ms 后仍未退出，系统会强制终止
-    stopThread(2000);
-}
+FFmpegDecoder::~FFmpegDecoder() { stopThread(2000); }
 
 void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet juceLayout, double s) {
 
-    sampleRate = s;
+    targetSampleRate = s;
     auto mapJuceSpeakerToFFmpegMask = [](juce::AudioChannelSet::ChannelType juceType) -> uint64_t {
         switch (juceType) {
         case juce::AudioChannelSet::left: return AV_CH_FRONT_LEFT;                   // 0x00000001
@@ -73,24 +72,27 @@ void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet juceLayout, double s) {
     }
 
     if (outputChannelLayoutMask == 0) {
-        av_channel_layout_default(&outputChannelLayout, juceLayout.getChannelTypes().size());
+        av_channel_layout_default(&targetChannelLayout, juceLayout.getChannelTypes().size());
     } else {
-        av_channel_layout_from_mask(&outputChannelLayout, outputChannelLayoutMask);
+        av_channel_layout_from_mask(&targetChannelLayout, outputChannelLayoutMask);
     }
 }
 
-void FFmpegDecoder::prepareToPlayNewSong(int64_t id) { currentSongId = id; }
-
 void FFmpegDecoder::run() {
-
     av_log_set_level(AV_LOG_ERROR);
 
     AVFormatContext* inputContext;
-    // path = dbManager::getInstance().getSongsManager().getPathBySongId(currentSongId);
     if (path.empty()) {
         // 弹出错误弹窗
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(defsStr::PopupWindowType, defsStr::errorMsg);
+        obj.getDynamicObject()->setProperty(
+            defsStr::msg,
+            juce::String("无法找到当前文件信息，请检查文件路径:") + path
+        );
+        Utils::sendPopupWindow(mSocket, obj);
         auto log = spdlog::get(LogAudioID);
-        log->error("获取播放信息失败");
+        log->error("无法找到歌曲文件");
     }
     int result = avformat_open_input(
         &inputContext,
@@ -100,27 +102,33 @@ void FFmpegDecoder::run() {
     ); // 这个函数会同时进行内存分配
     if (result < 0) {
         auto log = spdlog::get(LogAudioID);
-        log->error(
-            "打开多媒体文件失败:文件路径:{}:错误原因:{}",
-            path,
-            Utils::ffmpegErrorOutput(result)
-        );
+        std::string errorStr = std::string("打开多媒体文件失败:文件路径:") + path +
+                               std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
+        log->error(errorStr);
+        Utils::sendErrorPopupWindow(mSocket, errorStr);
         avformat_close_input(&inputContext);
         return;
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if (result < 0) {
         auto log = spdlog::get(LogAudioID);
-        log->error(
-            "获取流失败，通知用户检查原始文件:{},失败原因:{}",
-            path,
-            Utils::ffmpegErrorOutput(result)
-        );
-        avformat_close_input(&inputContext);
-        return;
+        std::string errorStr = std::string("获取音频流失败，请检查原始文件是否被篡改:") + path +
+                               std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
+        Utils::sendErrorPopupWindow(mSocket, errorStr);
+        log->error(errorStr);
     }
 
     auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)};
+
+    if (currentIndex < 0) {
+        auto log = spdlog::get(LogAudioID);
+        std::string errorStr = std::string("获取音频流失败，请检查原始文件是否被篡改:") + path +
+                               std::string(" 错误原因:该文件不为音频文件");
+        Utils::sendErrorPopupWindow(mSocket, errorStr);
+        log->error(errorStr);
+        avformat_close_input(&inputContext);
+        return;
+    }
 
     auto* decoderPar = inputContext->streams[currentIndex]->codecpar;
     auto codec = avcodec_find_decoder(decoderPar->codec_id);   // 根据ID寻找解码器
@@ -130,9 +138,9 @@ void FFmpegDecoder::run() {
     SwrContext* swrContext{nullptr};
     swr_alloc_set_opts2( // 下面初始化重采样器
         &swrContext, 
-        &outputChannelLayout, 
+        &targetChannelLayout, 
         AV_SAMPLE_FMT_FLTP,//float 且平面结构 
-        sampleRate, 
+        targetSampleRate, 
         &decoderPar->ch_layout,
         static_cast<AVSampleFormat>(decoderPar->format), 
         decoderPar->sample_rate, 
@@ -149,74 +157,8 @@ void FFmpegDecoder::run() {
     juce::AudioBuffer<float> buffer;
     uint8_t** outputDataArray;
 
-    auto swrAndPushIntoFifo = [&] {
-        while (avcodec_receive_frame(decoderContext, frame) == 0) {
-            auto delayNumSamples = swr_get_delay(swrContext, frame->sample_rate);
-            int numOutputSamples = av_rescale_rnd(
-                delayNumSamples + frame->nb_samples,
-                sampleRate,
-                decoderPar->sample_rate,
-                AV_ROUND_UP
-            );
-            buffer.setSize(//只分配第一次内存，第二次自动跳过
-                outputChannelLayout.nb_channels, 
-                numOutputSamples, 
-                false, 
-                false, 
-                true
-            );//如果数组内的样本已经是numOutputSamples了就不会重新执行
-            int outputLineSize{0};
-            result = av_samples_alloc_array_and_samples(
-                &outputDataArray, // 输出通道指针数组的起始地址
-                &outputLineSize,  // 物理字节大小
-                outputChannelLayout.nb_channels,
-                numOutputSamples,
-                AV_SAMPLE_FMT_FLTP,
-                0
-            ); // 第二个参数和第四个参数的区别：nb_samples 是逻辑样本数（比如 1024 个浮点样本）。
-            // linesize 是物理字节大小（比如对于 1024 个浮点样本，linesize 通常是 1024 * 4 = 4096
-            // 字节，但如果内存对齐强制要求 64 字节对齐，它可能是 4096 或 4096+）。
-
-            if (result < 0) {
-                av_frame_unref(frame);
-                av_freep(&outputDataArray[0]);
-                av_freep(&outputDataArray);
-                continue;
-            }
-
-            result = swr_convert(
-                swrContext,
-                outputDataArray,  // 这里面装的就是重采样后的PCM数据
-                numOutputSamples, // 输出缓冲区的最大容量(理论最大值)
-                static_cast<uint8_t**>(frame->data),
-                frame->nb_samples
-            ); // 执行重采样，返回实际重采样完的样本点个数
-
-            av_frame_unref(frame); // 这时候frame已经没有用了
-            // 这个函数的目的是清空重置，而av_frame_free的作用是彻底删除
-            // 前面那个可以理解做清空数组，后面那个意味着连数组的内存也一起销毁
-
-            if (numOutputSamples <= 0) {
-                // 没有数据，清理并继续
-                av_freep(&outputDataArray[0]);
-                av_freep(&outputDataArray);
-                // outputDataArray[0] 指向的是真正的音频数据块，而
-                // outputDataArray 本身是“存放这些指针的数组”（通常只有几十字节）
-                // 所以需要先释放一级然后释放二级
-                continue;
-            }
-
-            for (int ch = 0; ch < outputChannelLayout.nb_channels; ++ch) {
-                float* dest = buffer.getWritePointer(ch);
-                const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
-                std::memcpy(dest, src, numOutputSamples * sizeof(float));
-            }
-            av_freep(&outputDataArray[0]);
-            av_freep(&outputDataArray);
-
-            ringBuffer.pushAudioData(buffer);
-        }
-    };
+    while (playState == false) { // 直接空循环暂停得了
+    }
 
     while (av_read_frame(inputContext, packet) == 0) {
         if (packet->stream_index != currentIndex) {
@@ -231,12 +173,12 @@ void FFmpegDecoder::run() {
             auto delayNumSamples = swr_get_delay(swrContext, frame->sample_rate);
             int numOutputSamples = av_rescale_rnd(
                 delayNumSamples + frame->nb_samples,
-                sampleRate,
+                targetSampleRate,
                 decoderPar->sample_rate,
                 AV_ROUND_UP
             );
             buffer.setSize(//只分配第一次内存，第二次自动跳过
-                outputChannelLayout.nb_channels, 
+                targetChannelLayout.nb_channels, 
                 numOutputSamples, 
                 false, 
                 false, 
@@ -246,7 +188,7 @@ void FFmpegDecoder::run() {
             result = av_samples_alloc_array_and_samples(
                 &outputDataArray, // 输出通道指针数组的起始地址
                 &outputLineSize,  // 物理字节大小
-                outputChannelLayout.nb_channels,
+                targetChannelLayout.nb_channels,
                 numOutputSamples,
                 AV_SAMPLE_FMT_FLTP,
                 0
@@ -283,7 +225,7 @@ void FFmpegDecoder::run() {
                 continue;
             }
 
-            for (int ch = 0; ch < outputChannelLayout.nb_channels; ++ch) {
+            for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
                 float* dest = buffer.getWritePointer(ch);
                 const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
                 std::memcpy(dest, src, numOutputSamples * sizeof(float));
@@ -304,12 +246,12 @@ void FFmpegDecoder::run() {
         auto delayNumSamples = swr_get_delay(swrContext, frame->sample_rate);
         int numOutputSamples = av_rescale_rnd(
             delayNumSamples + frame->nb_samples,
-            sampleRate,
+            targetSampleRate,
             decoderPar->sample_rate,
             AV_ROUND_UP
         );
         buffer.setSize(//只分配第一次内存，第二次自动跳过
-            outputChannelLayout.nb_channels, 
+            targetChannelLayout.nb_channels, 
             numOutputSamples, 
             false, 
             false, 
@@ -319,7 +261,7 @@ void FFmpegDecoder::run() {
         result = av_samples_alloc_array_and_samples(
             &outputDataArray, // 输出通道指针数组的起始地址
             &outputLineSize,  // 物理字节大小
-            outputChannelLayout.nb_channels,
+            targetChannelLayout.nb_channels,
             numOutputSamples,
             AV_SAMPLE_FMT_FLTP,
             0
@@ -356,7 +298,7 @@ void FFmpegDecoder::run() {
             continue;
         }
 
-        for (int ch = 0; ch < outputChannelLayout.nb_channels; ++ch) {
+        for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
             float* dest = buffer.getWritePointer(ch);
             const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
             std::memcpy(dest, src, numOutputSamples * sizeof(float));
@@ -382,7 +324,7 @@ void FFmpegDecoder::run() {
         av_samples_alloc_array_and_samples(
             &flushData,
             &flushLinesize,
-            outputChannelLayout.nb_channels,
+            targetChannelLayout.nb_channels,
             maxFlushSamples,
             AV_SAMPLE_FMT_FLTP,
             0
@@ -392,7 +334,7 @@ void FFmpegDecoder::run() {
             int ret = swr_convert(swrContext, flushData, maxFlushSamples, nullptr, 0);
             if (ret <= 0) break;
             // 将 ret 个样本推入 FIFO
-            for (int ch = 0; ch < outputChannelLayout.nb_channels; ++ch) {
+            for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
                 float* dest = buffer.getWritePointer(ch);
                 const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
                 std::memcpy(dest, src, maxFlushSamples * sizeof(float));
@@ -413,4 +355,11 @@ void FFmpegDecoder::run() {
     swr_free(&swrContext);
     avcodec_free_context(&decoderContext);
     avformat_close_input(&inputContext);
+}
+
+void FFmpegDecoder::setNewPlayState(std::string songPath) {
+    currentTimeStamp = 0.0;
+    path = songPath;
+    playState = true;
+    startThread();
 }

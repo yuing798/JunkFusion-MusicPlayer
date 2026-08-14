@@ -3,8 +3,8 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 
-GodProcessor::GodProcessor(juce::File cacheDir)
-    : decoderRingBuffer(1000), decoder(decoderRingBuffer), mCacheDir(cacheDir) {}
+GodProcessor::GodProcessor(zmq::socket_t& socket)
+    : decoderRingBuffer(1000), decoder(decoderRingBuffer, socket), mSocket(socket) {}
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
