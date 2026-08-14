@@ -1,9 +1,11 @@
 #pragma once
 
+#include "./DeviceManager.hpp"
 #include "GodProcessor.hpp"
 #include "juce_core/juce_core.h"
 #include "zmq.hpp"
 
+#include <memory>
 #include <string>
 
 class AudioProcessWorker : public juce::Thread {
@@ -16,5 +18,6 @@ public:
 private:
     zmq::context_t mContext{1}; // zmq 上下文
     zmq::socket_t mSocket;
+    DeviceManager mDeviceManager;
     GodProcessor mGodProcessor;
 };

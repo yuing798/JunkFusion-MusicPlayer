@@ -8,7 +8,9 @@
 #include <zmq.hpp>
 
 AudioProcessWorker::AudioProcessWorker()
-    : juce::Thread("AudioProcessListener"), mGodProcessor(mSocket) {}
+    : juce::Thread("AudioProcessListener"), mDeviceManager(mSocket), mGodProcessor(mSocket) {
+    mDeviceManager.connectProcessor(&mGodProcessor);
+}
 
 bool AudioProcessWorker::initialise(const std::string& endpoint) {
 
@@ -52,4 +54,7 @@ void AudioProcessWorker::run() {
     }
 }
 
-AudioProcessWorker::~AudioProcessWorker() { stopThread(1500); }
+AudioProcessWorker::~AudioProcessWorker() {
+    stopThread(1500);
+    mDeviceManager.disconnectProcessor();
+}
