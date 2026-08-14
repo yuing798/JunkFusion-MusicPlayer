@@ -1,7 +1,7 @@
 #include "./dllManager.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
-#include "processManager/AudioProcessCoordinator.hpp"
+#include <SQLiteCpp/Database.h>
 #include <memory>
 #include <spdlog/common.h>
 #include <spdlog/logger.h>
@@ -16,14 +16,12 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     songImageDir = cacheDir.getChildFile("songImage");
     if (!songImageDir.exists()) songImageDir.createDirectory();
 
-    const auto logDirPath = logInfoDir.getFullPathName().toStdString();
     constexpr size_t kUiMaxSize = 5 * 1024 * 1024; // 5 MB
     constexpr size_t kUiMaxFiles = 3;
 
-    // ──  player_dll.log — UI调用dll操作 (Info) ──
     {
         auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-            logDirPath + "/player_dll.log",
+            logInfoDir.getChildFile("dll.log").getFullPathName().toStdString(),
             kUiMaxSize,
             kUiMaxFiles
         );
@@ -40,15 +38,17 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         // dllLogger->flush_on(spdlog::level::debug);
 
         spdlog::register_logger(dllLogger);
-
-        // spdlog::flush_all();
     }
 
     auto logger{spdlog::get(LogDllID)};
     logger->debug("准备初始化音频进程");
-    mAudioPorcessCoordinator =
-        std::make_unique<AudioProcessCoordinator>(cacheDir, juce::File{exeDirPtr});
-    mAudioPorcessCoordinator->start();
+
+    // zip 版本：改用 ZmqCoordinator 启动后端进程，启动完成后通过 zmq 回发 helloworld
+    mZmqCoordinator = std::make_unique<ZmqCoordinator>();
+    if (!mZmqCoordinator
+             ->start(juce::File{exeDirPtr}.getChildFile("JunkFusionAudioProcess.exe"), 5000)) {
+        logger->critical("音频进程启动或握手失败");
+    }
     logger->debug("已通知音频进程启动");
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};

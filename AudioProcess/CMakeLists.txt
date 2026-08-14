@@ -18,8 +18,9 @@ target_sources(JunkFusionAudioProcess
         DeviceManager.cpp 
         ffmpegDecoder.cpp
         GodProcessor.cpp
-        AudioProcessWorker.cpp
+        # AudioProcessWorker.cpp
         AudioUtils.cpp
+        ZmqWorker.cpp
 )
 
 target_compile_definitions(JunkFusionAudioProcess
@@ -47,6 +48,8 @@ target_link_libraries(JunkFusionAudioProcess
         # juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
         # juce::juce_gui_extra         # 包含高级 UI 组件
         juce::juce_core
+        cppzmq 
+        cppzmq-static
         
         # 第三方库
         ${FFMPEG_LIBRARIES}#解码层和重采样层

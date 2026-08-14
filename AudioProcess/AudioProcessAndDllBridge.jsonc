@@ -2,5 +2,6 @@
 {
   "LogAudioId":"",
   "connectSingal":"",
-  "cacheDir":""
+  "cacheDir":"--cacheDir",
+  "zmqEndpoint":"--zmqEndpoint"
 }

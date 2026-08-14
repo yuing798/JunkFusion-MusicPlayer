@@ -4,7 +4,7 @@
 #include "fileManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
 #include "libExport.h"
-#include "processManager/AudioProcessCoordinator.hpp"
+#include "processManager/zmq_coordinator.h"
 #include <SQLiteCpp/Database.h>
 #include <fstream>
 #include <memory>
@@ -14,12 +14,11 @@
 class dllManager {
 private:
     std::unique_ptr<SQLite::Database> db;
-    std::unique_ptr<SongsManage> songs; // 歌曲管理
-    juce::File cacheDir;                // 缓存文件夹
-    juce::File logInfoDir;              // 日志文件夹
-    juce::File songImageDir;            // 歌曲图片
-    // JunkFusionBackendProcessManager mBackendMaster; // 后端进程管理
-    std::unique_ptr<AudioProcessCoordinator> mAudioPorcessCoordinator;
+    std::unique_ptr<SongsManage> songs;              // 歌曲管理
+    juce::File cacheDir;                             // 缓存文件夹
+    juce::File logInfoDir;                           // 日志文件夹
+    juce::File songImageDir;                         // 歌曲图片
+    std::unique_ptr<ZmqCoordinator> mZmqCoordinator; // zmq 版本的后端进程协调者
 
 public:
     explicit dllManager();

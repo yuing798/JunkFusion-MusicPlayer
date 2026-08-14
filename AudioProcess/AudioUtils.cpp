@@ -1,5 +1,6 @@
 #include "./AudioUtils.hpp"
 #include "AudioDefs.hpp"
+#include "juce_core/juce_core.h"
 #include <memory>
 #include <spdlog/async.h>
 #include <spdlog/async_logger.h>
@@ -9,16 +10,19 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
-void AudioUtils::initAudioLogger(std::string logFilePath) {
+void AudioUtils::initAudioLogger(juce::File cacheDir) {
     std::shared_ptr<spdlog::logger> audioLogger;
     constexpr size_t kAudioMaxSize = 5 * 1024 * 1024; // 5 MB
     constexpr size_t kAudioMaxFiles = 3;
+    auto logDir{cacheDir.getChildFile("log")};
+    if (!logDir.exists()) logDir.createDirectory();
+    auto logFile{logDir.getChildFile("audioProcess.log").getFullPathName().toStdString()};
 
     auto audioThreadPool = std::make_shared<spdlog::details::thread_pool>(8192, 1);
 
     {
         auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-            logFilePath,
+            logFile,
             kAudioMaxSize,
             kAudioMaxFiles
         );

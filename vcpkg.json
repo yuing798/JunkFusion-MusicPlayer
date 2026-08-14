@@ -11,6 +11,7 @@
     },
     "spdlog",
     "sqlitecpp",
-    "hash-library"
+    "hash-library",
+    "cppzmq"
   ]
 }

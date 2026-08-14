@@ -1,9 +1,10 @@
 #include "AudioDefs.hpp"
-#include "AudioProcessWorker.hpp"
 #include "AudioUtils.hpp"
 #include "GodProcessor.hpp"
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
+#include "zmq_worker.h"
+#include <SQLiteCpp/Database.h>
 #include <juce_core/juce_core.h>
 #include <memory>
 #include <spdlog/logger.h>
@@ -13,35 +14,29 @@
 int main(int argc, char* argv[]) {
 
     juce::ScopedJuceInitialiser_GUI juceInitialiser; // 消息队列初始化
-    juce::String commandLine = juce::StringArray(argv, argc).joinIntoString(" ");
-    Utils::writeEmergencyLog(commandLine.toRawUTF8());
-    AudioProcessWorker mAudioProcessWorker;
-    juce::Thread::sleep(3000);
-    if (!mAudioProcessWorker.initialiseFromCommandLine(commandLine, "JunkFusionAudioProcess", 5000))
-        Utils::writeEmergencyLog("从命令行中初始化失败");
+
+    // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
+    juce::StringArray args{argv, argc};
+    std::string endpoint;
+    juce::File cacheDir;
+    for (int i = 0; i < args.size(); i++) {
+        if (args[i] == AudioDefs::zmqEndpoint) {
+            endpoint = args[i + 1].toStdString();
+            continue;
+        }
+        if (args[i] == AudioDefs::cacheDir) {
+            cacheDir = juce::File{args[i + 1]};
+            continue;
+        }
+    }
+    AudioUtils::initAudioLogger(cacheDir); // 开启日志
+
+    ZmqWorker worker;
+    if (!worker.initialise(endpoint)) {
+        Utils::writeEmergencyLog("zmq: 握手失败");
+    }
+
     std::unique_ptr<GodProcessor> mGodProcessor;
-
-    juce::WaitableEvent initEvent; // 用于等待初始化参数的传入
-    juce::String mCacheDir;
-    bool initSuccess{false};
-
-    mAudioProcessWorker.onInit = [&mCacheDir, &initSuccess, &initEvent](juce::String cacheDir) {
-        Utils::writeEmergencyLog("开始初始化参数");
-        mCacheDir = std::move(cacheDir);
-        initSuccess = true;
-        initEvent.signal();
-    };
-
-    initEvent.wait(3000);
-    if (initSuccess == false) {
-        // 这里通知调度者重启服务
-        Utils::writeEmergencyLog("初始化失败，准备通知调度者重启");
-        return -1;
-    } // 这里链接正式完成
-    auto logPath = juce::File{mCacheDir}.getChildFile("log");
-    if (!logPath.exists()) logPath.createDirectory();
-    auto audioLogFile = logPath.getChildFile("audioProcess.log");
-    AudioUtils::initAudioLogger(audioLogFile.getFullPathName().toStdString());
 
     auto logger{spdlog::get(AudioDefs::LogAudioId)};
     logger->debug("音频进程开始阻塞");

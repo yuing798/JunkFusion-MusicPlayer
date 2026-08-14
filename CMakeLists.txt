@@ -15,6 +15,8 @@ find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
 #find_package获得的目标内部已经使用了target_include_directory,所以不需要自己写
+find_package(cppzmq CONFIG REQUIRED)
+
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
