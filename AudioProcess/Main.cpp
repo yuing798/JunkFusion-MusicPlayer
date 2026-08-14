@@ -1,9 +1,9 @@
 #include "AudioDefs.hpp"
+#include "AudioProcessWorker.hpp"
 #include "AudioUtils.hpp"
 #include "GodProcessor.hpp"
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
-#include "zmq_worker.h"
 #include <SQLiteCpp/Database.h>
 #include <juce_core/juce_core.h>
 #include <memory>
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     }
     AudioUtils::initAudioLogger(cacheDir); // 开启日志
 
-    ZmqWorker worker;
+    AudioProcessWorker worker;
     if (!worker.initialise(endpoint)) {
         Utils::writeEmergencyLog("zmq: 握手失败");
     }

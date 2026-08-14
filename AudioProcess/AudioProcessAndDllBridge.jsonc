@@ -3,5 +3,6 @@
   "LogAudioId":"",
   "connectSingal":"",
   "cacheDir":"--cacheDir",
-  "zmqEndpoint":"--zmqEndpoint"
+  "zmqEndpoint":"--zmqEndpoint",
+  "songPath":""
 }
