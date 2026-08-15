@@ -51,6 +51,7 @@ dependencies:
   window_manager: ^0.5.2
   logger: ^2.7.0
   path_provider: ^2.1.6
+  osc: ^1.0.0
 
 dev_dependencies:
   flutter_test:

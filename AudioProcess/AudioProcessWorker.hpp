@@ -11,7 +11,7 @@
 class AudioProcessWorker : public juce::Thread {
 public:
     AudioProcessWorker(juce::File cacheDir);
-    bool initialise(const std::string& endpoint);
+    bool initWorker(const std::string& endpoint);
     void run() override;
     ~AudioProcessWorker();
 

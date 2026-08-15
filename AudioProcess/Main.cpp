@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     AudioUtils::initAudioLogger(cacheDir); // 开启日志
 
     AudioProcessWorker worker(std::move(cacheDir));
-    if (!worker.initialise(endpoint)) {
+    if (!worker.initWorker(endpoint)) {
         Utils::writeEmergencyLog("zmq: 握手失败");
     }
 

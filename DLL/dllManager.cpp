@@ -34,8 +34,6 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 #else
         dllLogger->set_level(spdlog::level::info);
 #endif
-        // dllLogger->set_level(spdlog::level::debug);
-        // dllLogger->flush_on(spdlog::level::debug);
 
         spdlog::register_logger(dllLogger);
     }
@@ -44,8 +42,8 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     logger->debug("准备初始化音频进程");
 
     // zip 版本：改用 ZmqCoordinator 启动后端进程，启动完成后通过 zmq 回发 helloworld
-    mZmqCoordinator = std::make_unique<ZmqCoordinator>();
-    if (!mZmqCoordinator
+    mAudioProcessCoordinator = std::make_unique<AudioProcessCoordinator>();
+    if (!mAudioProcessCoordinator
              ->start(juce::File{exeDirPtr}.getChildFile("JunkFusionAudioProcess.exe"), 5000)) {
         logger->critical("音频进程启动或握手失败");
     }

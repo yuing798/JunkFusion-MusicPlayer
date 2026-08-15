@@ -20,7 +20,7 @@
 #include <memory>
 #include <string>
 
-class ZmqCoordinator {
+class AudioProcessCoordinator {
 public:
     // 启动子进程并完成握手。
     //   exeFile : 后端进程( JunkFusionAudioProcess.exe )的完整路径

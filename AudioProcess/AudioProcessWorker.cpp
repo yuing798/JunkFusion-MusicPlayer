@@ -17,7 +17,7 @@ AudioProcessWorker::AudioProcessWorker(juce::File cacheDir)
     mManager->connectProcessor(&mGodProcessor);
 }
 
-bool AudioProcessWorker::initialise(const std::string& endpoint) {
+bool AudioProcessWorker::initWorker(const std::string& endpoint) {
 
     mSocket = zmq::socket_t(mContext, zmq::socket_type::dealer);
     mSocket.set(zmq::sockopt::rcvtimeo, 5000);
