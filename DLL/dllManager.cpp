@@ -41,10 +41,12 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     auto logger{spdlog::get(LogDllID)};
     logger->debug("准备初始化音频进程");
 
-    // zip 版本：改用 ZmqCoordinator 启动后端进程，启动完成后通过 zmq 回发 helloworld
     mAudioProcessCoordinator = std::make_unique<AudioProcessCoordinator>();
-    if (!mAudioProcessCoordinator
-             ->start(juce::File{exeDirPtr}.getChildFile("JunkFusionAudioProcess.exe"), 5000)) {
+    if (!mAudioProcessCoordinator->start(
+            juce::File{exeDirPtr}.getChildFile("JunkFusionAudioProcess.exe"),
+            mOscSender.getPort(),
+            juce::File{cacheDirId}
+        )) {
         logger->critical("音频进程启动或握手失败");
     }
     logger->debug("已通知音频进程启动");

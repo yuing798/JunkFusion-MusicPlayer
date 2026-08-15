@@ -50,6 +50,7 @@ target_link_libraries(JunkFusionAudioProcess
         juce::juce_core
         cppzmq 
         cppzmq-static
+        juce::juce_osc
         
         # 第三方库
         ${FFMPEG_LIBRARIES}#解码层和重采样层

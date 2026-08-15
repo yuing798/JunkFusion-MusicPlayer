@@ -16,6 +16,7 @@ target_link_libraries(JunkFusionDLL
         juce::juce_gui_basics#基础UI组件
         cppzmq 
         cppzmq-static
+        juce::juce_osc
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置
         juce::juce_recommended_lto_flags#链接时代码优化

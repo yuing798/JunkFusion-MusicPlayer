@@ -5,6 +5,7 @@
 #include "juce_core/juce_core.h"
 #include "libExport.h"
 #include "processManager/AudioProcessCoordinator.h"
+#include "processManager/oscSender.hpp"
 #include <SQLiteCpp/Database.h>
 #include <fstream>
 #include <memory>
@@ -19,6 +20,7 @@ private:
     juce::File logInfoDir;                                             // 日志文件夹
     juce::File songImageDir;                                           // 歌曲图片
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
+    OscSender mOscSender;
 
 public:
     explicit dllManager();

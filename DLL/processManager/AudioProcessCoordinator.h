@@ -22,14 +22,12 @@
 
 class AudioProcessCoordinator {
 public:
-    // 启动子进程并完成握手。
-    //   exeFile : 后端进程( JunkFusionAudioProcess.exe )的完整路径
-    //   timeoutMs : 等待子进程连上来并发出 ready 的超时时间
-    // 返回 true 表示子进程已启动且收到了它的 ready(握手成功)。失败返回 false。
-    bool start(const juce::File& exeFile, int timeoutMs = 5000);
+    bool start(const juce::File& exeFile, int oscPort, juce::File cacheDir);
 
     // 关闭套接字，并强制结束子进程。
     void stop();
+    AudioProcessCoordinator();
+    ~AudioProcessCoordinator();
 
 private:
     juce::ChildProcess mChildProcess; // 负责拉起并监控后端进程

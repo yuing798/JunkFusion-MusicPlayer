@@ -10,4 +10,5 @@ namespace AudioDefs {
     static constexpr const char* deviceList = "deviceList" ;
     static constexpr const char* sampleRateList = "sampleRateList" ;
     static constexpr const char* bufferSizeList = "bufferSizeList" ;
+    static constexpr const char* oscPort = "--oscPort" ;
 }

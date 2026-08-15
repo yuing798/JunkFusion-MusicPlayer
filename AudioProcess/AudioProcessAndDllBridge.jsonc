@@ -8,5 +8,6 @@
   "deviceTypeList":"",
   "deviceList":"",
   "sampleRateList":"",
-  "bufferSizeList":""
+  "bufferSizeList":"",
+  "oscPort":"--oscPort"
 }

@@ -51,7 +51,7 @@ void DeviceManager::saveSetupXml2File() {
 
         auto log = spdlog::get(LogAudioID);
         if (success) {
-            log->debug("声卡配置已保存到: " + mConfigFile.getFullPathName());
+            log->debug("声卡配置已保存到: {}", mConfigFile.getFullPathName().toStdString());
         } else {
             log->error("错误：无法写入声卡配置文件！");
         }

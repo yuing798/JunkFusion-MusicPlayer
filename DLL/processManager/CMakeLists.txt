@@ -2,5 +2,6 @@ target_sources(JunkFusionDLL
     PRIVATE
         # ChildProcessCoordinatorManager.cpp
         # AudioProcessCoordinator.cpp
-        ZmqCoordinator.cpp
+        AudioProcessCoordinator.cpp
+        OscSender.cpp
 )
