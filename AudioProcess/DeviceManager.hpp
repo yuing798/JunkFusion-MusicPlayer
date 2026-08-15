@@ -19,6 +19,7 @@ private:
 
 public:
     explicit DeviceManager(zmq::socket_t& socket, juce::File configFile);
+    ~DeviceManager();
     // 监听声卡状态变换
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
@@ -34,6 +35,8 @@ public:
     // 测量的是：“你的音频回调函数（processBlock）每次执行所花费的时间，占声卡给你的极限时间的百分比。”
     juce::var getAvailDeviceType();
     juce::var getAvailDevice(juce::AudioIODeviceType* type);
+    juce::var getAvailSampleRateList();
+    juce::var getAvailBufferSizeList();
 
     DONT_COPY_AND_MOVE(DeviceManager)
 };

@@ -19,7 +19,10 @@ DeviceManager::DeviceManager(zmq::socket_t& socket, juce::File configFile)
         auto log{spdlog::get(LogAudioID)};
         log->error("初始化声卡失败: {}", error.toStdString());
     }
+    mManager.addChangeListener(this);
 }
+
+DeviceManager::~DeviceManager() { mManager.removeChangeListener(this); }
 
 void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
     if (source == &mManager) {
@@ -80,4 +83,31 @@ juce::var DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
     juce::var obj{new juce::DynamicObject()};
     obj.getDynamicObject()->setProperty(AudioDefs::deviceList, juce::var(nameArray));
     return obj;
+}
+juce::var DeviceManager::getAvailSampleRateList() {
+    if (auto* device = mManager.getCurrentAudioDevice()) {
+        auto sampleRateList = device->getAvailableSampleRates();
+        juce::Array<juce::var> array;
+        for (auto& sr : sampleRateList) {
+            array.add(juce::String(sr, 2)); // 保留两位小数
+        }
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(AudioDefs::sampleRateList, juce::var(array));
+        return obj;
+    }
+    return {};
+}
+
+juce::var DeviceManager::getAvailBufferSizeList() {
+    if (auto* device = mManager.getCurrentAudioDevice()) {
+        auto bufferSizeList = device->getAvailableBufferSizes();
+        juce::Array<juce::var> array;
+        for (auto& bufferSize : bufferSizeList) {
+            array.add(bufferSize);
+        }
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(AudioDefs::bufferSizeList, juce::var(array));
+        return obj;
+    }
+    return {};
 }

@@ -8,4 +8,6 @@ namespace AudioDefs {
     static constexpr const char* songPath = "songPath" ;
     static constexpr const char* deviceTypeList = "deviceTypeList" ;
     static constexpr const char* deviceList = "deviceList" ;
+    static constexpr const char* sampleRateList = "sampleRateList" ;
+    static constexpr const char* bufferSizeList = "bufferSizeList" ;
 }

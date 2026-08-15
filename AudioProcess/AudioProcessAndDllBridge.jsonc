@@ -6,5 +6,7 @@
   "zmqEndpoint":"--zmqEndpoint",
   "songPath":"",
   "deviceTypeList":"",
-  "deviceList":""
+  "deviceList":"",
+  "sampleRateList":"",
+  "bufferSizeList":""
 }
