@@ -17,8 +17,8 @@ public:
 
 private:
     zmq::context_t mContext{1}; // zmq 上下文
-    zmq::socket_t mSocket;
-    std::unique_ptr<DeviceManager> mManager;
-    GodProcessor mGodProcessor;
+    zmq::socket_t mSocket; // 这个逼玩意是非线程安全的，所以不要跨线程使用
+    // std::unique_ptr<DeviceManager> mManager;
+    // std::unique_ptr<GodProcessor> mGodProcessor;
     juce::File mCacheDir;
 };

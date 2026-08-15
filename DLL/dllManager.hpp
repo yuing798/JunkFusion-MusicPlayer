@@ -36,5 +36,5 @@ public:
 
     SongsManage& getSongsManager() { return *songs; }
 
-    ~dllManager() { spdlog::shutdown(); }
+    ~dllManager();
 };

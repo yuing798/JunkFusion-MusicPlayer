@@ -26,4 +26,4 @@ OscSender::OscSender() {
         log->error("警告：OSC Sender 连接失败！");
     }
 }
-OscSender::~OscSender() {}
+OscSender::~OscSender() { mSender.disconnect(); }

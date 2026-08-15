@@ -253,3 +253,8 @@ void Utils::sendErrorPopupWindow(zmq::socket_t& socket, juce::String errorMsg) {
     obj.getDynamicObject()->setProperty(defsStr::msg, errorMsg);
     sendPopupWindow(socket, obj);
 }
+void Utils::checkCurrentThreadId(std::string identity) {
+    writeEmergencyLog((identity + " thread id: " +
+                       std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())))
+                          .c_str());
+}
