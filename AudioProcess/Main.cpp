@@ -2,6 +2,7 @@
 #include "AudioProcessWorker.hpp"
 #include "AudioUtils.hpp"
 #include "GodProcessor.hpp"
+#include "constants.h"
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
 #include <SQLiteCpp/Database.h>
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
         Utils::writeEmergencyLog("zmq: 握手失败");
     }
 
-    auto logger{spdlog::get(AudioDefs::LogAudioId)};
+    auto logger{spdlog::get(LogAudioID)};
     logger->debug("音频进程开始阻塞");
 
     juce::MessageManager::getInstance()->runDispatchLoop();

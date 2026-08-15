@@ -56,6 +56,7 @@ void main() async {
   bindings.dllInit(cacheDirPtr, exeDirPtr); //dll初始化
   ffi.malloc.free(cacheDirPtr);
   ffi.malloc.free(exeDirPtr);
+  print("dll初始化完成");
 
   AppCache.frontCacheRef = await SharedPreferences.getInstance(); //初始化前端缓存指针
 

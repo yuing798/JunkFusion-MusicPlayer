@@ -1,5 +1,6 @@
 #include "./AudioUtils.hpp"
 #include "AudioDefs.hpp"
+#include "constants.h"
 #include "juce_core/juce_core.h"
 #include <memory>
 #include <spdlog/async.h>
@@ -27,7 +28,7 @@ void AudioUtils::initAudioLogger(juce::File cacheDir) {
             kAudioMaxFiles
         );
         audioLogger = std::make_shared<spdlog::async_logger>(
-            AudioDefs::LogAudioId,
+            LogAudioID,
             std::move(sink),
             audioThreadPool,
             spdlog::async_overflow_policy::block

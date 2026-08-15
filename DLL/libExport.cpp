@@ -5,6 +5,7 @@
 #include "dllUtils.hpp"
 #include "fileManage/dbModel.hpp"
 #include "juce_core/juce_core.h"
+#include "otherUtils.hpp"
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -12,6 +13,7 @@
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
+        Utils::writeEmergencyLog("准备初始化dll单例1.0");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
     int getAllSongCount() {

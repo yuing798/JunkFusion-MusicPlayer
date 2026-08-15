@@ -5,6 +5,7 @@
 #include "otherUtils.hpp"
 #include "spdlog/spdlog.h"
 #include <zmq.hpp>
+AudioProcessCoordinator::AudioProcessCoordinator() {}
 
 bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce::File cacheDir) {
     auto logger{spdlog::get(LogDllID)};
@@ -46,3 +47,5 @@ void AudioProcessCoordinator::stop() {
     mSocket.close();
     mRunning = false;
 }
+
+AudioProcessCoordinator::~AudioProcessCoordinator() {}

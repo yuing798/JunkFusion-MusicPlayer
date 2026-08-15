@@ -1,6 +1,5 @@
 //run node D:/audio_develop/Junk-Fusion/DLL/processManager/dllAndCppProcessBridge.cjs
 {
-  "LogAudioId":"",
   "connectSingal":"",
   "cacheDir":"--cacheDir",
   "zmqEndpoint":"--zmqEndpoint",

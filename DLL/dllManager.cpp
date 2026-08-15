@@ -1,15 +1,19 @@
 #include "./dllManager.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
+#include "otherUtils.hpp"
+#include "processManager/oscSender.hpp"
 #include <SQLiteCpp/Database.h>
 #include <memory>
 #include <spdlog/common.h>
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
-dllManager::dllManager() {}
+dllManager::dllManager() { Utils::writeEmergencyLog("准备初始化dll单例2.0"); }
 
 void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
+    Utils::writeEmergencyLog("准备初始化dll单例3.0");
+
     cacheDir = juce::File{cacheDirId};
     logInfoDir = cacheDir.getChildFile("log");
     if (!logInfoDir.exists()) logInfoDir.createDirectory();
@@ -42,9 +46,10 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     logger->debug("准备初始化音频进程");
 
     mAudioProcessCoordinator = std::make_unique<AudioProcessCoordinator>();
+    mOscSender = std::make_unique<OscSender>();
     if (!mAudioProcessCoordinator->start(
             juce::File{exeDirPtr}.getChildFile("JunkFusionAudioProcess.exe"),
-            mOscSender.getPort(),
+            mOscSender->getPort(),
             juce::File{cacheDirId}
         )) {
         logger->critical("音频进程启动或握手失败");

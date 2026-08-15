@@ -21,6 +21,7 @@ target_sources(JunkFusionAudioProcess
         AudioProcessWorker.cpp
         AudioUtils.cpp
         # ZmqWorker.cpp
+        OscReceiver.cpp
 )
 
 target_compile_definitions(JunkFusionAudioProcess

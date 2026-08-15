@@ -20,7 +20,7 @@ private:
     juce::File logInfoDir;                                             // 日志文件夹
     juce::File songImageDir;                                           // 歌曲图片
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
-    OscSender mOscSender;
+    std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
 
 public:
     explicit dllManager();
