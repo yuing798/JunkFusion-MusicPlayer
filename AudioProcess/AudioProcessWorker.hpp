@@ -10,7 +10,7 @@
 
 class AudioProcessWorker : public juce::Thread {
 public:
-    AudioProcessWorker();
+    AudioProcessWorker(juce::File cacheDir);
     bool initialise(const std::string& endpoint);
     void run() override;
     ~AudioProcessWorker();
@@ -18,6 +18,7 @@ public:
 private:
     zmq::context_t mContext{1}; // zmq 上下文
     zmq::socket_t mSocket;
-    DeviceManager mDeviceManager;
+    std::unique_ptr<DeviceManager> mManager;
     GodProcessor mGodProcessor;
+    juce::File mCacheDir;
 };

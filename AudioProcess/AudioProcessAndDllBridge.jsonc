@@ -4,5 +4,7 @@
   "connectSingal":"",
   "cacheDir":"--cacheDir",
   "zmqEndpoint":"--zmqEndpoint",
-  "songPath":""
+  "songPath":"",
+  "deviceTypeList":"",
+  "deviceList":""
 }

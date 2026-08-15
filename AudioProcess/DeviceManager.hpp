@@ -28,10 +28,12 @@ public:
     // 断开processor的连接
     void disconnectProcessor();
 
-    void saveSetupXml2File(juce::File cacheDir);
+    void saveSetupXml2File();
 
     // AudioDeviceManager::getCpuUsage()
     // 测量的是：“你的音频回调函数（processBlock）每次执行所花费的时间，占声卡给你的极限时间的百分比。”
+    juce::var getAvailDeviceType();
+    juce::var getAvailDevice(juce::AudioIODeviceType* type);
 
     DONT_COPY_AND_MOVE(DeviceManager)
 };

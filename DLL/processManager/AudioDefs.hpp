@@ -6,4 +6,6 @@ namespace AudioDefs {
     static constexpr const char* cacheDir = "--cacheDir" ;
     static constexpr const char* zmqEndpoint = "--zmqEndpoint" ;
     static constexpr const char* songPath = "songPath" ;
+    static constexpr const char* deviceTypeList = "deviceTypeList" ;
+    static constexpr const char* deviceList = "deviceList" ;
 }

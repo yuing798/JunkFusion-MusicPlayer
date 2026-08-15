@@ -10,6 +10,7 @@
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <utility>
 
 int main(int argc, char* argv[]) {
 
@@ -31,7 +32,7 @@ int main(int argc, char* argv[]) {
     }
     AudioUtils::initAudioLogger(cacheDir); // 开启日志
 
-    AudioProcessWorker worker;
+    AudioProcessWorker worker(std::move(cacheDir));
     if (!worker.initialise(endpoint)) {
         Utils::writeEmergencyLog("zmq: 握手失败");
     }

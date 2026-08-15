@@ -1,15 +1,20 @@
 #include "./AudioProcessWorker.hpp"
 #include "./AudioDefs.hpp"
+#include "DeviceManager.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
+#include <memory>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
 
-AudioProcessWorker::AudioProcessWorker()
-    : juce::Thread("AudioProcessListener"), mDeviceManager(mSocket), mGodProcessor(mSocket) {
-    mDeviceManager.connectProcessor(&mGodProcessor);
+AudioProcessWorker::AudioProcessWorker(juce::File cacheDir)
+    : juce::Thread("AudioProcessListener"), mGodProcessor(mSocket), mCacheDir(cacheDir) {
+    juce::File configFile{mCacheDir.getChildFile("JFConfig.xml")};
+    if (!configFile.existsAsFile()) configFile.create();
+    mManager = std::make_unique<DeviceManager>(mSocket, std::move(configFile));
+    mManager->connectProcessor(&mGodProcessor);
 }
 
 bool AudioProcessWorker::initialise(const std::string& endpoint) {
@@ -56,5 +61,5 @@ void AudioProcessWorker::run() {
 
 AudioProcessWorker::~AudioProcessWorker() {
     stopThread(1500);
-    mDeviceManager.disconnectProcessor();
+    mManager->disconnectProcessor();
 }

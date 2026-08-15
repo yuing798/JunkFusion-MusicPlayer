@@ -1,25 +1,24 @@
 #include "./DeviceManager.hpp"
+#include "AudioDefs.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
 #include <spdlog/spdlog.h>
+#include <string>
 #include <zmq.hpp>
 
 DeviceManager::DeviceManager(zmq::socket_t& socket, juce::File configFile)
     : mSocket(socket), mConfigFile(configFile) {
 
-    if (configFile.existsAsFile()) {
-        xml = juce::parseXML(configFile);
-    }
+    setupXml = juce::parseXML(configFile);
 
-    // 第三个参数传入 xml.get()。
     // 如果 xml 不为空，JUCE 会优先按照 XML 里的配置打开声卡；如果 xml 为空，则自动使用默认设备。
-    juce::String error = mManager.initialise(0, 2, xml.get(), true);
+    juce::String error = mManager.initialise(0, 256, setupXml.get(), true);
 
     if (error.isNotEmpty()) {
-        juce::Logger::writeToLog("初始化声卡失败: " + error);
+        auto log{spdlog::get(LogAudioID)};
+        log->error("初始化声卡失败: {}", error.toStdString());
     }
-
-    mManager.initialise(0, 256, nullptr, true);
 }
 
 void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
@@ -30,6 +29,7 @@ void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
 }
 
 void DeviceManager::connectProcessor(juce::AudioProcessor* p) {
+    jassert(p);
     mPlayer.setProcessor(p);
     mManager.addAudioCallback(&mPlayer);
 }
@@ -38,22 +38,46 @@ void DeviceManager::disconnectProcessor() {
     mPlayer.setProcessor(nullptr);
 }
 
-void DeviceManager::saveSetupXml2File(juce::File cacheDir) {
+void DeviceManager::saveSetupXml2File() {
     setupXml = mManager.createStateXml();
 
     if (setupXml != nullptr) {
-        configFile = cacheDir.getChildFile("deviceConfig.xml");
-
-        if (!configFile.existsAsFile()) configFile.create();
 
         // 4. 将 XmlElement 直接写入本地文件
-        bool success = setupXml->writeTo(configFile);
+        bool success = setupXml->writeTo(mConfigFile);
 
         auto log = spdlog::get(LogAudioID);
         if (success) {
-            log->debug("声卡配置已保存到: " + configFile.getFullPathName());
+            log->debug("声卡配置已保存到: " + mConfigFile.getFullPathName());
         } else {
             log->error("错误：无法写入声卡配置文件！");
         }
     }
+}
+
+juce::var DeviceManager::getAvailDeviceType() {
+    // 获取所有的驱动类型集合 (比如 ASIO, WASAPI, DirectSound)
+    const auto& types{mManager.getAvailableDeviceTypes()};
+    std::string logInfo{"检测到的驱动类型有:"};
+    juce::Array<juce::var> deviceTypeList;
+
+    for (auto* type : types) {
+        auto typeName = type->getTypeName();
+        logInfo += typeName.toStdString();
+        deviceTypeList.add(typeName);
+    }
+    juce::var obj{new juce::DynamicObject()};
+    obj.getDynamicObject()->setProperty(AudioDefs::deviceTypeList, juce::var(deviceTypeList));
+    return obj;
+}
+juce::var DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
+    if (type == nullptr) return juce::var();
+    auto deviceNames = type->getDeviceNames();
+    // 将 deviceNames 转换为 juce::var
+    juce::Array<juce::var> nameArray;
+    for (const auto& name : deviceNames)
+        nameArray.add(name);
+    juce::var obj{new juce::DynamicObject()};
+    obj.getDynamicObject()->setProperty(AudioDefs::deviceList, juce::var(nameArray));
+    return obj;
 }
