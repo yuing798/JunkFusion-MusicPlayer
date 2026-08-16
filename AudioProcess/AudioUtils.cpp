@@ -19,7 +19,8 @@ void AudioUtils::initAudioLogger(juce::File cacheDir) {
     if (!logDir.exists()) logDir.createDirectory();
     auto logFile{logDir.getChildFile("audioProcess.log").getFullPathName().toStdString()};
 
-    auto audioThreadPool = std::make_shared<spdlog::details::thread_pool>(8192, 1);
+    // 初始化 spdlog 的全局静态异步线程池，而不是使用局部变量
+    spdlog::init_thread_pool(8192, 1);
 
     {
         auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
@@ -30,15 +31,16 @@ void AudioUtils::initAudioLogger(juce::File cacheDir) {
         audioLogger = std::make_shared<spdlog::async_logger>(
             LogAudioID,
             std::move(sink),
-            audioThreadPool,
+            spdlog::thread_pool(),
             spdlog::async_overflow_policy::block
         );
         audioLogger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v");
-#ifdef JF_DEBUG
+        // #ifdef JF_DEBUG
+        //         audioLogger->set_level(spdlog::level::debug);
+        // #else
+        //         audioLogger->set_level(spdlog::level::err);
+        // #endif
         audioLogger->set_level(spdlog::level::debug);
-#else
-        audioLogger->set_level(spdlog::level::err);
-#endif
         spdlog::register_logger(audioLogger);
     }
 }

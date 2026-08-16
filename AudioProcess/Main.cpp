@@ -44,6 +44,12 @@ int main(int argc, char* argv[]) {
     AudioProcessWorker worker(std::move(cacheDir), std::move(tcpPort));
 
     auto logger{spdlog::get(LogAudioID)};
+    if (!logger) {
+        Utils::writeEmergencyLog("错误：spdlog 未成功注册 logger！");
+    } else {
+        Utils::writeEmergencyLog("开始初始化音频进程日志");
+        logger->info("spdlog 初始化成功");
+    }
     logger->debug("音频进程开始阻塞");
     Utils::writeEmergencyLog("音频进程开始阻塞");
 
