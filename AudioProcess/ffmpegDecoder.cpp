@@ -23,8 +23,7 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b, zmq::socket_t& socket)
-    : juce::Thread("Decoder"), ringBuffer(b), mSocket(socket) {
+FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b) : juce::Thread("Decoder"), ringBuffer(b) {
     setPriority(juce::Thread::Priority::highest); // 最高优先级
 }
 
@@ -90,7 +89,7 @@ void FFmpegDecoder::run() {
             defsStr::msg,
             juce::String("无法找到当前文件信息，请检查文件路径:") + path
         );
-        Utils::sendPopupWindow(mSocket, obj);
+        // Utils::sendPopupWindow(mSocket, obj);
         auto log = spdlog::get(LogAudioID);
         log->error("无法找到歌曲文件");
     }
@@ -105,7 +104,7 @@ void FFmpegDecoder::run() {
         std::string errorStr = std::string("打开多媒体文件失败:文件路径:") + path +
                                std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
         log->error(errorStr);
-        Utils::sendErrorPopupWindow(mSocket, errorStr);
+        // Utils::sendErrorPopupWindow(mSocket, errorStr);
         avformat_close_input(&inputContext);
         return;
     }
@@ -114,7 +113,7 @@ void FFmpegDecoder::run() {
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("获取音频流失败，请检查原始文件是否被篡改:") + path +
                                std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
-        Utils::sendErrorPopupWindow(mSocket, errorStr);
+        // Utils::sendErrorPopupWindow(mSocket, errorStr);
         log->error(errorStr);
     }
 
@@ -124,7 +123,7 @@ void FFmpegDecoder::run() {
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("获取音频流失败，请检查原始文件是否被篡改:") + path +
                                std::string(" 错误原因:该文件不为音频文件");
-        Utils::sendErrorPopupWindow(mSocket, errorStr);
+        // Utils::sendErrorPopupWindow(mSocket, errorStr);
         log->error(errorStr);
         avformat_close_input(&inputContext);
         return;

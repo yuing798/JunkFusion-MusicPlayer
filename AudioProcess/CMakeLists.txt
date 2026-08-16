@@ -18,11 +18,10 @@ target_sources(JunkFusionAudioProcess
         DeviceManager.cpp 
         ffmpegDecoder.cpp
         GodProcessor.cpp
-        AudioProcessWorker.cpp
         AudioUtils.cpp
-        # ZmqWorker.cpp
-        OscReceiver.cpp
 )
+
+add_subdirectory(processSchedule)
 
 target_compile_definitions(JunkFusionAudioProcess
     PRIVATE

@@ -7,8 +7,7 @@
 #include <string>
 #include <zmq.hpp>
 
-DeviceManager::DeviceManager(zmq::socket_t& socket, juce::File configFile)
-    : mSocket(socket), mConfigFile(configFile) {
+DeviceManager::DeviceManager(juce::File configFile) : mConfigFile(configFile) {
 
     setupXml = juce::parseXML(configFile);
 

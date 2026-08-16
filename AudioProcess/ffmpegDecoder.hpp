@@ -19,12 +19,11 @@ private:
     AudioRingBuffer& ringBuffer;
     double currentTimeStamp{0.0}; // 当前播放到了哪里
     bool playState{false};        // false为暂停,true为播放
-    zmq::socket_t& mSocket;
 
 public:
     void prepareToPlay(juce::AudioChannelSet, double); // 这个是在改变全局播放设置的时候调用
     void run() override;
     void setNewPlayState(std::string songPath); // 要播放新的歌曲了
-    explicit FFmpegDecoder(AudioRingBuffer&, zmq::socket_t&);
+    explicit FFmpegDecoder(AudioRingBuffer&);
     ~FFmpegDecoder();
 };

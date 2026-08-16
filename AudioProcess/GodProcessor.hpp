@@ -6,6 +6,7 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
+#include "processSchedule/OscReceiver.hpp"
 #include "zmq.hpp"
 #include <spdlog/logger.h>
 
@@ -13,10 +14,11 @@ class GodProcessor : public juce::AudioProcessor {
 private:
     AudioRingBuffer decoderRingBuffer;
     FFmpegDecoder decoder;
-    zmq::socket_t& mSocket;
+    // OscReceiver mOscReceiver;
+    OscReceiver mOscReceiver;
 
 public:
-    GodProcessor(zmq::socket_t& socket);
+    GodProcessor(int oscPort);
     ~GodProcessor() = default;
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;

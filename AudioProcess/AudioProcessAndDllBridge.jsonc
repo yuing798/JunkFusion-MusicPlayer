@@ -2,7 +2,8 @@
 {
   "connectSingal":"",
   "cacheDir":"--cacheDir",
-  "zmqEndpoint":"--zmqEndpoint",
+  "pushPullPort":"--pushPullPort",
+  "pubSubPort":"--pubSubPort",
   "songPath":"",
   "deviceTypeList":"",
   "deviceList":"",

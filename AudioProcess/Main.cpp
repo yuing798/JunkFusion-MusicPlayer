@@ -1,10 +1,11 @@
 #include "AudioDefs.hpp"
-#include "AudioProcessWorker.hpp"
 #include "AudioUtils.hpp"
+#include "DeviceManager.hpp"
 #include "GodProcessor.hpp"
 #include "constants.h"
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
+#include "processSchedule/AudioProcessWorker.hpp"
 #include <SQLiteCpp/Database.h>
 #include <juce_core/juce_core.h>
 #include <memory>
@@ -22,12 +23,13 @@ int main(int argc, char* argv[]) {
     juce::StringArray args{argv, argc};
     juce::String commandLine = args.joinIntoString(" ");
     // Utils::writeEmergencyLog(commandLine.toRawUTF8());
-    std::string tcpPort;
+    std::string pushPullPort;
+    std::string pubSubPort;
     juce::File cacheDir;
     int oscPort{0};
     for (int i = 0; i < args.size(); i++) {
-        if (args[i] == AudioDefs::zmqEndpoint) {
-            tcpPort = args[i + 1].toStdString();
+        if (args[i] == AudioDefs::pushPullPort) {
+            pushPullPort = args[i + 1].toStdString();
             continue;
         }
         if (args[i] == AudioDefs::cacheDir) {
@@ -38,18 +40,19 @@ int main(int argc, char* argv[]) {
             oscPort = args[i + 1].getIntValue();
             continue;
         }
+        if (args[i] == AudioDefs::pubSubPort) {
+            pubSubPort = args[i + 1].toStdString();
+        }
     }
     AudioUtils::initAudioLogger(cacheDir); // 开启日志
-
-    AudioProcessWorker worker(std::move(cacheDir), std::move(tcpPort));
+    juce::File configFile = cacheDir.getChildFile("JFConfig.xml");
+    if (!configFile.existsAsFile()) configFile.create();
+    DeviceManager mDeviceManager(std::move(configFile));
+    GodProcessor mGodProcessor{oscPort}; // osc是用来操作滑块的，所以直接放在godProcessor中
+    AudioProcessWorker mWorker(std::move(pushPullPort), std::move(pubSubPort));
 
     auto logger{spdlog::get(LogAudioID)};
-    if (!logger) {
-        Utils::writeEmergencyLog("错误：spdlog 未成功注册 logger！");
-    } else {
-        Utils::writeEmergencyLog("开始初始化音频进程日志");
-        logger->info("spdlog 初始化成功");
-    }
+
     logger->debug("音频进程开始阻塞");
     Utils::writeEmergencyLog("音频进程开始阻塞");
 

@@ -1,0 +1,5 @@
+target_sources(JunkFusionAudioProcess
+    PRIVATE
+        AudioProcessWorker.cpp
+        OscReceiver.cpp
+)

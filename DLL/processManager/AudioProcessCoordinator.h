@@ -22,16 +22,44 @@
 
 class AudioProcessCoordinator {
 public:
-    bool start(const juce::File& exeFile, int oscPort, juce::File cacheDir);
-
-    // 关闭套接字，并强制结束子进程。
-    void stop();
     AudioProcessCoordinator();
     ~AudioProcessCoordinator();
+    bool start(
+        const juce::File& exeFile,
+        int oscPort,
+        juce::File cacheDir,
+        std::string pushPollPort,
+        std::string pubSubPort
+    );
+
+    void stop();
 
 private:
     juce::ChildProcess mChildProcess; // 负责拉起并监控后端进程
-    zmq::context_t mContext{1};       // zmq 上下文(单 IO 线程足够)
-    zmq::socket_t mSocket;            // REP 套接字(协调者绑定的一端),实际收发消息的接口
+    zmq::context_t mContext{1};
     bool mRunning{false};
+};
+
+// 发送普通数据给音频进程
+class AudioProcessPusher : public juce::Thread {
+public:
+    AudioProcessPusher(zmq::context_t& context);
+    ~AudioProcessPusher();
+    void run() override;
+
+private:
+    zmq::context_t& mContext;
+    std::string mPushPullPort;
+};
+
+// 接收音频进程传过来的紧急事件和广播状态
+class AudioProcessSuber : public juce::Thread {
+private:
+    zmq::context_t& mContext;
+    std::string mPubSubPort;
+
+public:
+    AudioProcessSuber(zmq::context_t& context);
+    ~AudioProcessSuber();
+    void run();
 };

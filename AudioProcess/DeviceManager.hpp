@@ -13,12 +13,11 @@ private:
     juce::AudioDeviceManager mManager;                       // 管理声卡
     juce::AudioProcessorPlayer mPlayer;                      // 传递音频
     juce::AudioDeviceManager::AudioDeviceSetup currentSetup; // 当前的声卡设置
-    zmq::socket_t& mSocket;
     std::unique_ptr<juce::XmlElement> setupXml;
     juce::File mConfigFile;
 
 public:
-    explicit DeviceManager(zmq::socket_t& socket, juce::File configFile);
+    explicit DeviceManager(juce::File configFile);
     ~DeviceManager();
     // 监听声卡状态变换
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
