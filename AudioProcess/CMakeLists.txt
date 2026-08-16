@@ -9,7 +9,7 @@ juce_add_console_app(JunkFusionAudioProcess
     COMPANY_NAME "YusekX"
 )    
 
-set_target_properties(JunkFusionAudioProcess PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+# set_target_properties(JunkFusionAudioProcess PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 target_sources(JunkFusionAudioProcess
     PRIVATE

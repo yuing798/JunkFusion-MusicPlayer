@@ -15,12 +15,13 @@
 class dllManager {
 private:
     std::unique_ptr<SQLite::Database> db;
-    std::unique_ptr<SongsManage> songs;                                // 歌曲管理
-    juce::File cacheDir;                                               // 缓存文件夹
-    juce::File logInfoDir;                                             // 日志文件夹
-    juce::File songImageDir;                                           // 歌曲图片
-    std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
+    std::unique_ptr<SongsManage> songs; // 歌曲管理
+    juce::File cacheDir;                // 缓存文件夹
+    juce::File logInfoDir;              // 日志文件夹
+    juce::File songImageDir;            // 歌曲图片
+
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
+    std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
 
 public:
     explicit dllManager();
@@ -32,9 +33,11 @@ public:
         static dllManager instance;
         return instance;
     } // 单例模式
+
     DONT_COPY_AND_MOVE(dllManager)
 
     SongsManage& getSongsManager() { return *songs; }
+    void closeAudioProcess() { mAudioProcessCoordinator->stop(); }
 
     ~dllManager();
 };

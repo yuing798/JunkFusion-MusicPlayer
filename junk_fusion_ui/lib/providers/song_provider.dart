@@ -1,5 +1,7 @@
+import 'dart:ffi';
 import 'dart:io';
 
+import 'package:ffi/ffi.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
@@ -77,7 +79,7 @@ class SongProvider extends ChangeNotifier {
       final results = await sendDLLIsolateTask(B_songImport.name, {
         B_songImport.filePaths: filePaths,
       });
-      print("完成隔离区函数");
+      // print("完成隔离区函数");
       final errorFiles = results[B_songImport.errorFiles] as List<String>;
       final songsList = results[B_songImport.songs] as List<SongInfo>;
       _songs.addAll(songsList);
@@ -105,6 +107,11 @@ class SongProvider extends ChangeNotifier {
       }
       notifyListeners();
     }
+    // String sfqwf = "wegw";
+    // final ptr = sfqwf.toNativeUtf8().cast<Char>();
+
+    // bindings.someImport(ptr);
+    // malloc.free(ptr);
   }
 
   // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串

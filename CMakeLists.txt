@@ -14,7 +14,6 @@ find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
-#find_package获得的目标内部已经使用了target_include_directory,所以不需要自己写
 find_package(cppzmq CONFIG REQUIRED)
 
 
@@ -25,7 +24,6 @@ endif()
 
 add_subdirectory(DLL)
 add_subdirectory(AudioProcess)
-# JUCE 内部会覆盖输出目录到 JunkFusion_artefacts，这里强制改回统一目录
 add_subdirectory(Utils)
 
 
@@ -36,9 +34,6 @@ add_custom_target(DeployRuntime ALL
     DEPENDS JunkFusionDLL JunkFusionAudioProcess  # 依赖两个核心目标
     COMMENT "准备部署运行时库到 Flutter 目录..."
 )
-if(WIN32)
-set(FLUTTER_EXE_DIR "${CMAKE_SOURCE_DIR}/junk_fusion_ui/build/windows/x64/runner/$<CONFIG>")
-endif()
 
 # $<CONFIG> 是 CMake 中极其核心的一个生成器表达式（Generator Expression），它的含义非常直白：
 # 它会在构建（编译）时，被替换为当前激活的构建配置名称
@@ -50,13 +45,20 @@ target_compile_definitions(JunkFusionAudioProcess PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
 
+set_target_properties(JunkFusionDLL PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/$<CONFIG>_bin"
+)
+set_target_properties(JunkFusionAudioProcess PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/$<CONFIG>_bin"
+)
+
 #将复制动作绑定到这个自定义目标上
 add_custom_command(TARGET DeployRuntime POST_BUILD
     COMMAND ${CMAKE_COMMAND}
         # ★ 修复隐患一：从构建目录（CMAKE_BINARY_DIR）下找 bin
-        -D SRC_DIR="${CMAKE_SOURCE_DIR}/bin"     
+        -D SRC_DIR="${CMAKE_SOURCE_DIR}/$<CONFIG>_bin"     
         # 用 $<CONFIG> 自动识别当前编译配置（Debug/Release）
-        -D DST_DIR="${FLUTTER_EXE_DIR}"
+        -D DST_DIR="${CMAKE_SOURCE_DIR}/junk_fusion_ui/build/windows/x64/runner/$<CONFIG>"
         -P "${CMAKE_SOURCE_DIR}/cmake/DeployBinaries.cmake"
-    COMMENT "正在同步所有动态库和后端进程到 Flutter 运行目录（已排除 .ilk/.pdb）..."
+    COMMENT "$<CONFIG>模式:正在同步所有动态库和后端进程到 Flutter 运行目录（已排除 .ilk/.pdb）..."
 )

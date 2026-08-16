@@ -19,6 +19,14 @@ class JunkFusionDLLBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
+  void closeBackend() {
+    return _closeBackend();
+  }
+
+  late final _closeBackendPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
+  late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
+
   void dllInit(
     ffi.Pointer<ffi.Char> cacheDirId,
     ffi.Pointer<ffi.Char> exeDirPtr,

@@ -18,11 +18,7 @@ extern "C" {
     LIB_EXPORT void saveComment(long long songId, const char* commentText);
     LIB_EXPORT void freeString(char* str);
     LIB_EXPORT const char* someImport(const char*);
-    // LIB_EXPORT void RegisterExitCallback(BackendExitCallback callback);
-
-    // LIB_EXPORT bool StartBackendProcess(const char* backendPath, const char* cacheDir);
-
-    // LIB_EXPORT void StopBackendProcess();
+    LIB_EXPORT void closeBackend();
 
 #ifdef __cplusplus
 }

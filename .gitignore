@@ -8,3 +8,6 @@ QtUI/
 bin/
 node_modules/
 text.txt
+
+Debug_bin/
+Release_bin

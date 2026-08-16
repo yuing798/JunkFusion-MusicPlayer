@@ -21,13 +21,13 @@ int main(int argc, char* argv[]) {
     // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
     juce::StringArray args{argv, argc};
     juce::String commandLine = args.joinIntoString(" ");
-    Utils::writeEmergencyLog(commandLine.toRawUTF8());
-    std::string endpoint;
+    // Utils::writeEmergencyLog(commandLine.toRawUTF8());
+    std::string tcpPort;
     juce::File cacheDir;
     int oscPort{0};
     for (int i = 0; i < args.size(); i++) {
         if (args[i] == AudioDefs::zmqEndpoint) {
-            endpoint = args[i + 1].toStdString();
+            tcpPort = args[i + 1].toStdString();
             continue;
         }
         if (args[i] == AudioDefs::cacheDir) {
@@ -41,10 +41,7 @@ int main(int argc, char* argv[]) {
     }
     AudioUtils::initAudioLogger(cacheDir); // 开启日志
 
-    AudioProcessWorker worker(std::move(cacheDir));
-    if (!worker.initWorker(endpoint)) {
-        Utils::writeEmergencyLog("zmq: 握手失败");
-    }
+    AudioProcessWorker worker(std::move(cacheDir), std::move(tcpPort));
 
     auto logger{spdlog::get(LogAudioID)};
     logger->debug("音频进程开始阻塞");

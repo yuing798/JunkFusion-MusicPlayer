@@ -69,7 +69,4 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
     db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
 }
-dllManager::~dllManager() {
-    Utils::writeEmergencyLog("准备执行dllManager的析构函数");
-    spdlog::shutdown();
-}
+dllManager::~dllManager() {}

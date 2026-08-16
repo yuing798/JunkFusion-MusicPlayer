@@ -8,18 +8,9 @@ import 'package:ffi/ffi.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/native_bindings_generated.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/utils/utils.dart';
 
-final DynamicLibrary _lib = () {
-  final libName = Platform.isWindows
-      ? "JunkFusionDLL.dll"
-      : Platform.isMacOS
-      ? "JunkFusionDLL.dylib"
-      : "JunkFusionDLL.so";
-
-  return DynamicLibrary.open(libName);
-}();
-
-final bindings = JunkFusionDLLBindings(_lib);
+final bindings = JunkFusionDLLBindings(AppCache.libPath);
 
 Future<Map<String, Object?>> sendDLLIsolateTask(
   String funcName,

@@ -7,8 +7,8 @@ message(STATUS "正在部署运行时库: ${SRC_DIR} -> ${DST_DIR}")
 file(MAKE_DIRECTORY "${DST_DIR}")
 
 # 2. 只扫描 .dll 和 .exe 文件（自动屏蔽了 .ilk, .pdb, .lib, .exp 等垃圾文件）
-file(GLOB FILES_TO_COPY 
-     "${SRC_DIR}/*.dll" 
+file(GLOB FILES_TO_COPY # GLOB CMake 的文件操作命令之一，用于通配符匹配
+     "${SRC_DIR}/*.dll" #FILES_TO_COPY：变量名，匹配到的文件路径列表将存储于此
      "${SRC_DIR}/*.exe"
 )
 

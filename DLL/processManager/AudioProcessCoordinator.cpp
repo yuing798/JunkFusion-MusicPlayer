@@ -42,19 +42,27 @@ bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce
 
     // 等待 worker 主动发来的握手消息 "ready"，确认 DEALER 连接已真正建立。
     // DEALER 连接建立是异步的，这里 recv 一次能保证后续 stop() 发的 kill 能送达。
-    zmq::message_t handshake;
-    auto recvResult = mSocket.recv(handshake, zmq::recv_flags::none);
-    if (recvResult.has_value()) {
-        std::string handshakeStr(static_cast<char*>(handshake.data()), handshake.size());
-        Utils::writeEmergencyLog(("收到worker握手:" + handshakeStr).c_str());
-    } else {
-        Utils::writeEmergencyLog("等待worker握手超时");
-    }
-    Utils::writeEmergencyLog(
-        ("start 协调者 thread id: " +
-         std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())))
-            .c_str()
-    );
+    // zmq::message_t handshake;
+    // auto recvResult = mSocket.recv(handshake, zmq::recv_flags::none);
+    // if (recvResult.has_value()) {
+    //     std::string handshakeStr(static_cast<char*>(handshake.data()), handshake.size());
+    //     Utils::writeEmergencyLog(("收到worker握手:" + handshakeStr).c_str());
+    // } else {
+    //     Utils::writeEmergencyLog("等待worker握手超时");
+    // }
+    // Utils::writeEmergencyLog(
+    //     ("start 协调者 thread id: " +
+    //      std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())))
+    //         .c_str()
+    // );
+    // std::string ping{"ping"};
+    // zmq::message_t pong(ping.data(), ping.size());
+    // auto rst = mSocket.send(pong, zmq::send_flags::none);
+    // if (rst.has_value()) {
+    //     Utils::writeEmergencyLog("协调者——》工作者发送消息成功");
+    // } else {
+    //     Utils::writeEmergencyLog("协调者——》工作者发送消息失败");
+    // }
 
     mRunning = true;
     return true;
@@ -74,11 +82,4 @@ void AudioProcessCoordinator::stop() {
     mRunning = false;
 }
 
-AudioProcessCoordinator::~AudioProcessCoordinator() {
-    stop();
-    Utils::writeEmergencyLog(
-        ("stop 协调者 thread id: " +
-         std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())))
-            .c_str()
-    );
-}
+AudioProcessCoordinator::~AudioProcessCoordinator() {}
