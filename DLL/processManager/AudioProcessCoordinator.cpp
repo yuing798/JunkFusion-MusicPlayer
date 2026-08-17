@@ -62,8 +62,9 @@ AudioProcessPusher::AudioProcessPusher(zmq::context_t& context)
 
 void AudioProcessPusher::run() {
     zmq::socket_t socket(mContext, zmq::socket_type::push);
-    socket.bind("tcp://127.0.0.1:*");
+    socket.bind("tcp://127.0.0.1:*"); // 主进程bind,子进程connect
     mPushPullPort = socket.get(zmq::sockopt::last_endpoint);
+    spdlog::get(LogDllID)->debug("协调者：push端口为{}", mPushPullPort);
     while (!threadShouldExit()) {
     }
 }
@@ -75,6 +76,28 @@ void AudioProcessSuber::run() {
     zmq::socket_t socket(mContext, zmq::socket_type::sub);
     socket.bind("tcp://127.0.0.1:*");
     mPubSubPort = socket.get(zmq::sockopt::last_endpoint);
+    spdlog::get(LogDllID)->debug("协调者：sub端口为{}", mPubSubPort);
+
+    // 设置订阅过滤器
+    socket.set(zmq::sockopt::subscribe, ""); // 默认接收所有消息
+    socket.set(zmq::sockopt::rcvtimeo, 100); // 超时时间为100ms
     while (!threadShouldExit()) {
+
+        zmq::message_t msg;
+        auto rst = socket.recv(msg, zmq::recv_flags::none); // 同步阻塞等待
+        if (rst.has_value()) {
+            std::string data(static_cast<char*>(msg.data()), msg.size());
+            juce::var obj = juce::JSON::fromString(juce::String(data));
+            if (obj.isVoid() || !obj.isObject()) {
+                spdlog::get(LogDllID)->error(
+                    "AudioProcessSuber接收到未知格式:{}",
+                    obj.toString().toStdString()
+                );
+            };
+            if (obj.getDynamicObject()->hasProperty(AudioDefs::errorPopupWindowMsg)) {
+                auto msg =
+                    obj.getDynamicObject()->getProperty(AudioDefs::errorPopupWindowMsg).toString();
+            }
+        }
     }
 }

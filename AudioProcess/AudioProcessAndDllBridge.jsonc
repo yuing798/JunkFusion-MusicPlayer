@@ -1,6 +1,5 @@
 //run node D:/audio_develop/Junk-Fusion/DLL/processManager/dllAndCppProcessBridge.cjs
 {
-  "connectSingal":"",
   "cacheDir":"--cacheDir",
   "pushPullPort":"--pushPullPort",
   "pubSubPort":"--pubSubPort",
@@ -9,5 +8,6 @@
   "deviceList":"",
   "sampleRateList":"",
   "bufferSizeList":"",
-  "oscPort":"--oscPort"
+  "oscPort":"--oscPort",
+  "errorPopupWindowMsg":""
 }

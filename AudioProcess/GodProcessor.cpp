@@ -52,11 +52,11 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
     auto log{spdlog::get(LogAudioID)};
     log->debug("音频进程日志初始化完成");
 
+    // 解码失败弹窗
     decoder.sendErrorMsg = [this](std::string str) {
         str += "FFmpeg解码错误:";
         juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(defsStr::PopupWindowType, defsStr::errorMsg);
-        obj.getDynamicObject()->setProperty(defsStr::msg, juce::String(str));
+        obj.getDynamicObject()->setProperty(AudioDefs::errorPopupWindowMsg, juce::String(str));
         auto jsonStr{juce::JSON::toString(obj).toStdString()};
 
         mAudioProcessWorker->sender->sendMessage(jsonStr);
