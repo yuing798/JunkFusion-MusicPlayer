@@ -23,6 +23,8 @@ private:
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
 
+    static std::unique_ptr<dllManager> instance;
+
 public:
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);
@@ -30,14 +32,23 @@ public:
     juce::File& getSongImageDir() { return songImageDir; }
 
     static dllManager& getInstance() {
-        static dllManager instance;
-        return instance;
-    } // 单例模式
+        if (!instance) {
+            instance.reset(new dllManager()); // 第一次调用时创建
+        }
+        return *instance;
+    }
+
+    static void destroyInstance() {
+        if (instance) {
+            // ① 在这里，你甚至不需要显式调用 cleanup，因为析构函数会自动调用
+            // ② reset() 会执行 dllManager 的析构函数 -> 进而析构所有 unique_ptr
+            instance.reset();
+        }
+    }
 
     DONT_COPY_AND_MOVE(dllManager)
 
     SongsManage& getSongsManager() { return *songs; }
-    void closeAudioProcess() { mAudioProcessCoordinator->stop(); }
 
     ~dllManager();
 };

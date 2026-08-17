@@ -17,39 +17,21 @@
 #include "juce_core/juce_core.h"
 #include "zmq.hpp"
 
+#include <functional>
 #include <memory>
 #include <string>
-
-class AudioProcessCoordinator {
-public:
-    AudioProcessCoordinator();
-    ~AudioProcessCoordinator();
-    bool start(
-        const juce::File& exeFile,
-        int oscPort,
-        juce::File cacheDir,
-        std::string pushPollPort,
-        std::string pubSubPort
-    );
-
-    void stop();
-
-private:
-    juce::ChildProcess mChildProcess; // 负责拉起并监控后端进程
-    zmq::context_t mContext{1};
-    bool mRunning{false};
-};
-
 // 发送普通数据给音频进程
 class AudioProcessPusher : public juce::Thread {
 public:
-    AudioProcessPusher(zmq::context_t& context);
+    AudioProcessPusher(zmq::context_t& context, juce::WaitableEvent& e);
     ~AudioProcessPusher();
     void run() override;
+    std::string getPort() noexcept { return mPushPullPort; }
 
 private:
     zmq::context_t& mContext;
     std::string mPushPullPort;
+    juce::WaitableEvent& portInitOK;
 };
 
 // 接收音频进程传过来的紧急事件和广播状态
@@ -57,9 +39,28 @@ class AudioProcessSuber : public juce::Thread {
 private:
     zmq::context_t& mContext;
     std::string mPubSubPort;
+    juce::WaitableEvent& portInitOK;
 
 public:
-    AudioProcessSuber(zmq::context_t& context);
+    AudioProcessSuber(zmq::context_t& context, juce::WaitableEvent& e);
     ~AudioProcessSuber();
     void run();
+    std::string getPort() noexcept { return mPubSubPort; }
+};
+class AudioProcessCoordinator {
+public:
+    AudioProcessCoordinator();
+    ~AudioProcessCoordinator();
+    bool start(const juce::File& exeFile, int oscPort, juce::File cacheDir);
+
+    void stop();
+
+private:
+    juce::WaitableEvent pushInitOK;
+    juce::WaitableEvent subInitOK;
+    juce::ChildProcess mChildProcess; // 负责拉起并监控后端进程
+    zmq::context_t mContext{1};
+    bool mRunning{false};
+    std::unique_ptr<AudioProcessPusher> mAudioProcessPusher;
+    std::unique_ptr<AudioProcessSuber> mAudioProcessSuber;
 };

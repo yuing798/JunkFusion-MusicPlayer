@@ -4,27 +4,29 @@
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
 #include "spdlog/spdlog.h"
+#include <memory>
 #include <string>
 #include <zmq.hpp>
-AudioProcessCoordinator::AudioProcessCoordinator() {}
+AudioProcessCoordinator::AudioProcessCoordinator() {
+    mAudioProcessPusher = std::make_unique<AudioProcessPusher>(mContext, pushInitOK);
+    mAudioProcessSuber = std::make_unique<AudioProcessSuber>(mContext, subInitOK);
+}
 
-bool AudioProcessCoordinator::start(
-    const juce::File& exeFile,
-    int oscPort,
-    juce::File cacheDir,
-    std::string pushPollPort,
-    std::string pubSubPort
-) {
+bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce::File cacheDir) {
     auto logger{spdlog::get(LogDllID)};
 
     // ── 2. 构造子进程命令行，把 zmq 地址塞进 --zmq-endpoint ──
     juce::StringArray args;
     args.add(exeFile.getFullPathName());
 
+    // 等待端口分配完成
+    pushInitOK.wait();
     args.add(AudioDefs::pushPullPort);
-    args.add(juce::String(pushPollPort));
+    args.add(juce::String(mAudioProcessPusher->getPort()));
+
+    subInitOK.wait();
     args.add(AudioDefs::pubSubPort);
-    args.add(juce::String(pubSubPort));
+    args.add(juce::String(mAudioProcessSuber->getPort()));
     args.add(AudioDefs::cacheDir);
     args.add(cacheDir.getFullPathName());
     args.add(AudioDefs::oscPort);
@@ -55,27 +57,33 @@ void AudioProcessCoordinator::stop() {
     // mRunning = false;
 }
 
-AudioProcessCoordinator::~AudioProcessCoordinator() {}
+AudioProcessCoordinator::~AudioProcessCoordinator() { stop(); }
 
-AudioProcessPusher::AudioProcessPusher(zmq::context_t& context)
-    : juce::Thread("AudioProcessPusher"), mContext(context) {}
+AudioProcessPusher::AudioProcessPusher(zmq::context_t& context, juce::WaitableEvent& e)
+    : juce::Thread("AudioProcessPusher"), mContext(context), portInitOK(e) {
+    startThread();
+}
 
 void AudioProcessPusher::run() {
     zmq::socket_t socket(mContext, zmq::socket_type::push);
     socket.bind("tcp://127.0.0.1:*"); // 主进程bind,子进程connect
     mPushPullPort = socket.get(zmq::sockopt::last_endpoint);
+    portInitOK.signal();
     spdlog::get(LogDllID)->debug("协调者：push端口为{}", mPushPullPort);
     while (!threadShouldExit()) {
     }
 }
 
-AudioProcessSuber::AudioProcessSuber(zmq::context_t& context)
-    : juce::Thread("AudioProcessSuber"), mContext(context) {}
+AudioProcessSuber::AudioProcessSuber(zmq::context_t& context, juce::WaitableEvent& e)
+    : juce::Thread("AudioProcessSuber"), mContext(context), portInitOK(e) {
+    startThread();
+}
 
 void AudioProcessSuber::run() {
     zmq::socket_t socket(mContext, zmq::socket_type::sub);
     socket.bind("tcp://127.0.0.1:*");
     mPubSubPort = socket.get(zmq::sockopt::last_endpoint);
+    portInitOK.signal();
     spdlog::get(LogDllID)->debug("协调者：sub端口为{}", mPubSubPort);
 
     // 设置订阅过滤器

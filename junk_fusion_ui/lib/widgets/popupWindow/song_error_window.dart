@@ -81,41 +81,18 @@ class _SongErrorDialogState extends State<SongErrorDialog> {
                     border: Border.all(color: Colors.grey[300]!),
                     borderRadius: BorderRadius.circular(8.0),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Radio<int>(
-                            value: 0,
-                            groupValue: _selectedAction,
-                            onChanged: (int? value) {
-                              setState(() {
-                                _selectedAction = value!;
-                              });
-                            },
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          const Text('跳过这首歌'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Radio<int>(
-                            value: 1,
-                            groupValue: _selectedAction,
-                            onChanged: (int? value) {
-                              setState(() {
-                                _selectedAction = value!;
-                              });
-                            },
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          const Text('跳过并在列表中移除这首歌'),
-                        ],
-                      ),
-                    ],
+                  child: RadioGroup<bool>(
+                    groupValue: _selectedAction,
+                    onChanged: (value) => _selectedAction = value!,
+                    child: const Column(
+                      children: [
+                        RadioListTile<bool>(value: false, title: Text('跳过这首歌')),
+                        RadioListTile(
+                          value: true,
+                          title: Text("跳过并在歌曲列表删除这首歌"),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -128,7 +105,7 @@ class _SongErrorDialogState extends State<SongErrorDialog> {
                 SizedBox(
                   width: 20,
                   height: 20,
-                  child: Checkbox(
+                  child: CheckboxListTile(
                     value: _applyToFuture,
                     onChanged: (bool? value) {
                       setState(() {

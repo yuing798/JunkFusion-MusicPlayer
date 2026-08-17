@@ -72,8 +72,5 @@ extern "C" {
         // dllManager::getInstance().mAudioProcessCoordinator->stop();
         // return "";
     }
-    void closeBackend() {
-        dllManager::getInstance().closeAudioProcess();
-        spdlog::shutdown();
-    }
+    void closeBackend() { dllManager::destroyInstance(); }
 }

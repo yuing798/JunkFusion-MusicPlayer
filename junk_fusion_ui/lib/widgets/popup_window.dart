@@ -36,7 +36,7 @@ class DialogUtil {
       context: navigatorKey.currentContext!,
       barrierDismissible: false, // 禁止点击外部关闭
       builder: (BuildContext context) {
-        return SongErrorDialog(msg: msg, hasNextSong: hasNextSong);
+        return SongErrorDialog(msg: msg);
       },
     );
   }
