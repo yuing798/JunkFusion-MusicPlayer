@@ -11,7 +11,7 @@ void AudioProcessorPuller::run() {
     while (!threadShouldExit()) {
         zmq::message_t msg;
         // 纯阻塞等待，完全不消耗 CPU
-        auto res = pullSocket.recv(msg, zmq::recv_flags::none);
+        auto res = pullSocket.recv(msg, zmq::recv_flags::none); // 无限期阻塞
         if (res) {
             std::string command(static_cast<const char*>(msg.data()), msg.size());
             juce::Logger::writeToLog("音频进程收到指令: " + command);

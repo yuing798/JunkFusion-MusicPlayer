@@ -4,6 +4,7 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include <cstdint>
+#include <functional>
 #include <zmq.hpp>
 extern "C" {
 #include <libavutil/channel_layout.h>
@@ -26,4 +27,6 @@ public:
     void setNewPlayState(std::string songPath); // 要播放新的歌曲了
     explicit FFmpegDecoder(AudioRingBuffer&);
     ~FFmpegDecoder();
+
+    std::function<void(std::string)> sendErrorMsg;
 };

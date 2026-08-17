@@ -45,17 +45,14 @@ public:
 // ==========================================
 class AudioProcessWorker {
 private:
-    // 整个进程只需要 1 个 Context (1个后台I/O线程足够了)
     zmq::context_t zmqContext{1};
-
-    std::unique_ptr<AudioProcessorPuller> receiver;
-    std::unique_ptr<AudioProcessorPuber> sender;
 
 public:
     AudioProcessWorker(std::string pushPullPort, std::string pubSubPort);
 
     ~AudioProcessWorker();
 
-    // 暴露给音频引擎调用的接口
-    void triggerEmergency(const std::string& error) { sender->sendMessage("[EMERG]" + error); }
+    // 这两个本来就是完全供给外界调用的，放在这里只不过是用来集中管理
+    std::unique_ptr<AudioProcessorPuller> receiver;
+    std::unique_ptr<AudioProcessorPuber> sender;
 };

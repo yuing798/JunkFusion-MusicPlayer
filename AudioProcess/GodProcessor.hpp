@@ -1,24 +1,29 @@
 #pragma once
 
 #include "AudioRingBuffer.hpp"
+#include "DeviceManager.hpp"
 #include "constants.h"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
+#include "processSchedule/AudioProcessWorker.hpp"
 #include "processSchedule/OscReceiver.hpp"
 #include "zmq.hpp"
+#include <memory>
 #include <spdlog/logger.h>
 
 class GodProcessor : public juce::AudioProcessor {
 private:
     AudioRingBuffer decoderRingBuffer;
     FFmpegDecoder decoder;
-    // OscReceiver mOscReceiver;
-    OscReceiver mOscReceiver;
+    std::unique_ptr<OscReceiver> mOscReceiver;
+    std::unique_ptr<DeviceManager> mDeviceManager;
+    std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
+    juce::File mCacheDir;
 
 public:
-    GodProcessor(int oscPort);
+    GodProcessor(juce::StringArray initArgs);
     ~GodProcessor() = default;
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;
