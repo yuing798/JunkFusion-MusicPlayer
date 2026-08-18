@@ -168,7 +168,9 @@ class JunkFusionAppState extends State<JunkFusionApp>
     print("托盘触发退出，开始安全清理系统...");
 
     // 1. 切断 C++ 回调
-    bindings.registerErrorSendCallback(dart_ffi.Pointer.fromAddress(0).cast());
+    bindings.registerErrorSendCallback(
+      dart_ffi.Pointer.fromAddress(0).cast(),
+    ); //给cpp的函数指针先分配一个nullPtr
 
     // 2. 释放 Dart 端内存
     errorCallbackManager.dispose();

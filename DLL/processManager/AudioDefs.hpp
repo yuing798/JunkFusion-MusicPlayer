@@ -11,4 +11,5 @@ namespace AudioDefs {
     static constexpr const char* bufferSizeList = "bufferSizeList" ;
     static constexpr const char* oscPort = "--oscPort" ;
     static constexpr const char* errorPopupWindowMsg = "errorPopupWindowMsg" ;
+    static constexpr const char* killAudioProcess = "killAudioProcess" ;
 }

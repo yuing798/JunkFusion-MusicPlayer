@@ -9,5 +9,6 @@
   "sampleRateList":"",
   "bufferSizeList":"",
   "oscPort":"--oscPort",
-  "errorPopupWindowMsg":""
+  "errorPopupWindowMsg":"",
+  "killAudioProcess":""
 }

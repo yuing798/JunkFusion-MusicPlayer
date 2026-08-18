@@ -69,13 +69,42 @@ AudioProcessPusher::AudioProcessPusher(zmq::context_t& context, juce::WaitableEv
     startThread();
 }
 
+void AudioProcessPusher::sendMessage(const std::string& msg) {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    messageQueue.push(msg);
+    wakeUpEvent.signal(); // 唤醒沉睡的发送线程
+}
+
 void AudioProcessPusher::run() {
     zmq::socket_t socket(mContext, zmq::socket_type::push);
     socket.bind("tcp://127.0.0.1:*"); // 主进程bind,子进程connect
     mPushPullPort = socket.get(zmq::sockopt::last_endpoint);
     portInitOK.signal(); // 跨线程供给必须需要waitableEvent,防止收不到
     spdlog::get(LogDllID)->debug("已获取协调者：push端口为{}", mPushPullPort);
+
+    juce::Thread::sleep(100);
+
     while (!threadShouldExit()) {
+        // 线程睡眠在此，等待被 sendMessage 唤醒。超时设为 500ms 方便退出检查
+        wakeUpEvent.wait(500);
+
+        std::queue<std::string> localQueue;
+        {
+            // td::lock_guard<std::mutex> 是 C++ 标准库提供的一个 RAII（资源获取即初始化）
+            // 锁管理器。简单来说，它是 “自动锁”
+            // std::lock_guard<Mutex>（锁守卫）：这是一个类模板。它的构造函数会调用
+            // mutex.lock()，它的析构函数会调用 mutex.unlock()。
+            std::lock_guard<std::mutex> lock(queueMutex);
+            std::swap(localQueue, messageQueue); // 快速把队列交换出来，减少锁占用时间
+        }
+
+        while (!localQueue.empty()) {
+            std::string msg = localQueue.front();
+            localQueue.pop();
+
+            zmq::message_t zmsg(msg.data(), msg.size());
+            socket.send(zmsg, zmq::send_flags::none);
+        }
     }
 }
 
