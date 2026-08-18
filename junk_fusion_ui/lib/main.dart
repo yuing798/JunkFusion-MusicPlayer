@@ -102,16 +102,17 @@ class JunkFusionAppState extends State<JunkFusionApp>
   @override
   void dispose() {
     //dispose的执行时机不可靠，必须使用onWindowClose()来监听整个应用的关闭
-    trayManager.addListener(this);
+    trayManager.removeListener(this);
     windowManager.removeListener(this);
     super.dispose();
   }
 
   // 初始化托盘的方法
   Future<void> _initSystemTray() async {
-    // 设置托盘图标 (根据平台选择后缀)
-    String iconPath = "junk_fusion_ui/assets/image/JunkFusion.png";
-    await trayManager.setIcon(iconPath);
+    // 设置托盘图标
+    await trayManager.setIcon("assets/image/JunkFusion.ico");
+
+    await trayManager.setToolTip("Junk Fusion");
 
     // 构建右键菜单
     Menu menu = Menu(

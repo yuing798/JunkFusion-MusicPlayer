@@ -136,10 +136,13 @@ void AudioProcessSuber::run() {
                 );
             };
             if (obj.getDynamicObject()->hasProperty(AudioDefs::errorPopupWindowMsg)) {
-                auto msg =
+                auto receiverMsg =
                     obj.getDynamicObject()->getProperty(AudioDefs::errorPopupWindowMsg).toString();
-                spdlog::get(LogDllID)->debug("sub接收到发送错误弹窗消息:{}", msg.toStdString());
-                const char* sendMsg = msg.toRawUTF8();
+                spdlog::get(LogDllID)->debug(
+                    "sub接收到发送错误弹窗消息:{}",
+                    receiverMsg.toStdString()
+                );
+                const char* sendMsg = receiverMsg.toRawUTF8();
                 auto length{strlen(sendMsg)};
                 char* cString{static_cast<char*>(malloc(length + 1))};
                 if (cString) memcpy(cString, sendMsg, length + 1);
