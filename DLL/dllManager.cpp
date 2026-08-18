@@ -71,6 +71,8 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
 }
 dllManager::~dllManager() {
-    spdlog::get(LogDllID)->debug("准备关闭dll日志系统");
+    spdlog::get(LogDllID)->debug(
+        "----------------------------------------------------------------------------------"
+    );
     spdlog::shutdown();
 }

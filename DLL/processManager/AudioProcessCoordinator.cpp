@@ -61,6 +61,13 @@ void AudioProcessCoordinator::stop() {
 AudioProcessCoordinator::~AudioProcessCoordinator() {
     Utils::writeEmergencyLog("准备执行AudioProcessCoordinator的析构函数");
     stop();
+    juce::Thread::sleep(100);
+    if (mAudioProcessPusher) {
+        mAudioProcessPusher->stopThread(2000);
+    }
+    if (mAudioProcessSuber) {
+        mAudioProcessSuber->stopThread(2000);
+    }
 }
 
 AudioProcessPusher::AudioProcessPusher(zmq::context_t& context, juce::WaitableEvent& e)
@@ -108,7 +115,9 @@ void AudioProcessPusher::run() {
     socket.close();
 }
 
-AudioProcessPusher::~AudioProcessPusher() { stopThread(2000); }
+AudioProcessPusher::~AudioProcessPusher() {
+    // stopThread(2000);
+}
 
 AudioProcessSuber::AudioProcessSuber(zmq::context_t& context, juce::WaitableEvent& e)
     : juce::Thread("AudioProcessSuber"), mContext(context), portInitOK(e) {
@@ -159,4 +168,6 @@ void AudioProcessSuber::run() {
     socket.close();
 }
 
-AudioProcessSuber::~AudioProcessSuber() { stopThread(2000); }
+AudioProcessSuber::~AudioProcessSuber() {
+    // stopThread(2000);
+}

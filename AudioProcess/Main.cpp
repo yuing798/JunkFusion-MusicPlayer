@@ -36,6 +36,8 @@ int main(int argc, char* argv[]) {
 
     logger->debug("音频进程准备销毁");
     Utils::writeEmergencyLog("音频进程要死了!");
+    spdlog::get(LogAudioID)
+        ->debug("------------------------------------------------------------------------");
     spdlog::shutdown();
 
     return 0;
