@@ -44,14 +44,14 @@ class PlaybackProvider extends ChangeNotifier {
     // }
 
     await AppCache.frontCacheRef.setInt("currentSongId", songId);
-    // bindings.playNewSong(songId);
+    bindings.playNewSong(songId);
   }
 
   // 从持久化存储恢复当前播放歌曲 ID
   void restoreCurrentSongId() async {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
     if (songId != null) _currentSongId = songId;
-    print(_currentSongId);
+    // print(_currentSongId);
     notifyListeners();
   }
 

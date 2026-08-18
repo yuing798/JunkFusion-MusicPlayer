@@ -81,7 +81,9 @@ extern "C" {
         dllManager::getInstance().errorSendCallback = cb;
     }
     void playNewSong(int songId) {
+        // 闪退的原因是下面这一句
         auto songPath = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
-        dllManager::getInstance().sendMessage2AudioProcess(songPath);
+        std::string path = "";
+        dllManager::getInstance().sendMessage2AudioProcess(path);
     }
 }
