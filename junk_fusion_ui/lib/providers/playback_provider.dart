@@ -30,28 +30,34 @@ class PlaybackProvider extends ChangeNotifier {
   Future<void> setCurrentSongId(int songId) async {
     if (songId == _currentSongId) return;
     _currentSongId = songId;
+    _isPlaying = true;
     notifyListeners();
+
+    // try {
+    //   final success = await AppCache.frontCacheRef.setInt(
+    //     "currentSongId",
+    //     songId,
+    //   );
+    //   print('写入 currentSongId = $songId, 结果 = $success');
+    // } catch (e) {
+    //   print('写入失败: $e');
+    // }
+
     await AppCache.frontCacheRef.setInt("currentSongId", songId);
-    bindings.playNewSong(songId);
+    // bindings.playNewSong(songId);
   }
 
   // 从持久化存储恢复当前播放歌曲 ID
-  Future<void> restoreCurrentSongId() async {
+  void restoreCurrentSongId() async {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
     if (songId != null) _currentSongId = songId;
+    print(_currentSongId);
     notifyListeners();
   }
 
   // 切换播放/暂停状态
   void togglePlayPause() {
     _isPlaying = !_isPlaying;
-    notifyListeners();
-  }
-
-  void setPlayState(int songId) {
-    //把某首歌设置为播放状态
-    _currentSongId = songId;
-    _isPlaying = true;
     notifyListeners();
   }
 

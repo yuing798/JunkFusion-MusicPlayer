@@ -54,4 +54,7 @@ public:
     ~dllManager();
 
     std::function<void(const char*)> errorSendCallback;
+    void sendMessage2AudioProcess(std::string msg) {
+        mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(msg);
+    }
 };

@@ -22,6 +22,7 @@ extern "C" {
     LIB_EXPORT const char* someImport(const char*);
     LIB_EXPORT void closeBackend(); // dll注销
     LIB_EXPORT void registerErrorSendCallback(ErrorSend cb);
+    LIB_EXPORT void playNewSong(int songId);
 
 #ifdef __cplusplus
 }

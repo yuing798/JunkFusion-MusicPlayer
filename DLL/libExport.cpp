@@ -80,4 +80,8 @@ extern "C" {
     void registerErrorSendCallback(ErrorSend cb) {
         dllManager::getInstance().errorSendCallback = cb;
     }
+    void playNewSong(int songId) {
+        auto songPath = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
+        dllManager::getInstance().sendMessage2AudioProcess(songPath);
+    }
 }

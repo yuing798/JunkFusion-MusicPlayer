@@ -61,6 +61,8 @@ public:
     bool start(const juce::File& exeFile, int oscPort, juce::File cacheDir);
 
     void stop();
+    std::unique_ptr<AudioProcessPusher> mAudioProcessPusher;
+    std::unique_ptr<AudioProcessSuber> mAudioProcessSuber;
 
 private:
     juce::WaitableEvent pushInitOK;
@@ -68,6 +70,4 @@ private:
     juce::ChildProcess mChildProcess; // 负责拉起并监控后端进程
     zmq::context_t mContext{1};
     bool mRunning{false};
-    std::unique_ptr<AudioProcessPusher> mAudioProcessPusher;
-    std::unique_ptr<AudioProcessSuber> mAudioProcessSuber;
 };

@@ -35,6 +35,9 @@ void AudioProcessorPuller::run() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();
                     });
                 }
+                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::songPath)) {
+                    // 收到歌曲路径信息就要开始播放新歌曲了
+                }
             }
         }
     }

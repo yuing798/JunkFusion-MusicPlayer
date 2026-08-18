@@ -49,7 +49,6 @@ class EachSong extends StatelessWidget {
           if (isCurrentSong) {
             context.read<PlaybackProvider>().togglePlayPause();
           } else {
-            context.read<PlaybackProvider>().setPlayState(song.songId);
             context.read<PlaybackProvider>().setCurrentSongId(song.songId);
           }
         },
