@@ -15,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 // 需要在 pubspec.yaml 中添加: provider: ^6.1.2
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 // 导入自己的文件（相对路径，不需要 package: 前缀）
@@ -25,6 +26,10 @@ import 'providers/playback_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); //确保flutter绑定初始化
   await windowManager.ensureInitialized();
+
+  // 【必加】告诉底层：点关闭按钮时，不要杀进程，交给我(onWindowClose)来处理！
+  await windowManager.setPreventClose(true);
+
   WindowOptions options = const WindowOptions(
     minimumSize: Size(1450, 850),
     center: true,
@@ -81,40 +86,101 @@ class JunkFusionApp extends StatefulWidget {
 }
 
 /// JunkFusionApp — 应用根 Widget
-class JunkFusionAppState extends State<JunkFusionApp> with WindowListener {
+class JunkFusionAppState extends State<JunkFusionApp>
+    with WindowListener, TrayListener {
   final errorCallbackManager = ErrorCallbackManager();
 
   @override
   void initState() {
     super.initState();
     windowManager.addListener(this);
+    trayManager.addListener(this);
     errorCallbackManager.setupCallbacks();
+    _initSystemTray();
   }
 
   @override
   void dispose() {
     //dispose的执行时机不可靠，必须使用onWindowClose()来监听整个应用的关闭
+    trayManager.addListener(this);
     windowManager.removeListener(this);
     super.dispose();
+  }
+
+  // 初始化托盘的方法
+  Future<void> _initSystemTray() async {
+    // 设置托盘图标 (根据平台选择后缀)
+    String iconPath = "junk_fusion_ui/assets/image/JunkFusion.png";
+    await trayManager.setIcon(iconPath);
+
+    // 构建右键菜单
+    Menu menu = Menu(
+      items: [
+        MenuItem(key: 'show_window', label: '显示主界面'),
+        MenuItem.separator(), // 分割线
+        MenuItem(key: 'exit_app', label: '完全退出程序'),
+      ],
+    );
+    await trayManager.setContextMenu(menu);
   }
 
   // 拦截所有的窗口关闭请求 (无论是按 X 还是 Alt+F4)
   @override
   void onWindowClose() async {
-    // print("准备安全关闭系统...");
+    print("准备安全关闭系统...");
 
     // 1. 拦截默认的关闭行为，我们自己来控制
     bool isPreventClose = await windowManager.isPreventClose();
-    if (!isPreventClose) return;
+    if (isPreventClose) {
+      print("点击了关闭，窗口最小化到托盘...");
+      await windowManager.hide(); // 隐藏窗口，进程继续在后台运行
+    }
+  }
 
-    // 2. 执行你的【安全退出协议】
+  // 鼠标左键单击托盘图标：恢复显示窗口
+  @override
+  void onTrayIconMouseDown() {
+    windowManager.show();
+    windowManager.focus(); // 聚焦到最前面
+  }
+
+  // 鼠标右击托盘图标：(tray_manager 默认会自动弹出刚才设置的菜单，无需手动写代码)
+  @override
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu(); // 部分系统需要手动调用这行
+  }
+
+  // 监听菜单项的点击
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    if (menuItem.key == 'show_window') {
+      windowManager.show();
+      windowManager.focus();
+    } else if (menuItem.key == 'exit_app') {
+      // 托盘右键点击了退出，执行终极清理！
+      _safeExit();
+    }
+  }
+
+  // ==================== 终极安全退出协议 ====================
+
+  Future<void> _safeExit() async {
+    print("托盘触发退出，开始安全清理系统...");
+
+    // 1. 切断 C++ 回调
     bindings.registerErrorSendCallback(dart_ffi.Pointer.fromAddress(0).cast());
+
+    // 2. 释放 Dart 端内存
     errorCallbackManager.dispose();
-    // errorCallbackManager.dispose();
+
+    // 3. 关闭 C++ 后端
     bindings.closeBackend();
 
-    // 3. 彻底销毁窗口
-    await windowManager.destroy(); // 使用 destroy 真正关闭
+    // 4. 清理托盘图标 (这一步很重要，不然程序退出了托盘区还会残留一个“幽灵图标”，直到鼠标划过才消失)
+    await trayManager.destroy();
+
+    // 5. 彻底干掉进程
+    await windowManager.destroy();
   }
 
   @override

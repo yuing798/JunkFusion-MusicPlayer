@@ -80,9 +80,8 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
             iconData: TablerIcons.x,
             hoverColor: Colors.red, // 鼠标悬浮关闭按钮时变红
             onPressed: () {
-              bindings.closeBackend();
+              print("用户点击了右上角的关闭按钮");
               windowManager.close();
-              // exit(0);
             }, // 关闭窗口
           ),
         ],
