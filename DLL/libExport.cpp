@@ -6,6 +6,7 @@
 #include "fileManage/dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
+#include "processManager/AudioDefs.hpp"
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -83,7 +84,9 @@ extern "C" {
     void playNewSong(int songId) {
         // 闪退的原因是下面这一句
         auto songPath = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
-        std::string path = "";
-        dllManager::getInstance().sendMessage2AudioProcess(path);
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(songPath));
+        auto jsonStr = juce::JSON::toString(obj).toStdString();
+        dllManager::getInstance().sendMessage2AudioProcess(jsonStr);
     }
 }

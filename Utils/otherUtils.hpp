@@ -47,7 +47,7 @@ namespace Utils {
     // 将内存块转换成对象
     juce::DynamicObject::Ptr mb2object(const juce::MemoryBlock& mb);
 
-    void writeEmergencyLog(const char* message);
+    void writeEmergencyLog(std::string message);
 
     void sendPopupWindow(zmq::socket_t& socket, juce::var obj);
     void sendErrorPopupWindow(zmq::socket_t& socket, juce::String errorMsg);

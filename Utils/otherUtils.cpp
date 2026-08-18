@@ -214,14 +214,14 @@ juce::DynamicObject::Ptr Utils::mb2object(const juce::MemoryBlock& mb) {
  * @brief 紧急降级日志函数(绝不抛出异常，写完立刻刷盘）
  * @param message 待写入的日志消息字符串
  */
-void Utils::writeEmergencyLog(const char* message) {
+void Utils::writeEmergencyLog(std::string message) {
 #ifdef JF_DEBUG
     std::ofstream testFile(
         "D:/audio_develop/Junk-Fusion/text.txt",
         std::ios::out | std::ios::app
     ); // 追加模式
     if (testFile.is_open()) {
-        testFile << message << std::endl;
+        testFile << message.c_str() << std::endl;
         testFile.flush();
         testFile.close();
     }

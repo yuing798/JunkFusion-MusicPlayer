@@ -22,12 +22,14 @@ void AudioProcessorPuller::run() {
         // 纯阻塞等待，完全不消耗 CPU
         auto res = pullSocket.recv(msg, zmq::recv_flags::none); // 无限期阻塞
         if (res) {
-            Utils::writeEmergencyLog("puller接收到了消息");
+
             std::string command(static_cast<const char*>(msg.data()), msg.size());
+            Utils::writeEmergencyLog("puller接收到了消息" + command);
             spdlog::get(LogAudioID)->debug("音频进程pusller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
             auto jsonStr{juce::JSON::fromString(juce::String(command))};
             if (jsonStr.isVoid() || !jsonStr.isObject()) {
+                Utils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
                 if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::killAudioProcess)) {
@@ -37,6 +39,11 @@ void AudioProcessorPuller::run() {
                 }
                 if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::songPath)) {
                     // 收到歌曲路径信息就要开始播放新歌曲了
+                    auto songPath = jsonStr.getDynamicObject()
+                                        ->getProperty(AudioDefs::songPath)
+                                        .toString()
+                                        .toStdString();
+                    spdlog::get(LogAudioID)->debug("收到路径{}", songPath);
                 }
             }
         }
