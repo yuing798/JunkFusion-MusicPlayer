@@ -1,5 +1,10 @@
 #include "./AudioProcessWorker.hpp"
+#include "../AudioDefs.hpp"
 #include "AudioProcessWorker.hpp"
+#include "constants.h"
+#include "juce_core/juce_core.h"
+#include "juce_events/juce_events.h"
+#include <spdlog/spdlog.h>
 
 AudioProcessorPuller::AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort)
     : juce::Thread("AudioProcessorPuller"), context(ctx), mPushPullPort(pushPullPort) {}
@@ -14,8 +19,18 @@ void AudioProcessorPuller::run() {
         auto res = pullSocket.recv(msg, zmq::recv_flags::none); // 无限期阻塞
         if (res) {
             std::string command(static_cast<const char*>(msg.data()), msg.size());
-            juce::Logger::writeToLog("音频进程收到指令: " + command);
+            spdlog::get(LogAudioID)->debug("音频进程pusller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
+            auto jsonStr{juce::JSON::fromString(juce::String(command))};
+            if (jsonStr.isVoid() || !jsonStr.isObject()) {
+                spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
+            } else {
+                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::killAudioProcess)) {
+                    juce::MessageManager::callAsync([]() {
+                        juce::MessageManager::getInstance()->stopDispatchLoop();
+                    });
+                }
+            }
         }
     }
 }
@@ -71,8 +86,6 @@ AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pub
 }
 
 AudioProcessWorker::~AudioProcessWorker() {
-    {
-        receiver->stopThread(2000);
-        sender->stopThread(2000);
-    }
+    receiver->stopThread(2000);
+    sender->stopThread(2000);
 }
