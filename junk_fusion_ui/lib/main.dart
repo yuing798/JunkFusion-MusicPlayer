@@ -128,7 +128,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
   // 拦截所有的窗口关闭请求 (无论是按 X 还是 Alt+F4)
   @override
   void onWindowClose() async {
-    print("准备安全关闭系统...");
+    print("准备关闭窗口...");
 
     // 1. 拦截默认的关闭行为，我们自己来控制
     bool isPreventClose = await windowManager.isPreventClose();

@@ -6,6 +6,7 @@
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
+#include "otherUtils.hpp"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include "processSchedule/OscReceiver.hpp"
 #include <memory>
@@ -15,8 +16,11 @@
 GodProcessor::GodProcessor(juce::StringArray initArgs)
     : decoderRingBuffer(1000), decoder(decoderRingBuffer) {
 
+    Utils::writeEmergencyLog("开始执行GodProcessor的构造函数");
+
     std::string pushPullPort;
     std::string pubSubPort;
+    int oscPort{0};
     for (int i = 0; i < initArgs.size(); i++) {
         if (initArgs[i] == AudioDefs::pushPullPort) {
             pushPullPort = initArgs[i + 1].toStdString();
@@ -28,8 +32,8 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
         }
         if (initArgs[i] == AudioDefs::oscPort) {
             // 初始化osc接收者
-            auto oscPort = initArgs[i + 1].getIntValue();
-            mOscReceiver = std::make_unique<OscReceiver>(oscPort);
+            oscPort = initArgs[i + 1].getIntValue();
+
             continue;
         }
         if (initArgs[i] == AudioDefs::pubSubPort) {
@@ -37,9 +41,12 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
             continue;
         }
     }
+    Utils::writeEmergencyLog("准备执行worker的构造函数");
     // 初始化工作者
     mAudioProcessWorker =
         std::make_unique<AudioProcessWorker>(std::move(pushPullPort), std::move(pubSubPort));
+
+    Utils::writeEmergencyLog("worker的构造函数执行完毕");
 
     // 初始化设备管理者
     juce::File configFile = mCacheDir.getChildFile("JFConfig.xml");
@@ -48,6 +55,8 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
 
     // 初始化日志
     AudioUtils::initAudioLogger(mCacheDir);
+
+    mOscReceiver = std::make_unique<OscReceiver>(oscPort);
 
     auto log{spdlog::get(LogAudioID)};
     log->debug("音频进程日志初始化完成");

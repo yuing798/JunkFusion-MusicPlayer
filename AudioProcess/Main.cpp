@@ -15,14 +15,14 @@
 #include <utility>
 
 int main(int argc, char* argv[]) {
-    Utils::writeEmergencyLog("准备初始化音频进程");
+    Utils::writeEmergencyLog("开始初始化音频进程");
 
     juce::ScopedJuceInitialiser_GUI juceInitialiser; // 消息队列初始化
 
     // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
     juce::StringArray args{argv, argc};
-    // juce::String commandLine = args.joinIntoString(" ");
-    // Utils::writeEmergencyLog(commandLine.toRawUTF8());
+    juce::String commandLine = args.joinIntoString(" ");
+    Utils::writeEmergencyLog(commandLine.toRawUTF8());
     GodProcessor mGodProcessor{
         std::move(args)
     }; // 音频线程是唯一的核心，其他所有的类都服务于音频线程

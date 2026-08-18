@@ -72,7 +72,10 @@ extern "C" {
         // dllManager::getInstance().mAudioProcessCoordinator->stop();
         // return "";
     }
-    void closeBackend() { dllManager::destroyInstance(); }
+    void closeBackend() {
+        spdlog::get(LogDllID)->debug("准备关闭后端");
+        dllManager::destroyInstance();
+    }
 
     void registerErrorSendCallback(ErrorSend cb) {
         dllManager::getInstance().errorSendCallback = cb;

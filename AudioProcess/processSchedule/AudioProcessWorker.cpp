@@ -4,20 +4,25 @@
 #include "constants.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
+#include "otherUtils.hpp"
 #include <spdlog/spdlog.h>
 
 AudioProcessorPuller::AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort)
-    : juce::Thread("AudioProcessorPuller"), context(ctx), mPushPullPort(pushPullPort) {}
+    : juce::Thread("AudioProcessorPuller"), context(ctx), mPushPullPort(pushPullPort) {
+    Utils::writeEmergencyLog("AudioProcessorPuller构造函数执行完成");
+}
 
 void AudioProcessorPuller::run() {
     zmq::socket_t pullSocket(context, zmq::socket_type::pull);
     pullSocket.connect(mPushPullPort); // 连接到 UI 的 PUSH 端
+    Utils::writeEmergencyLog("puller开转");
 
     while (!threadShouldExit()) {
         zmq::message_t msg;
         // 纯阻塞等待，完全不消耗 CPU
         auto res = pullSocket.recv(msg, zmq::recv_flags::none); // 无限期阻塞
         if (res) {
+            Utils::writeEmergencyLog("puller接收到了消息");
             std::string command(static_cast<const char*>(msg.data()), msg.size());
             spdlog::get(LogAudioID)->debug("音频进程pusller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
@@ -77,6 +82,7 @@ void AudioProcessorPuber::run() {
 }
 
 AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pubSubPort) {
+    Utils::writeEmergencyLog("开始执行worker的构造函数");
     // 将 context 引用传递给线程
     receiver = std::make_unique<AudioProcessorPuller>(zmqContext, pushPullPort);
     sender = std::make_unique<AudioProcessorPuber>(zmqContext, pubSubPort);
