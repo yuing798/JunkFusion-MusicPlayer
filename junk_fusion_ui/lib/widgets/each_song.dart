@@ -47,9 +47,10 @@ class EachSong extends StatelessWidget {
         onTap: () {
           //箭头函数后面只能接上一句表达式
           if (isCurrentSong) {
-            playback.togglePlayPause();
+            context.read<PlaybackProvider>().togglePlayPause();
           } else {
-            playback.setPlayState(song.songId);
+            context.read<PlaybackProvider>().setPlayState(song.songId);
+            context.read<PlaybackProvider>().setCurrentSongId(song.songId);
           }
         },
         child: Stack(

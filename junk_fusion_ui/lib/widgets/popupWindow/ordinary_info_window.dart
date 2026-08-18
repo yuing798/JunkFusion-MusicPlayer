@@ -53,22 +53,25 @@ class OrdinaryInfoWindowState extends State<OrdinaryInfoWindow> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
             child: Stack(
-              fit: StackFit.expand,
+              // fit: StackFit.expand,
               children: [
                 DynMouseScroll(
                   builder: (_, controler_, physics_) {
-                    return SingleChildScrollView(
-                      controller: controler_,
-                      physics: physics_,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 40,
-                          horizontal: 30,
-                        ),
-                        child: Text(
-                          widget.message,
-                          style: AppTheme.midTextStyle,
-                          textAlign: TextAlign.left,
+                    return SizedBox(
+                      width: double.infinity,
+                      child: SingleChildScrollView(
+                        controller: controler_,
+                        physics: physics_,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 40,
+                            horizontal: 30,
+                          ),
+                          child: Text(
+                            widget.message,
+                            style: AppTheme.midTextStyle,
+                            textAlign: TextAlign.left,
+                          ),
                         ),
                       ),
                     );

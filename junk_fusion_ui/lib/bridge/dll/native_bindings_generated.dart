@@ -76,6 +76,14 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  void playNewSong(int songId) {
+    return _playNewSong(songId);
+  }
+
+  late final _playNewSongPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>('playNewSong');
+  late final _playNewSong = _playNewSongPtr.asFunction<void Function(int)>();
+
   void registerErrorSendCallback(ErrorSend cb) {
     return _registerErrorSendCallback(cb);
   }

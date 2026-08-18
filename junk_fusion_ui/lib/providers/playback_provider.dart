@@ -2,6 +2,8 @@
 // playback_provider.dart — 播放状态管理
 // ════════════════════════════════════════════════════════════════
 import 'package:flutter/foundation.dart';
+import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
+import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PlaybackProvider extends ChangeNotifier {
@@ -29,14 +31,13 @@ class PlaybackProvider extends ChangeNotifier {
     if (songId == _currentSongId) return;
     _currentSongId = songId;
     notifyListeners();
-    final localStorage = await SharedPreferences.getInstance();
-    await localStorage.setInt("currentSongId", songId);
+    await AppCache.frontCacheRef.setInt("currentSongId", songId);
+    bindings.playNewSong(songId);
   }
 
   // 从持久化存储恢复当前播放歌曲 ID
   Future<void> restoreCurrentSongId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final songId = prefs.getInt('currentSongId');
+    final songId = AppCache.frontCacheRef.getInt('currentSongId');
     if (songId != null) _currentSongId = songId;
     notifyListeners();
   }

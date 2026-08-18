@@ -43,6 +43,12 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    //在 initState 中调用任何可能触发 setState 或 notifyListeners 的异步/同步操作，
+    //都要用 WidgetsBinding.instance.addPostFrameCallback 延迟到第一帧完成之后，避免在构建过程中引发 markNeedsBuild 异常。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PlaybackProvider>().restoreCurrentSongId();
+    });
     // 初始化控制器
     _controller = AnimationController(
       vsync: this,
