@@ -41,6 +41,8 @@ const char* object2Uint8t(juce::DynamicObject::Ptr obj) {
     //    必须用局部变量持有 juce::String，否则 .toRawUTF8() 指向临时对象的内部缓冲区，
     //    分号执行完后临时 String 销毁 → 野指针 → 下游读到垃圾数据
     juce::String json = juce::JSON::toString(varObj);
+
+    // 注意这里是指针，实际数据还是在juce::String里面，所以必须申请堆内存
     const char* jsonStr = json.toRawUTF8();
 
     // 申请堆内存

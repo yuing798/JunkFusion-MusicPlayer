@@ -7,18 +7,21 @@
     #define LIB_EXPORT __attribute__((visibility("default")))
 #endif
 
+typedef void (*ErrorSend)(const char* str);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    LIB_EXPORT void dllInit(const char* cacheDirId, const char* exeDirPtr);
+    LIB_EXPORT void dllInit(const char* cacheDirId, const char* exeDirPtr); // dll初始化
     LIB_EXPORT int getAllSongCount();
     LIB_EXPORT int toggleMyLike(long long songId);
     LIB_EXPORT const char* getAllSongs();
     LIB_EXPORT void saveComment(long long songId, const char* commentText);
     LIB_EXPORT void freeString(char* str);
     LIB_EXPORT const char* someImport(const char*);
-    LIB_EXPORT void closeBackend();
+    LIB_EXPORT void closeBackend(); // dll注销
+    LIB_EXPORT void registerErrorSendCallback(ErrorSend cb);
 
 #ifdef __cplusplus
 }

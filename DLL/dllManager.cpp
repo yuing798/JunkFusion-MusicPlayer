@@ -11,10 +11,9 @@
 
 std::unique_ptr<dllManager> dllManager::instance = nullptr;
 
-dllManager::dllManager() { Utils::writeEmergencyLog("准备初始化dll单例2.0"); }
+dllManager::dllManager() {}
 
 void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
-    Utils::writeEmergencyLog("准备初始化dll单例3.0");
 
     cacheDir = juce::File{cacheDirId};
     logInfoDir = cacheDir.getChildFile("log");

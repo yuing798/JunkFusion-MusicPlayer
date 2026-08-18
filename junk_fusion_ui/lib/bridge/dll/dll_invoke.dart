@@ -10,7 +10,19 @@ import 'package:junk_fusion_ui/bridge/dll/native_bindings_generated.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 
-final bindings = JunkFusionDLLBindings(AppCache.libPath);
+final DynamicLibrary _libPath = () {
+  final libName = Platform.isWindows
+      ? "JunkFusionDLL.dll"
+      : Platform.isMacOS
+      ? "JunkFusionDLL.dylib"
+      : "JunkFusionDLL.so";
+
+  return DynamicLibrary.open(
+    "${AppCache.getExeDirectory()}${Platform.pathSeparator}$libName",
+  );
+}();
+
+final bindings = JunkFusionDLLBindings(_libPath);
 
 Future<Map<String, Object?>> sendDLLIsolateTask(
   String funcName,
@@ -52,10 +64,6 @@ int _nextRequestId = 0;
 Future<SendPort> isolateSendPort = () async {
   final initCompleter = Completer<SendPort>();
 
-  // Receive port on the main isolate to receive messages from the helper.
-  // We receive two types of messages:
-  // 1. A port to send messages on.
-  // 2. Responses to requests we sent.
   final receivePort = ReceivePort()
     ..listen((dynamic data) {
       if (data is SendPort) {
@@ -83,18 +91,6 @@ Future<SendPort> isolateSendPort = () async {
 
   // Start the helper isolate.
   await Isolate.spawn((SendPort sendPort) async {
-    // final DynamicLibrary isolateLib = () {
-    //   final isolateLibName = Platform.isWindows
-    //       ? "JunkFusionDLL.dll"
-    //       : Platform.isMacOS
-    //       ? "JunkFusionDLL.dylib"
-    //       : "JunkFusionDLL.so";
-
-    //   return DynamicLibrary.open(isolateLibName);
-    // }();
-
-    // final isolateBindings = JunkFusionDLLBindings(isolateLib);
-
     final ReceivePort helperReceivePort = ReceivePort()
       ..listen((dynamic data) {
         // On the helper isolate listen to requests and respond to them.
@@ -196,8 +192,6 @@ Future<SendPort> isolateSendPort = () async {
     // Send the port to the main isolate on which we can receive requests.
     sendPort.send(helperReceivePort.sendPort); //建立主副隔离区的双向通信
   }, receivePort.sendPort);
-  //第一个回调函数只会在第一次初始化的时候执行一次
-  //Isolate.spawn参数：(入口函数, 初始消息);
 
   return initCompleter.future;
 }(); //立即执行函数只执行一次，且后续永远不会因为任何变量“改变”而重新执行

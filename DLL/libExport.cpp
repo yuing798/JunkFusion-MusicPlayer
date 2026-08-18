@@ -73,4 +73,8 @@ extern "C" {
         // return "";
     }
     void closeBackend() { dllManager::destroyInstance(); }
+
+    void registerErrorSendCallback(ErrorSend cb) {
+        dllManager::getInstance().errorSendCallback = cb;
+    }
 }

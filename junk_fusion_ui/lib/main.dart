@@ -3,6 +3,7 @@ import 'dart:ffi' as dart_ffi;
 
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/bridge/dll/cpp_error_capture.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
@@ -47,33 +48,74 @@ void main() async {
   final cacheDirPtr = AppCache.cacheDirString
       .toNativeUtf8()
       .cast<dart_ffi.Char>();
-  print("exe所在目录和缓存目录分别为：");
-  print(AppCache.getExeDirectory());
-  print(AppCache.cacheDirString);
+  // print("exe所在目录和缓存目录分别为：");
+  // print(AppCache.getExeDirectory());
+  // print(AppCache.cacheDirString);
   final exeDirPtr = AppCache.getExeDirectory()
       .toNativeUtf8()
       .cast<dart_ffi.Char>();
   bindings.dllInit(cacheDirPtr, exeDirPtr); //dll初始化
   ffi.malloc.free(cacheDirPtr);
   ffi.malloc.free(exeDirPtr);
-  print("dll初始化完成");
+  // print("dll初始化完成");
 
   AppCache.frontCacheRef = await SharedPreferences.getInstance(); //初始化前端缓存指针
 
-  // `runApp` 接收一个 Widget 参数，把它设为屏幕上显示的根 widget
-  // Flutter 会接管该 widget 的生命周期和渲染
+  final errorCallbackManager = ErrorCallbackManager();
+  errorCallbackManager.setupCallbacks();
 
   final songProvider = SongProvider();
   songProvider.getAllSongs(); //全量获取歌曲元数据
 
-  runApp(JunkFusionApp(songProvider: songProvider));
+  runApp(JunkFusionApp(songProvider: songProvider)); //runApp不是阻塞式的，所以下面不能放析构逻辑
+}
+
+class JunkFusionApp extends StatefulWidget {
+  final SongProvider songProvider;
+  const JunkFusionApp({super.key, required this.songProvider});
+
+  @override
+  State<StatefulWidget> createState() {
+    return JunkFusionAppState();
+  }
 }
 
 /// JunkFusionApp — 应用根 Widget
-class JunkFusionApp extends StatelessWidget {
-  //最外层，但没画布
-  final SongProvider songProvider;
-  const JunkFusionApp({super.key, required this.songProvider});
+class JunkFusionAppState extends State<JunkFusionApp> with WindowListener {
+  final errorCallbackManager = ErrorCallbackManager();
+
+  @override
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+    errorCallbackManager.setupCallbacks();
+  }
+
+  @override
+  void dispose() {
+    //dispose的执行时机不可靠，必须使用onWindowClose()来监听整个应用的关闭
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  // 拦截所有的窗口关闭请求 (无论是按 X 还是 Alt+F4)
+  @override
+  void onWindowClose() async {
+    // print("准备安全关闭系统...");
+
+    // 1. 拦截默认的关闭行为，我们自己来控制
+    bool isPreventClose = await windowManager.isPreventClose();
+    if (!isPreventClose) return;
+
+    // 2. 执行你的【安全退出协议】
+    bindings.registerErrorSendCallback(dart_ffi.Pointer.fromAddress(0).cast());
+    errorCallbackManager.dispose();
+    // errorCallbackManager.dispose();
+    bindings.closeBackend();
+
+    // 3. 彻底销毁窗口
+    await windowManager.destroy(); // 使用 destroy 真正关闭
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +123,7 @@ class JunkFusionApp extends StatelessWidget {
     return MultiProvider(
       //数据层，没画布
       providers: [
-        ChangeNotifierProvider<SongProvider>.value(value: songProvider),
+        ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
         ChangeNotifierProvider(create: (_) => PlaybackProvider()),
       ],
 

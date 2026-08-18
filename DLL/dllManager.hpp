@@ -8,6 +8,7 @@
 #include "processManager/oscSender.hpp"
 #include <SQLiteCpp/Database.h>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <utility>
@@ -51,4 +52,6 @@ public:
     SongsManage& getSongsManager() { return *songs; }
 
     ~dllManager();
+
+    std::function<void(const char*)> errorSendCallback;
 };

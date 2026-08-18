@@ -76,6 +76,17 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  void registerErrorSendCallback(ErrorSend cb) {
+    return _registerErrorSendCallback(cb);
+  }
+
+  late final _registerErrorSendCallbackPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ErrorSend)>>(
+        'registerErrorSendCallback',
+      );
+  late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
+      .asFunction<void Function(ErrorSend)>();
+
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
     return _saveComment(songId, commentText);
   }
@@ -112,3 +123,7 @@ class JunkFusionDLLBindings {
       );
   late final _toggleMyLike = _toggleMyLikePtr.asFunction<int Function(int)>();
 }
+
+typedef ErrorSend = ffi.Pointer<ffi.NativeFunction<ErrorSendFunction>>;
+typedef ErrorSendFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
+typedef DartErrorSendFunction = void Function(ffi.Pointer<ffi.Char> str);
