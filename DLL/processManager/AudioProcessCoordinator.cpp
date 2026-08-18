@@ -50,16 +50,12 @@ bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce
 
 void AudioProcessCoordinator::stop() {
 
-    // std::string endInfo = "kill";
-    // zmq::message_t msg(endInfo.data(), endInfo.size());
-    // auto r = mSocket.send(msg, zmq::send_flags::none);
-    // Utils::writeEmergencyLog(("send返回:" + std::to_string(r.value_or(0))).c_str());
-    // if (!mChildProcess.waitForProcessToFinish(2000)) { // 最多等两秒结束子进程
-    //     Utils::writeEmergencyLog("音频进程未能退出，准备强制kill");
-    //     mChildProcess.kill();
-    // }
-    // mSocket.close();
-    // mRunning = false;
+    juce::var obj{new juce::DynamicObject()};
+    obj.getDynamicObject()->setProperty(AudioDefs::killAudioProcess, "");
+    auto jsonStr = juce::JSON::toString(obj).toStdString();
+    spdlog::get(LogDllID)->debug("在AudioProcessCoordinator::stop()中通知音频进程自杀");
+    mAudioProcessPusher->sendMessage(jsonStr);
+    mRunning = false;
 }
 
 AudioProcessCoordinator::~AudioProcessCoordinator() { stop(); }
@@ -106,7 +102,10 @@ void AudioProcessPusher::run() {
             socket.send(zmsg, zmq::send_flags::none);
         }
     }
+    socket.close();
 }
+
+AudioProcessPusher::~AudioProcessPusher() { stopThread(2000); }
 
 AudioProcessSuber::AudioProcessSuber(zmq::context_t& context, juce::WaitableEvent& e)
     : juce::Thread("AudioProcessSuber"), mContext(context), portInitOK(e) {
@@ -150,4 +149,8 @@ void AudioProcessSuber::run() {
             }
         }
     }
+
+    socket.close();
 }
+
+AudioProcessSuber::~AudioProcessSuber() { stopThread(2000); }
