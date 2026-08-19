@@ -35,12 +35,13 @@ void AudioUtils::initAudioLogger(juce::File cacheDir) {
             spdlog::async_overflow_policy::block
         );
         audioLogger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v");
-        // #ifdef JF_DEBUG
-        //         audioLogger->set_level(spdlog::level::debug);
-        // #else
-        //         audioLogger->set_level(spdlog::level::err);
-        // #endif
+#ifdef JF_DEBUG
         audioLogger->set_level(spdlog::level::debug);
+#else
+        audioLogger->set_level(spdlog::level::err);
+#endif
+        audioLogger->flush_on(spdlog::level::err); // 遇到错误立刻刷盘
         spdlog::register_logger(audioLogger);
     }
+    spdlog::get(LogAudioID)->debug("音频进程日志初始化完成");
 }

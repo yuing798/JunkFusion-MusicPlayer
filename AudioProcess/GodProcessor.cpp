@@ -53,13 +53,7 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
     if (!configFile.existsAsFile()) configFile.create();
     mDeviceManager = std::make_unique<DeviceManager>(std::move(configFile));
 
-    // 初始化日志
-    AudioUtils::initAudioLogger(mCacheDir);
-
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
-
-    auto log{spdlog::get(LogAudioID)};
-    log->debug("音频进程日志初始化完成");
 
     // 解码失败弹窗
     decoder.sendErrorMsg = [this](std::string str) {

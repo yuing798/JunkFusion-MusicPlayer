@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
+#include "otherUtils.hpp"
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
@@ -10,18 +11,28 @@
 DeviceManager::DeviceManager(juce::File configFile) : mConfigFile(configFile) {
 
     setupXml = juce::parseXML(configFile);
+    Utils::writeEmergencyLog("准备初始化声卡配置");
 
     // 如果 xml 不为空，JUCE 会优先按照 XML 里的配置打开声卡；如果 xml 为空，则自动使用默认设备。
     juce::String error = mManager.initialise(0, 256, setupXml.get(), true);
 
+    saveSetupXml2File();
+
     if (error.isNotEmpty()) {
+        Utils::writeEmergencyLog("声卡初始化失败");
         auto log{spdlog::get(LogAudioID)};
         log->error("初始化声卡失败: {}", error.toStdString());
+    } else {
+        Utils::writeEmergencyLog("声卡初始化成功");
+        spdlog::get(LogAudioID)->debug("声卡初始化成功");
     }
-    mManager.addChangeListener(this);
+    // mManager.addChangeListener(this);
+    Utils::writeEmergencyLog("DeviceManager构造函数完成");
 }
 
-DeviceManager::~DeviceManager() { mManager.removeChangeListener(this); }
+DeviceManager::~DeviceManager() {
+    // mManager.removeChangeListener(this);
+}
 
 void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
     if (source == &mManager) {
@@ -41,6 +52,7 @@ void DeviceManager::disconnectProcessor() {
 }
 
 void DeviceManager::saveSetupXml2File() {
+    spdlog::get(LogAudioID)->debug("准备保存声卡配置");
     setupXml = mManager.createStateXml();
 
     if (setupXml != nullptr) {
@@ -54,6 +66,8 @@ void DeviceManager::saveSetupXml2File() {
         } else {
             log->error("错误：无法写入声卡配置文件！");
         }
+    } else {
+        spdlog::get(LogAudioID)->debug("setupXml = nullptr");
     }
 }
 

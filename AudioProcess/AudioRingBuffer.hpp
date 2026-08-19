@@ -24,7 +24,7 @@ public:
     void popAudioData(juce::AudioBuffer<float>& destBuffer);
 
 private:
-    juce::AbstractFifo fifo{0};
+    juce::AbstractFifo fifo{1};
     juce::AudioBuffer<float> buffer;
     double mBufferMs{0.0};
 

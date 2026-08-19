@@ -16,26 +16,37 @@
 
 int main(int argc, char* argv[]) {
     Utils::writeEmergencyLog("开始初始化音频进程");
-
-    juce::ScopedJuceInitialiser_GUI juceInitialiser; // 消息队列初始化
-
     // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
     juce::StringArray args{argv, argc};
+    for (int i = 0; i < args.size(); i++) {
+        if (args[i] == AudioDefs::cacheDir) {
+            auto cacheDir = juce::File{args[i + 1]};
+            AudioUtils::initAudioLogger(cacheDir);
+            break;
+        }
+    }
+
     juce::String commandLine = args.joinIntoString(" ");
     Utils::writeEmergencyLog(commandLine.toRawUTF8());
-    GodProcessor mGodProcessor{
-        std::move(args)
-    }; // 音频线程是唯一的核心，其他所有的类都服务于音频线程
 
-    auto logger{spdlog::get(LogAudioID)};
+    {
 
-    logger->debug("音频进程开始阻塞");
-    Utils::writeEmergencyLog("音频进程开始阻塞");
+        juce::ScopedJuceInitialiser_GUI juceInitialiser; // 消息队列初始化
 
-    juce::MessageManager::getInstance()->runDispatchLoop();
+        GodProcessor mGodProcessor{
+            std::move(args)
+        }; // 音频线程是唯一的核心，其他所有的类都服务于音频线程
 
-    logger->debug("音频进程准备销毁");
-    Utils::writeEmergencyLog("音频进程要死了!");
+        auto logger{spdlog::get(LogAudioID)};
+
+        logger->debug("音频进程开始阻塞");
+        Utils::writeEmergencyLog("音频进程开始阻塞");
+
+        juce::MessageManager::getInstance()->runDispatchLoop();
+
+        logger->debug("音频进程准备销毁");
+        Utils::writeEmergencyLog("音频进程要死了!");
+    }
     spdlog::get(LogAudioID)
         ->debug("------------------------------------------------------------------------");
     spdlog::shutdown();

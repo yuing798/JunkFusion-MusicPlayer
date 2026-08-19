@@ -6,6 +6,7 @@
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
 #include <spdlog/spdlog.h>
+#include <zmq.hpp>
 
 AudioProcessorPuller::AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort)
     : juce::Thread("AudioProcessorPuller"), context(ctx), mPushPullPort(pushPullPort) {
@@ -15,6 +16,7 @@ AudioProcessorPuller::AudioProcessorPuller(zmq::context_t& ctx, std::string push
 void AudioProcessorPuller::run() {
     zmq::socket_t pullSocket(context, zmq::socket_type::pull);
     pullSocket.connect(mPushPullPort); // 连接到 UI 的 PUSH 端
+    pullSocket.set(zmq::sockopt::rcvtimeo, 500);
     Utils::writeEmergencyLog("puller开转");
 
     while (!threadShouldExit()) {
@@ -43,7 +45,7 @@ void AudioProcessorPuller::run() {
                                         ->getProperty(AudioDefs::songPath)
                                         .toString()
                                         .toStdString();
-                    spdlog::get(LogAudioID)->debug("收到路径{}", songPath);
+                    spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
                 }
             }
         }
