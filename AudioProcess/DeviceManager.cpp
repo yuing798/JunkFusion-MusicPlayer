@@ -16,74 +16,57 @@ DeviceManager::DeviceManager(juce::File configFile) : mConfigFile(configFile) {
     setupXml = juce::parseXML(configFile);
     Utils::writeEmergencyLog("准备初始化声卡配置");
 
-    // mManager.initialiseWithDefaultDevices(0, 2);
-    // auto Currentsetup = mManager.getAudioDeviceSetup();
-    // auto currentAudioType = mManager.getCurrentAudioDeviceType();
-    // spdlog::get(LogAudioID)->debug("现在的音频驱动类型为:{}", currentAudioType.toStdString());
-    // auto currentDevice = Currentsetup.outputDeviceName;
-    // spdlog::get(LogAudioID)->debug("现在的设备为:{}", currentDevice.toStdString());
-    // spdlog::get(LogAudioID)->debug("现在的设备采样率为:{}", Currentsetup.sampleRate);
-
     juce::String error = mManager.initialise(0, 256, setupXml.get(), true);
     currentSetup = mManager.getAudioDeviceSetup();
-    mManager.setAudioDeviceSetup(mManager.getAudioDeviceSetup(), true);
-    setupXml = mManager.createStateXml();
-    saveSetupXml2File();
-    spdlog::get(LogAudioID)->debug("当前的缓冲区长度为:{}", currentSetup.bufferSize);
-    auto bufferSizeList = mManager.getCurrentAudioDevice()->getAvailableBufferSizes();
-    std::string bsStr;
-    for (auto& bs : bufferSizeList) {
-        bsStr += std::to_string(bs) + "       ";
-    }
-    spdlog::get(LogAudioID)->debug("可设置的缓冲区长度共有:{}", bsStr);
+    // mManager.setAudioDeviceSetup(mManager.getAudioDeviceSetup(), true);
+    // setupXml = mManager.createStateXml();
+    // saveSetupXml2File();
+    // spdlog::get(LogAudioID)->debug("当前的缓冲区长度为:{}", currentSetup.bufferSize);
+    // auto bufferSizeList = mManager.getCurrentAudioDevice()->getAvailableBufferSizes();
+    // std::string bsStr;
+    // for (auto& bs : bufferSizeList) {
+    //     bsStr += std::to_string(bs) + "       ";
+    // }
+    // spdlog::get(LogAudioID)->debug("可设置的缓冲区长度共有:{}", bsStr);
 
-    currentSetup.bufferSize = 1920;
-    mManager.setAudioDeviceSetup(currentSetup, true);
-    setupXml = mManager.createStateXml();
-    saveSetupXml2File();
+    // {
+    //     currentSetup.bufferSize = 1920;
+    //     // 这个函数在应用第一次开启的时候是没有用的，只有真正改变了数值大小才有用
+    //     mManager.setAudioDeviceSetup(currentSetup, true);
+    //     setupXml = mManager.createStateXml();
+    //     saveSetupXml2File();
+    // }
 
-    currentSetup.bufferSize = 441;
-    mManager.setAudioDeviceSetup(currentSetup, true);
-    setupXml = mManager.createStateXml();
-    saveSetupXml2File();
+    // {
+    //     currentSetup.bufferSize = 441;
+    //     mManager.setAudioDeviceSetup(currentSetup, true);
+    //     setupXml = mManager.createStateXml();
+    //     saveSetupXml2File();
+    // }
 
-    currentSetup.bufferSize = 1920;
-    mManager.setAudioDeviceSetup(currentSetup, true);
-    setupXml = mManager.createStateXml();
-    saveSetupXml2File();
-
-    // auto futuresetup = mManager.getAudioDeviceSetup();
-
-    // auto futureAudioType = mManager.getCurrentAudioDeviceType();
-    // spdlog::get(LogAudioID)->debug("未来的音频驱动类型为:{}", futureAudioType.toStdString());
-    // auto futureDevice = futuresetup.outputDeviceName;
-    // spdlog::get(LogAudioID)->debug("未来的设备为:{}", futureDevice.toStdString());
-    // spdlog::get(LogAudioID)->debug("未来的设备采样率为:{}", futuresetup.sampleRate);
+    // {
+    //     currentSetup.bufferSize = 1920;
+    //     mManager.setAudioDeviceSetup(currentSetup, true);
+    //     setupXml = mManager.createStateXml();
+    //     saveSetupXml2File();
+    // }
 
     if (error.isNotEmpty()) {
         spdlog::get(LogAudioID)->error("声卡初始化失败: {}", error.toStdString());
     }
 
     // Utils::writeEmergencyLog("DeviceManager构造函数完成");
+    spdlog::get(LogAudioID)->debug("DeviceManager构造函数完成");
 }
 
 void DeviceManager::saveSetupXml2File() {
     auto log = spdlog::get(LogAudioID);
 
-    // log->debug("准备保存声卡配置");
-
-    // auto setup = mManager.getAudioDeviceSetup();
-
-    // log->debug("当前设备: {}", setup.outputDeviceName.toStdString());
-
-    // log->debug("sampleRate: {}", setup.sampleRate);
-
-    // log->debug("bufferSize: {}", setup.bufferSize);
-
-    // auto xml = mManager.createStateXml();
-
     if (setupXml == nullptr) {
-        log->error("缓存失败!AudioDeviceManager::createStateXml() 返回 nullptr");
+        log->error(
+            "缓存失败!AudioDeviceManager::createStateXml() 返回 "
+            "nullptr,可能是应用第一次初始化的原因"
+        );
         return;
     }
 
@@ -101,22 +84,9 @@ DeviceManager::~DeviceManager() { mManager.removeChangeListener(this); }
 
 void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
     if (source == &mManager) {
-        // 这个if在底层声卡参数“改变完成并生效后”才会调用的，而不是在调节过程中
-        // currentSetup = mManager.getAudioDeviceSetup();
-        // saveSetupXml2File();
-
-        // auto* currentDevice = mManager.getCurrentAudioDevice();
-        // auto log = spdlog::get(LogAudioID);
-
-        // if (currentDevice != nullptr) {
-        //     // 设备真正打开了！
-        //     log->debug("底层声卡已生效，当前挂载设备: {}",
-        //     currentDevice->getName().toStdString()); currentSetup =
-        //     mManager.getAudioDeviceSetup(); saveSetupXml2File();
-        // } else {
-        //     // 根本没有声卡被打开
-        //     log->error("回调触发，但底层没有打开任何物理声卡！");
-        // }
+        spdlog::get(LogAudioID)->debug("触发了DeviceManager::changeListenerCallback");
+        setupXml = mManager.createStateXml();
+        saveSetupXml2File();
     }
 }
 
