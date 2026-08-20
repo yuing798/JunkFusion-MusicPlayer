@@ -1,5 +1,6 @@
 #include "./AudioRingBuffer.hpp"
 #include "juce_core/system/juce_PlatformDefs.h"
+#include "otherUtils.hpp"
 
 AudioRingBuffer::AudioRingBuffer(double bufferMs) : mBufferMs(bufferMs) {}
 
@@ -12,6 +13,7 @@ void AudioRingBuffer::prepareToPlay(int numChannels, double sampleRate) {
 }
 
 void AudioRingBuffer::pushAudioData(const juce::AudioBuffer<float>& data) {
+    // Utils::writeEmergencyLog("ffmpeg和processBlock中转站推入一帧数据");
     jassert(data.getNumChannels() == buffer.getNumChannels());
 
     const int numSamples = data.getNumSamples();
@@ -32,8 +34,10 @@ void AudioRingBuffer::pushAudioData(const juce::AudioBuffer<float>& data) {
 
     // 更新写指针
     fifo.finishedWrite(size1 + size2);
+    Utils::writeEmergencyLog("ffmpeg和processBlock中转站数据推入完毕");
 }
 void AudioRingBuffer::popAudioData(juce::AudioBuffer<float>& destBuffer) {
+    Utils::writeEmergencyLog("ffmpeg和processBlock中转站推出一帧数据");
     jassert(destBuffer.getNumChannels() == buffer.getNumChannels());
     const int numChannels = destBuffer.getNumChannels();
     const int numSamples = destBuffer.getNumSamples();
@@ -61,4 +65,5 @@ void AudioRingBuffer::popAudioData(juce::AudioBuffer<float>& destBuffer) {
         for (int ch = 0; ch < numChannels; ++ch)
             destBuffer.clear(ch, totalRead, numSamples - totalRead);
     }
+    // Utils::writeEmergencyLog("ffmpeg和processBlock中转站推出数据完毕");
 }

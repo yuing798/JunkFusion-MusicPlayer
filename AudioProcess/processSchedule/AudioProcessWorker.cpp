@@ -46,6 +46,7 @@ void AudioProcessorPuller::run() {
                                         .toString()
                                         .toStdString();
                     spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
+                    if (onPlayNewSongInfoReceived) onPlayNewSongInfoReceived(songPath);
                 }
             }
         }

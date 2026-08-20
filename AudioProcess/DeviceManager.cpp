@@ -80,7 +80,10 @@ void DeviceManager::saveSetupXml2File() {
     log->debug("声卡配置已保存到: {}", mConfigFile.getFullPathName().toStdString());
 }
 
-DeviceManager::~DeviceManager() { mManager.removeChangeListener(this); }
+DeviceManager::~DeviceManager() {
+    mManager.removeChangeListener(this);
+    disconnectProcessor();
+}
 
 void DeviceManager::changeListenerCallback(juce::ChangeBroadcaster* source) {
     if (source == &mManager) {

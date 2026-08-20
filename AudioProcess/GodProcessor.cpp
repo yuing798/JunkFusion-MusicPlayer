@@ -64,11 +64,22 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
 
         mAudioProcessWorker->sender->sendMessage(jsonStr);
     };
+
+    // 播放新歌
+    mAudioProcessWorker->receiver->onPlayNewSongInfoReceived = [this](std::string songPath) {
+        decoder.setNewPlayState(songPath);
+    };
+
+    mDeviceManager->connectProcessor(this);
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
+    Utils::writeEmergencyLog("GodProcessor::prepareToPlay开始执行");
+
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
+    decoderRingBuffer.prepareToPlay(outputLayout.size(), sampleRate);
     decoder.prepareToPlay(outputLayout, sampleRate);
+    Utils::writeEmergencyLog("GodProcessor::prepareToPlay执行完成");
 }
 
 void GodProcessor::releaseResources() {}
@@ -76,6 +87,21 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     buffer.clear();
     juce::ignoreUnused(midiMessages);
     decoderRingBuffer.popAudioData(buffer);
+    // Utils::writeEmergencyLog("processBlock开转");
+    float volume{0.0f};
+    for (int i = 0; i < buffer.getNumSamples(); i++) {
+        volume += buffer.getReadPointer(0)[i];
+    }
+    Utils::writeEmergencyLog(
+        "processBlock中的第一通道的音量平均值为" +
+        std::to_string((volume / static_cast<float>(buffer.getNumSamples())))
+    );
 }
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}
 void GodProcessor::getStateInformation(juce::MemoryBlock& destData) {}
+
+bool GodProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
+    auto outSet = layouts.getMainOutputChannelSet();
+    // 只要输出不是禁用状态，且通道数在 1~256 之间，就允许声卡进行绑定
+    return !outSet.isDisabled() && outSet.size() > 0 && outSet.size() <= 256;
+}

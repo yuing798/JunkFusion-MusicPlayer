@@ -15,7 +15,7 @@
 #include <utility>
 
 int main(int argc, char* argv[]) {
-    Utils::writeEmergencyLog("开始初始化音频进程");
+    Utils::writeEmergencyLog("开始初始化音频进程1");
     // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
     juce::StringArray args{argv, argc};
     for (int i = 0; i < args.size(); i++) {

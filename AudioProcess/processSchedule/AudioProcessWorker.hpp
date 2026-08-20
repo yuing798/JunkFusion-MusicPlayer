@@ -3,6 +3,7 @@
 #include "juce_core/juce_core.h"
 #include "zmq.hpp"
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -16,6 +17,7 @@ private:
 
 public:
     AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort);
+    std::function<void(std::string)> onPlayNewSongInfoReceived;
 
     void run() override;
 };
@@ -52,7 +54,7 @@ public:
 
     ~AudioProcessWorker();
 
-    // 这两个本来就是完全供给外界调用的，放在这里只不过是用来集中管理
+    // 这两个本来就是完全供给外界调用的，放在这里只不过是用来集中管理,所以直接public就行
     std::unique_ptr<AudioProcessorPuller> receiver;
     std::unique_ptr<AudioProcessorPuber> sender;
 };
