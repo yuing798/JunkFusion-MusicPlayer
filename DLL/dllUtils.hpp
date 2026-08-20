@@ -16,3 +16,5 @@ juce::DynamicObject uint8t2Object(const char* str);
 const char* object2Uint8t(juce::DynamicObject::Ptr obj);
 
 juce::DynamicObject::Ptr charPtr2object(const char* ptr);
+
+void sendMessage2AudioProcess(juce::var obj);

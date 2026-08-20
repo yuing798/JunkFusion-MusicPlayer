@@ -11,6 +11,7 @@
 #include "processSchedule/OscReceiver.hpp"
 #include "zmq.hpp"
 #include <array>
+#include <atomic>
 #include <memory>
 #include <spdlog/logger.h>
 
@@ -22,8 +23,10 @@ private:
     std::unique_ptr<DeviceManager> mDeviceManager;
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
-    std::array<float, 44100> testArray;
-    int testArrayWritePtr{0};
+    // std::array<float, 44100> testArray;
+    // int testArrayWritePtr{0};
+
+    std::atomic<bool> playState{false}; // 播放还是暂停状态
 
 public:
     GodProcessor(juce::StringArray initArgs);
@@ -45,6 +48,9 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     juce::AudioProcessorEditor* createEditor() override { return nullptr; }
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+
+    void continuePlay() noexcept { playState.store(true); }
+    void pausePlay() noexcept { playState.store(false); }
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };

@@ -70,10 +70,16 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
         decoder.setNewPlayState(songPath);
     };
 
+    // 继续播放
+    mAudioProcessWorker->receiver->onContinuePlay = [this]() { continuePlay(); };
+    // 停止播放
+    mAudioProcessWorker->receiver->onPausePlay = [this]() { pausePlay(); };
+
     mDeviceManager->connectProcessor(this);
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
+    juce::ignoreUnused(maximumExpectedSamplesPerBlock);
     Utils::writeEmergencyLog("GodProcessor::prepareToPlay开始执行");
 
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
@@ -86,6 +92,9 @@ void GodProcessor::releaseResources() {}
 void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     buffer.clear();
     juce::ignoreUnused(midiMessages);
+
+    if (!playState.load()) return;
+
     decoderRingBuffer.popAudioData(buffer);
     // Utils::writeEmergencyLog("processBlock开转");
     // float volume{0.0f};

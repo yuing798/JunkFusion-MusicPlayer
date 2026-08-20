@@ -86,7 +86,16 @@ extern "C" {
         auto songPath = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(songPath));
-        auto jsonStr = juce::JSON::toString(obj).toStdString();
-        dllManager::getInstance().sendMessage2AudioProcess(jsonStr);
+        sendMessage2AudioProcess(obj);
+    }
+    void continuePlay() {
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(AudioDefs::play, "");
+        sendMessage2AudioProcess(obj);
+    }
+    void pausePlay() {
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(AudioDefs::pause, "");
+        sendMessage2AudioProcess(obj);
     }
 }

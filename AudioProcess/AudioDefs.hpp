@@ -12,4 +12,6 @@ namespace AudioDefs {
     static constexpr const char* oscPort = "--oscPort" ;
     static constexpr const char* errorPopupWindowMsg = "errorPopupWindowMsg" ;
     static constexpr const char* killAudioProcess = "killAudioProcess" ;
+    static constexpr const char* play = "play" ;
+    static constexpr const char* pause = "pause" ;
 }

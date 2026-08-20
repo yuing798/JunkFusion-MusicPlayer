@@ -27,6 +27,14 @@ class JunkFusionDLLBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
   late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
 
+  void continuePlay() {
+    return _continuePlay();
+  }
+
+  late final _continuePlayPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('continuePlay');
+  late final _continuePlay = _continuePlayPtr.asFunction<void Function()>();
+
   void dllInit(
     ffi.Pointer<ffi.Char> cacheDirId,
     ffi.Pointer<ffi.Char> exeDirPtr,
@@ -75,6 +83,15 @@ class JunkFusionDLLBindings {
       );
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  void pausePlay() {
+    return _pausePlay();
+  }
+
+  late final _pausePlayPtr = _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+    'pausePlay',
+  );
+  late final _pausePlay = _pausePlayPtr.asFunction<void Function()>();
 
   void playNewSong(int songId) {
     return _playNewSong(songId);

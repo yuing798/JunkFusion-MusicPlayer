@@ -165,11 +165,11 @@ void FFmpegDecoder::run() {
 
     while (!threadShouldExit()) {
 
-        while (!playState.load()) {
-            juce::Thread::sleep(10);
-            // pauseEvent.wait();
-            if (threadShouldExit()) return;
-        }
+        // while (!playState.load()) {
+        //     juce::Thread::sleep(10);
+        //     // pauseEvent.wait();
+        //     if (threadShouldExit()) return;
+        // }
 
         if (av_read_frame(inputContext, packet) != 0) {
             av_packet_unref(packet);
@@ -260,14 +260,14 @@ void FFmpegDecoder::run() {
 
             while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
                 // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
-                if (threadShouldExit() || !playState.load()) {
+                if (threadShouldExit()) {
                     break;
                 }
                 // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
                 juce::Thread::sleep(3);
             }
 
-            if (!threadShouldExit() && playState.load()) {
+            if (!threadShouldExit()) {
                 ringBuffer.pushAudioData(buffer);
             }
         }
@@ -342,7 +342,18 @@ void FFmpegDecoder::run() {
         av_freep(&outputDataArray[0]);
         av_freep(&outputDataArray);
 
-        ringBuffer.pushAudioData(buffer);
+        while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
+            // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
+            if (threadShouldExit()) {
+                break;
+            }
+            // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
+            juce::Thread::sleep(3);
+        }
+
+        if (!threadShouldExit()) {
+            ringBuffer.pushAudioData(buffer);
+        }
     }
 
     // ==========================================
@@ -385,7 +396,18 @@ void FFmpegDecoder::run() {
             av_freep(&flushData[0]);
             av_freep(&flushData);
 
-            ringBuffer.pushAudioData(flushBuffer);
+            while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
+                // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
+                if (threadShouldExit()) {
+                    break;
+                }
+                // 空间不足，让出 CPU 切片，睡眠 5 毫秒等待声卡消耗数据
+                juce::Thread::sleep(5);
+            }
+
+            if (!threadShouldExit()) {
+                ringBuffer.pushAudioData(flushBuffer);
+            }
         }
         // 释放 Flush 临时缓冲区
         av_freep(&flushData[0]);
@@ -409,7 +431,7 @@ void FFmpegDecoder::setNewPlayState(std::string songPath) {
     }
     currentTimeStamp = 0.0;
     path = songPath;
-    playState.store(true);
+    // playState.store(true);
     startThread();
     // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState结束");
 }

@@ -10,5 +10,7 @@
   "bufferSizeList":"",
   "oscPort":"--oscPort",
   "errorPopupWindowMsg":"",
-  "killAudioProcess":""
+  "killAudioProcess":"",
+  "play":"",
+  "pause":""
 }

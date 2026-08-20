@@ -1,4 +1,5 @@
 #include "./dllUtils.hpp"
+#include "dllManager.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <cstddef>
@@ -62,4 +63,9 @@ juce::DynamicObject::Ptr charPtr2object(const char* ptr) {
     juce::DynamicObject::Ptr obj = parsed.getDynamicObject();
 
     return obj;
+}
+
+void sendMessage2AudioProcess(juce::var obj) {
+    auto jsonStr{juce::JSON::toString(obj).toStdString()};
+    dllManager::getInstance().sendMessage2AudioProcess(jsonStr);
 }

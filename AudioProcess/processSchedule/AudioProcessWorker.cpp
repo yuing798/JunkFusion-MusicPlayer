@@ -48,6 +48,14 @@ void AudioProcessorPuller::run() {
                     spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
                     if (onPlayNewSongInfoReceived) onPlayNewSongInfoReceived(songPath);
                 }
+                if (jsonStr.hasProperty(AudioDefs::play)) {
+                    spdlog::get(LogAudioID)->debug("收到播放指令");
+                    if (onContinuePlay) onContinuePlay();
+                }
+                if (jsonStr.hasProperty(AudioDefs::pause)) {
+                    spdlog::get(LogAudioID)->debug("收到暂停指令");
+                    if (onPausePlay) onPausePlay();
+                }
             }
         }
     }

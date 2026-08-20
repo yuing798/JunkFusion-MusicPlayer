@@ -57,8 +57,15 @@ class PlaybackProvider extends ChangeNotifier {
 
   // 切换播放/暂停状态
   void togglePlayPause() {
+    // print("准备切换播放暂停状态");
     _isPlaying = !_isPlaying;
     notifyListeners();
+    if (!_isPlaying) {
+      //注意这里是切换完成后的状态
+      bindings.pausePlay();
+    } else {
+      bindings.continuePlay();
+    }
   }
 
   // 切换播放模式（循环 0 → 1 → 2 → 3 → 0 → ...）
