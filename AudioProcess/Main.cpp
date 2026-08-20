@@ -26,8 +26,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    juce::String commandLine = args.joinIntoString(" ");
-    Utils::writeEmergencyLog(commandLine.toRawUTF8());
+    // juce::String commandLine = args.joinIntoString(" ");
+    // Utils::writeEmergencyLog(commandLine.toRawUTF8());
 
     {
 
@@ -40,12 +40,12 @@ int main(int argc, char* argv[]) {
         auto logger{spdlog::get(LogAudioID)};
 
         logger->debug("音频进程开始阻塞");
-        Utils::writeEmergencyLog("音频进程开始阻塞");
+        // Utils::writeEmergencyLog("音频进程开始阻塞");
 
         juce::MessageManager::getInstance()->runDispatchLoop();
 
         logger->debug("音频进程准备销毁");
-        Utils::writeEmergencyLog("音频进程要死了!");
+        // Utils::writeEmergencyLog("音频进程要死了!");
     }
     spdlog::get(LogAudioID)
         ->debug("------------------------------------------------------------------------");

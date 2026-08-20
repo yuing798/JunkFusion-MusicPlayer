@@ -24,7 +24,7 @@ extern "C" {
 }
 
 FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b) : juce::Thread("Decoder"), ringBuffer(b) {
-    setPriority(juce::Thread::Priority::highest); // 最高优先级
+    setPriority(juce::Thread::Priority::high); // 高优先级
 }
 
 FFmpegDecoder::~FFmpegDecoder() { stopThread(2000); }
@@ -79,12 +79,12 @@ void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet juceLayout, double s) {
 
 void FFmpegDecoder::run() {
     spdlog::get(LogAudioID)->debug("开始新的解码线程");
-    Utils::writeEmergencyLog("开始新的解码线程");
+    // Utils::writeEmergencyLog("开始新的解码线程");
     av_log_set_level(AV_LOG_ERROR);
 
     AVFormatContext* inputContext{nullptr};
     if (path.empty()) {
-        Utils::writeEmergencyLog("无法找到歌曲文件");
+        // Utils::writeEmergencyLog("无法找到歌曲文件");
         if (sendErrorMsg) sendErrorMsg(std::string("无法找到当前文件信息，请检查文件路径:") + path);
         auto log = spdlog::get(LogAudioID);
         log->error("无法找到歌曲文件");
@@ -100,7 +100,7 @@ void FFmpegDecoder::run() {
     ); // 这个函数会同时进行内存分配
     Utils::writeEmergencyLog("avformat_open_input完成");
     if (result < 0) {
-        Utils::writeEmergencyLog("无法打开输入流");
+        // Utils::writeEmergencyLog("无法打开输入流");
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("打开多媒体文件失败:文件路径:") + path +
                                std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
@@ -113,7 +113,7 @@ void FFmpegDecoder::run() {
     result = avformat_find_stream_info(inputContext, nullptr);
     Utils::writeEmergencyLog("avformat_find_stream_info完成");
     if (result < 0) {
-        Utils::writeEmergencyLog("无法获取流信息");
+        // Utils::writeEmergencyLog("无法获取流信息");
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("获取音频流失败，请检查原始文件是否被篡改:") + path +
                                std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
@@ -125,7 +125,7 @@ void FFmpegDecoder::run() {
     auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)};
     Utils::writeEmergencyLog("av_find_best_stream完成");
     if (currentIndex < 0) {
-        Utils::writeEmergencyLog("无法获取音频流");
+        // Utils::writeEmergencyLog("无法获取音频流");
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("获取音频流失败，请检查原始文件是否被篡改:") + path +
                                std::string(" 错误原因:该文件不为音频文件");
@@ -161,104 +161,115 @@ void FFmpegDecoder::run() {
     // 输出数组指针
     juce::AudioBuffer<float> buffer;
     uint8_t** outputDataArray{nullptr};
-    Utils::writeEmergencyLog("ffmpeg上下文初始化完毕，准备进入帧循环1.0");
+    // Utils::writeEmergencyLog("ffmpeg上下文初始化完毕，准备进入帧循环1.0");
 
-    while (playState.load() == false) { // 直接空循环暂停得了
-    }
-    Utils::writeEmergencyLog("ffmpeg上下文初始化完毕，准备进入帧循环2.0");
+    while (!threadShouldExit()) {
 
-    while (av_read_frame(inputContext, packet) == 0) {
-        if (!threadShouldExit()) {
-            if (packet->stream_index != currentIndex) {
-                av_packet_unref(packet);
-                continue;
-            }
-            // 在音频中一个packet包含着多个frame，而视频只有一个frame
-            result = avcodec_send_packet(decoderContext, packet);
+        while (!playState.load()) {
+            juce::Thread::sleep(10);
+            // pauseEvent.wait();
+            if (threadShouldExit()) return;
+        }
+
+        if (av_read_frame(inputContext, packet) != 0) {
             av_packet_unref(packet);
-            if (result != 0) continue;
-            while (avcodec_receive_frame(decoderContext, frame) == 0) {
-                auto delayNumSamples = swr_get_delay(swrContext, frame->sample_rate);
-                int64_t numOutputSamples = av_rescale_rnd(
-                    delayNumSamples + frame->nb_samples,
-                    targetSampleRate,
-                    decoderPar->sample_rate,
-                    AV_ROUND_UP
-                );
-                buffer.setSize(//只分配第一次内存，第二次自动跳过
+            break;
+        } // 没有剩余的包了，直接退出
+
+        if (packet->stream_index != currentIndex) {
+            av_packet_unref(packet);
+            continue;
+        }
+        result = avcodec_send_packet(decoderContext, packet);
+        av_packet_unref(packet);
+        if (result != 0) continue;
+        while (avcodec_receive_frame(decoderContext, frame) == 0) {
+            auto delayNumSamples = swr_get_delay(swrContext, frame->sample_rate);
+            int64_t numOutputSamples = av_rescale_rnd(
+                delayNumSamples + frame->nb_samples,
+                targetSampleRate,
+                decoderPar->sample_rate,
+                AV_ROUND_UP
+            );
+            buffer.setSize(//只分配第一次内存，第二次自动跳过
                     targetChannelLayout.nb_channels, 
                     numOutputSamples, 
                     false, 
                     false, 
                     true
                 );//如果数组内的样本已经是numOutputSamples了就不会重新执行
-                int outputLineSize{0};
-                result = av_samples_alloc_array_and_samples(
-                    &outputDataArray, // 输出通道指针数组的起始地址
-                    &outputLineSize,  // 物理字节大小
-                    targetChannelLayout.nb_channels,
-                    numOutputSamples,
-                    AV_SAMPLE_FMT_FLTP,
-                    0
-                ); // 第二个参数和第四个参数的区别：nb_samples 是逻辑样本数（比如 1024
-                   // 个浮点样本）。
-                // linesize 是物理字节大小（比如对于 1024 个浮点样本，linesize 通常是 1024 * 4 =
-                // 4096 字节，但如果内存对齐强制要求 64 字节对齐，它可能是 4096 或 4096+）。
+            int outputLineSize{0};
+            result = av_samples_alloc_array_and_samples(
+                &outputDataArray, // 输出通道指针数组的起始地址
+                &outputLineSize,  // 物理字节大小
+                targetChannelLayout.nb_channels,
+                numOutputSamples,
+                AV_SAMPLE_FMT_FLTP,
+                0
+            ); // 第二个参数和第四个参数的区别：nb_samples 是逻辑样本数（比如 1024
+               // 个浮点样本）。
+            // linesize 是物理字节大小（比如对于 1024 个浮点样本，linesize 通常是 1024 * 4 =
+            // 4096 字节，但如果内存对齐强制要求 64 字节对齐，它可能是 4096 或 4096+）。
 
-                if (result < 0) {
-                    av_frame_unref(frame);
-                    av_freep(&outputDataArray[0]);
-                    av_freep(&outputDataArray);
-                    continue;
-                }
-
-                result = swr_convert(
-                    swrContext,
-                    outputDataArray,  // 这里面装的就是重采样后的PCM数据
-                    numOutputSamples, // 输出缓冲区的最大容量(理论最大值)
-                    static_cast<uint8_t**>(frame->data),
-                    frame->nb_samples
-                ); // 执行重采样，返回实际重采样完的样本点个数
-
-                av_frame_unref(frame); // 这时候frame已经没有用了
-                // 这个函数的目的是清空重置，而av_frame_free的作用是彻底删除
-                // 前面那个可以理解做清空数组，后面那个意味着连数组的内存也一起销毁
-
-                if (numOutputSamples <= 0) {
-                    // 没有数据，清理并继续
-                    av_freep(&outputDataArray[0]);
-                    av_freep(&outputDataArray);
-                    // outputDataArray[0] 指向的是真正的音频数据块，而
-                    // outputDataArray 本身是“存放这些指针的数组”（通常只有几十字节）
-                    // 所以需要先释放一级然后释放二级
-                    continue;
-                }
-
-                for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
-                    float* dest = buffer.getWritePointer(ch);
-                    const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
-
-                    float volume{0.0f};
-                    for (int i = 0; i < numOutputSamples; i++) {
-                        volume += src[i];
-                    }
-                    Utils::writeEmergencyLog(
-                        "第" + std::to_string(ch) + "通道的PCM裸流均值为" +
-                        std::to_string(volume / static_cast<float>(numOutputSamples))
-                    );
-
-                    std::memcpy(dest, src, numOutputSamples * sizeof(float));
-                }
+            if (result < 0) {
+                av_frame_unref(frame);
                 av_freep(&outputDataArray[0]);
                 av_freep(&outputDataArray);
+                continue;
+            }
 
+            result = swr_convert(
+                swrContext,
+                outputDataArray,  // 这里面装的就是重采样后的PCM数据
+                numOutputSamples, // 输出缓冲区的最大容量(理论最大值)
+                static_cast<uint8_t**>(frame->data),
+                frame->nb_samples
+            ); // 执行重采样，返回实际重采样完的样本点个数
+
+            av_frame_unref(frame); // 这时候frame已经没有用了
+            // 这个函数的目的是清空重置，而av_frame_free的作用是彻底删除
+            // 前面那个可以理解做清空数组，后面那个意味着连数组的内存也一起销毁
+
+            if (numOutputSamples <= 0) {
+                // 没有数据，清理并继续
+                av_freep(&outputDataArray[0]);
+                av_freep(&outputDataArray);
+                // outputDataArray[0] 指向的是真正的音频数据块，而
+                // outputDataArray 本身是“存放这些指针的数组”（通常只有几十字节）
+                // 所以需要先释放一级然后释放二级
+                continue;
+            }
+
+            for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
+                float* dest = buffer.getWritePointer(ch);
+                const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
+
+                // float volume{0.0f};
+                // for (int i = 0; i < numOutputSamples; i++) {
+                //     volume += src[i];
+                // }
+                // Utils::writeEmergencyLog(
+                //     "第" + std::to_string(ch) + "通道的PCM裸流均值为" +
+                //     std::to_string(volume / static_cast<float>(numOutputSamples))
+                // );
+
+                std::memcpy(dest, src, numOutputSamples * sizeof(float));
+            }
+            av_freep(&outputDataArray[0]);
+            av_freep(&outputDataArray);
+
+            while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
+                // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
+                if (threadShouldExit() || !playState.load()) {
+                    break;
+                }
+                // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
+                juce::Thread::sleep(3);
+            }
+
+            if (!threadShouldExit() && playState.load()) {
                 ringBuffer.pushAudioData(buffer);
             }
-        } else {
-            spdlog::get(LogAudioID)->debug("强行终止歌曲解码，准备播放下一首歌曲");
-            Utils::writeEmergencyLog("强行终止歌曲解码，准备播放下一首歌曲");
-            playState.store(false);
-            return;
         }
     }
 
@@ -390,15 +401,15 @@ void FFmpegDecoder::run() {
 }
 
 void FFmpegDecoder::setNewPlayState(std::string songPath) {
-    Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState开始");
+    // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState开始");
     if (isThreadRunning()) {
         stopThread(300);
         spdlog::get(LogAudioID)->debug("原有歌曲播放中，先把原来歌曲停止");
-        Utils::writeEmergencyLog("原有歌曲播放中，先把原来歌曲停止");
+        // Utils::writeEmergencyLog("原有歌曲播放中，先把原来歌曲停止");
     }
     currentTimeStamp = 0.0;
     path = songPath;
     playState.store(true);
     startThread();
-    Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState结束");
+    // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState结束");
 }

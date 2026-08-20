@@ -34,10 +34,10 @@ void AudioRingBuffer::pushAudioData(const juce::AudioBuffer<float>& data) {
 
     // 更新写指针
     fifo.finishedWrite(size1 + size2);
-    Utils::writeEmergencyLog("ffmpeg和processBlock中转站数据推入完毕");
+    // Utils::writeEmergencyLog("ffmpeg和processBlock中转站数据推入完毕");
 }
 void AudioRingBuffer::popAudioData(juce::AudioBuffer<float>& destBuffer) {
-    Utils::writeEmergencyLog("ffmpeg和processBlock中转站推出一帧数据");
+    // Utils::writeEmergencyLog("ffmpeg和processBlock中转站推出一帧数据");
     jassert(destBuffer.getNumChannels() == buffer.getNumChannels());
     const int numChannels = destBuffer.getNumChannels();
     const int numSamples = destBuffer.getNumSamples();

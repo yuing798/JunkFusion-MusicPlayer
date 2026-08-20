@@ -88,14 +88,14 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     juce::ignoreUnused(midiMessages);
     decoderRingBuffer.popAudioData(buffer);
     // Utils::writeEmergencyLog("processBlock开转");
-    float volume{0.0f};
-    for (int i = 0; i < buffer.getNumSamples(); i++) {
-        volume += buffer.getReadPointer(0)[i];
-    }
-    Utils::writeEmergencyLog(
-        "processBlock中的第一通道的音量平均值为" +
-        std::to_string((volume / static_cast<float>(buffer.getNumSamples())))
-    );
+    // float volume{0.0f};
+    // for (int i = 0; i < buffer.getNumSamples(); i++) {
+    //     volume += buffer.getReadPointer(0)[i];
+    // }
+    // Utils::writeEmergencyLog(
+    //     "processBlock中的第一通道的音量平均值为" +
+    //     std::to_string((volume / static_cast<float>(buffer.getNumSamples())))
+    // );
 }
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}
 void GodProcessor::getStateInformation(juce::MemoryBlock& destData) {}
