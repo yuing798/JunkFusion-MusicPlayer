@@ -30,8 +30,6 @@ void AudioPreProcess::prepareToPlay(
 
 void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
     buffer.clear();
-    mSongChangeDucks[0].tempBuffer.clear();
-    mSongChangeDucks[1].tempBuffer.clear();
 
     if (!isCrossFade) {
         // 交叉淡化的时候禁止播放暂停逻辑
@@ -48,6 +46,8 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
         }
         return;
     }
+    mSongChangeDucks[0].tempBuffer.clear();
+    mSongChangeDucks[1].tempBuffer.clear();
     mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(
         mSongChangeDucks[mainPlayDuckIndex].tempBuffer
     );
@@ -108,11 +108,19 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
 }
 
 void AudioPreProcess::playNewSong(std::string songPath) {
+
     mainPlayDuckIndex = !mainPlayDuckIndex;
 
+    if (!mSongChangeDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
+        // 只有主甲板在工作，副甲板完全没有在播放歌曲
+        smoothedPlayPause.setTargetValue(1.0f);
+        isFullMute = false;
+        isCrossFade = false;
+    } else {
+        isCrossFade = true;
+    }
     mSongChangeDucks[mainPlayDuckIndex].ringBuffer->reset();
     mSongChangeDucks[mainPlayDuckIndex].decoder->playNewSong(songPath);
-    isCrossFade = true;
     currentSongChangeCrossFadeIndex = 0;
 }
 void AudioPreProcess::pausePlay() {
