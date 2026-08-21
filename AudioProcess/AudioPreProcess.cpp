@@ -19,12 +19,10 @@ void AudioPreProcess::prepareToPlay(
     for (auto& duck : mSongChangeDucks) {
         duck.decoder->prepareToPlay(outputLayout, sampleRate);
         duck.ringBuffer->prepareToPlay(outputLayout.size(), sampleRate);
-        // duck.smoothedFade.reset(sampleRate, mSmoothSongChangeMs / 1000.0);
-        // duck.smoothedFade.setCurrentAndTargetValue(0.0f);
         duck.tempBuffer.setSize(outputLayout.size(), maximumExpectedSamplesPerBlock);
     }
     smoothedSongChangeCrossFadeMs.reset(sampleRate, 0.002f);
-    smoothedSongChangeCrossFadeMs.setCurrentAndTargetValue(500.0f); // 默认500毫秒长度的交叉淡化区
+    smoothedSongChangeCrossFadeMs.setCurrentAndTargetValue(100.0f); // 默认长度的交叉淡化区
 }
 
 void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
@@ -48,8 +46,10 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             smoothedSongChangeCrossFadeMs.getNextValue(); // 交叉淡化区长度(毫秒数)
         if (!isCrossFade) continue;
         // 交叉淡化区域的实际样本数
-        int currentSongChangeCrossFadeSamples =
-            currentSongChangeCrossFadeMs * mSampleRate / 1000.0f;
+        int currentSongChangeCrossFadeSamples{
+            static_cast<int>(currentSongChangeCrossFadeMs * mSampleRate / 1000.0f)
+        };
+
         // 交叉淡化程度
         float fadeProcess{
             (float)currentSongChangeCrossFadeIndex / (float)currentSongChangeCrossFadeSamples
@@ -66,25 +66,21 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             songChangeCosTable.getNumSamples(),
             fadeProcess
         )};
-        if (isCrossFade) {
+        // if (isCrossFade) {
 
-            for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
-                auto* originPtr{buffer.getWritePointer(ch)};
-                auto* mainDuckPtr{
-                    mSongChangeDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)
-                };
-                auto* deputyDuckPtr{
-                    mSongChangeDucks[!mainPlayDuckIndex].tempBuffer.getReadPointer(ch)
-                };
-                originPtr[i] = mainDuckPtr[i] * sinGainValue + deputyDuckPtr[i] * cosGainValue;
-            }
-            currentSongChangeCrossFadeIndex++;
-            if (fadeProcess >= 1.0f) {
-                mSongChangeDucks[!mainPlayDuckIndex].decoder->stopThread(200);
-                currentSongChangeCrossFadeIndex = 0;
-                isCrossFade = false;
-            }
+        for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
+            auto* originPtr{buffer.getWritePointer(ch)};
+            auto* mainDuckPtr{mSongChangeDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)};
+            auto* deputyDuckPtr{mSongChangeDucks[!mainPlayDuckIndex].tempBuffer.getReadPointer(ch)};
+            originPtr[i] = mainDuckPtr[i] * sinGainValue + deputyDuckPtr[i] * cosGainValue;
         }
+        currentSongChangeCrossFadeIndex++;
+        if (fadeProcess >= 1.0f) {
+            mSongChangeDucks[!mainPlayDuckIndex].decoder->stopThread(50);
+            currentSongChangeCrossFadeIndex = 0;
+            isCrossFade = false;
+        }
+        // }
     }
 }
 
