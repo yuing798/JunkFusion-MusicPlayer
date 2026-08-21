@@ -1,5 +1,6 @@
 #include "./GodProcessor.hpp"
 #include "./AudioDefs.hpp"
+#include "AudioRingBuffer.hpp"
 #include "AudioUtils.hpp"
 #include "DeviceManager.hpp"
 #include "constants.h"
@@ -9,12 +10,12 @@
 #include "otherUtils.hpp"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include "processSchedule/OscReceiver.hpp"
+#include <cstddef>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <string>
 
-GodProcessor::GodProcessor(juce::StringArray initArgs)
-    : decoderRingBuffer(1000), decoder(decoderRingBuffer) {
+GodProcessor::GodProcessor(juce::StringArray initArgs) {
 
     Utils::writeEmergencyLog("开始执行GodProcessor的构造函数");
 
@@ -79,23 +80,31 @@ GodProcessor::GodProcessor(juce::StringArray initArgs)
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
-    juce::ignoreUnused(maximumExpectedSamplesPerBlock);
-    Utils::writeEmergencyLog("GodProcessor::prepareToPlay开始执行");
+    mSampleRate = sampleRate;
 
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
-    decoderRingBuffer.prepareToPlay(outputLayout.size(), sampleRate);
-    decoder.prepareToPlay(outputLayout, sampleRate);
-    Utils::writeEmergencyLog("GodProcessor::prepareToPlay执行完成");
+    mNumChannels = outputLayout.size();
+    mPreProcess.prepareToPlay(outputLayout, sampleRate, maximumExpectedSamplesPerBlock);
+
+    // Utils::writeEmergencyLog("GodProcessor::prepareToPlay执行完成");
 }
 
 void GodProcessor::releaseResources() {}
 void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
-    buffer.clear();
+    buffer.clear(); // 防噪音
     juce::ignoreUnused(midiMessages);
+
+    mPreProcess.processBlock(buffer);
 
     if (!playState.load()) return;
 
-    decoderRingBuffer.popAudioData(buffer);
+    // if (isSongChanging.load()) {
+    //     decoderRingBuffer.clip2Smooth(mSmoothMs);
+    //     isSongChanging.store(false); // 切换时的淡出效果
+    //     // return;
+    // }
+
+    // decoderRingBuffer.popAudioData(buffer);
     // Utils::writeEmergencyLog("processBlock开转");
     // float volume{0.0f};
     // for (int i = 0; i < buffer.getNumSamples(); i++) {

@@ -1,11 +1,9 @@
 #include "AudioDefs.hpp"
 #include "AudioUtils.hpp"
-#include "DeviceManager.hpp"
 #include "GodProcessor.hpp"
 #include "constants.h"
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
-#include "processSchedule/AudioProcessWorker.hpp"
 #include <SQLiteCpp/Database.h>
 #include <juce_core/juce_core.h>
 #include <memory>

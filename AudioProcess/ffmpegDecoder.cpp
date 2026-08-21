@@ -23,7 +23,8 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-FFmpegDecoder::FFmpegDecoder(AudioRingBuffer& b) : juce::Thread("Decoder"), ringBuffer(b) {
+FFmpegDecoder::FFmpegDecoder(AudioRingBuffer* ringBuffer)
+    : juce::Thread("Decoder"), mRingBuffer(ringBuffer) {
     setPriority(juce::Thread::Priority::high); // 高优先级
 }
 
@@ -78,6 +79,7 @@ void FFmpegDecoder::prepareToPlay(juce::AudioChannelSet juceLayout, double s) {
 }
 
 void FFmpegDecoder::run() {
+
     spdlog::get(LogAudioID)->debug("开始新的解码线程");
     // Utils::writeEmergencyLog("开始新的解码线程");
     av_log_set_level(AV_LOG_ERROR);
@@ -164,12 +166,6 @@ void FFmpegDecoder::run() {
     // Utils::writeEmergencyLog("ffmpeg上下文初始化完毕，准备进入帧循环1.0");
 
     while (!threadShouldExit()) {
-
-        // while (!playState.load()) {
-        //     juce::Thread::sleep(10);
-        //     // pauseEvent.wait();
-        //     if (threadShouldExit()) return;
-        // }
 
         if (av_read_frame(inputContext, packet) != 0) {
             av_packet_unref(packet);
@@ -258,7 +254,7 @@ void FFmpegDecoder::run() {
             av_freep(&outputDataArray[0]);
             av_freep(&outputDataArray);
 
-            while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
+            while (mRingBuffer->getFreeSpace() < buffer.getNumSamples()) {
                 // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
                 if (threadShouldExit()) {
                     break;
@@ -268,7 +264,7 @@ void FFmpegDecoder::run() {
             }
 
             if (!threadShouldExit()) {
-                ringBuffer.pushAudioData(buffer);
+                mRingBuffer->pushAudioData(buffer);
             }
         }
     }
@@ -342,7 +338,7 @@ void FFmpegDecoder::run() {
         av_freep(&outputDataArray[0]);
         av_freep(&outputDataArray);
 
-        while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
+        while (mRingBuffer->getFreeSpace() < buffer.getNumSamples()) {
             // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
             if (threadShouldExit()) {
                 break;
@@ -352,7 +348,7 @@ void FFmpegDecoder::run() {
         }
 
         if (!threadShouldExit()) {
-            ringBuffer.pushAudioData(buffer);
+            mRingBuffer->pushAudioData(buffer);
         }
     }
 
@@ -396,7 +392,7 @@ void FFmpegDecoder::run() {
             av_freep(&flushData[0]);
             av_freep(&flushData);
 
-            while (ringBuffer.getFreeSpace() < buffer.getNumSamples()) {
+            while (mRingBuffer->getFreeSpace() < buffer.getNumSamples()) {
                 // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
                 if (threadShouldExit()) {
                     break;
@@ -406,7 +402,7 @@ void FFmpegDecoder::run() {
             }
 
             if (!threadShouldExit()) {
-                ringBuffer.pushAudioData(flushBuffer);
+                mRingBuffer->pushAudioData(flushBuffer);
             }
         }
         // 释放 Flush 临时缓冲区
@@ -422,16 +418,18 @@ void FFmpegDecoder::run() {
     avformat_close_input(&inputContext);
 }
 
-void FFmpegDecoder::setNewPlayState(std::string songPath) {
-    // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState开始");
-    if (isThreadRunning()) {
-        stopThread(300);
-        spdlog::get(LogAudioID)->debug("原有歌曲播放中，先把原来歌曲停止");
-        // Utils::writeEmergencyLog("原有歌曲播放中，先把原来歌曲停止");
-    }
-    currentTimeStamp = 0.0;
+// void FFmpegDecoder::setNewPlayState(std::string songPath) {
+//     // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState开始");
+//     if (isThreadRunning()) {
+//         stopThread(300);
+//         spdlog::get(LogAudioID)->debug("原有歌曲播放中，先把原来歌曲停止");
+//     }
+//     currentTimeStamp = 0.0;
+//     path = songPath;
+//     startThread();
+// }
+
+void FFmpegDecoder::playNewSong(std::string songPath) {
     path = songPath;
-    // playState.store(true);
     startThread();
-    // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState结束");
 }

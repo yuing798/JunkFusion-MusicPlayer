@@ -19,6 +19,7 @@ target_sources(JunkFusionAudioProcess
         ffmpegDecoder.cpp
         GodProcessor.cpp
         AudioUtils.cpp
+        AudioPreProcess.cpp
 )
 
 add_subdirectory(processSchedule)

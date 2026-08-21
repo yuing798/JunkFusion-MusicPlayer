@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AudioPreProcess.hpp"
 #include "AudioRingBuffer.hpp"
 #include "DeviceManager.hpp"
 #include "constants.h"
@@ -17,16 +18,17 @@
 
 class GodProcessor : public juce::AudioProcessor {
 private:
-    AudioRingBuffer decoderRingBuffer;
-    FFmpegDecoder decoder;
     std::unique_ptr<OscReceiver> mOscReceiver;
     std::unique_ptr<DeviceManager> mDeviceManager;
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
-    // std::array<float, 44100> testArray;
-    // int testArrayWritePtr{0};
 
     std::atomic<bool> playState{false}; // 播放还是暂停状态
+
+    AudioPreProcess mPreProcess; // 音频预处理
+
+    double mSampleRate{44100.0};
+    int mNumChannels{2};
 
 public:
     GodProcessor(juce::StringArray initArgs);
@@ -41,9 +43,19 @@ public:
     bool hasEditor() const override { return false; }
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
-    void setCurrentProgram(int index) override { return; }
-    const juce::String getProgramName(int index) override { return "JunkFusion"; }
-    void changeProgramName(int index, const juce::String& newName) override { return; }
+    void setCurrentProgram(int index) override {
+        juce::ignoreUnused(index);
+        return;
+    }
+    const juce::String getProgramName(int index) override {
+        juce::ignoreUnused(index);
+        return "JunkFusion";
+    }
+    void changeProgramName(int index, const juce::String& newName) override {
+        juce::ignoreUnused(index);
+        juce::ignoreUnused(newName);
+        return;
+    }
     void setStateInformation(const void* data, int sizeInBytes) override;
     void getStateInformation(juce::MemoryBlock& destData) override;
     juce::AudioProcessorEditor* createEditor() override { return nullptr; }

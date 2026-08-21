@@ -23,9 +23,15 @@ public:
     // 消费者：JUCE 的 processBlock 调用此函数捞出数据播放
     void popAudioData(juce::AudioBuffer<float>& destBuffer);
 
+    void reset();
+
+    // void clip2Smooth(double smoothMs); // 将除了用于平滑处理外的部分都置为0,参数，平滑区的长度
+
 private:
     juce::AbstractFifo fifo{1};
     juce::AudioBuffer<float> buffer;
+    double mSampleRate{44100.0};
+    int mNumChannels{2};
     double mBufferMs{0.0};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioRingBuffer)
