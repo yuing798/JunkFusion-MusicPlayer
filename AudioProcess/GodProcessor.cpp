@@ -92,9 +92,6 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
 void GodProcessor::releaseResources() {}
 void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     juce::ignoreUnused(midiMessages);
-    buffer.clear();
-
-    // if (!playState.load()) return;
 
     mPreProcess.processBlock(buffer);
 

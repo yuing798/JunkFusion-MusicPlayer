@@ -83,9 +83,10 @@ extern "C" {
     }
     void playNewSong(int songId) {
         // 闪退的原因是下面这一句
-        auto songPath = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
+        auto info = dllManager::getInstance().getSongsManager().getPlayInfoBySongId(songId);
         juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(songPath));
+        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(info.path));
+        obj.getDynamicObject()->setProperty(AudioDefs::songDuration, info.duration);
         sendMessage2AudioProcess(obj);
     }
     void continuePlay() {

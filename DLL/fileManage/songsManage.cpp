@@ -407,28 +407,30 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
     return result;
 }
 
-std::string SongsManage::getPathBySongId(int64_t songId) {
+PlayInfo SongsManage::getPlayInfoBySongId(int64_t songId) {
     spdlog::get(LogDllID)->debug("开始根据id搜索歌曲路径");
-    std::string path;
+    PlayInfo info;
     try {
         SQLite::Statement sql(
             db,
             R"(
-            SELECT filePath
+            SELECT filePath, duration
             FROM songs WHERE songId = :songId)"
         );
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
-            path = sql.getColumn("filePath").getString();
+            info.path = sql.getColumn("filePath").getString();
+            info.duration = sql.getColumn("duration").getDouble();
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, path);
-        return path;
+        spdlog::get(LogDllID)
+            ->debug("成功获取:id:{},路径:{},时长:{}", songId, info.path, info.duration);
+        return info;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};
         logger->error("SongsManage::getPlayInfoBySongId(int64_t songId)发生错误:{}", e.what());
-        return "";
+        return {};
     }
 }
 

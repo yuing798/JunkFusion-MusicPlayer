@@ -13,5 +13,6 @@
   "killAudioProcess":"",
   "play":"",
   "pause":"",
-  "songChangeCrossFadeLength":""
+  "songChangeCrossFadeLength":"",
+  "songDuration":""//歌曲时长
 }

@@ -29,6 +29,7 @@ private:
 
     double mSampleRate{44100.0};
     int mNumChannels{2};
+    double currentTimeStamp{0.0};
 
 public:
     GodProcessor(juce::StringArray initArgs);
@@ -60,9 +61,6 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     juce::AudioProcessorEditor* createEditor() override { return nullptr; }
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-
-    // void continuePlay() noexcept { playState.store(true); }
-    // void pausePlay() noexcept { playState.store(false); }
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };
