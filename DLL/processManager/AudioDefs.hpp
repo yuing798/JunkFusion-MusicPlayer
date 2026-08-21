@@ -14,4 +14,5 @@ namespace AudioDefs {
     static constexpr const char* killAudioProcess = "killAudioProcess" ;
     static constexpr const char* play = "play" ;
     static constexpr const char* pause = "pause" ;
+    static constexpr const char* songChangeCrossFadeLength = "songChangeCrossFadeLength" ;
 }

@@ -2,13 +2,6 @@
 #include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_core/juce_core.h"
 
-// 此处放置所有模块都需要用到的常量定义
-static constexpr float two_pi{2.0f * 3.14159265358979323846f};
-static constexpr float pi{3.14159265358979323846f};
-static constexpr float half_pi{1.57079632679f};
-static constexpr double defaultSampleRate{44100.0};
-static constexpr float Exp{2.718281828459f};
-
 // attachment别名
 using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;

@@ -16,9 +16,9 @@ extern "C" {
 
 class FFmpegDecoder : public juce::Thread {
 private:
-    AVChannelLayout targetChannelLayout;        // 输出通道布局
-    double targetSampleRate{defaultSampleRate}; // 输出采样率
-    std::string path;                           // 当前正在播放的歌曲路径
+    AVChannelLayout targetChannelLayout; // 输出通道布局
+    double targetSampleRate{44100.0};    // 输出采样率
+    std::string path;                    // 当前正在播放的歌曲路径
     AudioRingBuffer* mRingBuffer;
     double currentTimeStamp{0.0}; // 当前播放到了哪里
 

@@ -47,22 +47,21 @@ void AudioUtils::initAudioLogger(juce::File cacheDir) {
     spdlog::get(LogAudioID)->debug("音频进程日志初始化完成");
 }
 
-juce::AudioBuffer<float> AudioUtils::generateSinTable(int num4pi) {
-    int tableSize{1024};
+juce::AudioBuffer<float> AudioUtils::generateSinTable(double num4pi) {
     juce::AudioBuffer<float> tableBuffer;
     tableBuffer.clear();
-    tableBuffer.setSize(1, tableSize);
+    tableBuffer.setSize(1, AudioUtils::lookupTableSize);
 
-    for (int index = 0; index < tableSize; index++) {
+    for (int index = 0; index < AudioUtils::lookupTableSize; index++) {
 
-        float phase =
-            (static_cast<float>(index) / tableSize) * num4pi * juce::MathConstants<float>::pi;
+        float phase = (static_cast<float>(index) / AudioUtils::lookupTableSize) * num4pi *
+                      juce::MathConstants<float>::pi;
         tableBuffer.getWritePointer(0)[index] = std::sin(phase);
     }
     return tableBuffer;
 }
 
-juce::AudioBuffer<float> AudioUtils::generateCosTable(int num4pi) {
+juce::AudioBuffer<float> AudioUtils::generateCosTable(double num4pi) {
     int tableSize{1024};
     juce::AudioBuffer<float> tableBuffer;
     tableBuffer.clear();
@@ -75,4 +74,39 @@ juce::AudioBuffer<float> AudioUtils::generateCosTable(int num4pi) {
         tableBuffer.getWritePointer(0)[index] = std::cos(phase);
     }
     return tableBuffer;
+}
+
+float AudioUtils::getLinearInterpolator(const float* data, int size, float process) {
+    int index1 = static_cast<int>(process * size);
+    int index2 = getCircularBufferIndex(index1 + 1, size);
+    float fraction = process - index1;
+
+    return (1.0f - fraction) * data[index1] + fraction * data[index2];
+}
+
+float AudioUtils::getLagrangeInterpolator(const float* data, int size, float process) {
+    // 原理：用一个 N 阶多项式穿过 N+1 个最近的样本点，然后取多项式在所需延迟位置的值。
+    // 奇数阶的拉格朗日插值（如 3 阶，用 4 个样本）相当于一个对称的 FIR 滤波器，其系数是分数延迟 d
+    // 的简单多项式。
+    int intIndex = static_cast<int>(process * size);
+    float distanceIndex2IntIndex = process * size - intIndex;
+    float nagetive1 = data[getCircularBufferIndex(intIndex - 1, size)];
+    float intSample = data[intIndex];
+    float positive1 = data[getCircularBufferIndex(intIndex + 1, size)];
+    float positive2 = data[getCircularBufferIndex(intIndex + 2, size)];
+
+    float outputSample = 0.0f;
+    float distanceIndex2IntIndexMinus1 = distanceIndex2IntIndex - 1;
+    float distanceIndex2IntIndexMinus2 = distanceIndex2IntIndex - 2;
+    float distanceIndex2IntIndexPlus1 = distanceIndex2IntIndex + 1;
+
+    outputSample -= distanceIndex2IntIndex * distanceIndex2IntIndexMinus1 *
+                    distanceIndex2IntIndexMinus2 * 0.16667f * nagetive1;
+    outputSample += distanceIndex2IntIndexPlus1 * distanceIndex2IntIndexMinus1 *
+                    distanceIndex2IntIndexMinus2 * 0.5f * intSample;
+    outputSample -= distanceIndex2IntIndexPlus1 * distanceIndex2IntIndex *
+                    distanceIndex2IntIndexMinus2 * 0.5f * positive1;
+    outputSample += distanceIndex2IntIndexPlus1 * distanceIndex2IntIndex *
+                    distanceIndex2IntIndexMinus1 * 0.16667f * positive2;
+    return outputSample;
 }

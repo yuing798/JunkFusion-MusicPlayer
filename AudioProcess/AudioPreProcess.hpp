@@ -8,19 +8,27 @@
 // 该类实现音频的预处理，包括解码和双甲板的交叉淡化逻辑
 class AudioPreProcess {
 private:
-    std::atomic<bool> isSongChanging{false}; // 歌曲是否正在切换中，要加入平滑处理
+    // std::atomic<bool> isSongChanging{false}; // 歌曲是否正在切换中，要加入平滑处理
 
-    double mSmoothSongChangeMs{800.0}; // 歌曲切换或者暂停时的平滑毫秒数(0-1秒)
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>
+        smoothedSongChangeCrossFadeMs; // 对应UI用来处理交叉淡化区长度的滑块
+
+    juce::AudioBuffer<float> songChangeSinTable; // 淡入专用
+    juce::AudioBuffer<float> songChangeCosTable; // 淡出专用
+    int currentSongChangeCrossFadeIndex{0};      // 交叉淡化区的查表索引
+    bool isCrossFade{false};                     // 是否在交叉淡化区
 
     struct SongChangeDuck { // 针对歌曲切换的时候的交叉淡化处理
         juce::AudioBuffer<float> tempBuffer;
-        juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>
-            smoothedFade; // 淡入淡出时的平滑器
         std::unique_ptr<FFmpegDecoder> decoder;
         std::unique_ptr<AudioRingBuffer> ringBuffer;
+
+        // FadeState fadeState{FadeState::beginFadeIn};
     };
     std::array<SongChangeDuck, 2> mSongChangeDucks;
     int mainPlayDuckIndex{1}; // 主要是哪个duck在工作
+
+    double mSampleRate{44100.0};
 
 public:
     AudioPreProcess();

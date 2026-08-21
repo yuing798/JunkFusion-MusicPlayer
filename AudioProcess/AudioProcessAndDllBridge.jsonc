@@ -12,5 +12,6 @@
   "errorPopupWindowMsg":"",
   "killAudioProcess":"",
   "play":"",
-  "pause":""
+  "pause":"",
+  "songChangeCrossFadeLength":""
 }

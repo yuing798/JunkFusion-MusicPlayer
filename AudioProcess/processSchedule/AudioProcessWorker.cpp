@@ -56,6 +56,12 @@ void AudioProcessorPuller::run() {
                     spdlog::get(LogAudioID)->debug("收到暂停指令");
                     if (onPausePlay) onPausePlay();
                 }
+                // if (jsonStr.hasProperty(AudioDefs::songChangeCrossFadeLength)) {
+                //     int songChangeCrossFadeLength = jsonStr.getDynamicObject()->getProperty(
+                //         AudioDefs::songChangeCrossFadeLength
+                //     );
+
+                // }//这个应该改为使用osc接收
             }
         }
     }
