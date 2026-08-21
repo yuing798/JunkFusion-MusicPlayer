@@ -17,6 +17,10 @@ DeviceManager::DeviceManager(juce::File configFile) : mConfigFile(configFile) {
     Utils::writeEmergencyLog("准备初始化声卡配置");
 
     juce::String error = mManager.initialise(0, 256, setupXml.get(), true);
+    // if (error.isNotEmpty()) {
+    //     spdlog::get(LogAudioID)->error("声卡初始化错误!原因:{}", error.toStdString());
+    //     // mManager.initialise(0,256,nullptr)
+    // }
     currentSetup = mManager.getAudioDeviceSetup();
     // mManager.setAudioDeviceSetup(mManager.getAudioDeviceSetup(), true);
     // setupXml = mManager.createStateXml();
@@ -32,20 +36,6 @@ DeviceManager::DeviceManager(juce::File configFile) : mConfigFile(configFile) {
     // {
     //     currentSetup.bufferSize = 1920;
     //     // 这个函数在应用第一次开启的时候是没有用的，只有真正改变了数值大小才有用
-    //     mManager.setAudioDeviceSetup(currentSetup, true);
-    //     setupXml = mManager.createStateXml();
-    //     saveSetupXml2File();
-    // }
-
-    // {
-    //     currentSetup.bufferSize = 441;
-    //     mManager.setAudioDeviceSetup(currentSetup, true);
-    //     setupXml = mManager.createStateXml();
-    //     saveSetupXml2File();
-    // }
-
-    // {
-    //     currentSetup.bufferSize = 1920;
     //     mManager.setAudioDeviceSetup(currentSetup, true);
     //     setupXml = mManager.createStateXml();
     //     saveSetupXml2File();

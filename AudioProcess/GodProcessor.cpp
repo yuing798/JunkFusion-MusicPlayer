@@ -72,9 +72,9 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     };
 
     // 继续播放
-    mAudioProcessWorker->receiver->onContinuePlay = [this]() { continuePlay(); };
+    mAudioProcessWorker->receiver->onContinuePlay = [this]() { mPreProcess.continuePlay(); };
     // 停止播放
-    mAudioProcessWorker->receiver->onPausePlay = [this]() { pausePlay(); };
+    mAudioProcessWorker->receiver->onPausePlay = [this]() { mPreProcess.pausePlay(); };
 
     mDeviceManager->connectProcessor(this);
 }
@@ -94,7 +94,7 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     juce::ignoreUnused(midiMessages);
     buffer.clear();
 
-    if (!playState.load()) return;
+    // if (!playState.load()) return;
 
     mPreProcess.processBlock(buffer);
 

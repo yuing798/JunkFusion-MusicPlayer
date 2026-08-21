@@ -23,7 +23,7 @@ private:
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
 
-    std::atomic<bool> playState{false}; // 播放还是暂停状态
+    // std::atomic<bool> playState{false}; // 播放还是暂停状态
 
     AudioPreProcess mPreProcess; // 音频预处理
 
@@ -61,8 +61,8 @@ public:
     juce::AudioProcessorEditor* createEditor() override { return nullptr; }
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
-    void continuePlay() noexcept { playState.store(true); }
-    void pausePlay() noexcept { playState.store(false); }
+    // void continuePlay() noexcept { playState.store(true); }
+    // void pausePlay() noexcept { playState.store(false); }
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };

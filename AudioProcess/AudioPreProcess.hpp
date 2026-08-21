@@ -1,9 +1,11 @@
 #pragma once
 
 #include "AudioRingBuffer.hpp"
+#include "constants.h"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include <atomic>
+#include <spdlog/spdlog.h>
 
 // 该类实现音频的预处理，包括解码和双甲板的交叉淡化逻辑
 class AudioPreProcess {
@@ -11,7 +13,8 @@ private:
     // std::atomic<bool> isSongChanging{false}; // 歌曲是否正在切换中，要加入平滑处理
 
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>
-        smoothedSongChangeCrossFadeMs; // 对应UI用来处理交叉淡化区长度的滑块
+        smoothedSongChangeCrossFadeMs, // 对应UI用来处理交叉淡化区长度的滑块
+        smoothedPlayPause;             // 设置播放暂停
 
     juce::AudioBuffer<float> songChangeSinTable;         // 淡入专用
     juce::AudioBuffer<float> songChangeCosTable;         // 淡出专用
@@ -30,6 +33,8 @@ private:
 
     double mSampleRate{44100.0};
 
+    std::atomic<bool> isFullMute{true}; // 当前是否处于完全静音状态
+
 public:
     AudioPreProcess();
     void prepareToPlay(
@@ -39,4 +44,6 @@ public:
     );
     void processBlock(juce::AudioBuffer<float>& buffer);
     void playNewSong(std::string songpath);
+    void continuePlay();
+    void pausePlay();
 };

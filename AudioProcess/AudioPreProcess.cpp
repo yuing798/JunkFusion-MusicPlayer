@@ -24,6 +24,8 @@ void AudioPreProcess::prepareToPlay(
     }
     smoothedSongChangeCrossFadeMs.reset(sampleRate, 0.002f);
     smoothedSongChangeCrossFadeMs.setCurrentAndTargetValue(300.0f); // 默认长度的交叉淡化区
+    smoothedPlayPause.reset(sampleRate, 0.5f);
+    smoothedPlayPause.setCurrentAndTargetValue(0.0f);
 }
 
 void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
@@ -31,19 +33,30 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
     mSongChangeDucks[0].tempBuffer.clear();
     mSongChangeDucks[1].tempBuffer.clear();
 
-    if (isCrossFade) {
-        mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(
-            mSongChangeDucks[mainPlayDuckIndex].tempBuffer
-        );
-        mSongChangeDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(
-            mSongChangeDucks[!mainPlayDuckIndex].tempBuffer
-        );
-    } else {
+    if (!isCrossFade) {
+        // 交叉淡化的时候禁止播放暂停逻辑
+        if (isFullMute) return;
         mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(buffer);
+        for (int i = 0; i < buffer.getNumSamples(); i++) {
+            smoothedSongChangeCrossFadeMs.getNextValue();
+            auto currentPlayPauseGain{smoothedPlayPause.getNextValue()};
+            if (currentPlayPauseGain == 0) isFullMute = true;
+            for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
+                auto* originPtr{buffer.getWritePointer(ch)};
+                originPtr[i] *= currentPlayPauseGain;
+            }
+        }
         return;
     }
+    mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(
+        mSongChangeDucks[mainPlayDuckIndex].tempBuffer
+    );
+    mSongChangeDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(
+        mSongChangeDucks[!mainPlayDuckIndex].tempBuffer
+    );
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
+        // smoothedPlayPause.getNextValue();
         float currentSongChangeCrossFadeMs =
             smoothedSongChangeCrossFadeMs.getNextValue(); // 交叉淡化区长度(毫秒数)
         // if (!isCrossFade) continue;
@@ -101,4 +114,14 @@ void AudioPreProcess::playNewSong(std::string songPath) {
     mSongChangeDucks[mainPlayDuckIndex].decoder->playNewSong(songPath);
     isCrossFade = true;
     currentSongChangeCrossFadeIndex = 0;
+}
+void AudioPreProcess::pausePlay() {
+    // spdlog::get(LogAudioID)->debug("AudioPreProcess准备暂停播放");
+
+    smoothedPlayPause.setTargetValue(0.0f);
+}
+void AudioPreProcess::continuePlay() {
+    // spdlog::get(LogAudioID)->debug("AudioPreProcess准备继续播放");
+    smoothedPlayPause.setTargetValue(1.0f);
+    isFullMute = false;
 }
