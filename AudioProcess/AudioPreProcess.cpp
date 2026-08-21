@@ -31,7 +31,7 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             if (currentFadeValue == 0) {
                 if (duck.decoder->isThreadRunning()) {
                     // 平滑增益变化后等于0且正在运行说明在淡出区的边缘
-                    duck.decoder->startThread();
+                    duck.decoder->stopThread(200);
                 } else {
                     continue;
                 }

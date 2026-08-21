@@ -1,6 +1,7 @@
 #include "./AudioUtils.hpp"
 #include "AudioDefs.hpp"
 #include "constants.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include <memory>
 #include <spdlog/async.h>
@@ -44,4 +45,34 @@ void AudioUtils::initAudioLogger(juce::File cacheDir) {
         spdlog::register_logger(audioLogger);
     }
     spdlog::get(LogAudioID)->debug("音频进程日志初始化完成");
+}
+
+juce::AudioBuffer<float> AudioUtils::generateSinTable(int num4pi) {
+    int tableSize{1024};
+    juce::AudioBuffer<float> tableBuffer;
+    tableBuffer.clear();
+    tableBuffer.setSize(1, tableSize);
+
+    for (int index = 0; index < tableSize; index++) {
+
+        float phase =
+            (static_cast<float>(index) / tableSize) * num4pi * juce::MathConstants<float>::pi;
+        tableBuffer.getWritePointer(0)[index] = std::sin(phase);
+    }
+    return tableBuffer;
+}
+
+juce::AudioBuffer<float> AudioUtils::generateCosTable(int num4pi) {
+    int tableSize{1024};
+    juce::AudioBuffer<float> tableBuffer;
+    tableBuffer.clear();
+    tableBuffer.setSize(1, tableSize);
+
+    for (int index = 0; index < tableSize; index++) {
+
+        float phase =
+            (static_cast<float>(index) / tableSize) * num4pi * juce::MathConstants<float>::pi;
+        tableBuffer.getWritePointer(0)[index] = std::cos(phase);
+    }
+    return tableBuffer;
 }
