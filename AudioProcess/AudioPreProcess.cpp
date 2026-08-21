@@ -1,6 +1,7 @@
 #include "./AudioPreProcess.hpp"
 #include "AudioUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_events/juce_events.h"
 
 AudioPreProcess::AudioPreProcess() {
     for (auto& duck : mSongChangeDucks) {
@@ -22,7 +23,7 @@ void AudioPreProcess::prepareToPlay(
         duck.tempBuffer.setSize(outputLayout.size(), maximumExpectedSamplesPerBlock);
     }
     smoothedSongChangeCrossFadeMs.reset(sampleRate, 0.002f);
-    smoothedSongChangeCrossFadeMs.setCurrentAndTargetValue(100.0f); // 默认长度的交叉淡化区
+    smoothedSongChangeCrossFadeMs.setCurrentAndTargetValue(300.0f); // 默认长度的交叉淡化区
 }
 
 void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
@@ -39,12 +40,21 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
         );
     } else {
         mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(buffer);
+        return;
     }
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         float currentSongChangeCrossFadeMs =
             smoothedSongChangeCrossFadeMs.getNextValue(); // 交叉淡化区长度(毫秒数)
-        if (!isCrossFade) continue;
+        // if (!isCrossFade) continue;
+        if (!isCrossFade) {
+            // 交叉淡化已经结束，剩余样本直接输出主甲板
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+                buffer.getWritePointer(ch)[i] =
+                    mSongChangeDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)[i];
+            }
+            continue;
+        }
         // 交叉淡化区域的实际样本数
         int currentSongChangeCrossFadeSamples{
             static_cast<int>(currentSongChangeCrossFadeMs * mSampleRate / 1000.0f)
@@ -76,7 +86,7 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
         }
         currentSongChangeCrossFadeIndex++;
         if (fadeProcess >= 1.0f) {
-            mSongChangeDucks[!mainPlayDuckIndex].decoder->stopThread(50);
+            mSongChangeDucks[!mainPlayDuckIndex].decoder->signalThreadShouldExit();
             currentSongChangeCrossFadeIndex = 0;
             isCrossFade = false;
         }

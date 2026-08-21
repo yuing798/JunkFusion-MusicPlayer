@@ -79,7 +79,7 @@ juce::AudioBuffer<float> AudioUtils::generateCosTable(double num4pi) {
 float AudioUtils::getLinearInterpolator(const float* data, int size, float process) {
     int index1 = static_cast<int>(process * size);
     int index2 = getCircularBufferIndex(index1 + 1, size);
-    float fraction = process - index1;
+    float fraction = process * size - index1;
 
     return (1.0f - fraction) * data[index1] + fraction * data[index2];
 }
