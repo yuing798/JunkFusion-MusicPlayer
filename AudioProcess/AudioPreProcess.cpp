@@ -32,9 +32,21 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
     mSongChangeDucks[0].tempBuffer.clear();
     mSongChangeDucks[1].tempBuffer.clear();
 
+    if (isCrossFade) {
+        mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(
+            mSongChangeDucks[mainPlayDuckIndex].tempBuffer
+        );
+        mSongChangeDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(
+            mSongChangeDucks[!mainPlayDuckIndex].tempBuffer
+        );
+    } else {
+        mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(buffer);
+    }
+
     for (int i = 0; i < buffer.getNumSamples(); i++) {
-        // 交叉淡化区长度(毫秒数)
-        auto currentSongChangeCrossFadeMs = smoothedSongChangeCrossFadeMs.getNextValue();
+        float currentSongChangeCrossFadeMs =
+            smoothedSongChangeCrossFadeMs.getNextValue(); // 交叉淡化区长度(毫秒数)
+        if (!isCrossFade) continue;
         // 交叉淡化区域的实际样本数
         int currentSongChangeCrossFadeSamples =
             currentSongChangeCrossFadeMs * mSampleRate / 1000.0f;
@@ -56,12 +68,6 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
         )};
         if (isCrossFade) {
 
-            mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(
-                mSongChangeDucks[mainPlayDuckIndex].tempBuffer
-            );
-            mSongChangeDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(
-                mSongChangeDucks[!mainPlayDuckIndex].tempBuffer
-            );
             for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
                 auto* originPtr{buffer.getWritePointer(ch)};
                 auto* mainDuckPtr{
@@ -78,9 +84,6 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
                 currentSongChangeCrossFadeIndex = 0;
                 isCrossFade = false;
             }
-
-        } else {
-            mSongChangeDucks[mainPlayDuckIndex].ringBuffer->popAudioData(buffer);
         }
     }
 }

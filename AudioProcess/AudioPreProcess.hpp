@@ -13,10 +13,10 @@ private:
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>
         smoothedSongChangeCrossFadeMs; // 对应UI用来处理交叉淡化区长度的滑块
 
-    juce::AudioBuffer<float> songChangeSinTable; // 淡入专用
-    juce::AudioBuffer<float> songChangeCosTable; // 淡出专用
-    int currentSongChangeCrossFadeIndex{0};      // 交叉淡化区的查表索引
-    bool isCrossFade{false};                     // 是否在交叉淡化区
+    juce::AudioBuffer<float> songChangeSinTable;         // 淡入专用
+    juce::AudioBuffer<float> songChangeCosTable;         // 淡出专用
+    std::atomic<int> currentSongChangeCrossFadeIndex{0}; // 交叉淡化区的查表索引
+    std::atomic<bool> isCrossFade{false};                // 是否在交叉淡化区
 
     struct SongChangeDuck { // 针对歌曲切换的时候的交叉淡化处理
         juce::AudioBuffer<float> tempBuffer;
@@ -26,7 +26,7 @@ private:
         // FadeState fadeState{FadeState::beginFadeIn};
     };
     std::array<SongChangeDuck, 2> mSongChangeDucks;
-    int mainPlayDuckIndex{1}; // 主要是哪个duck在工作
+    std::atomic<int> mainPlayDuckIndex{1}; // 主要是哪个duck在工作
 
     double mSampleRate{44100.0};
 
