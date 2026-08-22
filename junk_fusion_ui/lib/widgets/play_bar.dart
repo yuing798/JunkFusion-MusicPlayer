@@ -12,6 +12,7 @@
 
 import 'dart:io';
 
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
@@ -239,26 +240,36 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
     return SlideTransition(
       position: _slideAnimation,
-      child: Container(
-        height: 90,
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        color: AppTheme.colorHover,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ProgressBar(
+          //   progress: Duration(milliseconds: 10000),
+          //   total: Duration(milliseconds: (song.duration * 1000).toInt()),
+          //   onSeek: (value) {},
+          // ),
+          Container(
+            height: 90,
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+            color: AppTheme.colorHover,
 
-        // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
-        // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
-        child: Row(
-          children: [
-            // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
-            Expanded(flex: 5, child: buildLeftArea()),
+            // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
+            // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
+            child: Row(
+              children: [
+                // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
+                Expanded(flex: 5, child: buildLeftArea()),
 
-            // ── 中区（播放控制） ──
-            Expanded(flex: 4, child: buildMidArea()),
+                // ── 中区（播放控制） ──
+                Expanded(flex: 4, child: buildMidArea()),
 
-            // ── 右区（预留） ──
-            // 和左区对称占位，后续放置音量/进度条等控件
-            const Spacer(flex: 5),
-          ],
-        ),
+                // ── 右区（预留） ──
+                // 和左区对称占位，后续放置音量/进度条等控件
+                const Spacer(flex: 5),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

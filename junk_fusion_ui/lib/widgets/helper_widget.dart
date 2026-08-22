@@ -38,6 +38,7 @@ class RectIconButton extends StatelessWidget {
     return IconButton(
       icon: createIcon(iconData),
       onPressed: onPressed,
+      // padding: EdgeInsets.all(0),
       tooltip: tooltip, // 如果为 null，IconButton 会自动忽略 tooltip
       style: IconButton.styleFrom(
         shape: RoundedRectangleBorder(

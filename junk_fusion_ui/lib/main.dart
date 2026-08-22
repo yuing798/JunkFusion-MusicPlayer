@@ -31,7 +31,8 @@ void main() async {
   await windowManager.setPreventClose(true);
 
   WindowOptions options = const WindowOptions(
-    minimumSize: Size(1450, 850),
+    // size: AppCache.defaultWindowSize,
+    minimumSize: AppCache.defaultWindowSize,
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
@@ -73,6 +74,12 @@ void main() async {
   songProvider.getAllSongs(); //全量获取歌曲元数据
 
   runApp(JunkFusionApp(songProvider: songProvider)); //runApp不是阻塞式的，所以下面不能放析构逻辑
+
+  // 在首帧渲染后恢复窗口状态，确保设置生效
+  // WidgetsBinding.instance.addPostFrameCallback((_) {
+  //   final appState = navigatorKey.currentContext?.read<JunkFusionAppState>();
+  //   appState?._loadWindowState();
+  // });
 }
 
 class JunkFusionApp extends StatefulWidget {
@@ -97,6 +104,10 @@ class JunkFusionAppState extends State<JunkFusionApp>
     trayManager.addListener(this);
     errorCallbackManager.setupCallbacks();
     _initSystemTray();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadWindowState();
+    });
   }
 
   @override
@@ -104,7 +115,51 @@ class JunkFusionAppState extends State<JunkFusionApp>
     //dispose的执行时机不可靠，必须使用onWindowClose()来监听整个应用的关闭
     trayManager.removeListener(this);
     windowManager.removeListener(this);
+    _saveWindowState();
     super.dispose();
+  }
+
+  Future<void> _saveWindowState() async {
+    if (await windowManager.isMinimized()) return;
+    //保存窗口是否处于最大化状态
+    final isMaximized = await windowManager.isMaximized();
+    await AppCache.frontCacheRef.setBool('windowMaximized', isMaximized);
+
+    if (!isMaximized) {
+      //只有在没有最大化的时候才保存尺寸和位置，放置将全屏尺寸误存为普通尺寸
+      final size = await windowManager.getSize();
+      final position = await windowManager.getPosition();
+
+      await AppCache.frontCacheRef.setDouble('windowWidth', size.width);
+      await AppCache.frontCacheRef.setDouble('windowHeight', size.height);
+      await AppCache.frontCacheRef.setDouble('windowX', position.dx);
+      await AppCache.frontCacheRef.setDouble('windowY', position.dy);
+    }
+  }
+
+  Future<void> _loadWindowState() async {
+    if (AppCache.frontCacheRef.getBool('windowMaximized') == true) {
+      await windowManager.maximize();
+      return;
+    }
+    final width =
+        AppCache.frontCacheRef.getDouble('windowWidth') ??
+        AppCache.defaultWindowWidth;
+    final height =
+        AppCache.frontCacheRef.getDouble('windowHeight') ??
+        AppCache.defaultWindowHeight;
+    final x = AppCache.frontCacheRef.getDouble('windowX');
+    final y = AppCache.frontCacheRef.getDouble('windowY');
+
+    await windowManager.setSize(Size(width, height));
+
+    // 如果位置信息存在，则恢复位置
+    if (x != null && y != null) {
+      await windowManager.setPosition(Offset(x, y));
+    } else {
+      // 如果没有保存位置，让窗口居中
+      await windowManager.center();
+    }
   }
 
   // 初始化托盘的方法
@@ -129,8 +184,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
   @override
   void onWindowClose() async {
     print("准备关闭窗口...");
+    _saveWindowState();
 
-    // 1. 拦截默认的关闭行为，我们自己来控制
     bool isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
       print("点击了关闭，窗口最小化到托盘...");
@@ -138,11 +193,19 @@ class JunkFusionAppState extends State<JunkFusionApp>
     }
   }
 
+  @override
+  void onWindowMove() {
+    _saveWindowState();
+
+    super.onWindowMove();
+  }
+
   // 鼠标左键单击托盘图标：恢复显示窗口
   @override
   void onTrayIconMouseDown() {
     windowManager.show();
     windowManager.focus(); // 聚焦到最前面
+    _loadWindowState();
   }
 
   // 鼠标右击托盘图标：(tray_manager 默认会自动弹出刚才设置的菜单，无需手动写代码)
@@ -157,6 +220,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
     if (menuItem.key == 'show_window') {
       windowManager.show();
       windowManager.focus();
+      _loadWindowState();
     } else if (menuItem.key == 'exit_app') {
       // 托盘右键点击了退出，执行终极清理！
       _safeExit();
@@ -166,7 +230,9 @@ class JunkFusionAppState extends State<JunkFusionApp>
   // ==================== 终极安全退出协议 ====================
 
   Future<void> _safeExit() async {
-    print("托盘触发退出，开始安全清理系统...");
+    // print("托盘触发退出，开始安全清理系统...");
+
+    _saveWindowState();
 
     // 1. 切断 C++ 回调
     bindings.registerErrorSendCallback(

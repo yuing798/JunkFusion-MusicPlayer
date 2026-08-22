@@ -6,6 +6,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
 
+// #include <libavutil/mathematics.h>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
@@ -87,20 +88,21 @@ void FFmpegDecoder::run() {
     AVFormatContext* inputContext{nullptr};
     if (path.empty()) {
         // Utils::writeEmergencyLog("无法找到歌曲文件");
-        if (sendErrorMsg) sendErrorMsg(std::string("无法找到当前文件信息，请检查文件路径:") + path);
+        std::string errorStr{"无法找到当前文件信息，请检查文件路径:" + path};
+        if (sendErrorMsg) sendErrorMsg(errorStr);
         auto log = spdlog::get(LogAudioID);
-        log->error("无法找到歌曲文件");
+        log->error(errorStr);
 
         return;
     }
-    Utils::writeEmergencyLog("准备avformat_open_input");
+    // Utils::writeEmergencyLog("准备avformat_open_input");
     int result = avformat_open_input(
         &inputContext,
         path.c_str(),
         NULL,
         NULL
     ); // 这个函数会同时进行内存分配
-    Utils::writeEmergencyLog("avformat_open_input完成");
+    // Utils::writeEmergencyLog("avformat_open_input完成");
     if (result < 0) {
         // Utils::writeEmergencyLog("无法打开输入流");
         auto log = spdlog::get(LogAudioID);
@@ -113,7 +115,7 @@ void FFmpegDecoder::run() {
         return;
     }
     result = avformat_find_stream_info(inputContext, nullptr);
-    Utils::writeEmergencyLog("avformat_find_stream_info完成");
+    // Utils::writeEmergencyLog("avformat_find_stream_info完成");
     if (result < 0) {
         // Utils::writeEmergencyLog("无法获取流信息");
         auto log = spdlog::get(LogAudioID);
@@ -125,7 +127,7 @@ void FFmpegDecoder::run() {
     }
 
     auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)};
-    Utils::writeEmergencyLog("av_find_best_stream完成");
+    // Utils::writeEmergencyLog("av_find_best_stream完成");
     if (currentIndex < 0) {
         // Utils::writeEmergencyLog("无法获取音频流");
         auto log = spdlog::get(LogAudioID);
@@ -136,6 +138,8 @@ void FFmpegDecoder::run() {
         avformat_close_input(&inputContext);
         return;
     }
+
+    auto streamTimeBase{inputContext->streams[currentIndex]->time_base}; // 当前流的时间基
 
     auto* decoderPar = inputContext->streams[currentIndex]->codecpar;
     auto codec = avcodec_find_decoder(decoderPar->codec_id);   // 根据ID寻找解码器
@@ -166,6 +170,16 @@ void FFmpegDecoder::run() {
     // Utils::writeEmergencyLog("ffmpeg上下文初始化完毕，准备进入帧循环1.0");
 
     while (!threadShouldExit()) {
+
+        if (isRequestSeek) {
+            auto targetPts{av_rescale_q(
+                static_cast<int64_t>(targetSeconds * AV_TIME_BASE),
+                AV_TIME_BASE_Q,
+                streamTimeBase
+            )};
+            av_seek_frame(inputContext, currentIndex, targetPts, 0);
+            isRequestSeek = false;
+        }
 
         if (av_read_frame(inputContext, packet) != 0) {
             av_packet_unref(packet);
@@ -415,4 +429,8 @@ void FFmpegDecoder::run() {
 void FFmpegDecoder::playNewSong(std::string songPath) {
     path = songPath;
     startThread();
+}
+void FFmpegDecoder::preferSeek(double targetSecs) {
+    targetSeconds = targetSecs;
+    isRequestSeek = true;
 }

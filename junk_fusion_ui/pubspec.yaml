@@ -52,6 +52,7 @@ dependencies:
   logger: ^2.7.0
   path_provider: ^2.1.6
   tray_manager: ^0.5.3
+  audio_video_progress_bar: ^2.0.3
 
 dev_dependencies:
   flutter_test:

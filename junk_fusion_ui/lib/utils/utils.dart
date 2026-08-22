@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ffi' as ffi;
 
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,4 +16,11 @@ class AppCache {
     final Directory exeDir = File(exePath).parent;
     return exeDir.path;
   }
+
+  static const double defaultWindowWidth = 1300.0;
+  static const double defaultWindowHeight = 700.0;
+  static const defaultWindowSize = Size(
+    defaultWindowWidth,
+    defaultWindowHeight,
+  );
 }
