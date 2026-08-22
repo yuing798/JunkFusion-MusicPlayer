@@ -16,4 +16,5 @@ namespace AudioDefs {
     static constexpr const char* pause = "pause" ;
     static constexpr const char* songChangeCrossFadeLength = "songChangeCrossFadeLength" ;
     static constexpr const char* songDuration = "songDuration" ;
+    static constexpr const char* playInfo = "playInfo" ;
 }

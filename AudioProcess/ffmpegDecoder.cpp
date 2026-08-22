@@ -376,12 +376,6 @@ void FFmpegDecoder::run() {
         while (true) {
             int ret = swr_convert(swrContext, flushData, maxFlushSamples, nullptr, 0);
             if (ret <= 0) break;
-            // 将 ret 个样本推入 FIFO
-            // for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
-            //     float* dest = buffer.getWritePointer(ch);
-            //     const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
-            //     std::memcpy(dest, src, maxFlushSamples * sizeof(float));
-            // }
 
             juce::AudioBuffer<float> flushBuffer(targetChannelLayout.nb_channels, ret);
 
@@ -417,17 +411,6 @@ void FFmpegDecoder::run() {
     avcodec_free_context(&decoderContext);
     avformat_close_input(&inputContext);
 }
-
-// void FFmpegDecoder::setNewPlayState(std::string songPath) {
-//     // Utils::writeEmergencyLog("FFmpegDecoder::setNewPlayState开始");
-//     if (isThreadRunning()) {
-//         stopThread(300);
-//         spdlog::get(LogAudioID)->debug("原有歌曲播放中，先把原来歌曲停止");
-//     }
-//     currentTimeStamp = 0.0;
-//     path = songPath;
-//     startThread();
-// }
 
 void FFmpegDecoder::playNewSong(std::string songPath) {
     path = songPath;

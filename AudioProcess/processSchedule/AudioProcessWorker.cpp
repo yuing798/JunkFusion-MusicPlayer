@@ -39,14 +39,22 @@ void AudioProcessorPuller::run() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();
                     });
                 }
-                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::songPath)) {
+                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::playInfo)) {
                     // 收到歌曲路径信息就要开始播放新歌曲了
-                    auto songPath = jsonStr.getDynamicObject()
-                                        ->getProperty(AudioDefs::songPath)
-                                        .toString()
-                                        .toStdString();
-                    spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
-                    if (onPlayNewSongInfoReceived) onPlayNewSongInfoReceived(songPath);
+                    juce::var playInfo = jsonStr.getDynamicObject()
+                                             ->getProperty(AudioDefs::playInfo)
+                                             .getDynamicObject();
+                    auto songPath{playInfo.getDynamicObject()
+                                      ->getProperty(AudioDefs::songPath)
+                                      .toString()
+                                      .toStdString()};
+                    double songDuration{
+                        playInfo.getDynamicObject()->getProperty(AudioDefs::songDuration)
+                    };
+
+                    // spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
+                    if (onPlayNewSongInfoReceived)
+                        onPlayNewSongInfoReceived(songPath, songDuration);
                 }
                 if (jsonStr.hasProperty(AudioDefs::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");

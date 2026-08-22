@@ -14,5 +14,6 @@
   "play":"",
   "pause":"",
   "songChangeCrossFadeLength":"",
-  "songDuration":""//歌曲时长
+  "songDuration":"",//歌曲时长
+  "playInfo":""
 }

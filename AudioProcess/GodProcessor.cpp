@@ -67,9 +67,8 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     // };
 
     // 播放新歌
-    mAudioProcessWorker->receiver->onPlayNewSongInfoReceived = [this](std::string songPath) {
-        mPreProcess.playNewSong(songPath);
-    };
+    mAudioProcessWorker->receiver->onPlayNewSongInfoReceived =
+        [this](std::string songPath, double songDuration) { mPreProcess.playNewSong(songPath); };
 
     // 继续播放
     mAudioProcessWorker->receiver->onContinuePlay = [this]() { mPreProcess.continuePlay(); };

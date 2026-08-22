@@ -82,12 +82,13 @@ extern "C" {
         dllManager::getInstance().errorSendCallback = cb;
     }
     void playNewSong(int songId) {
-        // 闪退的原因是下面这一句
         auto info = dllManager::getInstance().getSongsManager().getPlayInfoBySongId(songId);
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(info.path));
         obj.getDynamicObject()->setProperty(AudioDefs::songDuration, info.duration);
-        sendMessage2AudioProcess(obj);
+        juce::var playInfo{new juce::DynamicObject()};
+        playInfo.getDynamicObject()->setProperty(AudioDefs::playInfo, obj);
+        sendMessage2AudioProcess(playInfo);
     }
     void continuePlay() {
         juce::var obj{new juce::DynamicObject()};
