@@ -75,6 +75,8 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  bool _isProgressBarHovered = false;
+
   @override
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
@@ -240,36 +242,62 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
     return SlideTransition(
       position: _slideAnimation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ProgressBar(
-          //   progress: Duration(milliseconds: 10000),
-          //   total: Duration(milliseconds: (song.duration * 1000).toInt()),
-          //   onSeek: (value) {},
-          // ),
-          Container(
-            height: 90,
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-            color: AppTheme.colorHover,
+      child: SizedBox(
+        height: 99,
+        child: Stack(
+          // mainAxisSize: MainAxisSize.min,
+          // height: 90,
+          children: [
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 90,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 10,
+                ),
+                color: AppTheme.colorHover,
 
-            // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
-            // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
-            child: Row(
-              children: [
-                // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
-                Expanded(flex: 5, child: buildLeftArea()),
+                // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
+                // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
+                child: Row(
+                  children: [
+                    // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
+                    Expanded(flex: 5, child: buildLeftArea()),
 
-                // ── 中区（播放控制） ──
-                Expanded(flex: 4, child: buildMidArea()),
+                    // ── 中区（播放控制） ──
+                    Expanded(flex: 4, child: buildMidArea()),
 
-                // ── 右区（预留） ──
-                // 和左区对称占位，后续放置音量/进度条等控件
-                const Spacer(flex: 5),
-              ],
+                    // ── 右区（预留） ──
+                    // 和左区对称占位，后续放置音量/进度条等控件
+                    const Spacer(flex: 5),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 5.0),
+              child: MouseRegion(
+                onEnter: (event) => setState(() {
+                  _isProgressBarHovered = true;
+                }),
+                onExit: (event) => setState(() {
+                  _isProgressBarHovered = false;
+                }),
+                cursor: SystemMouseCursors.click,
+                child: ProgressBar(
+                  progress: Duration(milliseconds: 10000),
+                  total: Duration(milliseconds: (song.duration * 1000).toInt()),
+                  onSeek: (value) {},
+                  timeLabelLocation: TimeLabelLocation.none,
+                  barHeight: _isProgressBarHovered ? 9.0 : 5.0,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
