@@ -116,7 +116,16 @@ void AudioPreProcess::playNewSong(std::string songPath) {
         smoothedPlayPause.setTargetValue(1.0f);
         isFullMute = false;
         isCrossFade = false;
+    } else if (isFullMute == true) {
+        // 副甲板在工作但是当前处于暂停状态
+        mSongChangeDucks[!mainPlayDuckIndex]
+            .decoder->signalThreadShouldExit(); // 直接把副甲板的线程停止
+        isCrossFade = false;
+        isFullMute = false;
+        smoothedPlayPause.setTargetValue(1.0f);
+
     } else {
+        // 副甲板在工作且播放的时候突然切歌
         isCrossFade = true;
     }
     mSongChangeDucks[mainPlayDuckIndex].ringBuffer->reset();
