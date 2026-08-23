@@ -76,7 +76,7 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
 
     mDeviceManager->connectProcessor(this);
 
-    // startTimer(300); // 播放进度条的监听频率
+    startTimer(300); // 播放进度条的监听频率
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -103,11 +103,11 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     //     }
     // }
 
-    // for (int i = 0; i < buffer.getNumSamples(); i++) {
-    //     if (!mPreProcess.getIsFullMute()) {
-    //         currentPlaySamples++;
-    //     }
-    // }
+    for (int i = 0; i < buffer.getNumSamples(); i++) {
+        if (!mPreProcess.getIsFullMute()) {
+            currentPlaySamples++;
+        }
+    }
 
     // if (isSongChanging.load()) {
     //     decoderRingBuffer.clip2Smooth(mSmoothMs);
@@ -127,16 +127,16 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     // );
 }
 
-// void GodProcessor::timerCallback() {
-// double currentSeconds = currentPlaySamples.load() / mSampleRate;
-// juce::var obj{new juce::DynamicObject()};
-// obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentSeconds);
-// auto msg = juce::JSON::toString(obj).toStdString();
-// mAudioProcessWorker->sender->sendMessage(msg);
-// }
+void GodProcessor::timerCallback() {
+    double currentSeconds = currentPlaySamples.load() / mSampleRate;
+    juce::var obj{new juce::DynamicObject()};
+    obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentSeconds);
+    auto msg = juce::JSON::toString(obj).toStdString();
+    mAudioProcessWorker->sender->sendMessage(msg);
+}
 
 GodProcessor::~GodProcessor() {
-    // stopTimer(); // 300ms的计时器不需要暂停吧
+    stopTimer(); // 300ms的计时器不需要暂停吧
 }
 
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}

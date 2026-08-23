@@ -93,5 +93,6 @@ class PlaybackProvider extends ChangeNotifier {
   }
   void setCurrentPTS(double currentPTS) {
     _currentTimeStamp = currentPTS;
+    notifyListeners();
   }
 }

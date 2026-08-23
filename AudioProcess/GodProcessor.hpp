@@ -17,7 +17,7 @@
 #include <memory>
 #include <spdlog/logger.h>
 
-class GodProcessor : public juce::AudioProcessor {
+class GodProcessor : public juce::AudioProcessor, public juce::Timer {
 private:
     std::unique_ptr<OscReceiver> mOscReceiver;
     std::unique_ptr<DeviceManager> mDeviceManager;
@@ -62,7 +62,7 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
     // 计时器是专门给播放进度条的，300ms发送一次，我暂时还想不到其他功能
-    // void timerCallback() override;
+    void timerCallback() override;
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };
