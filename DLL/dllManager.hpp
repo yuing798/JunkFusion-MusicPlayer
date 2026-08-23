@@ -41,8 +41,6 @@ public:
 
     static void destroyInstance() {
         if (instance) {
-            // ① 在这里，你甚至不需要显式调用 cleanup，因为析构函数会自动调用
-            // ② reset() 会执行 dllManager 的析构函数 -> 进而析构所有 unique_ptr
             instance.reset();
         }
     }

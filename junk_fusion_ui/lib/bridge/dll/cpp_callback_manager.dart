@@ -3,9 +3,10 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
-import './native_bindings_generated.dart'; // 假设你的胶水代码在这里
+import './native_bindings_generated.dart';
 
-class ErrorCallbackManager {
+//统一实现cpp传过来的回调函数
+class CppCallbackManager {
   ffi.NativeCallable<ErrorSendFunction>? _callable;
 
   void _handleErrorFromCpp(ffi.Pointer<ffi.Char> strPtr) {
@@ -32,8 +33,12 @@ class ErrorCallbackManager {
     bindings.registerErrorSendCallback(_callable!.nativeFunction);
   }
 
-  /// 3. 清理资源 (非常重要)
+  /// 3. 清理资源
   void dispose() {
+    bindings.registerErrorSendCallback(
+      ffi.Pointer.fromAddress(0).cast(),
+    ); //给cpp的函数指针先分配一个nullPtr
+
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _callable?.close();
   }

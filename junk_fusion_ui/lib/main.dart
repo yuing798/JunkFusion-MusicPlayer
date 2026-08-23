@@ -3,7 +3,7 @@ import 'dart:ffi' as dart_ffi;
 
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/bridge/dll/cpp_error_capture.dart';
+import 'package:junk_fusion_ui/bridge/dll/cpp_callback_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
@@ -67,19 +67,10 @@ void main() async {
 
   AppCache.frontCacheRef = await SharedPreferences.getInstance(); //初始化前端缓存指针
 
-  final errorCallbackManager = ErrorCallbackManager();
-  errorCallbackManager.setupCallbacks();
-
   final songProvider = SongProvider();
   songProvider.getAllSongs(); //全量获取歌曲元数据
 
   runApp(JunkFusionApp(songProvider: songProvider)); //runApp不是阻塞式的，所以下面不能放析构逻辑
-
-  // 在首帧渲染后恢复窗口状态，确保设置生效
-  // WidgetsBinding.instance.addPostFrameCallback((_) {
-  //   final appState = navigatorKey.currentContext?.read<JunkFusionAppState>();
-  //   appState?._loadWindowState();
-  // });
 }
 
 class JunkFusionApp extends StatefulWidget {
@@ -95,14 +86,14 @@ class JunkFusionApp extends StatefulWidget {
 /// JunkFusionApp — 应用根 Widget
 class JunkFusionAppState extends State<JunkFusionApp>
     with WindowListener, TrayListener {
-  final errorCallbackManager = ErrorCallbackManager();
+  final cppCallbackManager = CppCallbackManager();
 
   @override
   void initState() {
     super.initState();
     windowManager.addListener(this);
     trayManager.addListener(this);
-    errorCallbackManager.setupCallbacks();
+    cppCallbackManager.setupCallbacks();
     _initSystemTray();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -183,12 +174,12 @@ class JunkFusionAppState extends State<JunkFusionApp>
   // 拦截所有的窗口关闭请求 (无论是按 X 还是 Alt+F4)
   @override
   void onWindowClose() async {
-    print("准备关闭窗口...");
+    // print("准备关闭窗口...");
     _saveWindowState();
 
     bool isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
-      print("点击了关闭，窗口最小化到托盘...");
+      // print("点击了关闭，窗口最小化到托盘...");
       await windowManager.hide(); // 隐藏窗口，进程继续在后台运行
     }
   }
@@ -234,13 +225,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
 
     _saveWindowState();
 
-    // 1. 切断 C++ 回调
-    bindings.registerErrorSendCallback(
-      dart_ffi.Pointer.fromAddress(0).cast(),
-    ); //给cpp的函数指针先分配一个nullPtr
-
     // 2. 释放 Dart 端内存
-    errorCallbackManager.dispose();
+    cppCallbackManager.dispose();
 
     // 3. 关闭 C++ 后端
     bindings.closeBackend();

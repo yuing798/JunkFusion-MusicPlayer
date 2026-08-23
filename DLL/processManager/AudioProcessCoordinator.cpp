@@ -133,7 +133,7 @@ void AudioProcessSuber::run() {
 
     // 设置订阅过滤器
     socket.set(zmq::sockopt::subscribe, ""); // 默认接收所有消息
-    socket.set(zmq::sockopt::rcvtimeo, 100); // 超时时间为100ms
+    socket.set(zmq::sockopt::rcvtimeo, 500); // 超时时间为500ms
     while (!threadShouldExit()) {
 
         zmq::message_t msg;
@@ -151,6 +151,7 @@ void AudioProcessSuber::run() {
                     "AudioProcessSuber接收到未知格式:{}",
                     obj.toString().toStdString()
                 );
+                continue;
             };
             if (obj.getDynamicObject()->hasProperty(AudioDefs::errorPopupWindowMsg)) {
                 auto receiverMsg =
@@ -167,6 +168,7 @@ void AudioProcessSuber::run() {
 
                 if (dllManager::getInstance().errorSendCallback)
                     dllManager::getInstance().errorSendCallback(cString);
+                continue;
             }
         }
     }

@@ -40,6 +40,7 @@ dependencies:
   # google_fonts: ^8.2.1
   # flutter_improved_scrolling: ^0.0.4 #更好用的滚动条
   smooth_scroll_multiplatform: ^ 1.0.8 #他妈的这个逼玩意才是唯一能够实现平滑滚动的，,虽然说不能实现键盘操作
+  package_rename_plus: ^1.11.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
