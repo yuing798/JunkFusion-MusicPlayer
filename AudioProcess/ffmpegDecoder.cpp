@@ -95,14 +95,14 @@ void FFmpegDecoder::run() {
 
         return;
     }
-    Utils::writeEmergencyLog("准备avformat_open_input");
+    // Utils::writeEmergencyLog("准备avformat_open_input");
     int result = avformat_open_input(
         &inputContext,
         path.c_str(),
         NULL,
         NULL
     ); // 这个函数会同时进行内存分配
-    Utils::writeEmergencyLog("avformat_open_input完成");
+    // Utils::writeEmergencyLog("avformat_open_input完成");
     if (result < 0) {
         Utils::writeEmergencyLog("无法打开输入流");
         auto log = spdlog::get(LogAudioID);
@@ -171,18 +171,21 @@ void FFmpegDecoder::run() {
 
     while (!threadShouldExit()) {
 
-        if (isRequestSeek) {
-            auto targetPts{av_rescale_q(
-                static_cast<int64_t>(targetSeconds * AV_TIME_BASE),
-                AV_TIME_BASE_Q,
-                streamTimeBase
-            )};
-            av_seek_frame(inputContext, currentIndex, targetPts, 0);
-            avcodec_flush_buffers(decoderContext);
-            isRequestSeek = false;
-        }
+        // Utils::writeEmergencyLog("开始新的帧循环");
+
+        // if (isRequestSeek) {
+        //     auto targetPts{av_rescale_q(
+        //         static_cast<int64_t>(targetSeconds * AV_TIME_BASE),
+        //         AV_TIME_BASE_Q,
+        //         streamTimeBase
+        //     )};
+        //     av_seek_frame(inputContext, currentIndex, targetPts, 0);
+        //     avcodec_flush_buffers(decoderContext);
+        //     isRequestSeek = false;
+        // }
 
         if (av_read_frame(inputContext, packet) != 0) {
+            Utils::writeEmergencyLog("av_read_frame返回非零数据");
             av_packet_unref(packet);
             break;
         } // 没有剩余的包了，直接退出
@@ -201,14 +204,8 @@ void FFmpegDecoder::run() {
                 targetSampleRate,
                 decoderPar->sample_rate,
                 AV_ROUND_UP
-            );
-            buffer.setSize(//只分配第一次内存，第二次自动跳过
-                    targetChannelLayout.nb_channels, 
-                    numOutputSamples, 
-                    false, 
-                    false, 
-                    true
-                );//如果数组内的样本已经是numOutputSamples了就不会重新执行
+            ); // 这个计算出来的是理论所需的最大空间，并非实际空间
+
             int outputLineSize{0};
             result = av_samples_alloc_array_and_samples(
                 &outputDataArray, // 输出通道指针数组的起始地址
@@ -223,6 +220,7 @@ void FFmpegDecoder::run() {
             // 4096 字节，但如果内存对齐强制要求 64 字节对齐，它可能是 4096 或 4096+）。
 
             if (result < 0) {
+                Utils::writeEmergencyLog("av_samples_alloc_array_and_samples返回负值");
                 av_frame_unref(frame);
                 av_freep(&outputDataArray[0]);
                 av_freep(&outputDataArray);
@@ -237,11 +235,28 @@ void FFmpegDecoder::run() {
                 frame->nb_samples
             ); // 执行重采样，返回实际重采样完的样本点个数
 
+            if (result < 0) {
+                // Utils::writeEmergencyLog("swr_convert返回负值");
+                av_frame_unref(frame);
+                av_freep(&outputDataArray[0]);
+                av_freep(&outputDataArray);
+                continue;
+            }
+
+            buffer.setSize(//只分配第一次内存，第二次自动跳过
+                targetChannelLayout.nb_channels, 
+                result, 
+                false, 
+                false, 
+                true
+            );//如果数组内的样本已经是numOutputSamples了就不会重新执行
+
             av_frame_unref(frame); // 这时候frame已经没有用了
             // 这个函数的目的是清空重置，而av_frame_free的作用是彻底删除
             // 前面那个可以理解做清空数组，后面那个意味着连数组的内存也一起销毁
 
-            if (numOutputSamples <= 0) {
+            if (result <= 0) {
+
                 // 没有数据，清理并继续
                 av_freep(&outputDataArray[0]);
                 av_freep(&outputDataArray);
@@ -255,16 +270,7 @@ void FFmpegDecoder::run() {
                 float* dest = buffer.getWritePointer(ch);
                 const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
 
-                // float volume{0.0f};
-                // for (int i = 0; i < numOutputSamples; i++) {
-                //     volume += src[i];
-                // }
-                // Utils::writeEmergencyLog(
-                //     "第" + std::to_string(ch) + "通道的PCM裸流均值为" +
-                //     std::to_string(volume / static_cast<float>(numOutputSamples))
-                // );
-
-                std::memcpy(dest, src, numOutputSamples * sizeof(float));
+                std::memcpy(dest, src, result * sizeof(float));
             }
             av_freep(&outputDataArray[0]);
             av_freep(&outputDataArray);
@@ -282,6 +288,7 @@ void FFmpegDecoder::run() {
                 mRingBuffer->pushAudioData(buffer);
             }
         }
+        // Utils::writeEmergencyLog("avcodec_receive_frame返回非零数据导致提前退出");
     }
 
     // 下面执行flush操作
@@ -297,13 +304,7 @@ void FFmpegDecoder::run() {
             decoderPar->sample_rate,
             AV_ROUND_UP
         );
-        buffer.setSize(//只分配第一次内存，第二次自动跳过
-            targetChannelLayout.nb_channels, 
-            numOutputSamples, 
-            false, 
-            false, 
-            true
-        );//如果数组内的样本已经是numOutputSamples了就不会重新执行
+
         int outputLineSize{0};
         result = av_samples_alloc_array_and_samples(
             &outputDataArray, // 输出通道指针数组的起始地址
@@ -331,11 +332,19 @@ void FFmpegDecoder::run() {
             frame->nb_samples
         ); // 执行重采样，返回实际重采样完的样本点个数
 
+        buffer.setSize(//只分配第一次内存，第二次自动跳过
+            targetChannelLayout.nb_channels, 
+            result, 
+            false, 
+            false, 
+            true
+        );//如果数组内的样本已经是numOutputSamples了就不会重新执行
+
         av_frame_unref(frame); // 这时候frame已经没有用了
         // 这个函数的目的是清空重置，而av_frame_free的作用是彻底删除
         // 前面那个可以理解做清空数组，后面那个意味着连数组的内存也一起销毁
 
-        if (numOutputSamples <= 0) {
+        if (result <= 0) {
             // 没有数据，清理并继续
             av_freep(&outputDataArray[0]);
             av_freep(&outputDataArray);
@@ -348,7 +357,7 @@ void FFmpegDecoder::run() {
         for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
             float* dest = buffer.getWritePointer(ch);
             const float* src = reinterpret_cast<const float*>(outputDataArray[ch]);
-            std::memcpy(dest, src, numOutputSamples * sizeof(float));
+            std::memcpy(dest, src, result * sizeof(float));
         }
         av_freep(&outputDataArray[0]);
         av_freep(&outputDataArray);
@@ -398,25 +407,25 @@ void FFmpegDecoder::run() {
                 flushBuffer.copyFrom(ch, 0, reinterpret_cast<const float*>(flushData[ch]), ret);
             }
 
-            av_freep(&flushData[0]);
-            av_freep(&flushData);
-
-            while (mRingBuffer->getFreeSpace() < buffer.getNumSamples()) {
-                // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
+            while (mRingBuffer->getFreeSpace() < ret) {
                 if (threadShouldExit()) {
                     break;
                 }
-                // 空间不足，让出 CPU 切片，睡眠 5 毫秒等待声卡消耗数据
                 juce::Thread::sleep(5);
             }
 
-            if (!threadShouldExit()) {
-                mRingBuffer->pushAudioData(flushBuffer);
+            // 如果是因为切歌要求退出，直接打断最外层的 flush 循环，不要继续塞数据了
+            if (threadShouldExit()) {
+                break;
             }
+
+            mRingBuffer->pushAudioData(flushBuffer);
         }
         // 释放 Flush 临时缓冲区
-        av_freep(&flushData[0]);
-        av_freep(&flushData);
+        if (flushData != nullptr) {
+            av_freep(&flushData[0]);
+            av_freep(&flushData);
+        }
     }
 
     av_frame_free(&frame);

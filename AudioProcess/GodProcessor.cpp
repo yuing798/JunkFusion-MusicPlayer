@@ -76,7 +76,7 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
 
     mDeviceManager->connectProcessor(this);
 
-    startTimer(300); // 播放进度条的监听频率
+    // startTimer(300); // 播放进度条的监听频率
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -93,11 +93,21 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
 
     mPreProcess.processBlock(buffer);
 
-    for (int i = 0; i < buffer.getNumSamples(); i++) {
-        if (!mPreProcess.getIsFullMute()) {
-            currentPlaySamples++;
-        }
-    }
+    // for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
+    //     auto* writePointer = buffer.getWritePointer(channel);
+    //     for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
+    //         if (std::isnan(writePointer[sample]) || std::isinf(writePointer[sample])) {
+    //             // 如果进到这里，说明解码器吐出了脏数据！
+    //             Utils::writeEmergencyLog("CRITICAL: NaN or Inf detected at sample ");
+    //         }
+    //     }
+    // }
+
+    // for (int i = 0; i < buffer.getNumSamples(); i++) {
+    //     if (!mPreProcess.getIsFullMute()) {
+    //         currentPlaySamples++;
+    //     }
+    // }
 
     // if (isSongChanging.load()) {
     //     decoderRingBuffer.clip2Smooth(mSmoothMs);
@@ -117,16 +127,16 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     // );
 }
 
-void GodProcessor::timerCallback() {
-    double currentSeconds = currentPlaySamples.load() / mSampleRate;
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentSeconds);
-    auto msg = juce::JSON::toString(obj).toStdString();
-    mAudioProcessWorker->sender->sendMessage(msg);
-}
+// void GodProcessor::timerCallback() {
+// double currentSeconds = currentPlaySamples.load() / mSampleRate;
+// juce::var obj{new juce::DynamicObject()};
+// obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentSeconds);
+// auto msg = juce::JSON::toString(obj).toStdString();
+// mAudioProcessWorker->sender->sendMessage(msg);
+// }
 
 GodProcessor::~GodProcessor() {
-    stopTimer(); // 300ms的计时器不需要暂停吧
+    // stopTimer(); // 300ms的计时器不需要暂停吧
 }
 
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}

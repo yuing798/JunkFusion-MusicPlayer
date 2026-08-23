@@ -18,9 +18,9 @@ class PlaybackProvider extends ChangeNotifier {
   bool _isPlaying = false;
   bool get isPlaying => _isPlaying;
 
-  // 当前播放进度时间戳（null 表示无进度信息）
-  double? _currentTimeStamp;
-  double? get currentTimeStamp => _currentTimeStamp;
+  // 当前播放进度时间戳
+  double _currentTimeStamp = 0;
+  double get currentTimeStamp => _currentTimeStamp;
 
   // 播放模式枚举
   // 0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
@@ -83,7 +83,7 @@ class PlaybackProvider extends ChangeNotifier {
   void reset() {
     _currentSongId = null;
     _isPlaying = false;
-    _currentTimeStamp = null;
+    _currentTimeStamp = 0;
     _playMode = 0;
     notifyListeners();
   }

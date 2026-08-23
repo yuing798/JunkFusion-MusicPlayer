@@ -289,7 +289,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
                 cursor: SystemMouseCursors.click,
                 child: ProgressBar(
                   progress: Duration(
-                    milliseconds: (playback.currentTimeStamp! * 1000).toInt(),
+                    milliseconds: (playback.currentTimeStamp * 1000).toInt(),
                   ),
                   total: Duration(milliseconds: (song.duration * 1000).toInt()),
                   onSeek: (value) {},
