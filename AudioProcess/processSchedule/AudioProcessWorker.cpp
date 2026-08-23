@@ -52,7 +52,7 @@ void AudioProcessorPuller::run() {
                         playInfo.getDynamicObject()->getProperty(AudioDefs::songDuration)
                     };
 
-                    // spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
+                    spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
                     if (onPlayNewSongInfoReceived)
                         onPlayNewSongInfoReceived(songPath, songDuration);
                 }
@@ -109,12 +109,15 @@ void AudioProcessorPuber::run() {
         while (!localQueue.empty()) {
             std::string msg = localQueue.front();
             localQueue.pop();
+            Utils::writeEmergencyLog("[AudioProcess]准备发射命令:" + msg);
 
             zmq::message_t zmsg(msg.data(), msg.size());
             pubSocket.send(zmsg, zmq::send_flags::none);
         }
     }
 }
+
+void AudioProcessorPuber::timerCallback() {}
 
 AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pubSubPort) {
     Utils::writeEmergencyLog("开始执行worker的构造函数");

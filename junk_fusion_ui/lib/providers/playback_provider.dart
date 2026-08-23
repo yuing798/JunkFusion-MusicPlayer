@@ -1,6 +1,8 @@
 // ════════════════════════════════════════════════════════════════
 // playback_provider.dart — 播放状态管理
 // ════════════════════════════════════════════════════════════════
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
@@ -84,5 +86,25 @@ class PlaybackProvider extends ChangeNotifier {
     _currentTimeStamp = null;
     _playMode = 0;
     notifyListeners();
+  }
+
+  void seekTargetSeconds(double targetSeconds) {
+    //跳转到目标秒数
+  }
+  void poolTimeStamp() {
+    //轮询当前歌曲进度的计时器
+    // int count = 0;
+    Timer.periodic(const Duration(milliseconds: 300), (Timer timer) {
+      // if (_isPlaying == false) return;
+      //300毫秒搞一下不需要暂停逻辑啦
+    });
+    // Timer(const Duration(seconds: 1), (Timer timer) {
+    //   count++;
+    //   print('Tick $count');
+    //   if (count >= 5) {
+    //     timer.cancel(); // 取消定时器，停止后续执行
+    //     print('Timer canceled.');
+    //   }
+    // });
   }
 }

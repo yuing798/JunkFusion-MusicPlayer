@@ -24,8 +24,9 @@ extern "C" {
     LIB_EXPORT void closeBackend(); // dll注销
     LIB_EXPORT void registerErrorSendCallback(ErrorSend cb);
     LIB_EXPORT void playNewSong(int songId);
-    LIB_EXPORT void continuePlay(); // 继续播放
-    LIB_EXPORT void pausePlay();    // 暂停播放
+    LIB_EXPORT void continuePlay();  // 继续播放
+    LIB_EXPORT void pausePlay();     // 暂停播放
+    LIB_EXPORT void requestNowPTS(); // 请求当前的播放时间戳
 
 #ifdef __cplusplus
 }

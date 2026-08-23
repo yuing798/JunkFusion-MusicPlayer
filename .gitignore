@@ -12,3 +12,4 @@ text.txt
 Debug_bin/
 Release_bin/
 TestAudio/
+*.mp3

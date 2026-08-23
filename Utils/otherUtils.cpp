@@ -227,32 +227,6 @@ void Utils::writeEmergencyLog(std::string message) {
     }
 #endif
 }
-
-void Utils::sendPopupWindow(zmq::socket_t& socket, juce::var obj) {
-    if (!obj.isObject()) return;
-    auto str{juce::JSON::toString(juce::var(obj))};
-    std::string stdStr = str.toStdString();
-
-    // 使用 stdStr.size() 获取正确的 UTF-8 字节长度（类型本身就是 size_t）
-    // str.length() 返回的是 字符个数（如 "hello中" 是 6 个字符），但 ZeroMQ 发送网络数据需要的是
-    // UTF-8 字节数（中文字符在 UTF-8 下占 3 个字节）。
-    zmq::message_t msg(stdStr.data(), stdStr.size());
-
-    //  发送
-    socket.send(msg, zmq::send_flags::none);
-}
-void Utils::sendInfoPopupWindow(zmq::socket_t& socket, juce::String infoMsg) {
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(defsStr::PopupWindowType, defsStr::infoMsg);
-    obj.getDynamicObject()->setProperty(defsStr::msg, infoMsg);
-    sendPopupWindow(socket, obj);
-}
-void Utils::sendErrorPopupWindow(zmq::socket_t& socket, juce::String errorMsg) {
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(defsStr::PopupWindowType, defsStr::errorMsg);
-    obj.getDynamicObject()->setProperty(defsStr::msg, errorMsg);
-    sendPopupWindow(socket, obj);
-}
 void Utils::checkCurrentThreadId(std::string identity) {
     writeEmergencyLog((identity + " thread id: " +
                        std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())))

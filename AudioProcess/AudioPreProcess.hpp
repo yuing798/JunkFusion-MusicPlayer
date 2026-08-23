@@ -5,6 +5,7 @@
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include <atomic>
+#include <functional>
 #include <spdlog/spdlog.h>
 
 // 该类实现音频的预处理，包括解码和双甲板的交叉淡化逻辑
@@ -46,4 +47,7 @@ public:
     void playNewSong(std::string songpath);
     void continuePlay();
     void pausePlay();
+    // std::function<void(void)> onFullMuteTrigger;
+    std::function<void(std::string)> sendErrorMsg;
+    bool getIsFullMute() const { return isFullMute; }
 };

@@ -49,8 +49,5 @@ namespace Utils {
 
     void writeEmergencyLog(std::string message);
 
-    void sendPopupWindow(zmq::socket_t& socket, juce::var obj);
-    void sendErrorPopupWindow(zmq::socket_t& socket, juce::String errorMsg);
-    void sendInfoPopupWindow(zmq::socket_t& socket, juce::String infoMsg);
     void checkCurrentThreadId(std::string identity); // 检查当前所在的线程ID号
 } // namespace Utils

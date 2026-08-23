@@ -87,7 +87,7 @@ void FFmpegDecoder::run() {
 
     AVFormatContext* inputContext{nullptr};
     if (path.empty()) {
-        // Utils::writeEmergencyLog("无法找到歌曲文件");
+        Utils::writeEmergencyLog("无法找到歌曲文件");
         std::string errorStr{"无法找到当前文件信息，请检查文件路径:" + path};
         if (sendErrorMsg) sendErrorMsg(errorStr);
         auto log = spdlog::get(LogAudioID);
@@ -95,16 +95,16 @@ void FFmpegDecoder::run() {
 
         return;
     }
-    // Utils::writeEmergencyLog("准备avformat_open_input");
+    Utils::writeEmergencyLog("准备avformat_open_input");
     int result = avformat_open_input(
         &inputContext,
         path.c_str(),
         NULL,
         NULL
     ); // 这个函数会同时进行内存分配
-    // Utils::writeEmergencyLog("avformat_open_input完成");
+    Utils::writeEmergencyLog("avformat_open_input完成");
     if (result < 0) {
-        // Utils::writeEmergencyLog("无法打开输入流");
+        Utils::writeEmergencyLog("无法打开输入流");
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("打开多媒体文件失败:文件路径:") + path +
                                std::string(" 错误原因:") + Utils::ffmpegErrorOutput(result);
@@ -178,6 +178,7 @@ void FFmpegDecoder::run() {
                 streamTimeBase
             )};
             av_seek_frame(inputContext, currentIndex, targetPts, 0);
+            avcodec_flush_buffers(decoderContext);
             isRequestSeek = false;
         }
 

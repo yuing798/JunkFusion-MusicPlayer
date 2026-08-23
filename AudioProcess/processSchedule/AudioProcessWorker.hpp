@@ -1,6 +1,7 @@
 #pragma once
 
 #include "juce_core/juce_core.h"
+#include "juce_events/juce_events.h"
 #include "zmq.hpp"
 
 #include <functional>
@@ -27,7 +28,7 @@ public:
 // ==========================================
 // 线程 2：专职向 UI 发送状态/异常 (PUB)
 // ==========================================
-class AudioProcessorPuber : public juce::Thread {
+class AudioProcessorPuber : public juce::Thread, public juce::Timer {
 private:
     zmq::context_t& context;
     std::mutex queueMutex;
@@ -42,6 +43,7 @@ public:
     void sendMessage(const std::string& msg);
 
     void run() override;
+    void timerCallback() override;
 };
 
 // ==========================================

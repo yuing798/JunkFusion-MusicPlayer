@@ -23,13 +23,11 @@ private:
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
 
-    // std::atomic<bool> playState{false}; // 播放还是暂停状态
-
     AudioPreProcess mPreProcess; // 音频预处理
 
     double mSampleRate{44100.0};
     int mNumChannels{2};
-    double currentTimeStamp{0.0};
+    std::atomic<int> currentPlaySamples{0}; // 该歌曲已经播放的采样点总数
 
 public:
     GodProcessor(juce::StringArray initArgs);

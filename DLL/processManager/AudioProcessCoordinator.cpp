@@ -138,10 +138,15 @@ void AudioProcessSuber::run() {
 
         zmq::message_t msg;
         auto rst = socket.recv(msg, zmq::recv_flags::none); // 同步阻塞等待
+
         if (rst.has_value()) {
+            Utils::writeEmergencyLog("suber收到消息");
             std::string data(static_cast<char*>(msg.data()), msg.size());
             juce::var obj = juce::JSON::fromString(juce::String(data));
             if (obj.isVoid() || !obj.isObject()) {
+                Utils::writeEmergencyLog(
+                    "AudioProcessSuber接收到未知格式:" + obj.toString().toStdString()
+                );
                 spdlog::get(LogDllID)->error(
                     "AudioProcessSuber接收到未知格式:{}",
                     obj.toString().toStdString()
@@ -154,6 +159,7 @@ void AudioProcessSuber::run() {
                     "sub接收到发送错误弹窗消息:{}",
                     receiverMsg.toStdString()
                 );
+                Utils::writeEmergencyLog("sub接收到发送错误弹窗消息");
                 const char* sendMsg = receiverMsg.toRawUTF8();
                 auto length{strlen(sendMsg)};
                 char* cString{static_cast<char*>(malloc(length + 1))};

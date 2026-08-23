@@ -57,14 +57,10 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
 
     // 解码失败弹窗
-    // decoder.sendErrorMsg = [this](std::string str) {
-    //     str += "FFmpeg解码错误:";
-    //     juce::var obj{new juce::DynamicObject()};
-    //     obj.getDynamicObject()->setProperty(AudioDefs::errorPopupWindowMsg, juce::String(str));
-    //     auto jsonStr{juce::JSON::toString(obj).toStdString()};
 
-    //     mAudioProcessWorker->sender->sendMessage(jsonStr);
-    // };
+    mPreProcess.sendErrorMsg = [this](std::string errorStr) {
+        mAudioProcessWorker->sender->sendMessage(errorStr);
+    };
 
     // 播放新歌
     mAudioProcessWorker->receiver->onPlayNewSongInfoReceived =
@@ -84,8 +80,6 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
     mNumChannels = outputLayout.size();
     mPreProcess.prepareToPlay(outputLayout, sampleRate, maximumExpectedSamplesPerBlock);
-
-    // Utils::writeEmergencyLog("GodProcessor::prepareToPlay执行完成");
 }
 
 void GodProcessor::releaseResources() {}
@@ -93,6 +87,12 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     juce::ignoreUnused(midiMessages);
 
     mPreProcess.processBlock(buffer);
+
+    for (int i = 0; i < buffer.getNumSamples(); i++) {
+        if (!mPreProcess.getIsFullMute()) {
+            currentPlaySamples++;
+        }
+    }
 
     // if (isSongChanging.load()) {
     //     decoderRingBuffer.clip2Smooth(mSmoothMs);

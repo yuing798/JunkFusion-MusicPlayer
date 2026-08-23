@@ -1,4 +1,5 @@
 #include "./AudioPreProcess.hpp"
+#include "AudioDefs.hpp"
 #include "AudioUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_events/juce_events.h"
@@ -7,6 +8,16 @@ AudioPreProcess::AudioPreProcess() {
     for (auto& duck : mSongChangeDucks) {
         duck.ringBuffer = std::make_unique<AudioRingBuffer>(1000); // 中转站分配1秒
         duck.decoder = std::make_unique<FFmpegDecoder>(duck.ringBuffer.get());
+        duck.decoder->sendErrorMsg = [this](std::string msg) {
+            std::string errorStr = "FFmpeg解码错误:" + msg;
+            juce::var obj{new juce::DynamicObject()};
+            obj.getDynamicObject()->setProperty(
+                AudioDefs::errorPopupWindowMsg,
+                juce::String(errorStr)
+            );
+            auto jsonStr{juce::JSON::toString(obj).toStdString()};
+            if (sendErrorMsg) sendErrorMsg(jsonStr);
+        };
     }
     songChangeSinTable = AudioUtils::generateSinTable(0.5);
     songChangeCosTable = AudioUtils::generateCosTable(0.5);
@@ -113,7 +124,7 @@ void AudioPreProcess::playNewSong(std::string songPath) {
 
     if (!mSongChangeDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
         // 只有主甲板在工作，副甲板完全没有在播放歌曲
-        smoothedPlayPause.setTargetValue(1.0f);
+        smoothedPlayPause.setCurrentAndTargetValue(1.0f);
         isFullMute = false;
         isCrossFade = false;
     } else if (isFullMute == true) {
@@ -122,7 +133,7 @@ void AudioPreProcess::playNewSong(std::string songPath) {
             .decoder->signalThreadShouldExit(); // 直接把副甲板的线程停止
         isCrossFade = false;
         isFullMute = false;
-        smoothedPlayPause.setTargetValue(1.0f);
+        smoothedPlayPause.setCurrentAndTargetValue(1.0f); // 歌曲刚开始的时候应该不需要平滑进入
 
     } else {
         // 副甲板在工作且播放的时候突然切歌
