@@ -13,7 +13,7 @@
 #include <utility>
 
 int main(int argc, char* argv[]) {
-    Utils::writeEmergencyLog("开始初始化音频进程1");
+    // Utils::writeEmergencyLog("开始初始化音频进程1");
     // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
     juce::StringArray args{argv, argc};
     for (int i = 0; i < args.size(); i++) {
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 
         juce::ScopedJuceInitialiser_GUI juceInitialiser; // 消息队列初始化
 
-        GodProcessor mGodProcessor{
+        GodProcessor processor{
             std::move(args)
         }; // 音频线程是唯一的核心，其他所有的类都服务于音频线程
 

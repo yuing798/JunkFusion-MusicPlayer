@@ -1,7 +1,6 @@
 #ifndef LLB_EXPORT_H
 #define LLB_EXPORT_H
 
-// #include "libExport.h"
 #ifdef _WIN32
     #define LIB_EXPORT __declspec(dllexport)
 #else
@@ -9,6 +8,7 @@
 #endif
 
 typedef void (*ErrorSend)(const char* str);
+typedef void (*DoubleFunc)(double);
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,9 +24,9 @@ extern "C" {
     LIB_EXPORT void closeBackend(); // dll注销
     LIB_EXPORT void registerErrorSendCallback(ErrorSend cb);
     LIB_EXPORT void playNewSong(int songId);
-    LIB_EXPORT void continuePlay();  // 继续播放
-    LIB_EXPORT void pausePlay();     // 暂停播放
-    LIB_EXPORT void requestNowPTS(); // 请求当前的播放时间戳
+    LIB_EXPORT void continuePlay(); // 继续播放
+    LIB_EXPORT void pausePlay();    // 暂停播放
+    LIB_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
 
 #ifdef __cplusplus
 }

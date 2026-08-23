@@ -101,6 +101,17 @@ class JunkFusionDLLBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>('playNewSong');
   late final _playNewSong = _playNewSongPtr.asFunction<void Function(int)>();
 
+  void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
+    return _registerCurrentPTSCallback(doubleFunc);
+  }
+
+  late final _registerCurrentPTSCallbackPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(DoubleFunc)>>(
+        'registerCurrentPTSCallback',
+      );
+  late final _registerCurrentPTSCallback = _registerCurrentPTSCallbackPtr
+      .asFunction<void Function(DoubleFunc)>();
+
   void registerErrorSendCallback(ErrorSend cb) {
     return _registerErrorSendCallback(cb);
   }
@@ -149,6 +160,9 @@ class JunkFusionDLLBindings {
   late final _toggleMyLike = _toggleMyLikePtr.asFunction<int Function(int)>();
 }
 
+typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;
+typedef DoubleFuncFunction = ffi.Void Function(ffi.Double);
+typedef DartDoubleFuncFunction = void Function(double);
 typedef ErrorSend = ffi.Pointer<ffi.NativeFunction<ErrorSendFunction>>;
 typedef ErrorSendFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
 typedef DartErrorSendFunction = void Function(ffi.Pointer<ffi.Char> str);

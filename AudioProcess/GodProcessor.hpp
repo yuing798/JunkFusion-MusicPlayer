@@ -8,6 +8,7 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
+#include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include "processSchedule/OscReceiver.hpp"
 #include "zmq.hpp"
@@ -16,7 +17,7 @@
 #include <memory>
 #include <spdlog/logger.h>
 
-class GodProcessor : public juce::AudioProcessor {
+class GodProcessor : public juce::AudioProcessor, public juce::Timer {
 private:
     std::unique_ptr<OscReceiver> mOscReceiver;
     std::unique_ptr<DeviceManager> mDeviceManager;
@@ -31,7 +32,7 @@ private:
 
 public:
     GodProcessor(juce::StringArray initArgs);
-    ~GodProcessor() = default;
+    ~GodProcessor();
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;
     void releaseResources() override;
@@ -59,6 +60,9 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     juce::AudioProcessorEditor* createEditor() override { return nullptr; }
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+
+    // 计时器是专门给播放进度条的，300ms发送一次，我暂时还想不到其他功能
+    void timerCallback() override;
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };

@@ -64,7 +64,10 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
 
     // 播放新歌
     mAudioProcessWorker->receiver->onPlayNewSongInfoReceived =
-        [this](std::string songPath, double songDuration) { mPreProcess.playNewSong(songPath); };
+        [this](std::string songPath, double songDuration) {
+            mPreProcess.playNewSong(songPath);
+            currentPlaySamples = 0;
+        };
 
     // 继续播放
     mAudioProcessWorker->receiver->onContinuePlay = [this]() { mPreProcess.continuePlay(); };
@@ -72,6 +75,8 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     mAudioProcessWorker->receiver->onPausePlay = [this]() { mPreProcess.pausePlay(); };
 
     mDeviceManager->connectProcessor(this);
+
+    startTimer(300); // 播放进度条的监听频率
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -111,6 +116,19 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     //     std::to_string((volume / static_cast<float>(buffer.getNumSamples())))
     // );
 }
+
+void GodProcessor::timerCallback() {
+    double currentSeconds = currentPlaySamples.load() / mSampleRate;
+    juce::var obj{new juce::DynamicObject()};
+    obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentSeconds);
+    auto msg = juce::JSON::toString(obj).toStdString();
+    mAudioProcessWorker->sender->sendMessage(msg);
+}
+
+GodProcessor::~GodProcessor() {
+    stopTimer(); // 300ms的计时器不需要暂停吧
+}
+
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}
 void GodProcessor::getStateInformation(juce::MemoryBlock& destData) {}
 

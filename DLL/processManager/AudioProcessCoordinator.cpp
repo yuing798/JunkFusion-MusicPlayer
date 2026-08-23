@@ -169,6 +169,10 @@ void AudioProcessSuber::run() {
                 if (dllManager::getInstance().errorSendCallback)
                     dllManager::getInstance().errorSendCallback(cString);
                 continue;
+            } else if (obj.getDynamicObject()->hasProperty(AudioDefs::currentPTS)) {
+                double pts = obj.getDynamicObject()->getProperty(AudioDefs::currentPTS);
+                if (dllManager::getInstance().currentPTSCallback)
+                    dllManager::getInstance().currentPTSCallback(pts);
             }
         }
     }

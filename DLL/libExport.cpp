@@ -100,9 +100,7 @@ extern "C" {
         obj.getDynamicObject()->setProperty(AudioDefs::pause, "");
         sendMessage2AudioProcess(obj);
     }
-    void requestNowPTS() {
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty("requestNowPTS", "");
-        // sendme
+    void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
+        dllManager::getInstance().currentPTSCallback = doubleFunc;
     }
 }

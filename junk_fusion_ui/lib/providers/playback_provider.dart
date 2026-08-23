@@ -19,8 +19,8 @@ class PlaybackProvider extends ChangeNotifier {
   bool get isPlaying => _isPlaying;
 
   // 当前播放进度时间戳（null 表示无进度信息）
-  int? _currentTimeStamp;
-  int? get currentTimeStamp => _currentTimeStamp;
+  double? _currentTimeStamp;
+  double? get currentTimeStamp => _currentTimeStamp;
 
   // 播放模式枚举
   // 0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
@@ -91,20 +91,7 @@ class PlaybackProvider extends ChangeNotifier {
   void seekTargetSeconds(double targetSeconds) {
     //跳转到目标秒数
   }
-  void poolTimeStamp() {
-    //轮询当前歌曲进度的计时器
-    // int count = 0;
-    Timer.periodic(const Duration(milliseconds: 300), (Timer timer) {
-      // if (_isPlaying == false) return;
-      //300毫秒搞一下不需要暂停逻辑啦
-    });
-    // Timer(const Duration(seconds: 1), (Timer timer) {
-    //   count++;
-    //   print('Tick $count');
-    //   if (count >= 5) {
-    //     timer.cancel(); // 取消定时器，停止后续执行
-    //     print('Timer canceled.');
-    //   }
-    // });
+  void setCurrentPTS(double currentPTS) {
+    _currentTimeStamp = currentPTS;
   }
 }

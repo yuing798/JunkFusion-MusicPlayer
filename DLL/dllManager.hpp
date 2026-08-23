@@ -51,7 +51,9 @@ public:
 
     ~dllManager();
 
-    std::function<void(const char*)> errorSendCallback;
+    std::function<void(const char*)> errorSendCallback; // cpp主动向前端发送错误数据
+    std::function<void(double)> currentPTSCallback;     // 获取当前的播放进度条的callback
+
     void sendMessage2AudioProcess(std::string msg) {
         mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(msg);
     }
