@@ -120,10 +120,6 @@ Future<SendPort> isolateSendPort = () async {
               bool result = bindings.toggleMyLike(songId) == 1;
               results[B_toggleMyLike.successOrError] = result;
             } else if (name == B_saveComment.name) {
-              assert(
-                params.containsKey(B_saveComment.songId) &&
-                    params.containsKey(B_saveComment.text),
-              );
               final songId = params[B_saveComment.songId] as int;
               final commentText = params[B_saveComment.text] as String;
               final cPtr = commentText.toNativeUtf8().cast<Char>();
@@ -158,7 +154,7 @@ Future<SendPort> isolateSendPort = () async {
               //向上转型永远成功
               final songsRaw = resultObj[B_songImport.songs] as List<dynamic>;
               final errorFilesRaw =
-                  resultObj[B_songImport.errorFiles] as List<dynamic>;
+                  resultObj[B_songImport.errorFiles] as Map<String, dynamic>;
 
               List<SongInfo> songsList = [];
               for (int i = 0; i < songsRaw.length; i++) {
@@ -166,10 +162,12 @@ Future<SendPort> isolateSendPort = () async {
                   SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>),
                 );
               }
+              List<String> errorFiles = [];
+              errorFilesRaw.forEach((key, value) {
+                errorFiles.add("$key:$value");
+              });
               results[B_songImport.songs] = songsList;
-              results[B_songImport.errorFiles] = List<String>.from(
-                errorFilesRaw,
-              );
+              results[B_songImport.errorFiles] = errorFiles;
             }
             // print("准备发送回复消息");
             sendPort.send(_TaskResponse(data.id, results));

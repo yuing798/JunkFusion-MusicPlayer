@@ -11,9 +11,6 @@
 #include <SQLiteCpp/Statement.h>
 #include <cmath>
 #include <cstdint>
-#include <libavcodec/packet.h>
-#include <libavutil/channel_layout.h>
-#include <libavutil/frame.h>
 #include <memory>
 #include <optional>
 #include <sha1.h>
@@ -44,7 +41,7 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d) {
     }
 }
 
-std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
+InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     SongInfo info{};
     std::string filePath = path.getFullPathName().toStdString();
     int64_t fileSize = path.getSize();
@@ -66,14 +63,18 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
                 Utils ::ffmpegErrorOutput(result)
             );
         avformat_close_input(&inputContext);
-        return std::nullopt;
+        InsertSongInfo errorInfo;
+        errorInfo.errorMsg = "多媒体文件无法打开";
+        return errorInfo;
     }
     result = avformat_find_stream_info(inputContext, nullptr);
     if (result < 0) {
         // SPDLOG:无法找到流信息
         if (logger) logger->error("无法找到该文件的流信息:{}", Utils::ffmpegErrorOutput(result));
         avformat_close_input(&inputContext);
-        return std::nullopt;
+        InsertSongInfo errorInfo;
+        errorInfo.errorMsg = "无法找到该文件的流信息";
+        return errorInfo;
     }
 
     // 时长（秒）
@@ -90,7 +91,9 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
 
     if (currentIndex < 0) {
         avformat_close_input(&inputContext);
-        return std::nullopt;
+        InsertSongInfo errorInfo;
+        errorInfo.errorMsg = "无法找到该文件的音频流";
+        return errorInfo;
     }
 
     auto codec = avcodec_find_decoder(decoderPar->codec_id);   // 根据ID寻找解码器
@@ -312,10 +315,10 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
     } else {
         AVChannelLayout layout;
         av_channel_layout_from_mask(&layout, channelLayoutMask);
-        char buffer[64] = {0};
-        av_channel_layout_describe(&layout, buffer, sizeof(buffer));
+        char layoutBuffer[64] = {0};
+        av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
 
-        info.channelLayout = juce::String(buffer);
+        info.channelLayout = juce::String(layoutBuffer);
     }
 
     // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
@@ -467,7 +470,9 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
 
                 // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
                 if (fileSize == existingSize && lastModifiedTime == existingTime) {
-                    return std::nullopt;
+                    InsertSongInfo errorInfo;
+                    errorInfo.errorMsg = "该文件已经存在";
+                    return errorInfo;
                 }
             }
         }
@@ -522,10 +527,14 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
         transaction.commit();
     } catch (const SQLite::Exception& e) {
         if (logger) logger->error("insert song error:{}", e.what());
-        return std::nullopt;
+        InsertSongInfo errorInfo;
+        errorInfo.errorMsg = "数据库错误";
+        return errorInfo;
     }
 
-    return info;
+    InsertSongInfo insertSongInfo;
+    insertSongInfo.info = info;
+    return insertSongInfo;
 }
 
 std::vector<SongInfo> SongsManage::getAllSongs() {
@@ -589,9 +598,9 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             } else {
                 AVChannelLayout layout;
                 av_channel_layout_from_mask(&layout, channelLayoutMask);
-                char buffer[64] = {0};
-                av_channel_layout_describe(&layout, buffer, sizeof(buffer));
-                info.channelLayout = juce::String(buffer);
+                char layoutBuffer[64] = {0};
+                av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
+                info.channelLayout = juce::String(layoutBuffer);
             }
             info.codecName = optStrCol("codecName");
 

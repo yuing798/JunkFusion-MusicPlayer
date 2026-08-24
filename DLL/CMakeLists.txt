@@ -11,6 +11,7 @@ target_link_libraries(JunkFusionDLL
         SQLiteCpp#数据库系统
         spdlog::spdlog#日志系统
         juce::juce_core
+        juce::juce_audio_basics
         unofficial::hash-library#哈希算法库
         ${FFMPEG_LIBRARIES}
         juce::juce_gui_basics#基础UI组件

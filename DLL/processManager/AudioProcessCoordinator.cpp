@@ -140,7 +140,7 @@ void AudioProcessSuber::run() {
         auto rst = socket.recv(msg, zmq::recv_flags::none); // 同步阻塞等待
 
         if (rst.has_value()) {
-            Utils::writeEmergencyLog("suber收到消息");
+            // Utils::writeEmergencyLog("suber收到消息");
             std::string data(static_cast<char*>(msg.data()), msg.size());
             juce::var obj = juce::JSON::fromString(juce::String(data));
             if (obj.isVoid() || !obj.isObject()) {

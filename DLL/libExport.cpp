@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
         // Utils::writeEmergencyLog("准备初始化dll单例1.0");
@@ -25,7 +24,7 @@ extern "C" {
         std::vector<SongInfo> songs = dllManager::getInstance().getSongsManager().getAllSongs();
         auto obj{new juce::DynamicObject()};
         obj->setProperty(B_getAllSongs::songsList, juce::var(SongInfo::vector2VarArray(songs)));
-        return object2Uint8t(obj);
+        return DllUtils::object2Uint8t(obj);
     }
     void saveComment(long long songId, const char* commentText) {
         dllManager::getInstance().getSongsManager().saveComment(commentText, songId);
@@ -40,27 +39,31 @@ extern "C" {
         auto logger{spdlog::get(LogDllID)};
         // logger->info("接收到的信息为：{}", jsonStr);
         logger->info("开始导入歌曲");
-        auto obj = charPtr2object(jsonStr);
-        auto filePaths = obj->getProperty(B_songImport::filePaths).getArray();
+        auto obj = DllUtils::charPtr2object(jsonStr);
+        auto filePaths = obj.getDynamicObject()->getProperty(B_songImport::filePaths).getArray();
         std::vector<SongInfo> songs;
-        juce::Array<juce::var> errorFiles;
+        juce::var errorFiles{new juce::DynamicObject()};
         std::string errorFilesString;
         // std::string successFilesString;
         for (auto& filePath : *filePaths) {
             auto path = juce::File(filePath.toString());
             auto result = dllManager::getInstance().getSongsManager().insertSong(path);
-            if (result.has_value()) {
-                songs.push_back(result.value());
+            if (result.errorMsg.empty()) {
+                songs.push_back(result.info);
                 // successFilesString += path.getFileName().toStdString() + "\n";
             } else {
                 auto pathStr = path.getFileName();
-                errorFiles.add(pathStr);
+                errorFiles.getDynamicObject()->setProperty(pathStr, juce::String(result.errorMsg));
                 errorFilesString += path.getFileName().toStdString() + "\n";
             }
         }
-        juce::DynamicObject::Ptr resultObj{new juce::DynamicObject()};
-        resultObj->setProperty(B_songImport::songs, SongInfo::vector2VarArray(songs));
-        resultObj->setProperty(B_songImport::errorFiles, errorFiles);
+        juce::var resultObj{new juce::DynamicObject()};
+        resultObj.getDynamicObject()->setProperty(
+            B_songImport::songs,
+            SongInfo::vector2VarArray(songs)
+        );
+
+        resultObj.getDynamicObject()->setProperty(B_songImport::errorFiles, errorFiles);
         std::string resultStr{
             "导入歌曲完成，成功" + std::to_string(songs.size()) + "首，失败" +
             std::to_string(errorFiles.size()) + "首\n失败文件：\n" + errorFilesString
@@ -69,10 +72,7 @@ extern "C" {
         };
         // 这里准备加上失败原因
         logger->info(resultStr);
-        return object2Uint8t(resultObj);
-
-        // dllManager::getInstance().mAudioProcessCoordinator->stop();
-        // return "";
+        return DllUtils::object2Uint8t(resultObj);
     }
     void closeBackend() {
         spdlog::get(LogDllID)->debug("准备关闭后端");
@@ -88,17 +88,17 @@ extern "C" {
         obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(path));
         juce::var playInfo{new juce::DynamicObject()};
         playInfo.getDynamicObject()->setProperty(AudioDefs::playInfo, obj);
-        sendMessage2AudioProcess(playInfo);
+        DllUtils::sendMessage2AudioProcess(playInfo);
     }
     void continuePlay() {
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::play, "");
-        sendMessage2AudioProcess(obj);
+        DllUtils::sendMessage2AudioProcess(obj);
     }
     void pausePlay() {
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::pause, "");
-        sendMessage2AudioProcess(obj);
+        DllUtils::sendMessage2AudioProcess(obj);
     }
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().currentPTSCallback = doubleFunc;
@@ -106,6 +106,6 @@ extern "C" {
     void seekTargetPTS(double targetSeconds) {
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::seekTargetPTS, targetSeconds);
-        sendMessage2AudioProcess(obj);
+        DllUtils::sendMessage2AudioProcess(obj);
     }
 }

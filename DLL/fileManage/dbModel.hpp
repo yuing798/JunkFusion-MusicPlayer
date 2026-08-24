@@ -109,6 +109,11 @@ struct SongInfo {
     }
 };
 
+struct InsertSongInfo {
+    SongInfo info;
+    std::string errorMsg;
+};
+
 // songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
 inline const char* createSongsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songs (

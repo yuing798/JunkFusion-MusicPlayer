@@ -23,7 +23,7 @@ public:
     explicit SongsManage(SQLite::Database& d);
     // ~SongsManage();
 
-    std::optional<SongInfo> insertSong(const juce::File& path);
+    InsertSongInfo insertSong(const juce::File& path);
 
     /** 统一分页入口，根据 SortMode 选择排序方式 */
     std::vector<SongInfo> getAllSongs();

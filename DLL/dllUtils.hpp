@@ -6,15 +6,14 @@
 #include <cstdint>
 #include <string>
 
-// 异步返回给dart端使用
-// void asyncSendJuceVar2Dart(int64_t dart_port, const juce::var& data);
+namespace DllUtils {
+    // 把const char*转换为对象
+    juce::var uint8t2Object(const char* str);
 
-// 把const char*转换为对象
-juce::DynamicObject uint8t2Object(const char* str);
+    // 把对象转换为const char*
+    const char* object2Uint8t(juce::var obj);
 
-// 把对象转换为const char*
-const char* object2Uint8t(juce::DynamicObject::Ptr obj);
+    juce::var charPtr2object(const char* ptr);
 
-juce::DynamicObject::Ptr charPtr2object(const char* ptr);
-
-void sendMessage2AudioProcess(juce::var obj);
+    void sendMessage2AudioProcess(juce::var obj);
+} // namespace DllUtils
