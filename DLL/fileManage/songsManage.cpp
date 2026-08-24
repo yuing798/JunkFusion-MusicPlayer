@@ -312,13 +312,6 @@ std::optional<SongInfo> SongsManage::insertSong(const juce::File& path) {
     return info;
 }
 
-std::optional<int> SongsManage::getTotalSongCount() {
-    SQLite::Statement query(db, "SELECT COUNT(*) FROM songs");
-    if (query.executeStep()) // exec返回的是受影响的函数，executeStep返回是否还有需要执行的行
-        return query.getColumn(0).getInt();
-    return std::nullopt;
-}
-
 std::vector<SongInfo> SongsManage::getAllSongs() {
     std::vector<SongInfo> result;
 
@@ -407,9 +400,9 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
     return result;
 }
 
-PlayInfo SongsManage::getPlayInfoBySongId(int64_t songId) {
+std::string SongsManage::getPathBySongId(int64_t songId) {
     spdlog::get(LogDllID)->debug("开始根据id搜索歌曲路径");
-    PlayInfo info;
+    std::string path;
     try {
         SQLite::Statement sql(
             db,
@@ -419,18 +412,16 @@ PlayInfo SongsManage::getPlayInfoBySongId(int64_t songId) {
         );
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
-            info.path = sql.getColumn("filePath").getString();
-            info.duration = sql.getColumn("duration").getDouble();
+            path = sql.getColumn("filePath").getString();
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        spdlog::get(LogDllID)
-            ->debug("成功获取:id:{},路径:{},时长:{}", songId, info.path, info.duration);
-        return info;
+        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, path);
+        return path;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};
         logger->error("SongsManage::getPlayInfoBySongId(int64_t songId)发生错误:{}", e.what());
-        return {};
+        return "";
     }
 }
 
@@ -454,20 +445,6 @@ bool SongsManage::reverseMyLike(int64_t id) {
         return false;
     }
 }
-
-// std::string SongsManage::getImageHashBySongId(int64_t id) {
-//     try {
-//         SQLite::Statement sql(db, "SELECT hash FROM songs WHERE songId = :songId");
-//         sql.bind(":songId", id);
-//         if (sql.executeStep()) {
-//             return sql.getColumn("hash").getString();
-//         }
-//     } catch (const SQLite::Exception& e) {
-//         auto logger = spdlog::get(LogUiID);
-//         logger->error("获取歌曲封面哈希值失败:{}", e.what());
-//     }
-//     return "";
-// }
 
 void SongsManage::saveComment(juce::String text, int64_t songId) {
     try {

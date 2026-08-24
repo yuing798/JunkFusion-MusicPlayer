@@ -1,7 +1,7 @@
 #include "./libExport.h"
+#include "./dllAndFlutterBridge.hpp"
 #include "./dllManager.hpp"
 #include "constants.h"
-#include "dllBridgeName.hpp"
 #include "dllUtils.hpp"
 #include "fileManage/dbModel.hpp"
 #include "juce_core/juce_core.h"
@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
+
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
@@ -82,10 +83,9 @@ extern "C" {
         dllManager::getInstance().errorSendCallback = cb;
     }
     void playNewSong(int songId) {
-        auto info = dllManager::getInstance().getSongsManager().getPlayInfoBySongId(songId);
+        auto path = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
         juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(info.path));
-        obj.getDynamicObject()->setProperty(AudioDefs::songDuration, info.duration);
+        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(path));
         juce::var playInfo{new juce::DynamicObject()};
         playInfo.getDynamicObject()->setProperty(AudioDefs::playInfo, obj);
         sendMessage2AudioProcess(playInfo);

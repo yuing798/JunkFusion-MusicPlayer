@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dllBridgeName.hpp"
+#include "dllAndFlutterBridge.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
 #include <optional>
@@ -107,11 +107,6 @@ struct SongInfo {
         }
         return array;
     }
-};
-
-struct PlayInfo {
-    std::string path;
-    double duration;
 };
 
 // songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）

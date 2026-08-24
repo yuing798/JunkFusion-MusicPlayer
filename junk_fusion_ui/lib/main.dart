@@ -4,7 +4,6 @@ import 'dart:ffi' as dart_ffi;
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dll/cpp_callback_manager.dart';
-import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';

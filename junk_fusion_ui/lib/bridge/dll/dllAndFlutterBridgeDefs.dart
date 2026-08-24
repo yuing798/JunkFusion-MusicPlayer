@@ -1,5 +1,5 @@
 // ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.
-// Generated from bridgeDefs.json
+// Generated from dllAndFlutterBridge.jsonc
 
 class B_songImport{
   static const String name = 'songImport';
@@ -16,11 +16,6 @@ class B_toggleMyLike{
   static const String name = 'toggleMyLike';
   static const String songId = 'songId';
   static const String successOrError = 'successOrError';
-}
-
-class B_getAllSongCount{
-  static const String name = 'getAllSongCount';
-  static const String count = 'count';
 }
 
 class B_getAllSongs{

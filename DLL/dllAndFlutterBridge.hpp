@@ -18,11 +18,6 @@ struct B_toggleMyLike{
     static constexpr const char* successOrError = "successOrError" ;
 };
 
-struct B_getAllSongCount{
-    static constexpr const char* name = "getAllSongCount" ;
-    static constexpr const char* count = "count" ;
-};
-
 struct B_getAllSongs{
     static constexpr const char* name = "getAllSongs" ;
     static constexpr const char* songsList = "songsList" ;

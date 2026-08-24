@@ -15,7 +15,6 @@ extern "C" {
 #endif
 
     LIB_EXPORT void dllInit(const char* cacheDirId, const char* exeDirPtr); // dll初始化
-    LIB_EXPORT int getAllSongCount();
     LIB_EXPORT int toggleMyLike(long long songId);
     LIB_EXPORT const char* getAllSongs();
     LIB_EXPORT void saveComment(long long songId, const char* commentText);

@@ -64,15 +64,6 @@ class JunkFusionDLLBindings {
   late final _freeString = _freeStringPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
-  int getAllSongCount() {
-    return _getAllSongCount();
-  }
-
-  late final _getAllSongCountPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function()>>('getAllSongCount');
-  late final _getAllSongCount = _getAllSongCountPtr
-      .asFunction<int Function()>();
-
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }

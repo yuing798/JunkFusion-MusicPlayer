@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:junk_fusion_ui/bridge/dll/dllBridgeName.dart';
+import 'package:junk_fusion_ui/bridge/dll/dllAndFlutterBridgeDefs.dart';
 import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
