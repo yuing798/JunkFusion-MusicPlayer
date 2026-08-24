@@ -139,6 +139,7 @@ inline const char* createSongsTableSQL = R"(
         isMyLike           INTEGER DEFAULT 0,
         comment            TEXT,
         playNum       INTEGER DEFAULT 0,
-        hash TEXT
+        hash TEXT,
+        timeDomainSpec BLOB
     )
 )";
