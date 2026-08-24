@@ -77,12 +77,12 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     // 移动进度条到目标秒数
     mAudioProcessWorker->receiver->onSeekTargetPTS = [this](double targetSeconds) {
         mPreProcess.seekPreferPTS(targetSeconds);
-        currentPlaySamples = targetSeconds * mSampleRate;
+        currentPlaySamples = static_cast<int>(targetSeconds * mSampleRate);
     };
 
     mDeviceManager->connectProcessor(this);
 
-    startTimer(300); // 播放进度条的监听频率
+    startTimerHz(30); // 播放进度条的监听频率
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -115,12 +115,6 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         }
     }
 
-    // if (isSongChanging.load()) {
-    //     decoderRingBuffer.clip2Smooth(mSmoothMs);
-    //     isSongChanging.store(false); // 切换时的淡出效果
-    //     // return;
-    // }
-
     // decoderRingBuffer.popAudioData(buffer);
     // Utils::writeEmergencyLog("processBlock开转");
     // float volume{0.0f};
@@ -142,7 +136,8 @@ void GodProcessor::timerCallback() {
 }
 
 GodProcessor::~GodProcessor() {
-    stopTimer(); // 300ms的计时器不需要暂停吧
+    stopTimer();
+    // 以后出现了cpu性能问题再在停止播放器件暂停计时器
 }
 
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}

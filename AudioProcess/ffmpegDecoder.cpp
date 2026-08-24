@@ -175,7 +175,7 @@ void FFmpegDecoder::run() {
 
         if (isRequestSeek) {
             spdlog::get(LogAudioID)->debug("准备调节进度条到目标秒数:{}", targetSeconds.load());
-            mRingBuffer->reset(); // 清除原有缓冲区，防止残余
+            // mRingBuffer->reset(); // 清除原有缓冲区，防止残余
             auto targetPts{av_rescale_q(
                 static_cast<int64_t>(targetSeconds * AV_TIME_BASE),
                 AV_TIME_BASE_Q,
@@ -442,7 +442,9 @@ void FFmpegDecoder::playNewSong(std::string songPath) {
     path = songPath;
     startThread();
 }
-void FFmpegDecoder::seekPreferPTS(double targetSecs) {
+void FFmpegDecoder::seekPreferPTS(std::string songPath, double targetSecs) {
+
     targetSeconds = targetSecs;
     isRequestSeek = true;
+    playNewSong(songPath);
 }

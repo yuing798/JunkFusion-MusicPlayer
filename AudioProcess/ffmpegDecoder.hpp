@@ -32,5 +32,5 @@ public:
     ~FFmpegDecoder();
 
     std::function<void(std::string)> sendErrorMsg;
-    void seekPreferPTS(double targetSecs); // 查找某一帧的音频并跳转到那个位置
+    void seekPreferPTS(std::string songPath, double targetSecs); // 查找某一帧的音频并跳转到那个位置
 };
