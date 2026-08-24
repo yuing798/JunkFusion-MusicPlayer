@@ -173,16 +173,18 @@ void FFmpegDecoder::run() {
 
         // Utils::writeEmergencyLog("开始新的帧循环");
 
-        // if (isRequestSeek) {
-        //     auto targetPts{av_rescale_q(
-        //         static_cast<int64_t>(targetSeconds * AV_TIME_BASE),
-        //         AV_TIME_BASE_Q,
-        //         streamTimeBase
-        //     )};
-        //     av_seek_frame(inputContext, currentIndex, targetPts, 0);
-        //     avcodec_flush_buffers(decoderContext);
-        //     isRequestSeek = false;
-        // }
+        if (isRequestSeek) {
+            spdlog::get(LogAudioID)->debug("准备调节进度条到目标秒数:{}", targetSeconds.load());
+            mRingBuffer->reset(); // 清除原有缓冲区，防止残余
+            auto targetPts{av_rescale_q(
+                static_cast<int64_t>(targetSeconds * AV_TIME_BASE),
+                AV_TIME_BASE_Q,
+                streamTimeBase
+            )};
+            av_seek_frame(inputContext, currentIndex, targetPts, 0);
+            avcodec_flush_buffers(decoderContext);
+            isRequestSeek = false;
+        }
 
         if (av_read_frame(inputContext, packet) != 0) {
             Utils::writeEmergencyLog("av_read_frame返回非零数据");
@@ -247,7 +249,7 @@ void FFmpegDecoder::run() {
                 targetChannelLayout.nb_channels, 
                 result, 
                 false, 
-                false, 
+                true, 
                 true
             );//如果数组内的样本已经是numOutputSamples了就不会重新执行
 
@@ -336,7 +338,7 @@ void FFmpegDecoder::run() {
             targetChannelLayout.nb_channels, 
             result, 
             false, 
-            false, 
+            true, 
             true
         );//如果数组内的样本已经是numOutputSamples了就不会重新执行
 
@@ -401,10 +403,10 @@ void FFmpegDecoder::run() {
             int ret = swr_convert(swrContext, flushData, maxFlushSamples, nullptr, 0);
             if (ret <= 0) break;
 
-            juce::AudioBuffer<float> flushBuffer(targetChannelLayout.nb_channels, ret);
+            buffer.setSize(targetChannelLayout.nb_channels, ret, false, true, true);
 
             for (int ch = 0; ch < targetChannelLayout.nb_channels; ++ch) {
-                flushBuffer.copyFrom(ch, 0, reinterpret_cast<const float*>(flushData[ch]), ret);
+                buffer.copyFrom(ch, 0, reinterpret_cast<const float*>(flushData[ch]), ret);
             }
 
             while (mRingBuffer->getFreeSpace() < ret) {
@@ -419,7 +421,7 @@ void FFmpegDecoder::run() {
                 break;
             }
 
-            mRingBuffer->pushAudioData(flushBuffer);
+            mRingBuffer->pushAudioData(buffer);
         }
         // 释放 Flush 临时缓冲区
         if (flushData != nullptr) {
@@ -440,7 +442,7 @@ void FFmpegDecoder::playNewSong(std::string songPath) {
     path = songPath;
     startThread();
 }
-void FFmpegDecoder::preferSeek(double targetSecs) {
+void FFmpegDecoder::seekPreferPTS(double targetSecs) {
     targetSeconds = targetSecs;
     isRequestSeek = true;
 }

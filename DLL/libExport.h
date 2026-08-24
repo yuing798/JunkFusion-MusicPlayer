@@ -27,6 +27,7 @@ extern "C" {
     LIB_EXPORT void continuePlay(); // 继续播放
     LIB_EXPORT void pausePlay();    // 暂停播放
     LIB_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
+    LIB_EXPORT void seekTargetPTS(double targetSeconds); // 进度条移动到目标进度
 
 #ifdef __cplusplus
 }

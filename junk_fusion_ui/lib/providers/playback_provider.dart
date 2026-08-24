@@ -88,9 +88,11 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void seekTargetSeconds(double targetSeconds) {
+  void seekPreferPTS(double targetSeconds) {
     //跳转到目标秒数
+    bindings.seekTargetPTS(targetSeconds);
   }
+
   void setCurrentPTS(double currentPTS) {
     _currentTimeStamp = currentPTS;
     notifyListeners();

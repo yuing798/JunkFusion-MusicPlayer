@@ -136,6 +136,17 @@ class JunkFusionDLLBindings {
   late final _saveComment = _saveCommentPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  void seekTargetPTS(double targetSeconds) {
+    return _seekTargetPTS(targetSeconds);
+  }
+
+  late final _seekTargetPTSPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Double)>>(
+        'seekTargetPTS',
+      );
+  late final _seekTargetPTS = _seekTargetPTSPtr
+      .asFunction<void Function(double)>();
+
   ffi.Pointer<ffi.Char> someImport(ffi.Pointer<ffi.Char> arg0) {
     return _someImport(arg0);
   }

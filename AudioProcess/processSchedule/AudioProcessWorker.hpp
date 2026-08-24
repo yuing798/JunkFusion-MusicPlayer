@@ -21,6 +21,7 @@ public:
     std::function<void(std::string, double)> onPlayNewSongInfoReceived;
     std::function<void(void)> onContinuePlay;
     std::function<void(void)> onPausePlay;
+    std::function<void(double)> onSeekTargetPTS;
 
     void run() override;
 };

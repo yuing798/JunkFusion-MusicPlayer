@@ -64,12 +64,11 @@ void AudioProcessorPuller::run() {
                     spdlog::get(LogAudioID)->debug("收到暂停指令");
                     if (onPausePlay) onPausePlay();
                 }
-                // if (jsonStr.hasProperty(AudioDefs::songChangeCrossFadeLength)) {
-                //     int songChangeCrossFadeLength = jsonStr.getDynamicObject()->getProperty(
-                //         AudioDefs::songChangeCrossFadeLength
-                //     );
+                if (jsonStr.hasProperty(AudioDefs::seekTargetPTS)) {
+                    double pts{jsonStr.getDynamicObject()->getProperty(AudioDefs::seekTargetPTS)};
 
-                // }//这个应该改为使用osc接收
+                    if (onSeekTargetPTS) onSeekTargetPTS(pts);
+                }
             }
         }
     }
@@ -109,7 +108,7 @@ void AudioProcessorPuber::run() {
         while (!localQueue.empty()) {
             std::string msg = localQueue.front();
             localQueue.pop();
-            Utils::writeEmergencyLog("[AudioProcess]准备发射命令:" + msg);
+            // Utils::writeEmergencyLog("[AudioProcess]准备发射命令:" + msg);
 
             zmq::message_t zmsg(msg.data(), msg.size());
             pubSocket.send(zmsg, zmq::send_flags::none);

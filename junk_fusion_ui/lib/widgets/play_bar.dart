@@ -292,7 +292,11 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
                     milliseconds: (playback.currentTimeStamp * 1000).toInt(),
                   ),
                   total: Duration(milliseconds: (song.duration * 1000).toInt()),
-                  onSeek: (value) {},
+                  onSeek: (value) {
+                    context.read<PlaybackProvider>().seekPreferPTS(
+                      (value.inMilliseconds).toDouble() / 1000.0,
+                    );
+                  },
                   timeLabelLocation: TimeLabelLocation.none,
                   barHeight: _isProgressBarHovered ? 9.0 : 5.0,
                 ),

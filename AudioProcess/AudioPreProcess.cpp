@@ -153,3 +153,7 @@ void AudioPreProcess::continuePlay() {
     smoothedPlayPause.setTargetValue(1.0f);
     isFullMute = false;
 }
+
+void AudioPreProcess::seekPreferPTS(double targetSeconds) {
+    mSongChangeDucks[mainPlayDuckIndex].decoder->seekPreferPTS(targetSeconds);
+}

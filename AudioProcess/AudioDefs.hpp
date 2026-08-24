@@ -18,4 +18,5 @@ namespace AudioDefs {
     static constexpr const char* songDuration = "songDuration" ;
     static constexpr const char* playInfo = "playInfo" ;
     static constexpr const char* currentPTS = "currentPTS" ;
+    static constexpr const char* seekTargetPTS = "seekTargetPTS" ;
 }

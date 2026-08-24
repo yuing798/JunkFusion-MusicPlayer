@@ -16,5 +16,6 @@
   "songChangeCrossFadeLength":"",
   "songDuration":"",//歌曲时长
   "playInfo":"",
-  "currentPTS":""//当前的播放进度条时间戳
+  "currentPTS":"",//当前的播放进度条时间戳
+  "seekTargetPTS":""
 }

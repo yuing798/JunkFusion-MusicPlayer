@@ -74,6 +74,12 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     // 停止播放
     mAudioProcessWorker->receiver->onPausePlay = [this]() { mPreProcess.pausePlay(); };
 
+    // 移动进度条到目标秒数
+    mAudioProcessWorker->receiver->onSeekTargetPTS = [this](double targetSeconds) {
+        mPreProcess.seekPreferPTS(targetSeconds);
+        currentPlaySamples = targetSeconds * mSampleRate;
+    };
+
     mDeviceManager->connectProcessor(this);
 
     startTimer(300); // 播放进度条的监听频率

@@ -103,4 +103,9 @@ extern "C" {
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().currentPTSCallback = doubleFunc;
     }
+    void seekTargetPTS(double targetSeconds) {
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(AudioDefs::seekTargetPTS, targetSeconds);
+        sendMessage2AudioProcess(obj);
+    }
 }

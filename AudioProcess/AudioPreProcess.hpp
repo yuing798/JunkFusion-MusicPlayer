@@ -50,4 +50,5 @@ public:
     // std::function<void(void)> onFullMuteTrigger;
     std::function<void(std::string)> sendErrorMsg;
     bool getIsFullMute() const { return isFullMute; }
+    void seekPreferPTS(double targetSeconds); // 跳转到目标时间点
 };
