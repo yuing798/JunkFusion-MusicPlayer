@@ -79,7 +79,7 @@ extern "C" {
         dllManager::destroyInstance();
     }
 
-    void registerErrorSendCallback(ErrorSend cb) {
+    void registerErrorSendCallback(StringFunc cb) {
         dllManager::getInstance().errorSendCallback = cb;
     }
     void playNewSong(int songId) {
@@ -107,5 +107,8 @@ extern "C" {
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::seekTargetPTS, targetSeconds);
         DllUtils::sendMessage2AudioProcess(obj);
+    }
+    void registerTimeDomainSpecInsertOver(StringFunc cb) {
+        dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
     }
 }

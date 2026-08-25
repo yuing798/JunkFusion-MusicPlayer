@@ -27,7 +27,7 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-SongsManage::SongsManage(SQLite::Database& d) : db(d) {
+SongsManage::SongsManage(SQLite::Database& d) : db(d), mTimeDomainSpecInsert(d) {
     try {
         db.exec(createSongsTableSQL);
     } catch (const std::exception& e) {
@@ -39,6 +39,9 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d) {
                 e.what()
             );
     }
+    mTimeDomainSpecInsert.onFileTaskOver = [this](const char* fileName) {
+        if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(fileName);
+    };
 }
 
 InsertSongInfo SongsManage::insertSong(const juce::File& path) {

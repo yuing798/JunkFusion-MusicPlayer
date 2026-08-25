@@ -103,16 +103,28 @@ class JunkFusionDLLBindings {
   late final _registerCurrentPTSCallback = _registerCurrentPTSCallbackPtr
       .asFunction<void Function(DoubleFunc)>();
 
-  void registerErrorSendCallback(ErrorSend cb) {
+  void registerErrorSendCallback(StringFunc cb) {
     return _registerErrorSendCallback(cb);
   }
 
   late final _registerErrorSendCallbackPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ErrorSend)>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
         'registerErrorSendCallback',
       );
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
-      .asFunction<void Function(ErrorSend)>();
+      .asFunction<void Function(StringFunc)>();
+
+  void registerTimeDomainSpecInsertOver(StringFunc cb) {
+    return _registerTimeDomainSpecInsertOver(cb);
+  }
+
+  late final _registerTimeDomainSpecInsertOverPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
+        'registerTimeDomainSpecInsertOver',
+      );
+  late final _registerTimeDomainSpecInsertOver =
+      _registerTimeDomainSpecInsertOverPtr
+          .asFunction<void Function(StringFunc)>();
 
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
     return _saveComment(songId, commentText);
@@ -165,6 +177,6 @@ class JunkFusionDLLBindings {
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;
 typedef DoubleFuncFunction = ffi.Void Function(ffi.Double);
 typedef DartDoubleFuncFunction = void Function(double);
-typedef ErrorSend = ffi.Pointer<ffi.NativeFunction<ErrorSendFunction>>;
-typedef ErrorSendFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
-typedef DartErrorSendFunction = void Function(ffi.Pointer<ffi.Char> str);
+typedef StringFunc = ffi.Pointer<ffi.NativeFunction<StringFuncFunction>>;
+typedef StringFuncFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
+typedef DartStringFuncFunction = void Function(ffi.Pointer<ffi.Char> str);
