@@ -113,9 +113,13 @@ extern "C" {
         dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
     }
     const char* getTimeDomainSpecBySongId(long long songId) {
-        auto vec{dllManager::getInstance().getSongsManager().getTimeDomainSpecBySongId(songId)};
+        auto vec = dllManager::getInstance().getSongsManager().getTimeDomainSpecBySongId(songId);
+        juce::Array<juce::var> arr;
+        for (auto& i : vec) {
+            arr.add(i);
+        }
         juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(B_getTimeDomainSpec::specList, juce::var(vec));
+        obj.getDynamicObject()->setProperty(B_getTimeDomainSpec::specList, juce::var(arr));
         auto ptr = DllUtils::object2Uint8t(obj);
 
         return ptr;

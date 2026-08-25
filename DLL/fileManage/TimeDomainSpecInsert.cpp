@@ -56,9 +56,9 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
     auto* pAudioStream = inputContext->streams[currentIndex];
 
     // 时长（秒）
-    double duration{0.000001f}; // 防止失败的时候除以零
+    double duration{0.0f};
     if (inputContext->duration != AV_NOPTS_VALUE) {
-        duration = static_cast<double>(pAudioStream->duration) / AV_TIME_BASE;
+        duration = pAudioStream->duration * av_q2d(pAudioStream->time_base);
     }
     auto* decoderPar = pAudioStream->codecpar;
 
@@ -72,7 +72,7 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
     swr_alloc_set_opts2( // 下面初始化重采样器
             &swrContext, 
             &mono,//单通道 
-            AV_SAMPLE_FMT_FLTP,//float 且平面结构 
+            AV_SAMPLE_FMT_DBLP,//float 且平面结构 
             decoderPar->sample_rate, 
             &decoderPar->ch_layout,
             static_cast<AVSampleFormat>(decoderPar->format), 
@@ -82,7 +82,7 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
         );
     swr_init(swrContext);
 
-    juce::AudioBuffer<float> buffer;
+    juce::AudioBuffer<double> buffer;
 
     int64_t totalSamples = static_cast<int64_t>(duration * (double)decoderPar->sample_rate);
 
@@ -95,13 +95,13 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
     auto num4LeftBin{totalSamples - 128 * samplePerLeftBin}; // 左边柱子的数目
 
     buffer.clear();
-    int binCount{0};        // 帧循环中使用了多少根柱子
-    int sampleCount{0};     // 每个柱子中已经存储了多少个样本点
-    float squarePlus{0.0f}; // 平方和
+    int binCount{0};         // 帧循环中使用了多少根柱子
+    int sampleCount{0};      // 每个柱子中已经存储了多少个样本点
+    double squarePlus{0.0f}; // 平方和
 
     auto pushDataIntoAudioGraph = [&](uint8_t* outputArray, int swrResult) {
         auto* dest = buffer.getWritePointer(0);
-        const float* src = reinterpret_cast<const float*>(outputArray);
+        const double* src = reinterpret_cast<const double*>(outputArray);
         for (int i = 0; i < swrResult; i++) {
             if (binCount >= 128) return;
             auto square = src[i] * src[i];
@@ -152,7 +152,7 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
                 nullptr,      // 物理字节大小
                 1,
                 numOutputSamples,
-                AV_SAMPLE_FMT_FLTP,
+                AV_SAMPLE_FMT_DBLP,
                 0
             );
 
@@ -178,11 +178,6 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
 
             av_frame_unref(frame);
 
-            if (result <= 0) {
-                av_freep(&outputArray);
-                continue;
-            }
-
             pushDataIntoAudioGraph(outputArray, num4SwrSamples);
 
             av_freep(&outputArray);
@@ -201,7 +196,7 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
             nullptr,      // 物理字节大小
             1,
             numOutputSamples,
-            AV_SAMPLE_FMT_FLTP,
+            AV_SAMPLE_FMT_DBLP,
             0
         ); // 第二个参数和第四个参数的区别：nb_samples 是逻辑样本数（比如 1024 个浮点样本）。
         // linesize 是物理字节大小（比如对于 1024 个浮点样本，linesize 通常是 1024 * 4 = 4096
@@ -241,7 +236,7 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
 
     if (maxFlushSamples > 0) {
         uint8_t* outputArray = nullptr;
-        av_samples_alloc(&outputArray, nullptr, 1, maxFlushSamples, AV_SAMPLE_FMT_FLTP, 0);
+        av_samples_alloc(&outputArray, nullptr, 1, maxFlushSamples, AV_SAMPLE_FMT_DBLP, 0);
 
         while (true) {
             int ret = swr_convert(swrContext, &outputArray, maxFlushSamples, nullptr, 0);
@@ -266,9 +261,22 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
         sql.bind(
             ":timeDomainSpec",
             buffer.getReadPointer(0),
-            static_cast<int>(buffer.getNumSamples() * sizeof(float))
+            static_cast<int>(buffer.getNumSamples() * sizeof(double))
         ); // 时域图
         sql.bind(":filePath", file);
+
+        std::string spdlogStr{""};
+        spdlog::get(LogDllID)->debug(
+            "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
+            file,
+            buffer.getNumSamples(),
+            static_cast<int>(buffer.getNumSamples() * sizeof(double))
+        );
+        for (int i = 0; i < buffer.getNumSamples(); i++) {
+
+            spdlogStr += std::to_string(buffer.getReadPointer(0)[i]) + " ";
+        }
+        spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
 
         sql.exec();
         auto fileName{juce::File(file).getFileName()};

@@ -42,12 +42,15 @@ class PlaybackProvider extends ChangeNotifier {
     _isPlaying = true;
     final ptr = bindings.getTimeDomainSpecBySongId(_currentSongId!);
     final dartStr = ptr.cast<Utf8>().toDartString();
+    print(dartStr);
     final obj = jsonDecode(dartStr) as Map<String, dynamic>;
     bindings.freeString(ptr);
     final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
     _timeDomainSpec = timeDomainSpec
         .map((e) => (e as num).toDouble())
         .toList(); //歌曲时域图数据
+
+    // print(_timeDomainSpec);
 
     notifyListeners();
 

@@ -162,7 +162,7 @@ void AudioProcessSuber::run() {
                     receiverMsg.toStdString()
                 );
                 Utils::writeEmergencyLog("sub接收到发送错误弹窗消息");
-                auto cString{DllUtils::sendString2Frontend(receiverMsg)};
+                auto cString{DllUtils::copyStringOnHeap(receiverMsg)};
 
                 if (dllManager::getInstance().errorSendCallback)
                     dllManager::getInstance().errorSendCallback(cString);
