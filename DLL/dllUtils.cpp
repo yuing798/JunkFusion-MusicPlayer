@@ -1,5 +1,6 @@
 #include "./dllUtils.hpp"
 #include "dllManager.hpp"
+#include "dllUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <cstddef>
@@ -27,15 +28,7 @@ const char* DllUtils::object2Uint8t(juce::var obj) {
     //    分号执行完后临时 String 销毁 → 野指针 → 下游读到垃圾数据
     juce::String json = juce::JSON::toString(obj);
 
-    // 注意这里是指针，实际数据还是在juce::String里面，所以必须申请堆内存
-    const char* jsonStr = json.toRawUTF8();
-
-    // 申请堆内存
-    size_t length{strlen(jsonStr)};
-    char* cString{static_cast<char*>(malloc(length + 1))};
-    if (cString) {
-        memcpy(cString, jsonStr, length + 1);
-    }
+    auto cString = sendString2Frontend(json);
     return cString;
 }
 
@@ -52,4 +45,19 @@ juce::var DllUtils::charPtr2object(const char* ptr) {
 void DllUtils::sendMessage2AudioProcess(juce::var obj) {
     auto jsonStr{juce::JSON::toString(obj).toStdString()};
     dllManager::getInstance().sendMessage2AudioProcess(jsonStr);
+}
+
+const char* DllUtils::sendString2Frontend(juce::String& str) {
+    const char* ptr{str.toRawUTF8()};
+    auto length{strlen(ptr)};
+    char* copyPtr{static_cast<char*>(malloc(length + 1))};
+    if (copyPtr) memcpy(copyPtr, ptr, length + 1);
+    return copyPtr;
+}
+const char* DllUtils::sendString2Frontend(std::string& str) {
+    const char* ptr{str.c_str()};
+    auto length{strlen(ptr)};
+    char* copyPtr{static_cast<char*>(malloc(length + 1))};
+    if (copyPtr) memcpy(copyPtr, ptr, length + 1);
+    return copyPtr;
 }

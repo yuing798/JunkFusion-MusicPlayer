@@ -11,6 +11,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <sha1.h>
@@ -335,6 +336,9 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
 
     InsertSongInfo insertSongInfo;
     insertSongInfo.info = info;
+
+    mTimeDomainSpecInsert.setTask(filePath);
+
     return insertSongInfo;
 }
 
@@ -481,6 +485,30 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};
         logger->error("id号{}:评论更新失败:{}", songId, e.what());
+    }
+}
+
+std::vector<float> SongsManage::getTimeDomainSpecBySongId(int64_t songId) {
+    try {
+        SQLite::Statement sql(db, "SELECT timeDomainSpec FROM songs WHERE songId = :songId");
+        sql.bind(":songId", songId);
+        if (sql.executeStep()) {
+            const void* blob{sql.getColumn("timeDomainSpec").getBlob()};
+            int size{sql.getColumn("timeDomainSpec").getBytes()}; // 字节数
+            std::vector<float> buffer;
+            if (128 != (size / sizeof(float))) {
+                throw SQLite::Exception("波形图发生损坏");
+            }
+            buffer.resize(size / sizeof(float));
+            std::memcpy(buffer.data(), blob, size);
+            return buffer;
+        } else {
+            throw SQLite::Exception("无法执行时域图读取");
+        }
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)
+            ->error("getTimeDomainSpecBySongId错误:id:{},原因:{}", songId, e.what());
+        return {};
     }
 }
 

@@ -32,7 +32,7 @@ public:
 
     bool reverseMyLike(int64_t id);
     std::string getPathBySongId(int64_t songId); // 根据ID获得路径和歌曲时长
-    bool deleteSongId(int64_t songId);           // 删除songId对应的条目
     void saveComment(juce::String text, int64_t songId);
-    std::function<void(const char*)> onTimeDomainSpecInsertOver;
+    std::function<void(const char*)> onTimeDomainSpecInsertOver;  // 重型数据插入数据库完成
+    std::vector<float> getTimeDomainSpecBySongId(int64_t songId); // 根据ID号获取时域图
 };

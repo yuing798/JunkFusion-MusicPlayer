@@ -46,6 +46,7 @@ class CppCallbackManager {
           String str = ptr.cast<Utf8>().toDartString();
           bindings.freeString(ptr);
           // TODO:重型歌曲插入任务完成
+          print("重型歌曲插入任务完成:文件:$str");
         });
 
     // 将生成的函数指针传给 C++

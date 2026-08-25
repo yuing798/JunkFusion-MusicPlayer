@@ -1,9 +1,11 @@
 #include "./TimeDomainSpecInsert.hpp"
 #include "constants.h"
+#include "dllUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <cstring>
 #include <mutex>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -20,11 +22,9 @@ extern "C" {
 TimeDomainSpecInsert::TimeDomainSpecInsert(SQLite::Database& db)
     : juce::Thread("TimeDomainSpecInsert"), mDb(db) {}
 
-void TimeDomainSpecInsert::setTask(std::vector<std::string> fileTasks) {
+void TimeDomainSpecInsert::setTask(std::string file) {
     std::lock_guard<std::mutex> lock(mtx);
-    for (auto& fileTask : fileTasks) {
-        mTaskQueue.push(std::move(fileTask));
-    }
+    mTaskQueue.push(std::move(file));
     notify();
     if (!isThreadRunning()) startThread();
 }
@@ -271,10 +271,10 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
         sql.bind(":filePath", file);
 
         sql.exec();
+        auto fileName{juce::File(file).getFileName()};
+        auto cString{DllUtils::sendString2Frontend(fileName)};
 
-        auto fileName{juce::File(file).getFileName().toRawUTF8()};
-
-        if (onFileTaskOver) onFileTaskOver(fileName);
+        if (onFileTaskOver) onFileTaskOver(cString);
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->error("TimeDomainSpecInsert线程发生数据库错误:{}", e.what());
     }

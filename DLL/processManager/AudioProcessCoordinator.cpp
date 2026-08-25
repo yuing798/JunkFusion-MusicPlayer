@@ -2,6 +2,7 @@
 #include "./AudioDefs.hpp"
 #include "constants.h"
 #include "dllManager.hpp"
+#include "dllUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
 #include "spdlog/spdlog.h"
@@ -161,10 +162,7 @@ void AudioProcessSuber::run() {
                     receiverMsg.toStdString()
                 );
                 Utils::writeEmergencyLog("sub接收到发送错误弹窗消息");
-                const char* sendMsg = receiverMsg.toRawUTF8();
-                auto length{strlen(sendMsg)};
-                char* cString{static_cast<char*>(malloc(length + 1))};
-                if (cString) memcpy(cString, sendMsg, length + 1);
+                auto cString{DllUtils::sendString2Frontend(receiverMsg)};
 
                 if (dllManager::getInstance().errorSendCallback)
                     dllManager::getInstance().errorSendCallback(cString);

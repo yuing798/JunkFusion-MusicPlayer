@@ -16,4 +16,9 @@ namespace DllUtils {
     juce::var charPtr2object(const char* ptr);
 
     void sendMessage2AudioProcess(juce::var obj);
+
+    // 将cpp字符串转为字符串指针的形式并拷贝一份到堆上面
+    const char* sendString2Frontend(juce::String& str);
+    // 将cpp字符串转为字符串指针的形式并拷贝一份到堆上面
+    const char* sendString2Frontend(std::string& str);
 } // namespace DllUtils
