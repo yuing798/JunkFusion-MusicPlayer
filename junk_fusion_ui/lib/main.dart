@@ -17,7 +17,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-// 导入自己的文件（相对路径，不需要 package: 前缀）
 import 'app.dart'; // 根组件
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';

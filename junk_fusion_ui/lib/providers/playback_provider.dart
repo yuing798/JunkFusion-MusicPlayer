@@ -25,6 +25,9 @@ class PlaybackProvider extends ChangeNotifier {
   double _currentTimeStamp = 0;
   double get currentTimeStamp => _currentTimeStamp;
 
+  List<double> _timeDomainSpec = [];
+  List<double> get timeDomainSpec => _timeDomainSpec;
+
   // 播放模式枚举
   // 0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
   int _playMode = 0;
@@ -42,7 +45,7 @@ class PlaybackProvider extends ChangeNotifier {
     final obj = jsonDecode(dartStr) as Map<String, dynamic>;
     bindings.freeString(ptr);
     final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
-    List<double> timeDomainSpecList = timeDomainSpec
+    _timeDomainSpec = timeDomainSpec
         .map((e) => (e as num).toDouble())
         .toList(); //歌曲时域图数据
 

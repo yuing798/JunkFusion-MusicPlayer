@@ -114,19 +114,6 @@ Future<SendPort> isolateSendPort = () async {
                 songsList.add(SongInfo.fromJson(song as Map<String, dynamic>));
               }
               results[B_getAllSongs.songsList] = songsList;
-            } else if (name == B_toggleMyLike.name) {
-              assert(params.containsKey(B_toggleMyLike.songId));
-              final songId = params[B_toggleMyLike.songId] as int; // 强制转换为 int
-              bool result = bindings.toggleMyLike(songId) == 1;
-              results[B_toggleMyLike.successOrError] = result;
-            } else if (name == B_saveComment.name) {
-              final songId = params[B_saveComment.songId] as int;
-              final commentText = params[B_saveComment.text] as String;
-              final cPtr = commentText.toNativeUtf8().cast<Char>();
-              bindings.saveComment(songId, cPtr);
-              malloc.free(
-                cPtr,
-              ); //因为这个c指针是dart的内存管理器分配在堆上面的，所以需要使用dart的calloc.free释放内存
             } else if (name == B_songImport.name) {
               // print("开始导入文件");
               assert(params.containsKey(B_songImport.filePaths));
@@ -193,11 +180,3 @@ Future<SendPort> isolateSendPort = () async {
 
   return initCompleter.future;
 }(); //立即执行函数只执行一次，且后续永远不会因为任何变量“改变”而重新执行
-
-// Completer 的所有成员（API 清单）
-// 成员	类型	作用（一句话概括）
-// Completer<T>()	构造函数	创建一个新遥控器，T 是你要返回的数据类型。
-// future	Getter（属性）	获取遥控器对应的那张“小票”（Future<T>），将其交给调用方。
-// complete(value)	方法	成功完成：将数据塞进 Future，所有等待的 await 会立即拿到 value。
-// completeError(error, [stackTrace])	方法	失败完成：让 Future 抛出异常，触发 catchError。
-// isCompleted	Getter（属性）	检查遥控器是否已经按过（无论成功还是失败），返回 bool。

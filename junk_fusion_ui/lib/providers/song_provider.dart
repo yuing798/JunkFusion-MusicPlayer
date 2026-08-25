@@ -43,12 +43,9 @@ class SongProvider extends ChangeNotifier {
     _songs[index] = originSong.copyWith(isMyLike: !originSong.isMyLike);
     notifyListeners(); // 通知 UI 刷新（UI 立刻看到变化）
 
-    // --- 异步调用后端 ---
-    final results = await sendDLLIsolateTask(B_toggleMyLike.name, {
-      B_toggleMyLike.songId: songId,
-    });
-    final successOrError = results[B_toggleMyLike.successOrError] as bool;
-    if (!successOrError) {
+    bool result = bindings.toggleMyLike(songId) == 1;
+
+    if (!result) {
       DialogUtil.showInfoDialog("切换我喜欢状态发生错误，请重试");
       // --- 失败回滚：恢复原始状态 ---
       _songs[index] = originSong;
@@ -107,11 +104,12 @@ class SongProvider extends ChangeNotifier {
       }
       notifyListeners();
     }
-    // String sfqwf = "wegw";
-    // final ptr = sfqwf.toNativeUtf8().cast<Char>();
+  }
 
-    // bindings.someImport(ptr);
-    // malloc.free(ptr);
+  void saveComment(int songId, String text) {
+    final cPtr = text.toNativeUtf8().cast<Char>();
+    bindings.saveComment(songId, cPtr);
+    malloc.free(cPtr);
   }
 
   // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串
