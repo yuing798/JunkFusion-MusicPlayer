@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart';
-import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
+import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:provider/provider.dart';

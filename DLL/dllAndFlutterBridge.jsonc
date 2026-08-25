@@ -48,5 +48,9 @@
     "comment":"",
     "playNum":"",
     "hash":""
+  },
+
+  "getTimeDomainSpec":{
+    "specList":""//时域图数组
   }
 }//node D:/audio_develop/Junk-Fusion/JunkFusionDLL/generateBridge.cjs执行

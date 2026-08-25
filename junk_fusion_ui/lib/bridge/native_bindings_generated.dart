@@ -75,6 +75,17 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
+    return _getTimeDomainSpecBySongId(songId);
+  }
+
+  late final _getTimeDomainSpecBySongIdPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getTimeDomainSpecBySongId',
+      );
+  late final _getTimeDomainSpecBySongId = _getTimeDomainSpecBySongIdPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
   void pausePlay() {
     return _pausePlay();
   }

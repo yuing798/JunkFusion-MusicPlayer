@@ -1,6 +1,5 @@
 #ifndef LLB_EXPORT_H
 #define LLB_EXPORT_H
-
 #ifdef _WIN32
     #define LIB_EXPORT __declspec(dllexport)
 #else
@@ -28,6 +27,7 @@ extern "C" {
     LIB_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     LIB_EXPORT void seekTargetPTS(double targetSeconds); // 进度条移动到目标进度
     LIB_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
+    LIB_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
 
 #ifdef __cplusplus
 }

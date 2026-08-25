@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
@@ -49,7 +48,7 @@ class EachSong extends StatelessWidget {
           if (isCurrentSong) {
             context.read<PlaybackProvider>().togglePlayPause();
           } else {
-            context.read<PlaybackProvider>().setCurrentSongId(song.songId);
+            context.read<PlaybackProvider>().setNewSong(song.songId);
           }
         },
         child: Stack(

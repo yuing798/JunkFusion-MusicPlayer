@@ -272,7 +272,7 @@ void TimeDomainSpecInsert::processSingleFile(std::string file) {
 
         sql.exec();
         auto fileName{juce::File(file).getFileName()};
-        auto cString{DllUtils::sendString2Frontend(fileName)};
+        auto cString{DllUtils::copyStringOnHeap(fileName)};
 
         if (onFileTaskOver) onFileTaskOver(cString);
     } catch (SQLite::Exception& e) {

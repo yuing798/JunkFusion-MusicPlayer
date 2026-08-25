@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 juce::var DllUtils::uint8t2Object(const char* str) {
 
@@ -28,7 +29,7 @@ const char* DllUtils::object2Uint8t(juce::var obj) {
     //    分号执行完后临时 String 销毁 → 野指针 → 下游读到垃圾数据
     juce::String json = juce::JSON::toString(obj);
 
-    auto cString = sendString2Frontend(json);
+    auto cString = copyStringOnHeap(json);
     return cString;
 }
 
@@ -47,14 +48,14 @@ void DllUtils::sendMessage2AudioProcess(juce::var obj) {
     dllManager::getInstance().sendMessage2AudioProcess(jsonStr);
 }
 
-const char* DllUtils::sendString2Frontend(juce::String& str) {
+const char* DllUtils::copyStringOnHeap(juce::String& str) {
     const char* ptr{str.toRawUTF8()};
     auto length{strlen(ptr)};
     char* copyPtr{static_cast<char*>(malloc(length + 1))};
     if (copyPtr) memcpy(copyPtr, ptr, length + 1);
     return copyPtr;
 }
-const char* DllUtils::sendString2Frontend(std::string& str) {
+const char* DllUtils::copyStringOnHeap(std::string& str) {
     const char* ptr{str.c_str()};
     auto length{strlen(ptr)};
     char* copyPtr{static_cast<char*>(malloc(length + 1))};

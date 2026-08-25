@@ -2,9 +2,12 @@
 // playback_provider.dart — 播放状态管理
 // ════════════════════════════════════════════════════════════════
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
-import 'package:junk_fusion_ui/bridge/dll/dll_invoke.dart';
+import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
+import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,21 +32,21 @@ class PlaybackProvider extends ChangeNotifier {
 
   // 设置当前播放的歌曲 ID，并持久化存储
   //   这是整个 ChangeNotifier 模式的核心！
-  Future<void> setCurrentSongId(int songId) async {
+  Future<void> setNewSong(int songId) async {
     if (songId == _currentSongId) return;
     _currentSongId = songId;
+    if (_currentSongId == null) return;
     _isPlaying = true;
-    notifyListeners();
+    final ptr = bindings.getTimeDomainSpecBySongId(_currentSongId!);
+    final dartStr = ptr.cast<Utf8>().toDartString();
+    final obj = jsonDecode(dartStr) as Map<String, dynamic>;
+    bindings.freeString(ptr);
+    final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
+    List<double> timeDomainSpecList = timeDomainSpec
+        .map((e) => (e as num).toDouble())
+        .toList(); //歌曲时域图数据
 
-    // try {
-    //   final success = await AppCache.frontCacheRef.setInt(
-    //     "currentSongId",
-    //     songId,
-    //   );
-    //   print('写入 currentSongId = $songId, 结果 = $success');
-    // } catch (e) {
-    //   print('写入失败: $e');
-    // }
+    notifyListeners();
 
     await AppCache.frontCacheRef.setInt("currentSongId", songId);
     bindings.playNewSong(songId);
@@ -96,5 +99,9 @@ class PlaybackProvider extends ChangeNotifier {
   void setCurrentPTS(double currentPTS) {
     _currentTimeStamp = currentPTS;
     notifyListeners();
+  }
+
+  void setCurrentTimeDomainSpec() {
+    //设置当前这首歌曲的时域图
   }
 }

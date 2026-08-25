@@ -7,6 +7,7 @@
 #include "juce_core/juce_core.h"
 #include "otherUtils.hpp"
 #include "processManager/AudioDefs.hpp"
+#include <cstdlib>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -110,5 +111,13 @@ extern "C" {
     }
     void registerTimeDomainSpecInsertOver(StringFunc cb) {
         dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
+    }
+    const char* getTimeDomainSpecBySongId(long long songId) {
+        auto vec{dllManager::getInstance().getSongsManager().getTimeDomainSpecBySongId(songId)};
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(B_getTimeDomainSpec::specList, juce::var(vec));
+        auto ptr = DllUtils::object2Uint8t(obj);
+
+        return ptr;
     }
 }

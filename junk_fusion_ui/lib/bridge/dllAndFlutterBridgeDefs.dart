@@ -55,3 +55,8 @@ class B_songInfo{
   static const String playNum = 'playNum';
   static const String hash = 'hash';
 }
+
+class B_getTimeDomainSpec{
+  static const String name = 'getTimeDomainSpec';
+  static const String specList = 'specList';
+}

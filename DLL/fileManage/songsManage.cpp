@@ -488,18 +488,18 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
     }
 }
 
-std::vector<float> SongsManage::getTimeDomainSpecBySongId(int64_t songId) {
+juce::Array<double> SongsManage::getTimeDomainSpecBySongId(int64_t songId) {
     try {
         SQLite::Statement sql(db, "SELECT timeDomainSpec FROM songs WHERE songId = :songId");
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
             const void* blob{sql.getColumn("timeDomainSpec").getBlob()};
             int size{sql.getColumn("timeDomainSpec").getBytes()}; // 字节数
-            std::vector<float> buffer;
-            if (128 != (size / sizeof(float))) {
+            juce::Array<double> buffer;
+            if (128 != (size / sizeof(double))) {
                 throw SQLite::Exception("波形图发生损坏");
             }
-            buffer.resize(size / sizeof(float));
+            buffer.resize(size / sizeof(double));
             std::memcpy(buffer.data(), blob, size);
             return buffer;
         } else {

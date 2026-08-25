@@ -55,3 +55,8 @@ struct B_songInfo{
     static constexpr const char* playNum = "playNum" ;
     static constexpr const char* hash = "hash" ;
 };
+
+struct B_getTimeDomainSpec{
+    static constexpr const char* name = "getTimeDomainSpec" ;
+    static constexpr const char* specList = "specList" ;
+};
