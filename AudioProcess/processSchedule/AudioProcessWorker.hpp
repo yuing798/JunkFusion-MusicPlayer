@@ -18,10 +18,11 @@ private:
 
 public:
     AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort);
-    std::function<void(std::string, double)> onPlayNewSongInfoReceived;
+    std::function<void(std::string)> onPlayNewSongInfoReceived;
     std::function<void(void)> onContinuePlay;
     std::function<void(void)> onPausePlay;
     std::function<void(double)> onSeekTargetPTS;
+    std::function<void(std::string, double)> onSetFirstPlay;
 
     void run() override;
 };

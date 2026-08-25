@@ -165,3 +165,12 @@ void AudioPreProcess::seekPreferPTS(double targetSeconds) {
     }
     isSongChange = false;
 }
+
+void AudioPreProcess::setFirstPlay(std::string path, double targetSeconds) {
+    isFullMute = false;
+    mDucks[mainPlayDuckIndex].ringBuffer->reset();
+    mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(path, targetSeconds);
+    isSongChange = false;
+    smoothedPlayPause.setCurrentAndTargetValue(1.0f);
+    currentSongPath = path;
+}

@@ -1,22 +1,9 @@
 // ════════════════════════════════════════════════════════════════
 // app.dart — 应用根组件
-//
-// 布局结构（对应 Vue App.vue 的 template）：
-// ```
-// Column
-// ├── Expanded
-// │   └── Row
-// │       ├── LeftColumn (固定 220px)
-// │       └── Expanded (主内容区 — 动态页面)
-// └── AnimatedSlide + AnimatedOpacity (底部播放栏)
-// ```
 // ════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/widgets/title_bar.dart';
-import 'package:provider/provider.dart';
-import 'providers/song_provider.dart';
-import 'providers/playback_provider.dart';
 import 'theme/app_theme.dart';
 import 'widgets/left_column.dart';
 import 'widgets/play_bar.dart';
@@ -32,10 +19,6 @@ class App extends StatefulWidget {
 // _AppState — App 的内部状态类
 
 class _AppState extends State<App> {
-  // ──────────────────────────────────────────────────────────────
-  // 页面切换
-  // ──────────────────────────────────────────────────────────────
-
   // 当前选中的页面 ID（默认 0 = AllMusic）
   int? _currentPageId = 0;
 
@@ -114,7 +97,6 @@ class _AppState extends State<App> {
             ),
           ),
 
-          // --- 底部播放栏（对应 Vue <Transition name="slide-up">） ---
           Positioned(
             left: 0,
             right: 0,

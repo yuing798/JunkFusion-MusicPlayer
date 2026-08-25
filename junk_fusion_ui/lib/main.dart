@@ -67,13 +67,24 @@ void main() async {
 
   final songProvider = SongProvider();
   songProvider.getAllSongs(); //全量获取歌曲元数据
+  final playbackProvider = PlaybackProvider();
 
-  runApp(JunkFusionApp(songProvider: songProvider)); //runApp不是阻塞式的，所以下面不能放析构逻辑
+  runApp(
+    JunkFusionApp(
+      songProvider: songProvider,
+      playbackProvider: playbackProvider,
+    ),
+  ); //runApp不是阻塞式的，所以下面不能放析构逻辑
 }
 
 class JunkFusionApp extends StatefulWidget {
   final SongProvider songProvider;
-  const JunkFusionApp({super.key, required this.songProvider});
+  final PlaybackProvider playbackProvider;
+  const JunkFusionApp({
+    super.key,
+    required this.songProvider,
+    required this.playbackProvider,
+  });
 
   @override
   State<StatefulWidget> createState() {
@@ -223,6 +234,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
 
     _saveWindowState();
 
+    widget.playbackProvider.saveState(); //这种方法读到的既不是watch也不是read,只是一个普通的方法调用
+
     // 2. 释放 Dart 端内存
     cppCallbackManager.dispose();
 
@@ -243,7 +256,9 @@ class JunkFusionAppState extends State<JunkFusionApp>
       //数据层，没画布
       providers: [
         ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
-        ChangeNotifierProvider(create: (_) => PlaybackProvider()),
+        ChangeNotifierProvider<PlaybackProvider>.value(
+          value: widget.playbackProvider,
+        ),
       ],
 
       child: MaterialApp(

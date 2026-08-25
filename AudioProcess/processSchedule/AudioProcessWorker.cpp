@@ -38,36 +38,48 @@ void AudioProcessorPuller::run() {
                     juce::MessageManager::callAsync([]() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();
                     });
+                    continue;
                 }
-                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::playInfo)) {
+                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::playNewSong)) {
                     // 收到歌曲路径信息就要开始播放新歌曲了
                     juce::var playInfo = jsonStr.getDynamicObject()
-                                             ->getProperty(AudioDefs::playInfo)
+                                             ->getProperty(AudioDefs::playNewSong)
                                              .getDynamicObject();
                     auto songPath{playInfo.getDynamicObject()
                                       ->getProperty(AudioDefs::songPath)
                                       .toString()
                                       .toStdString()};
-                    double songDuration{
-                        playInfo.getDynamicObject()->getProperty(AudioDefs::songDuration)
-                    };
 
                     spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
-                    if (onPlayNewSongInfoReceived)
-                        onPlayNewSongInfoReceived(songPath, songDuration);
+                    if (onPlayNewSongInfoReceived) onPlayNewSongInfoReceived(songPath);
+                    continue;
                 }
                 if (jsonStr.hasProperty(AudioDefs::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
                     if (onContinuePlay) onContinuePlay();
+                    continue;
                 }
                 if (jsonStr.hasProperty(AudioDefs::pause)) {
                     spdlog::get(LogAudioID)->debug("收到暂停指令");
                     if (onPausePlay) onPausePlay();
+                    continue;
                 }
                 if (jsonStr.hasProperty(AudioDefs::seekTargetPTS)) {
                     double pts{jsonStr.getDynamicObject()->getProperty(AudioDefs::seekTargetPTS)};
 
                     if (onSeekTargetPTS) onSeekTargetPTS(pts);
+                    continue;
+                }
+                if (jsonStr.hasProperty(AudioDefs::firstPlay)) {
+                    juce::var info{jsonStr.getDynamicObject()
+                                       ->getProperty(AudioDefs::firstPlay)
+                                       .getDynamicObject()};
+                    auto path{info.getDynamicObject()
+                                  ->getProperty(AudioDefs::songPath)
+                                  .toString()
+                                  .toStdString()};
+                    double currentPTS{info.getDynamicObject()->getProperty(AudioDefs::currentPTS)};
+                    if (onSetFirstPlay) onSetFirstPlay(path, currentPTS);
                 }
             }
         }

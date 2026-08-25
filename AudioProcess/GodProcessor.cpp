@@ -63,11 +63,10 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     };
 
     // 播放新歌
-    mAudioProcessWorker->receiver->onPlayNewSongInfoReceived =
-        [this](std::string songPath, double songDuration) {
-            mPreProcess.playNewSong(songPath);
-            currentPlaySamples = 0;
-        };
+    mAudioProcessWorker->receiver->onPlayNewSongInfoReceived = [this](std::string songPath) {
+        mPreProcess.playNewSong(songPath);
+        currentPlaySamples = 0;
+    };
 
     // 继续播放
     mAudioProcessWorker->receiver->onContinuePlay = [this]() { mPreProcess.continuePlay(); };
@@ -80,9 +79,12 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
         currentPlaySamples = static_cast<int>(targetSeconds * mSampleRate);
     };
 
-    mDeviceManager->connectProcessor(this);
+    mAudioProcessWorker->receiver->onSetFirstPlay = [this](std::string path, double pts) {
+        mPreProcess.setFirstPlay(path, pts);
+        startTimerHz(30); // 播放进度条的监听频率
+    };
 
-    startTimerHz(30); // 播放进度条的监听频率
+    mDeviceManager->connectProcessor(this);
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {

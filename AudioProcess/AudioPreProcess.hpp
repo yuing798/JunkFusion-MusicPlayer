@@ -53,4 +53,5 @@ public:
     std::function<void(std::string)> sendErrorMsg;
     bool getIsFullMute() const { return isFullMute; }
     void seekPreferPTS(double targetSeconds); // 跳转到目标时间点
+    void setFirstPlay(std::string path, double targetSeconds);
 };

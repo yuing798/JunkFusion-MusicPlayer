@@ -28,6 +28,11 @@ class PlaybackProvider extends ChangeNotifier {
   List<double> _timeDomainSpec = [];
   List<double> get timeDomainSpec => _timeDomainSpec;
 
+  bool _hasFirstPlay = false; //是否已经进行了第一次播放
+
+  bool _isPTSLock = false; //在某些情况下，进度条不能被后端的回调改变
+  bool get isPTSLock => _isPTSLock;
+
   // 播放模式枚举
   // 0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
   int _playMode = 0;
@@ -42,7 +47,7 @@ class PlaybackProvider extends ChangeNotifier {
     _isPlaying = true;
     final ptr = bindings.getTimeDomainSpecBySongId(_currentSongId!);
     final dartStr = ptr.cast<Utf8>().toDartString();
-    print(dartStr);
+    // print(dartStr);
     final obj = jsonDecode(dartStr) as Map<String, dynamic>;
     bindings.freeString(ptr);
     final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
@@ -59,10 +64,11 @@ class PlaybackProvider extends ChangeNotifier {
   }
 
   // 从持久化存储恢复当前播放歌曲 ID
-  void restoreCurrentSongId() async {
+  void restoreState() async {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
     if (songId != null) _currentSongId = songId;
     // print(_currentSongId);
+    _currentTimeStamp = AppCache.frontCacheRef.getDouble("currentPTS") ?? 0.0;
     notifyListeners();
   }
 
@@ -75,6 +81,13 @@ class PlaybackProvider extends ChangeNotifier {
       //注意这里是切换完成后的状态
       bindings.pausePlay();
     } else {
+      if (!_hasFirstPlay) {
+        print("触发第一次播放");
+        _hasFirstPlay = true;
+        if (_currentSongId == null) return;
+        bindings.setFirstPlay(_currentSongId!, _currentTimeStamp);
+        return;
+      }
       bindings.continuePlay();
     }
   }
@@ -103,11 +116,18 @@ class PlaybackProvider extends ChangeNotifier {
   }
 
   void setCurrentPTS(double currentPTS) {
+    if (_isPTSLock) return;
     _currentTimeStamp = currentPTS;
     notifyListeners();
   }
 
-  void setCurrentTimeDomainSpec() {
-    //设置当前这首歌曲的时域图
+  void saveState() async {
+    //这个函数只在退出应用的时候调用
+    _isPTSLock = true;
+    if (_currentSongId != null) {
+      await AppCache.frontCacheRef.setInt("currentSongId", _currentSongId!);
+    }
+
+    await AppCache.frontCacheRef.setDouble("currentPTS", _currentTimeStamp);
   }
 }

@@ -3,7 +3,7 @@
   "cacheDir":"--cacheDir",
   "pushPullPort":"--pushPullPort",
   "pubSubPort":"--pubSubPort",
-  "songPath":"",
+  
   "deviceTypeList":"",
   "deviceList":"",
   "sampleRateList":"",
@@ -14,8 +14,12 @@
   "play":"",
   "pause":"",
   "songChangeCrossFadeLength":"",
-  "songDuration":"",//歌曲时长
-  "playInfo":"",
-  "currentPTS":"",//当前的播放进度条时间戳
-  "seekTargetPTS":""
+  
+  "seekTargetPTS":"",
+  "firstPlay":"",//应用初始化后第一次播放
+
+  "playNewSong":"",//播放新歌，和上面那个字段不同，这个是切换歌曲调用的
+  "songPath":"",//准备播放的歌曲路径
+  "currentPTS":""//当前的播放进度条时间戳
+
 }

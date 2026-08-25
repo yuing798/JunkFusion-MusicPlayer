@@ -100,7 +100,9 @@ class JunkFusionDLLBindings {
   }
 
   late final _playNewSongPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>('playNewSong');
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
+        'playNewSong',
+      );
   late final _playNewSong = _playNewSongPtr.asFunction<void Function(int)>();
 
   void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
@@ -160,6 +162,17 @@ class JunkFusionDLLBindings {
       );
   late final _seekTargetPTS = _seekTargetPTSPtr
       .asFunction<void Function(double)>();
+
+  void setFirstPlay(int songId, double currentPTS) {
+    return _setFirstPlay(songId, currentPTS);
+  }
+
+  late final _setFirstPlayPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong, ffi.Double)>>(
+        'setFirstPlay',
+      );
+  late final _setFirstPlay = _setFirstPlayPtr
+      .asFunction<void Function(int, double)>();
 
   ffi.Pointer<ffi.Char> someImport(ffi.Pointer<ffi.Char> arg0) {
     return _someImport(arg0);

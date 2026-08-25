@@ -1,7 +1,7 @@
 # Run with `dart run ffigen --config ffigen.yaml`.
 name: JunkFusionDLLBindings
 description: "auto generate dll bridge in dart"
-output: "lib/bridge/dll/native_bindings_generated.dart"
+output: "lib/bridge/native_bindings_generated.dart"
 headers:
   entry-points:
     - "../DLL/libExport.h"
