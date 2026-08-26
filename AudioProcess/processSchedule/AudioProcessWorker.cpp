@@ -51,7 +51,7 @@ void AudioProcessorPuller::run() {
                                       .toStdString()};
 
                     spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
-                    if (onPlayNewSongInfoReceived) onPlayNewSongInfoReceived(songPath);
+                    if (onPlayNewSong) onPlayNewSong(songPath);
                     continue;
                 }
                 if (jsonStr.hasProperty(AudioDefs::play)) {

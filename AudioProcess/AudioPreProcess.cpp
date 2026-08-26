@@ -52,7 +52,10 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             smoothedSongChangeCrossFadeMs.getNextValue();
             smoothedPTSChangeCrossFadeMs.getNextValue();
             auto currentPlayPauseGain{smoothedPlayPause.getNextValue()};
-            if (currentPlayPauseGain == 0) isFullMute = true;
+            if (currentPlayPauseGain == 0) {
+                isFullMute = true;
+                if (onIsFullMuteTrigger) onIsFullMuteTrigger();
+            }
             for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
                 auto* originPtr{buffer.getWritePointer(ch)};
                 originPtr[i] *= currentPlayPauseGain;
@@ -119,8 +122,9 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
 }
 
 void AudioPreProcess::playNewSong(std::string songPath) {
+    // 播放新歌的时候一定在歌曲开头
 
-    mainPlayDuckIndex = !mainPlayDuckIndex;
+    mainPlayDuckIndex = !mainPlayDuckIndex; // 双甲板架构，先切换甲板
 
     if (!mDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
         // 只有主甲板在工作，副甲板完全没有在播放歌曲
@@ -162,6 +166,10 @@ void AudioPreProcess::seekPreferPTS(double targetSeconds) {
         mDucks[mainPlayDuckIndex].ringBuffer->reset();
         mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(currentSongPath, targetSeconds);
         currentCrossFadeIndex = 0;
+    } else {
+        isCrossFade = false;
+        mDucks[mainPlayDuckIndex].ringBuffer->reset();
+        mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(currentSongPath, targetSeconds);
     }
     isSongChange = false;
 }
@@ -171,6 +179,10 @@ void AudioPreProcess::setFirstPlay(std::string path, double targetSeconds) {
     mDucks[mainPlayDuckIndex].ringBuffer->reset();
     mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(path, targetSeconds);
     isSongChange = false;
-    smoothedPlayPause.setCurrentAndTargetValue(1.0f);
+    if (targetSeconds != 0.0) {
+        smoothedPlayPause.setTargetValue(1.0f);
+    } else {
+        smoothedPlayPause.setCurrentAndTargetValue(1.0f);
+    } // 如果在歌曲开头是不需要平滑进入的，其他位置需要
     currentSongPath = path;
 }

@@ -63,13 +63,16 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     };
 
     // 播放新歌
-    mAudioProcessWorker->receiver->onPlayNewSongInfoReceived = [this](std::string songPath) {
+    mAudioProcessWorker->receiver->onPlayNewSong = [this](std::string songPath) {
         mPreProcess.playNewSong(songPath);
         currentPlaySamples = 0;
     };
 
     // 继续播放
-    mAudioProcessWorker->receiver->onContinuePlay = [this]() { mPreProcess.continuePlay(); };
+    mAudioProcessWorker->receiver->onContinuePlay = [this]() {
+        mPreProcess.continuePlay();
+        startTimerHz(30);
+    };
     // 停止播放
     mAudioProcessWorker->receiver->onPausePlay = [this]() { mPreProcess.pausePlay(); };
 
@@ -83,6 +86,8 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
         mPreProcess.setFirstPlay(path, pts);
         startTimerHz(30); // 播放进度条的监听频率
     };
+
+    mPreProcess.onIsFullMuteTrigger = [this] { stopTimer(); }; // 停止状态暂停计时器的发送
 
     mDeviceManager->connectProcessor(this);
 }
@@ -116,17 +121,6 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
             currentPlaySamples++;
         }
     }
-
-    // decoderRingBuffer.popAudioData(buffer);
-    // Utils::writeEmergencyLog("processBlock开转");
-    // float volume{0.0f};
-    // for (int i = 0; i < buffer.getNumSamples(); i++) {
-    //     volume += buffer.getReadPointer(0)[i];
-    // }
-    // Utils::writeEmergencyLog(
-    //     "processBlock中的第一通道的音量平均值为" +
-    //     std::to_string((volume / static_cast<float>(buffer.getNumSamples())))
-    // );
 }
 
 void GodProcessor::timerCallback() {
@@ -137,10 +131,7 @@ void GodProcessor::timerCallback() {
     mAudioProcessWorker->sender->sendMessage(msg);
 }
 
-GodProcessor::~GodProcessor() {
-    stopTimer();
-    // 以后出现了cpu性能问题再在停止播放器件暂停计时器
-}
+GodProcessor::~GodProcessor() { stopTimer(); }
 
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}
 void GodProcessor::getStateInformation(juce::MemoryBlock& destData) {}

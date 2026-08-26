@@ -54,4 +54,5 @@ public:
     bool getIsFullMute() const { return isFullMute; }
     void seekPreferPTS(double targetSeconds); // 跳转到目标时间点
     void setFirstPlay(std::string path, double targetSeconds);
+    std::function<void(void)> onIsFullMuteTrigger; // 完全静音是否触发了
 };
