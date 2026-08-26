@@ -11,12 +11,10 @@ namespace AudioDefs {
     static constexpr const char* oscPort = "--oscPort" ;
     static constexpr const char* errorPopupWindowMsg = "errorPopupWindowMsg" ;
     static constexpr const char* killAudioProcess = "killAudioProcess" ;
-    static constexpr const char* play = "play" ;
     static constexpr const char* pause = "pause" ;
     static constexpr const char* songChangeCrossFadeLength = "songChangeCrossFadeLength" ;
-    static constexpr const char* seekTargetPTS = "seekTargetPTS" ;
-    static constexpr const char* firstPlay = "firstPlay" ;
-    static constexpr const char* playNewSong = "playNewSong" ;
+    static constexpr const char* play = "play" ;
     static constexpr const char* songPath = "songPath" ;
+    static constexpr const char* targetPTS = "targetPTS" ;
     static constexpr const char* currentPTS = "currentPTS" ;
 }

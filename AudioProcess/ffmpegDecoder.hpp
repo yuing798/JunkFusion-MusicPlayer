@@ -27,10 +27,9 @@ private:
 public:
     void prepareToPlay(juce::AudioChannelSet, double); // 这个是在改变全局播放设置的时候调用
     void run() override;
-    void playNewSong(std::string songPath);
+    void play(std::string songPath, double targetSeconds);
     explicit FFmpegDecoder(AudioRingBuffer* ringBuffer);
     ~FFmpegDecoder();
 
     std::function<void(std::string)> sendErrorMsg;
-    void seekPreferPTS(std::string songPath, double targetSecs); // 查找某一帧的音频并跳转到那个位置
 };

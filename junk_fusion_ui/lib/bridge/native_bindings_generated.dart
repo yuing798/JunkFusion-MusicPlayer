@@ -27,14 +27,6 @@ class JunkFusionDLLBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
   late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
 
-  void continuePlay() {
-    return _continuePlay();
-  }
-
-  late final _continuePlayPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('continuePlay');
-  late final _continuePlay = _continuePlayPtr.asFunction<void Function()>();
-
   void dllInit(
     ffi.Pointer<ffi.Char> cacheDirId,
     ffi.Pointer<ffi.Char> exeDirPtr,
@@ -95,15 +87,15 @@ class JunkFusionDLLBindings {
   );
   late final _pausePlay = _pausePlayPtr.asFunction<void Function()>();
 
-  void playNewSong(int songId) {
-    return _playNewSong(songId);
+  void play(int songId, double targetPTS) {
+    return _play(songId, targetPTS);
   }
 
-  late final _playNewSongPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
-        'playNewSong',
+  late final _playPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong, ffi.Double)>>(
+        'play',
       );
-  late final _playNewSong = _playNewSongPtr.asFunction<void Function(int)>();
+  late final _play = _playPtr.asFunction<void Function(int, double)>();
 
   void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
     return _registerCurrentPTSCallback(doubleFunc);
@@ -151,28 +143,6 @@ class JunkFusionDLLBindings {
       >('saveComment');
   late final _saveComment = _saveCommentPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
-
-  void seekTargetPTS(double targetSeconds) {
-    return _seekTargetPTS(targetSeconds);
-  }
-
-  late final _seekTargetPTSPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Double)>>(
-        'seekTargetPTS',
-      );
-  late final _seekTargetPTS = _seekTargetPTSPtr
-      .asFunction<void Function(double)>();
-
-  void setFirstPlay(int songId, double currentPTS) {
-    return _setFirstPlay(songId, currentPTS);
-  }
-
-  late final _setFirstPlayPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong, ffi.Double)>>(
-        'setFirstPlay',
-      );
-  late final _setFirstPlay = _setFirstPlayPtr
-      .asFunction<void Function(int, double)>();
 
   ffi.Pointer<ffi.Char> someImport(ffi.Pointer<ffi.Char> arg0) {
     return _someImport(arg0);

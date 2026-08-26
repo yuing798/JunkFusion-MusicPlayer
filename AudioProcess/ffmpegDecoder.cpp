@@ -438,13 +438,9 @@ void FFmpegDecoder::run() {
     avformat_close_input(&inputContext);
 }
 
-void FFmpegDecoder::playNewSong(std::string songPath) {
+void FFmpegDecoder::play(std::string songPath, double targetPTS) {
+    targetSeconds = targetPTS;
+    isRequestSeek = true;
     path = songPath;
     startThread();
-}
-void FFmpegDecoder::seekPreferPTS(std::string songPath, double targetSecs) {
-
-    targetSeconds = targetSecs;
-    isRequestSeek = true;
-    playNewSong(songPath);
 }

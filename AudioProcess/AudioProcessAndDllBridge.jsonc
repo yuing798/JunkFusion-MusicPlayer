@@ -11,15 +11,12 @@
   "oscPort":"--oscPort",
   "errorPopupWindowMsg":"",
   "killAudioProcess":"",
-  "play":"",
+  
   "pause":"",
   "songChangeCrossFadeLength":"",
   
-  "seekTargetPTS":"",
-  "firstPlay":"",//应用初始化后第一次播放
-
-  "playNewSong":"",//播放新歌，和上面那个字段不同，这个是切换歌曲调用的
+  "play":"",
   "songPath":"",//准备播放的歌曲路径
-  "currentPTS":""//当前的播放进度条时间戳
-
+  "targetPTS":"",//目标进度条时间戳
+  "currentPTS":""//这个是从音频进程向UI发送的，上面那个反过来
 }

@@ -3,8 +3,9 @@
 #include "AudioUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_events/juce_events.h"
+#include "processSchedule/AudioProcessWorker.hpp"
 
-AudioPreProcess::AudioPreProcess() {
+AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
     for (auto& duck : mDucks) {
         duck.ringBuffer = std::make_unique<AudioRingBuffer>(1000); // 中转站分配1秒
         duck.decoder = std::make_unique<FFmpegDecoder>(duck.ringBuffer.get());
@@ -16,11 +17,19 @@ AudioPreProcess::AudioPreProcess() {
                 juce::String(errorStr)
             );
             auto jsonStr{juce::JSON::toString(obj).toStdString()};
-            if (sendErrorMsg) sendErrorMsg(jsonStr);
+            mWorker->sender->sendMessage(jsonStr);
         };
     }
     fadeInSinTable = AudioUtils::generateSinTable(0.5);
     fadeOutCosTable = AudioUtils::generateCosTable(0.5);
+
+    // 播放新歌
+    mWorker->receiver->onPlay = [this](std::string songPath, double targetPTS) {
+        play(songPath, targetPTS);
+    };
+
+    // 停止播放
+    mWorker->receiver->onPausePlay = [this]() { pausePlay(); };
 }
 void AudioPreProcess::prepareToPlay(
     juce::AudioChannelSet outputLayout,
@@ -54,7 +63,6 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             auto currentPlayPauseGain{smoothedPlayPause.getNextValue()};
             if (currentPlayPauseGain == 0) {
                 isFullMute = true;
-                if (onIsFullMuteTrigger) onIsFullMuteTrigger();
             }
             for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
                 auto* originPtr{buffer.getWritePointer(ch)};
@@ -62,127 +70,132 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             }
         }
         return;
-    }
-    mDucks[0].tempBuffer.clear();
-    mDucks[1].tempBuffer.clear();
-    mDucks[mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[mainPlayDuckIndex].tempBuffer);
-    mDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[!mainPlayDuckIndex].tempBuffer);
+    } else {
+        mDucks[0].tempBuffer.clear();
+        mDucks[1].tempBuffer.clear();
+        mDucks[mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[mainPlayDuckIndex].tempBuffer);
+        mDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[!mainPlayDuckIndex].tempBuffer);
 
-    for (int i = 0; i < buffer.getNumSamples(); i++) {
-        // smoothedPlayPause.getNextValue();
+        for (int i = 0; i < buffer.getNumSamples(); i++) {
+            // smoothedPlayPause.getNextValue();
 
-        float currentCrossFadeMs{0.0f}; // 交叉淡化区长度(毫秒数)
-        if (isSongChange.load() == true) {
-            currentCrossFadeMs = smoothedSongChangeCrossFadeMs.getNextValue();
-            smoothedPTSChangeCrossFadeMs.getNextValue();
-        } else {
-            currentCrossFadeMs = smoothedPTSChangeCrossFadeMs.getNextValue();
-            smoothedSongChangeCrossFadeMs.getNextValue();
-        }
-        // if (!isCrossFade) continue;
-        if (!isCrossFade) {
-            // 交叉淡化已经结束，剩余样本直接输出主甲板
-            for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
-                buffer.getWritePointer(ch)[i] =
-                    mDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)[i];
+            float currentCrossFadeMs{0.0f}; // 交叉淡化区长度(毫秒数)
+            if (isSongChange.load() == true) {
+                currentCrossFadeMs = smoothedSongChangeCrossFadeMs.getNextValue();
+                smoothedPTSChangeCrossFadeMs.getNextValue();
+            } else {
+                currentCrossFadeMs = smoothedPTSChangeCrossFadeMs.getNextValue();
+                smoothedSongChangeCrossFadeMs.getNextValue();
             }
-            continue;
-        }
-        // 交叉淡化区域的实际样本数
-        int currentCrossFadeSamples{static_cast<int>(currentCrossFadeMs * mSampleRate / 1000.0f)};
+            // if (!isCrossFade) continue;
+            if (!isCrossFade) {
+                // 交叉淡化已经结束，剩余样本直接输出主甲板
+                for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+                    buffer.getWritePointer(ch)[i] =
+                        mDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)[i];
+                }
+                continue;
+            }
+            // 交叉淡化区域的实际样本数
+            int currentCrossFadeSamples{
+                static_cast<int>(currentCrossFadeMs * mSampleRate / 1000.0f)
+            };
 
-        // 交叉淡化程度
-        float fadeProcess{(float)currentCrossFadeIndex / (float)currentCrossFadeSamples};
-        // 给主甲板使用
-        auto sinGainValue{AudioUtils::getLinearInterpolator(
-            fadeInSinTable.getReadPointer(0),
-            fadeInSinTable.getNumSamples(),
-            fadeProcess
-        )};
-        // 给副甲板使用
-        auto cosGainValue{AudioUtils::getLinearInterpolator(
-            fadeOutCosTable.getReadPointer(0),
-            fadeOutCosTable.getNumSamples(),
-            fadeProcess
-        )};
+            // 交叉淡化程度
+            float fadeProcess{(float)currentCrossFadeIndex / (float)currentCrossFadeSamples};
+            // 给主甲板使用
+            auto sinGainValue{AudioUtils::getLinearInterpolator(
+                fadeInSinTable.getReadPointer(0),
+                fadeInSinTable.getNumSamples(),
+                fadeProcess
+            )};
+            // 给副甲板使用
+            auto cosGainValue{AudioUtils::getLinearInterpolator(
+                fadeOutCosTable.getReadPointer(0),
+                fadeOutCosTable.getNumSamples(),
+                fadeProcess
+            )};
 
-        for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
-            auto* originPtr{buffer.getWritePointer(ch)};
-            auto* mainDuckPtr{mDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)};
-            auto* deputyDuckPtr{mDucks[!mainPlayDuckIndex].tempBuffer.getReadPointer(ch)};
-            originPtr[i] = mainDuckPtr[i] * sinGainValue + deputyDuckPtr[i] * cosGainValue;
-        }
-        currentCrossFadeIndex++;
-        if (fadeProcess >= 1.0f) {
-            mDucks[!mainPlayDuckIndex].decoder->signalThreadShouldExit();
-            currentCrossFadeIndex = 0;
-            isCrossFade = false;
+            for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
+                auto* originPtr{buffer.getWritePointer(ch)};
+                auto* mainDuckPtr{mDucks[mainPlayDuckIndex].tempBuffer.getReadPointer(ch)};
+                auto* deputyDuckPtr{mDucks[!mainPlayDuckIndex].tempBuffer.getReadPointer(ch)};
+                originPtr[i] = mainDuckPtr[i] * sinGainValue + deputyDuckPtr[i] * cosGainValue;
+            }
+            currentCrossFadeIndex++;
+            if (fadeProcess >= 1.0f) {
+                mDucks[!mainPlayDuckIndex].decoder->signalThreadShouldExit();
+                currentCrossFadeIndex = 0;
+                isCrossFade = false;
+            }
         }
     }
 }
 
-void AudioPreProcess::playNewSong(std::string songPath) {
-    // 播放新歌的时候一定在歌曲开头
-
-    mainPlayDuckIndex = !mainPlayDuckIndex; // 双甲板架构，先切换甲板
-
-    if (!mDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
-        // 只有主甲板在工作，副甲板完全没有在播放歌曲
-        smoothedPlayPause.setCurrentAndTargetValue(1.0f);
-        isFullMute = false;
-        isCrossFade = false;
-    } else if (isFullMute == true) {
-        // 副甲板在工作但是当前处于暂停状态
-        mDucks[!mainPlayDuckIndex].decoder->signalThreadShouldExit(); // 直接把副甲板的线程停止
-        isCrossFade = false;
-        isFullMute = false;
-        smoothedPlayPause.setCurrentAndTargetValue(1.0f); // 歌曲刚开始的时候应该不需要平滑进入
-
-    } else {
-        // 副甲板在工作且播放的时候突然切歌
-        isCrossFade = true;
-    }
-    isSongChange = true;
-    mDucks[mainPlayDuckIndex].ringBuffer->reset();
-    currentSongPath = songPath;
-    mDucks[mainPlayDuckIndex].decoder->playNewSong(songPath);
-    currentCrossFadeIndex = 0;
+void AudioPreProcess::timerCallback() {
+    double currentSeconds = mCurrentPlaySamples / mSampleRate;
+    juce::var obj{new juce::DynamicObject()};
+    obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentSeconds);
+    auto msg = juce::JSON::toString(obj).toStdString();
+    mWorker->sender->sendMessage(msg);
 }
 void AudioPreProcess::pausePlay() {
     // spdlog::get(LogAudioID)->debug("AudioPreProcess准备暂停播放");
 
     smoothedPlayPause.setTargetValue(0.0f);
 }
-void AudioPreProcess::continuePlay() {
-    // spdlog::get(LogAudioID)->debug("AudioPreProcess准备继续播放");
-    smoothedPlayPause.setTargetValue(1.0f);
-    isFullMute = false;
-}
 
-void AudioPreProcess::seekPreferPTS(double targetSeconds) {
+void AudioPreProcess::play(std::string songPath, double targetPTS) {
     mainPlayDuckIndex = !mainPlayDuckIndex;
-    if (isFullMute == false) {
-        isCrossFade = true;
-        mDucks[mainPlayDuckIndex].ringBuffer->reset();
-        mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(currentSongPath, targetSeconds);
-        currentCrossFadeIndex = 0;
+    mCurrentPlaySamples = targetPTS * mSampleRate;
+    if (currentSongPath != songPath) {
+        isSongChange = true;
     } else {
-        isCrossFade = false;
-        mDucks[mainPlayDuckIndex].ringBuffer->reset();
-        mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(currentSongPath, targetSeconds);
+        isSongChange = false;
+    } // 这里的isSongChange是为了实施不同的交叉淡化时长的，
+    // 歌曲切换的不相干性远大于进度条切换，所以应该长交叉淡化
+    currentSongPath = songPath;
+
+    if (mDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
+        // 另一个甲板正在工作
+
+        if (isFullMute) {
+            // 如果另一个甲板正在工作但是是静音状态
+            isCrossFade = false;
+            if (targetPTS == 0.0) {
+                smoothedPlayPause.setCurrentAndTargetValue(1.0f);
+            } else {
+                smoothedPlayPause.setTargetValue(1.0f);
+                // 歌曲不在开头的话肯定要淡入淡出的
+            }
+
+            // 如果另一个甲板在播放，需要平滑静音后再在processBlock中发生停止线程信号
+            mDucks[!mainPlayDuckIndex].decoder->signalThreadShouldExit();
+        } else {
+            // 如果另一个甲板正在工作且位于播放状态
+            isCrossFade = true;
+        }
+    } else {
+        isCrossFade = false; // 另一个甲板不在工作不用交叉淡化处理
+        if (isFullMute) {    // 另一个甲板不在工作且不处于完全静音的情况完全不可能发生
+
+            if (targetPTS == 0.0) {
+                smoothedPlayPause.setCurrentAndTargetValue(1.0f);
+            } else {
+                smoothedPlayPause.setTargetValue(1.0f);
+                // 歌曲不在开头的话肯定要淡入淡出的
+            }
+        }
     }
-    isSongChange = false;
+
+    isFullMute = false;
+
+    // 这个值只有交叉淡化才会使用，不过设置一个int值开销小的离谱，所以放在这里是无所谓的
+    currentCrossFadeIndex = 0;
+    mDucks[mainPlayDuckIndex].ringBuffer->reset();
+    mDucks[mainPlayDuckIndex].decoder->play(songPath, targetPTS);
+    // 从打开输入上下文到帧循环的时间不过几十纳秒，开新线程完全可以
+    startTimerHz(30); // 30帧的进度条刷新率
 }
 
-void AudioPreProcess::setFirstPlay(std::string path, double targetSeconds) {
-    isFullMute = false;
-    mDucks[mainPlayDuckIndex].ringBuffer->reset();
-    mDucks[mainPlayDuckIndex].decoder->seekPreferPTS(path, targetSeconds);
-    isSongChange = false;
-    if (targetSeconds != 0.0) {
-        smoothedPlayPause.setTargetValue(1.0f);
-    } else {
-        smoothedPlayPause.setCurrentAndTargetValue(1.0f);
-    } // 如果在歌曲开头是不需要平滑进入的，其他位置需要
-    currentSongPath = path;
-}
+AudioPreProcess::~AudioPreProcess() { stopTimer(); }

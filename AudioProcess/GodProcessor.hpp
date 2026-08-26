@@ -17,18 +17,17 @@
 #include <memory>
 #include <spdlog/logger.h>
 
-class GodProcessor : public juce::AudioProcessor, public juce::Timer {
+class GodProcessor : public juce::AudioProcessor {
 private:
     std::unique_ptr<OscReceiver> mOscReceiver;
     std::unique_ptr<DeviceManager> mDeviceManager;
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
 
-    AudioPreProcess mPreProcess; // 音频预处理
+    std::unique_ptr<AudioPreProcess> mPreProcess; // 音频预处理
 
     double mSampleRate{44100.0};
     int mNumChannels{2};
-    std::atomic<int> currentPlaySamples{0}; // 该歌曲已经播放的采样点总数
 
 public:
     GodProcessor(juce::StringArray initArgs);
@@ -60,9 +59,6 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     juce::AudioProcessorEditor* createEditor() override { return nullptr; }
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-
-    // 计时器是专门给播放进度条的，300ms发送一次，我暂时还想不到其他功能
-    void timerCallback() override;
 
     DONT_COPY_AND_MOVE(GodProcessor)
 };

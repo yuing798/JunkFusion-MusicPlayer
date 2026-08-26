@@ -34,52 +34,31 @@ void AudioProcessorPuller::run() {
                 Utils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
-                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::killAudioProcess)) {
-                    juce::MessageManager::callAsync([]() {
-                        juce::MessageManager::getInstance()->stopDispatchLoop();
-                    });
-                    continue;
-                }
-                if (jsonStr.getDynamicObject()->hasProperty(AudioDefs::playNewSong)) {
-                    // 收到歌曲路径信息就要开始播放新歌曲了
-                    juce::var playInfo = jsonStr.getDynamicObject()
-                                             ->getProperty(AudioDefs::playNewSong)
-                                             .getDynamicObject();
-                    auto songPath{playInfo.getDynamicObject()
-                                      ->getProperty(AudioDefs::songPath)
-                                      .toString()
-                                      .toStdString()};
+                if (auto obj = jsonStr.getDynamicObject()) {
+                    if (obj->hasProperty(AudioDefs::killAudioProcess)) {
+                        juce::MessageManager::callAsync([]() {
+                            juce::MessageManager::getInstance()->stopDispatchLoop();
+                        });
+                        continue;
+                    }
+                    if (obj->hasProperty(AudioDefs::play)) {
+                        spdlog::get(LogAudioID)->debug("收到播放指令");
+                        juce::var playInfo{obj->getProperty(AudioDefs::play)};
+                        if (auto playInfoObj = playInfo.getDynamicObject()) {
+                            auto songPath{playInfoObj->getProperty(AudioDefs::songPath)
+                                              .toString()
+                                              .toStdString()};
+                            double targetPTS{playInfoObj->getProperty(AudioDefs::targetPTS)};
 
-                    spdlog::get(LogAudioID)->debug("收到歌曲路径{}", songPath);
-                    if (onPlayNewSong) onPlayNewSong(songPath);
-                    continue;
-                }
-                if (jsonStr.hasProperty(AudioDefs::play)) {
-                    spdlog::get(LogAudioID)->debug("收到播放指令");
-                    if (onContinuePlay) onContinuePlay();
-                    continue;
-                }
-                if (jsonStr.hasProperty(AudioDefs::pause)) {
-                    spdlog::get(LogAudioID)->debug("收到暂停指令");
-                    if (onPausePlay) onPausePlay();
-                    continue;
-                }
-                if (jsonStr.hasProperty(AudioDefs::seekTargetPTS)) {
-                    double pts{jsonStr.getDynamicObject()->getProperty(AudioDefs::seekTargetPTS)};
-
-                    if (onSeekTargetPTS) onSeekTargetPTS(pts);
-                    continue;
-                }
-                if (jsonStr.hasProperty(AudioDefs::firstPlay)) {
-                    juce::var info{jsonStr.getDynamicObject()
-                                       ->getProperty(AudioDefs::firstPlay)
-                                       .getDynamicObject()};
-                    auto path{info.getDynamicObject()
-                                  ->getProperty(AudioDefs::songPath)
-                                  .toString()
-                                  .toStdString()};
-                    double currentPTS{info.getDynamicObject()->getProperty(AudioDefs::currentPTS)};
-                    if (onSetFirstPlay) onSetFirstPlay(path, currentPTS);
+                            if (onPlay) onPlay(songPath, targetPTS);
+                            continue;
+                        }
+                    }
+                    if (obj->hasProperty(AudioDefs::pause)) {
+                        spdlog::get(LogAudioID)->debug("收到暂停指令");
+                        if (onPausePlay) onPausePlay();
+                        continue;
+                    }
                 }
             }
         }

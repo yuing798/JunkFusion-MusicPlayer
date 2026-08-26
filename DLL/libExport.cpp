@@ -71,7 +71,6 @@ extern "C" {
             // + "成功文件" +
             // successFilesString
         };
-        // 这里准备加上失败原因
         logger->info(resultStr);
         return DllUtils::object2Uint8t(resultObj);
     }
@@ -83,17 +82,14 @@ extern "C" {
     void registerErrorSendCallback(StringFunc cb) {
         dllManager::getInstance().errorSendCallback = cb;
     }
-    void playNewSong(long long songId) {
+    void play(long long songId, double currentPTS) {
         auto path = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(path));
         juce::var playInfo{new juce::DynamicObject()};
-        playInfo.getDynamicObject()->setProperty(AudioDefs::playNewSong, obj);
-        DllUtils::sendMessage2AudioProcess(playInfo);
-    }
-    void continuePlay() {
+
+        playInfo.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(path));
+        playInfo.getDynamicObject()->setProperty(AudioDefs::targetPTS, currentPTS);
         juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioDefs::play, "");
+        obj.getDynamicObject()->setProperty(AudioDefs::play, playInfo);
         DllUtils::sendMessage2AudioProcess(obj);
     }
     void pausePlay() {
@@ -103,11 +99,6 @@ extern "C" {
     }
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().currentPTSCallback = doubleFunc;
-    }
-    void seekTargetPTS(double targetSeconds) {
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioDefs::seekTargetPTS, targetSeconds);
-        DllUtils::sendMessage2AudioProcess(obj);
     }
     void registerTimeDomainSpecInsertOver(StringFunc cb) {
         dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
@@ -123,15 +114,5 @@ extern "C" {
         auto ptr = DllUtils::object2Uint8t(obj);
 
         return ptr;
-    }
-    void setFirstPlay(long long songId, double currentPTS) {
-        auto path = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
-        juce::var obj{new juce::DynamicObject()};
-
-        obj.getDynamicObject()->setProperty(AudioDefs::songPath, juce::String(path));
-        obj.getDynamicObject()->setProperty(AudioDefs::currentPTS, currentPTS);
-        juce::var playInfo{new juce::DynamicObject()};
-        playInfo.getDynamicObject()->setProperty(AudioDefs::firstPlay, obj);
-        DllUtils::sendMessage2AudioProcess(playInfo);
     }
 }

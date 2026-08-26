@@ -21,14 +21,11 @@ extern "C" {
     LIB_EXPORT const char* someImport(const char*);
     LIB_EXPORT void closeBackend(); // dll注销
     LIB_EXPORT void registerErrorSendCallback(StringFunc cb);
-    LIB_EXPORT void playNewSong(long long songId);
-    LIB_EXPORT void continuePlay(); // 继续播放
-    LIB_EXPORT void pausePlay();    // 暂停播放
+    LIB_EXPORT void play(long long songId, double targetPTS);
+    LIB_EXPORT void pausePlay(); // 暂停播放
     LIB_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
-    LIB_EXPORT void seekTargetPTS(double targetSeconds); // 进度条移动到目标进度
     LIB_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
     LIB_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
-    LIB_EXPORT void setFirstPlay(long long songId, double currentPTS);
 
 #ifdef __cplusplus
 }

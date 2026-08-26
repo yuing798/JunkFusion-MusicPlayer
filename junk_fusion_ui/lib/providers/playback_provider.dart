@@ -28,7 +28,7 @@ class PlaybackProvider extends ChangeNotifier {
   List<double> _timeDomainSpec = [];
   List<double> get timeDomainSpec => _timeDomainSpec;
 
-  bool _hasFirstPlay = false; //是否已经进行了第一次播放
+  // bool _hasFirstPlay = false; //是否已经进行了第一次播放
 
   bool _isPTSLock = false; //在某些情况下，进度条不能被后端的回调改变
   bool get isPTSLock => _isPTSLock;
@@ -47,7 +47,7 @@ class PlaybackProvider extends ChangeNotifier {
     _isPlaying = true;
     final ptr = bindings.getTimeDomainSpecBySongId(_currentSongId!);
     final dartStr = ptr.cast<Utf8>().toDartString();
-    // print(dartStr);
+    print(dartStr);
     final obj = jsonDecode(dartStr) as Map<String, dynamic>;
     bindings.freeString(ptr);
     final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
@@ -60,7 +60,7 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
 
     await AppCache.frontCacheRef.setInt("currentSongId", songId);
-    bindings.playNewSong(songId);
+    bindings.play(songId, 0.0);
   }
 
   // 从持久化存储恢复当前播放歌曲 ID
@@ -68,7 +68,7 @@ class PlaybackProvider extends ChangeNotifier {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
     if (songId != null) _currentSongId = songId;
     // print(_currentSongId);
-    _currentTimeStamp = AppCache.frontCacheRef.getDouble("currentPTS") ?? 0.0;
+    // _currentTimeStamp = AppCache.frontCacheRef.getDouble("currentPTS") ?? 0.0;
     notifyListeners();
   }
 
@@ -81,14 +81,14 @@ class PlaybackProvider extends ChangeNotifier {
       //注意这里是切换完成后的状态
       bindings.pausePlay();
     } else {
-      if (!_hasFirstPlay) {
-        print("触发第一次播放");
-        _hasFirstPlay = true;
-        if (_currentSongId == null) return;
-        bindings.setFirstPlay(_currentSongId!, _currentTimeStamp);
-        return;
-      }
-      bindings.continuePlay();
+      // if (!_hasFirstPlay) {
+      //   print("触发第一次播放");
+      //   _hasFirstPlay = true;
+      //   if (_currentSongId == null) return;
+      //   bindings.setFirstPlay(_currentSongId!, _currentTimeStamp);
+      //   return;
+      // }
+      bindings.play(_currentSongId!, _currentTimeStamp);
     }
   }
 
@@ -112,7 +112,7 @@ class PlaybackProvider extends ChangeNotifier {
 
   void seekPreferPTS(double targetSeconds) {
     //跳转到目标秒数
-    bindings.seekTargetPTS(targetSeconds);
+    bindings.play(_currentSongId!, targetSeconds);
   }
 
   void setCurrentPTS(double currentPTS) {
@@ -128,6 +128,6 @@ class PlaybackProvider extends ChangeNotifier {
       await AppCache.frontCacheRef.setInt("currentSongId", _currentSongId!);
     }
 
-    await AppCache.frontCacheRef.setDouble("currentPTS", _currentTimeStamp);
+    // await AppCache.frontCacheRef.setDouble("currentPTS", _currentTimeStamp);
   }
 }
