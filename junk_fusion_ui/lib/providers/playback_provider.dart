@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
@@ -38,6 +39,13 @@ class PlaybackProvider extends ChangeNotifier {
   int _playMode = 0;
   int get playMode => _playMode;
 
+  double _songDuration = 0.0;
+  double get songDuration => _songDuration;
+
+  void setSongDuration(double d) {
+    _songDuration = d;
+  }
+
   // 设置当前播放的歌曲 ID，并持久化存储
   //   这是整个 ChangeNotifier 模式的核心！
   Future<void> setNewSong(int songId) async {
@@ -47,7 +55,7 @@ class PlaybackProvider extends ChangeNotifier {
     _isPlaying = true;
     final ptr = bindings.getTimeDomainSpecBySongId(_currentSongId!);
     final dartStr = ptr.cast<Utf8>().toDartString();
-    print(dartStr);
+    // print(dartStr);
     final obj = jsonDecode(dartStr) as Map<String, dynamic>;
     bindings.freeString(ptr);
     final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
@@ -67,8 +75,6 @@ class PlaybackProvider extends ChangeNotifier {
   void restoreState() async {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
     if (songId != null) _currentSongId = songId;
-    // print(_currentSongId);
-    // _currentTimeStamp = AppCache.frontCacheRef.getDouble("currentPTS") ?? 0.0;
     notifyListeners();
   }
 
@@ -81,13 +87,6 @@ class PlaybackProvider extends ChangeNotifier {
       //注意这里是切换完成后的状态
       bindings.pausePlay();
     } else {
-      // if (!_hasFirstPlay) {
-      //   print("触发第一次播放");
-      //   _hasFirstPlay = true;
-      //   if (_currentSongId == null) return;
-      //   bindings.setFirstPlay(_currentSongId!, _currentTimeStamp);
-      //   return;
-      // }
       bindings.play(_currentSongId!, _currentTimeStamp);
     }
   }
@@ -101,17 +100,11 @@ class PlaybackProvider extends ChangeNotifier {
     await localStorage.setInt("cycleMode", _playMode);
   }
 
-  // 重置所有播放状态
-  void reset() {
-    _currentSongId = null;
-    _isPlaying = false;
-    _currentTimeStamp = 0;
-    _playMode = 0;
-    notifyListeners();
-  }
-
   void seekPreferPTS(double targetSeconds) {
     //跳转到目标秒数
+    _currentTimeStamp = targetSeconds;
+    if (!_isPlaying) return;
+
     bindings.play(_currentSongId!, targetSeconds);
   }
 
@@ -127,7 +120,5 @@ class PlaybackProvider extends ChangeNotifier {
     if (_currentSongId != null) {
       await AppCache.frontCacheRef.setInt("currentSongId", _currentSongId!);
     }
-
-    // await AppCache.frontCacheRef.setDouble("currentPTS", _currentTimeStamp);
   }
 }

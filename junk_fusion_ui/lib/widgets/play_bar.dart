@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget.dart';
+import 'package:junk_fusion_ui/widgets/song_progress_area.dart';
+import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
@@ -40,6 +42,8 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
   late final Animation<Offset> _slideAnimation;
 
   int? _previousSongId; //缓存上一次的歌曲ID，防止重复触发动画
+
+  double _height = 100;
 
   @override
   void initState() {
@@ -75,15 +79,10 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  bool _isProgressBarHovered = false;
-
   @override
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
 
-    // 安全地获取当前歌曲（如果 currentId 为空，返回 null）
-    // currentSongId 可能为 null：PlayBar 现在由 AnimatedSlide 始终渲染，
-    // 即使没有播放歌曲时也会构建（只是被推到屏幕外），所以必须判空
     final songId = playback.currentSongId;
     final shouldShow = songId != null;
     if (songId != _previousSongId) {
@@ -95,11 +94,11 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
       }
     }
     if (songId == null) return const SizedBox.shrink();
-    final song = context.select<SongProvider, SongInfo?>(
+    final song = context.select<SongProvider, SongInfo>(
       (provider) => provider.getSongInfo(songId),
     );
 
-    if (song == null) return SizedBox.shrink();
+    playback.setSongDuration(song.duration);
 
     Widget buildLikeButton() {
       return IconButton(
@@ -243,7 +242,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
     return SlideTransition(
       position: _slideAnimation,
       child: SizedBox(
-        height: 99,
+        height: _height,
         child: Stack(
           // mainAxisSize: MainAxisSize.min,
           // height: 90,
@@ -277,29 +276,16 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 5.0),
-              child: MouseRegion(
-                onEnter: (event) => setState(() {
-                  _isProgressBarHovered = true;
-                }),
-                onExit: (event) => setState(() {
-                  _isProgressBarHovered = false;
-                }),
-                cursor: SystemMouseCursors.click,
-                child: ProgressBar(
-                  progress: Duration(
-                    milliseconds: (playback.currentTimeStamp * 1000).toInt(),
-                  ),
-                  total: Duration(milliseconds: (song.duration * 1000).toInt()),
-                  onSeek: (value) {
-                    context.read<PlaybackProvider>().seekPreferPTS(
-                      (value.inMilliseconds).toDouble() / 1000.0,
-                    );
-                  },
-                  timeLabelLocation: TimeLabelLocation.none,
-                  barHeight: _isProgressBarHovered ? 9.0 : 5.0,
-                ),
+            Positioned(
+              bottom: 80,
+              left: 5,
+              right: 5,
+              child: SongProgressArea(
+                onHeightChange: (double value) {
+                  setState(() {
+                    _height = 80 + value;
+                  });
+                },
               ),
             ),
           ],

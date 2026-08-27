@@ -63,13 +63,13 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             auto currentPlayPauseGain{smoothedPlayPause.getNextValue()};
             if (currentPlayPauseGain == 0) {
                 isFullMute = true;
+                stopTimer();
             }
             for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
                 auto* originPtr{buffer.getWritePointer(ch)};
                 originPtr[i] *= currentPlayPauseGain;
             }
         }
-        return;
     } else {
         mDucks[0].tempBuffer.clear();
         mDucks[1].tempBuffer.clear();
@@ -130,6 +130,9 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             }
         }
     }
+    for (int i = 0; i < buffer.getNumSamples(); i++) {
+        if (!isFullMute) mCurrentPlaySamples++;
+    }
 }
 
 void AudioPreProcess::timerCallback() {
@@ -147,7 +150,7 @@ void AudioPreProcess::pausePlay() {
 
 void AudioPreProcess::play(std::string songPath, double targetPTS) {
     mainPlayDuckIndex = !mainPlayDuckIndex;
-    mCurrentPlaySamples = targetPTS * mSampleRate;
+    mCurrentPlaySamples = (int)(targetPTS * mSampleRate);
     if (currentSongPath != songPath) {
         isSongChange = true;
     } else {
@@ -198,4 +201,8 @@ void AudioPreProcess::play(std::string songPath, double targetPTS) {
     startTimerHz(30); // 30帧的进度条刷新率
 }
 
-AudioPreProcess::~AudioPreProcess() { stopTimer(); }
+AudioPreProcess::~AudioPreProcess() {
+    mDucks[0].decoder->stopThread(100);
+    mDucks[1].decoder->stopThread(100);
+    if (isTimerRunning()) stopTimer();
+}

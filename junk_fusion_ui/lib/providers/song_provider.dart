@@ -17,13 +17,12 @@ class SongProvider extends ChangeNotifier {
   List<SongInfo> _songs = [];
 
   List<SongInfo> get songs => _songs;
+  int get songCount => _songs.length;
 
   // 按 ID 查找歌曲
-  SongInfo? getSongInfo(int songId) {
-    return _songs.where((s) => s.songId == songId).firstOrNull;
+  SongInfo getSongInfo(int songId) {
+    return _songs.where((s) => s.songId == songId).first;
   }
-
-  int get songCount => _songs.length;
 
   Future<void> getAllSongs() async {
     final results = await sendDLLIsolateTask(B_getAllSongs.name, {});
@@ -140,47 +139,3 @@ class SongProvider extends ChangeNotifier {
     return result;
   }
 }
-
-// ════════════════════════════════════════════════════════════════
-// Provider 使用模式总结：
-//
-// ## 注入 Provider 到 Widget Tree（在 main.dart 中）：
-// ```dart
-// MultiProvider(
-//   providers: [
-//     ChangeNotifierProvider(create: (_) => SongProvider()),
-//     ChangeNotifierProvider(create: (_) => PlaybackProvider()),
-//   ],
-//   child: const MyApp(),
-// )
-// ```
-//
-// ## 在 Widget 中使用：
-//
-// ### 方式 1: context.watch (推荐，自动监听)
-// ```dart
-// @override
-// Widget build(BuildContext context) {
-//   final songs = context.watch<SongProvider>().songs;
-//   return ListView(...);
-// }
-// ```
-//
-// ### 方式 2: context.read (不监听，只调用方法)
-// ```dart
-// ElevatedButton(
-//   onPressed: () {
-//     context.read<SongProvider>().getAllSongs();
-//   },
-//   child: Text('刷新'),
-// )
-// ```
-//
-// ### 方式 3: Consumer widget (局部重建)
-// ```dart
-// Consumer<SongProvider>(
-//   builder: (context, provider, child) {
-//     return Text('共 ${provider.songs.length} 首');
-//   },
-// )
-// ```
