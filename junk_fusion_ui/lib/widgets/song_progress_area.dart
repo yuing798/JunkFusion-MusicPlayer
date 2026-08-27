@@ -20,9 +20,13 @@ class SongProgressAreaState extends State<SongProgressArea>
   late final AnimationController _controller;
   late final Animation<Offset> _slideAnimation;
 
-  // 【新增状态】：用于处理波形图拖拽的临时视觉状态
+  // 用于处理波形图拖拽的临时视觉状态
   bool _isWaveformDragging = false;
   double _waveformDragTime = 0.0;
+
+  // 【新增】：使用 ValueNotifier 高效追踪鼠标 X 坐标，避免全局频繁 setState
+  final ValueNotifier<double?> _hoverXNotifier = ValueNotifier(null);
+  //包裹一个值，当这个值发生变化时，能主动通知依赖它的组件进行更新。
 
   @override
   void initState() {
@@ -49,13 +53,12 @@ class SongProgressAreaState extends State<SongProgressArea>
   @override
   void dispose() {
     _controller.dispose();
+    _hoverXNotifier.dispose();
     super.dispose();
   }
 
-  // 【修改方法】：只负责计算时间，不再直接触发 seek
   double _calculateTime(double localDx, double maxWidth, double duration) {
     if (maxWidth <= 0) return 0.0;
-    // 计算百分比并限制在 0.0 ~ 1.0 之间
     double percentage = (localDx / maxWidth).clamp(0.0, 1.0);
     return percentage * duration;
   }
@@ -65,22 +68,28 @@ class SongProgressAreaState extends State<SongProgressArea>
     final playback = context.read<PlaybackProvider>();
 
     return MouseRegion(
+      // 【新增】：监听鼠标在整个区域内的滑动，实时更新 X 坐标
+      onHover: (event) {
+        _hoverXNotifier.value = event.localPosition.dx;
+      },
       onEnter: (event) => setState(() {
         _isProgressBarHovered = true;
-        widget.onHeightChange(20 + 120);
+        widget.onHeightChange(20 + 80);
         _controller.forward();
       }),
-      onExit: (event) => setState(() {
-        _isProgressBarHovered = false;
+      onExit: (event) {
+        setState(() {
+          _isProgressBarHovered = false;
+        });
+        _hoverXNotifier.value = null; // 【新增】：鼠标移出时隐藏线
         _controller.reverse();
-      }),
+      },
       cursor: SystemMouseCursors.click,
       child: Column(
         verticalDirection: VerticalDirection.up,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ProgressBar(
-            // 【核心改动 1】：拖拽波形时，显示临时时间；平时显示歌曲真实播放时间
             progress: Duration(
               milliseconds: _isWaveformDragging
                   ? (_waveformDragTime * 1000).toInt()
@@ -106,7 +115,6 @@ class SongProgressAreaState extends State<SongProgressArea>
                   builder: (context, constraints) {
                     return GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      // 【核心改动 2】：单纯的单击，抬起鼠标时直接触发跳转
                       onTapUp: (details) {
                         double targetTime = _calculateTime(
                           details.localPosition.dx,
@@ -115,8 +123,9 @@ class SongProgressAreaState extends State<SongProgressArea>
                         );
                         playback.seekPreferPTS(targetTime);
                       },
-                      // 【核心改动 3】：开始拖拽，记录初始时间和拖拽状态
                       onHorizontalDragStart: (details) {
+                        // 【新增】：拖拽开始时同步线的位置
+                        _hoverXNotifier.value = details.localPosition.dx;
                         setState(() {
                           _isWaveformDragging = true;
                           _waveformDragTime = _calculateTime(
@@ -126,8 +135,9 @@ class SongProgressAreaState extends State<SongProgressArea>
                           );
                         });
                       },
-                      // 【核心改动 4】：拖拽中，只更新UI临时时间，不调取后台 seek
                       onHorizontalDragUpdate: (details) {
+                        // 【新增】：拖拽过程中同步线的位置
+                        _hoverXNotifier.value = details.localPosition.dx;
                         setState(() {
                           _waveformDragTime = _calculateTime(
                             details.localPosition.dx,
@@ -136,23 +146,54 @@ class SongProgressAreaState extends State<SongProgressArea>
                           );
                         });
                       },
-                      // 【核心改动 5】：拖拽结束松开鼠标，触发后台真正的 seek！
                       onHorizontalDragEnd: (details) {
                         playback.seekPreferPTS(_waveformDragTime);
                         setState(() {
                           _isWaveformDragging = false;
                         });
                       },
-                      // 意外中断拖拽（例如鼠标切屏等），恢复正常状态
                       onHorizontalDragCancel: () {
                         setState(() {
                           _isWaveformDragging = false;
                         });
                       },
+                      // 【核心改动】：使用 Stack 将线盖在波形图上方
                       child: SizedBox(
-                        height: 120,
-                        child: CustomPaint(
-                          painter: SpectrumPainter(playback.timeDomainSpec),
+                        height: 80,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // 1. 底部的波形图
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: SpectrumPainter(
+                                  playback.timeDomainSpec,
+                                ),
+                              ),
+                            ),
+
+                            // 2. 悬浮/拖拽时的垂直指示线（使用 ValueListenableBuilder 局部刷新优化性能）
+                            ValueListenableBuilder<double?>(
+                              valueListenable: _hoverXNotifier,
+                              builder: (context, hoverX, child) {
+                                // 如果没有悬浮，或者鼠标超出了边界，则不显示线
+                                if (hoverX == null ||
+                                    hoverX < 0 ||
+                                    hoverX > constraints.maxWidth) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Positioned(
+                                  left: hoverX,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 3, // 线的粗细
+                                    color: Colors.black87, // 线的颜色
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     );

@@ -40,7 +40,7 @@ class SpectrumPainter extends CustomPainter {
       double normalized = data[i] / maxVal;
 
       // 计算柱子高度（保留底部留白，看起来更灵动）
-      double barHeight = normalized * totalHeight * 0.85;
+      double barHeight = normalized * totalHeight;
       if (barHeight == 0.0) barHeight = 1.0;
 
       // 计算x坐标
