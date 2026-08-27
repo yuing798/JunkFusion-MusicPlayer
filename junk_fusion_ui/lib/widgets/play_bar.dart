@@ -16,6 +16,7 @@ import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/widgets/play_list.dart';
 import 'package:junk_fusion_ui/widgets/song_progress_area.dart';
 import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
 import 'package:provider/provider.dart';
@@ -34,9 +35,10 @@ class PlayBar extends StatefulWidget {
   }
 }
 
-class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
+class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _slideAnimation;
+  late final PlayList _playList;
 
   int? _previousSongId; //缓存上一次的歌曲ID，防止重复触发动画
 
@@ -45,6 +47,8 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    _playList = PlayList(this);
 
     //在 initState 中调用任何可能触发 setState 或 notifyListeners 的异步/同步操作，
     //都要用 WidgetsBinding.instance.addPostFrameCallback 延迟到第一帧完成之后，避免在构建过程中引发 markNeedsBuild 异常。
@@ -73,6 +77,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
+    _playList.dispose();
     super.dispose();
   }
 
@@ -160,16 +165,6 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
           // ── 喜欢按钮
           buildLikeButton(),
-
-          // ── 歌曲详情弹窗──
-          // PopupWindow(
-          //   title: '歌曲详情',
-          //   triggerBuilder: (open) => IconButton(
-          //     onPressed: open,
-          //     icon: createIcon(TablerIcons.infoHexagonFilled),
-          //   ),
-          //   contentBuilder: () => SongDetailInfo(song: song),
-          // ),
         ],
       );
     }
@@ -230,7 +225,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.listFilled, size: 32),
             onPressed: () {
-              // TODO: 桥接层 - 打开播放列表
+              _playList.showPlayList();
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

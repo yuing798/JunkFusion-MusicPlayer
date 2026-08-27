@@ -5,6 +5,7 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/cpp_callback_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
+import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
@@ -259,6 +260,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),
+        ChangeNotifierProvider(create: (_) => AppTheme()),
       ],
 
       child: MaterialApp(

@@ -1,6 +1,7 @@
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
+import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
 import 'package:provider/provider.dart';
 
@@ -68,6 +69,7 @@ class SongProgressAreaState extends State<SongProgressArea>
   @override
   Widget build(BuildContext context) {
     final playback = context.read<PlaybackProvider>();
+    final theme = context.watch<AppTheme>();
 
     return MouseRegion(
       // 【新增】：监听鼠标在整个区域内的滑动，实时更新 X 坐标
@@ -169,7 +171,8 @@ class SongProgressAreaState extends State<SongProgressArea>
                             Positioned.fill(
                               child: CustomPaint(
                                 painter: SpectrumPainter(
-                                  playback.timeDomainSpec,
+                                  data: playback.timeDomainSpec,
+                                  waveColor: theme.colorCell,
                                 ),
                               ),
                             ),

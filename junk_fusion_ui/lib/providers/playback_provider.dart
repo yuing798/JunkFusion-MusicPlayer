@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
+import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,6 +34,9 @@ class PlaybackProvider extends ChangeNotifier {
 
   bool _isPTSLock = false; //在某些情况下，进度条不能被后端的回调改变
   bool get isPTSLock => _isPTSLock;
+
+  List<SongInfo> _playList = [];
+  List<SongInfo> get playList => _playList;
 
   // 播放模式枚举
   // 0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
