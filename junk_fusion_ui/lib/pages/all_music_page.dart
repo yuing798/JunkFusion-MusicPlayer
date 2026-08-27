@@ -262,6 +262,11 @@ class _AllMusicPageState extends State<AllMusicPage> {
                           // `ValueKey` 基于值的唯一 Key，帮助 Flutter 识别
                           // 列表项的身份（diff 算法优化）
                           song: song,
+                          onSongPlay: () {
+                            context.read<PlaybackProvider>().setPlayList(
+                              sortedSongs,
+                            );
+                          },
                         );
                       },
                     );

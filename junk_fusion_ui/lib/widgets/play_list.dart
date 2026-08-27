@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
+import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -84,8 +86,9 @@ class PlayList {
                           Row(
                             children: [
                               Text("播放列表", style: theme.midTextStyle),
+                              SizedBox(width: 10),
                               Text(
-                                "${context.watch<PlaybackProvider>().playList.length}",
+                                "${context.watch<PlaybackProvider>().playList.length}首歌",
                                 style: theme.littleTextStyle,
                               ),
                               const Spacer(),
@@ -109,6 +112,8 @@ class PlayList {
                           Expanded(
                             child: DynMouseScroll(
                               builder: (context_, controler_, physics_) {
+                                final playback = context_
+                                    .watch<PlaybackProvider>();
                                 return ListView.builder(
                                   //ListView.builder是虚拟滚动的，而ListView是全量创建的
                                   controller: controler_,
@@ -116,8 +121,8 @@ class PlayList {
                                   // `itemCount` 等于列表长度
                                   itemCount: context
                                       .watch<PlaybackProvider>()
-                                      .playList
-                                      .length,
+                                      .playListCount,
+                                  padding: EdgeInsets.only(right: 10),
                                   // `itemExtent` 固定每个 item 高度（性能优化）
                                   // 对应原 Vue 虚拟滚动的 estimateSize: () => 80
                                   itemExtent: 80,
@@ -131,44 +136,95 @@ class PlayList {
                                       key: ValueKey(song.songId),
                                       // `ValueKey` 基于值的唯一 Key，帮助 Flutter 识别
                                       // 列表项的身份（diff 算法优化）
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
-                                        (song.hash != null)
-                                            ? Image.file(
-                                                File(
-                                                  '${AppCache.cacheDirString}/songImage/${song.hash}/original.jpg',
+                                        SizedBox(
+                                          width: 50,
+                                          height: 50,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              //箭头函数后面只能接上一句表达式
+                                              if (playback.currentSongId ==
+                                                  song.songId) {
+                                                context
+                                                    .read<PlaybackProvider>()
+                                                    .togglePlayPause();
+                                              } else {
+                                                context
+                                                    .read<PlaybackProvider>()
+                                                    .setNewSong(song.songId);
+                                              }
+                                            },
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                // 封面图（非当前歌曲时显示）
+                                                (playback.currentSongId !=
+                                                        song.songId)
+                                                    ? HoverPlayButton(
+                                                        hash: song.hash,
+                                                      )
+                                                    : (playback.isPlaying)
+                                                    ? Icon(
+                                                        TablerIcons
+                                                            .playerPauseFilled,
+                                                        size: 32,
+                                                      )
+                                                    : Icon(
+                                                        TablerIcons
+                                                            .playerPlayFilled,
+                                                        size: 32,
+                                                      ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 15),
+                                        Align(
+                                          alignment:
+                                              AlignmentGeometry.centerLeft,
+                                          child: SizedBox(
+                                            width: 120,
+
+                                            //子组件必须显式设定高度才能被crossAxisAlignment:CrossAxisAlignment.center,影响
+                                            height: 50,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Tooltip(
+                                                  message: song.title,
+                                                  child: Text(
+                                                    song.title,
+                                                    style: context
+                                                        .watch<AppTheme>()
+                                                        .midTextStyle,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
                                                 ),
-                                                width: 60,
-                                                height: 60,
-                                                fit: BoxFit.cover,
-                                                // cacheHeight: 50,
-                                                // cacheWidth: 50,
-                                              )
-                                            : Image.asset(
-                                                "assets/image/JunkFusion.png",
-                                                width: 60,
-                                                height: 60,
-                                                fit: BoxFit.cover,
-                                                // cacheHeight: 50,
-                                                // cacheWidth: 50,
-                                              ),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              song.title,
-                                              style: context
-                                                  .watch<AppTheme>()
-                                                  .midTextStyle,
+                                                Tooltip(
+                                                  message: song.artist ?? "未知",
+                                                  child: Text(
+                                                    song.artist ?? "未知",
+                                                    style: context
+                                                        .watch<AppTheme>()
+                                                        .littleTextStyle,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              song.artist ?? "未知",
-                                              style: context
-                                                  .watch<AppTheme>()
-                                                  .littleTextStyle,
-                                            ),
-                                          ],
+                                          ),
                                         ),
                                         const Spacer(),
-                                        Text("${song.duration}"),
+                                        Text(
+                                          SongProvider.formatDuration(
+                                            song.duration,
+                                          ),
+                                        ),
                                       ],
                                     );
                                   },

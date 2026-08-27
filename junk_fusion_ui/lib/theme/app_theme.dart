@@ -52,9 +52,9 @@ class AppTheme extends ChangeNotifier {
   );
 
   /// 中等字号文本样式（用于导航按钮、歌曲名等）
-  TextStyle get midTextStyle => TextStyle(fontSize: 18, color: colorTextMain);
+  TextStyle get midTextStyle => TextStyle(fontSize: 17, color: colorTextMain);
 
   /// 小号文本样式（用于次级信息、艺术家名等）
   TextStyle get littleTextStyle =>
-      TextStyle(fontSize: 16, color: colorTextSecond);
+      TextStyle(fontSize: 14, color: colorTextSecond);
 }
