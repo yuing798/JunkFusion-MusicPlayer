@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget.dart';
+import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
@@ -32,16 +32,17 @@ class OrdinaryInfoWindowState extends State<OrdinaryInfoWindow> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<AppTheme>();
     return Center(
       child: Material(
         type: MaterialType.transparency,
         child: Container(
           width: 500,
-          // 高度约束：最小 400，最大 700
-          constraints: const BoxConstraints(minHeight: 400, maxHeight: 700),
+          // 高度约束：最小 200，最大 700
+          constraints: const BoxConstraints(minHeight: 200, maxHeight: 700),
           decoration: BoxDecoration(
-            color: AppTheme.colorHover,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+            color: theme.colorHover,
+            borderRadius: BorderRadius.circular(6),
             boxShadow: const [
               BoxShadow(
                 color: Colors.black26,
@@ -69,7 +70,7 @@ class OrdinaryInfoWindowState extends State<OrdinaryInfoWindow> {
                           ),
                           child: Text(
                             widget.message,
-                            style: AppTheme.midTextStyle,
+                            style: theme.midTextStyle,
                             textAlign: TextAlign.left,
                           ),
                         ),
@@ -83,8 +84,8 @@ class OrdinaryInfoWindowState extends State<OrdinaryInfoWindow> {
                 Positioned(
                   top: 6,
                   right: 6,
-                  child: RectIconButton(
-                    iconData: TablerIcons.x,
+                  child: IconButton(
+                    icon: Icon(TablerIcons.x, size: 32),
                     onPressed: widget.onClose,
                   ),
                 ),

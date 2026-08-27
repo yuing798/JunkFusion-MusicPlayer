@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/utils/global_key_defs.dart';
+import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import '../theme/app_theme.dart';
 
@@ -79,12 +81,11 @@ class _LeftColumnState extends State<LeftColumn> {
 
   @override
   Widget build(BuildContext context) {
-    //作用：build 函数是 Flutter 的 “施工图绘制员”，它的唯一职责就是根据当前的数据（State）和配置（Widget）
-    //，返回一棵你要显示在屏幕上的 Widget 树（比如返回一堆 Container、Row、Text 拼成的界面）
-    // Container — 类似 HTML 的 <div>，可设置宽高、颜色、边距等
+    final theme = context.watch<AppTheme>();
+
     return Container(
       width: 220,
-      color: AppTheme.colorNav,
+      color: theme.colorNav,
 
       // Scrollbar — 滚动条（thumb 颜色使用强调色）
       child: DynMouseScroll(
@@ -144,13 +145,22 @@ class _LeftColumnState extends State<LeftColumn> {
       margin: const EdgeInsets.symmetric(horizontal: 15.0),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: AppTheme.colorEdge, width: 3.0),
-          bottom: BorderSide(color: AppTheme.colorEdge, width: 3.0),
+          top: BorderSide(
+            color: navigatorKey.currentContext!.watch<AppTheme>().colorEdge,
+            width: 3.0,
+          ),
+          bottom: BorderSide(
+            color: navigatorKey.currentContext!.watch<AppTheme>().colorEdge,
+            width: 3.0,
+          ),
         ),
       ),
       height: 50,
       alignment: Alignment.center,
-      child: Text(label, style: AppTheme.bigTextStyle),
+      child: Text(
+        label,
+        style: navigatorKey.currentContext!.watch<AppTheme>().bigTextStyle,
+      ),
     );
   }
 
@@ -171,8 +181,13 @@ class _LeftColumnState extends State<LeftColumn> {
         // `AnimatedContainer` — 带动画的容器
         // 在属性改变时会自动过渡（duration + curve）
         // 对应 Vue CSS transition
-        color: isActive ? AppTheme.colorStress : null,
-        child: Text(button.text, style: AppTheme.midTextStyle),
+        color: isActive
+            ? navigatorKey.currentContext!.watch<AppTheme>().colorStress
+            : null,
+        child: Text(
+          button.text,
+          style: navigatorKey.currentContext!.watch<AppTheme>().midTextStyle,
+        ),
       ),
     );
   }

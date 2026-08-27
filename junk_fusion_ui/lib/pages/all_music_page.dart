@@ -1,30 +1,5 @@
-// ════════════════════════════════════════════════════════════════
-// all_music_page.dart — "所有音乐" 页面
-//
-// 对应原 Vue 项目 components/pages/AllMusic.vue
-//
-// 页面结构：
-//   第 1 行：标题 "所有音乐" + "共 N 首"
-//   第 2 行：工具栏（导入按钮 + 排序下拉 + 升降序切换）
-//   剩余：虚拟滚动歌曲列表（ListView.builder）
-//
-// 排序功能：
-//   0 = 添加时间排序（songId 升/降）
-//   1 = 歌曲名称排序（按拼音字母）
-//   2 = 播放次数排序（playNum 升/降）
-//
-// Dart 语法说明：
-// - `ListView.builder` 是 Flutter 内置的高性能列表组件
-//   它只构建屏幕上可见的 item（类似 @tanstack/vue-virtual）
-// - `itemCount` 指定总 item 数
-// - `itemBuilder` 是构建每个 item 的回调函数
-// - `DropdownButton` 是 Flutter Material 下拉选择框
-// - `Enum` 定义枚举类型（更好的类型安全）
-// ════════════════════════════════════════════════════════════════
-
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
@@ -171,7 +146,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
         // ── 第 3 部分：歌曲列表（虚拟滚动，填充剩余空间） ──
         Expanded(
           child: sortedSongs.isEmpty
-              ? const Center(child: Text('暂无歌曲', style: AppTheme.midTextStyle))
+              ? const SizedBox.shrink()
               : DynMouseScroll(
                   builder: (context_, controler_, physics_) {
                     return ListView.builder(
@@ -212,15 +187,16 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
   // 构建标题行："所有音乐" + "共 N 首"
   Widget _buildHeaderRow(BuildContext context) {
+    final theme = context.watch<AppTheme>();
     return SizedBox(
       height: 50,
       child: Row(
         children: [
-          Text('所有音乐', style: AppTheme.bigTextStyle),
+          Text('所有音乐', style: theme.bigTextStyle),
           const SizedBox(width: 15),
           Selector<SongProvider, int>(
             builder: (_, value, _) {
-              return Text('共 $value 首', style: AppTheme.littleTextStyle);
+              return Text('共 $value 首', style: theme.littleTextStyle);
             },
             selector: (_, songProvi) => songProvi.songCount,
           ),
@@ -244,7 +220,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
           // ── 右侧：排序下拉 + 升降序按钮 ──
           // 对应原 Vue .right-column
-          _buildSortControls(),
+          _buildSortControls(context.watch<AppTheme>()),
         ],
       ),
     );
@@ -252,6 +228,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
   // 构建"导入文件/扫描文件夹"按钮
   Widget _buildImportButton(BuildContext context) {
+    final theme = context.watch<AppTheme>();
     return SizedBox(
       height: 40,
       child: TextButton(
@@ -261,22 +238,22 @@ class _AllMusicPageState extends State<AllMusicPage> {
                 _songImport(context);
               },
         style: TextButton.styleFrom(
-          backgroundColor: AppTheme.colorHover,
-          foregroundColor: AppTheme.colorTextMain,
+          backgroundColor: theme.colorHover,
+          foregroundColor: theme.colorTextMain,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.zero, //  直角矩形
           ),
         ),
         child: Text(
           _isImporting ? '导入中...' : '导入文件',
-          style: AppTheme.midTextStyle,
+          style: theme.midTextStyle,
         ),
       ),
     );
   }
 
   // 构建排序控件（下拉框 + 升降序切换）
-  Widget _buildSortControls() {
+  Widget _buildSortControls(AppTheme theme) {
     return Row(
       mainAxisSize: MainAxisSize.min, //根据子组件确定主轴长度
       children: [
@@ -287,7 +264,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
             value: _selectedSort,
             items: SortMode.values,
             itemBuilder: (mode) =>
-                Text(mode.label, style: AppTheme.comboTextStyle),
+                Text(mode.label, style: theme.comboTextStyle),
             onChanged: (mode) async {
               setState(() {
                 _selectedSort = mode;
@@ -302,14 +279,15 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
         // ── 升降序切换按钮 ──
         IconButton(
-          icon: createIcon(
+          icon: Icon(
             _isAscending
                 ? TablerIcons.arrowBigDownLineFilled
                 : TablerIcons.arrowBigUpLineFilled,
+            size: 32,
           ),
           onPressed: _toggleAscending,
           tooltip: _isAscending ? '升序' : '降序',
-          color: AppTheme.colorTextMain,
+          color: theme.colorTextMain,
         ),
       ],
     );

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -55,15 +54,29 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
           ),
 
           // ──右侧控制按钮区 ──
-          RectIconButton(
-            iconData: TablerIcons.minus,
+          IconButton(
+            icon: Icon(TablerIcons.minus, size: 32),
+            style: IconButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0), // 0 → 矩形，可设其他值获得圆角矩形
+              ),
+            ),
+
             onPressed: () => windowManager.minimize(), // 最小化
             tooltip: "最小化",
           ),
-          RectIconButton(
-            iconData: _isMaximized
-                ? TablerIcons.windowMinimize
-                : TablerIcons.windowMaximize,
+          IconButton(
+            icon: Icon(
+              _isMaximized
+                  ? TablerIcons.windowMinimize
+                  : TablerIcons.windowMaximize,
+              size: 32,
+            ),
+            style: IconButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0), // 0 → 矩形，可设其他值获得圆角矩形
+              ),
+            ),
 
             tooltip: _isMaximized ? "向下还原" : "最大化",
             onPressed: () async {
@@ -75,8 +88,8 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
               }
             },
           ),
-          RectIconButton(
-            iconData: TablerIcons.x,
+          IconButton(
+            icon: Icon(TablerIcons.x, size: 32),
             hoverColor: Colors.red, // 鼠标悬浮关闭按钮时变红
             onPressed: () {
               // print("用户点击了右上角的关闭按钮");

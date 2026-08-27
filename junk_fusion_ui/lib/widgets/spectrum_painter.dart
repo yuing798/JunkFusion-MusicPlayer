@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/utils/global_key_defs.dart';
+import 'package:provider/provider.dart';
 
 class SpectrumPainter extends CustomPainter {
   final List<double> data; // 原始数据（未归一化）
@@ -31,7 +33,7 @@ class SpectrumPainter extends CustomPainter {
 
     // 画笔配置（带圆角）
     final paint = Paint()
-      ..color = AppTheme.colorHover.withAlpha(150)
+      ..color = navigatorKey.currentContext!.watch<AppTheme>().colorHover
       ..style = PaintingStyle.fill;
 
     // 3. 开始绘制每一个柱子

@@ -1,12 +1,8 @@
 import 'dart:async'; // Timer 类在此库中
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/ordinary_info_window.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/song_error_window.dart';
-import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
-import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import '../theme/app_theme.dart';
 
 class DialogUtil {
   // 使用原生的 showDialog 弹出自定义内容

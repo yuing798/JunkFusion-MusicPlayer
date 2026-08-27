@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/widgets/title_bar.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'widgets/left_column.dart';
 import 'widgets/play_bar.dart';
@@ -79,7 +80,7 @@ class _AppState extends State<App> {
                 Expanded(
                   child: ColoredBox(
                     //能够单独设置颜色的组件
-                    color: AppTheme.colorMain,
+                    color: context.watch<AppTheme>().colorMain,
                     child: Column(
                       children: [
                         const TitleBar(),

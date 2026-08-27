@@ -24,6 +24,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 /// 通用 ComboBox 下拉组件
@@ -101,7 +102,7 @@ class _ComboBoxState<T> extends State<ComboBox<T>>
     // duration: 动画持续时间（与 AppTheme.easeTime 保持一致）
     // vsync: this — 来自 SingleTickerProviderStateMixin
     _rotationController = AnimationController(
-      duration: AppTheme.easeTime,
+      duration: Duration(milliseconds: 300),
       vsync: this,
     );
   }
@@ -203,7 +204,8 @@ class _ComboBoxState<T> extends State<ComboBox<T>>
     // 根据是否打开来决定边框颜色
     // isOpen = "获得焦点" → colorFocus
     // !isOpen = "失焦" → transparent
-    final borderColor = _isOpen ? AppTheme.colorFocus : Colors.transparent;
+    final theme = context.watch<AppTheme>();
+    final borderColor = _isOpen ? theme.colorFocus : Colors.transparent;
 
     return GestureDetector(
       // key 绑定在 ComboBox 本体的外层，用于定位
@@ -215,8 +217,8 @@ class _ComboBoxState<T> extends State<ComboBox<T>>
         padding: const EdgeInsets.symmetric(horizontal: 12),
         // 装饰：背景色 + 边框（失焦透明，获焦强调色）
         decoration: BoxDecoration(
-          color: AppTheme.colorComboBox,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+          color: theme.colorComboBox,
+          borderRadius: BorderRadius.circular(5),
           border: Border.all(color: borderColor, width: 2),
         ),
         // Row：左边显示当前选中文本，右边显示箭头图标
@@ -227,7 +229,7 @@ class _ComboBoxState<T> extends State<ComboBox<T>>
               child: widget.value != null
                   ? (widget.selectedBuilder?.call(widget.value as T) ??
                         widget.itemBuilder(widget.value as T))
-                  : Text(widget.placeholder, style: AppTheme.comboTextStyle),
+                  : Text(widget.placeholder, style: theme.midTextStyle),
             ),
 
             // ── 右侧：箭头图标（带旋转动画） ──
@@ -242,7 +244,7 @@ class _ComboBoxState<T> extends State<ComboBox<T>>
                   child: Icon(
                     TablerIcons.caretDownFilled,
                     size: 20,
-                    color: AppTheme.colorTextMain,
+                    color: theme.colorTextMain,
                   ),
                 );
               },
@@ -331,8 +333,7 @@ class _DropdownMenu<T> extends StatelessWidget {
               // 限制最大高度，超出则滚动
               constraints: BoxConstraints(maxHeight: maxMenuHeight),
               decoration: BoxDecoration(
-                color: AppTheme.colorComboBox,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                borderRadius: BorderRadius.circular(6),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x29000000), // 黑色 16% 透明度
@@ -398,7 +399,7 @@ class _DropdownItemState<T> extends State<_DropdownItem<T>> {
     // 2. 悬浮/按下 → colorComboMenuSelected
     // 3. 默认 → 透明
     final backgroundColor = _isHovered
-        ? AppTheme.colorComboMenuSelected
+        ? context.watch<AppTheme>().colorComboMenuSelected
         : Colors.transparent;
 
     // MouseRegion：桌面端专用的鼠标检测组件

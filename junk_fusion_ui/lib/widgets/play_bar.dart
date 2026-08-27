@@ -16,7 +16,6 @@ import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:junk_fusion_ui/widgets/song_progress_area.dart';
 import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
 import 'package:provider/provider.dart';
@@ -24,8 +23,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
-import 'ppp.dart';
-import 'song_detail_info.dart';
 
 // PlayBar — 底部播放栏
 class PlayBar extends StatefulWidget {
@@ -100,6 +97,8 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
     playback.setSongDuration(song.duration);
 
+    final theme = context.watch<AppTheme>();
+
     Widget buildLikeButton() {
       return IconButton(
         icon: (song.isMyLike)
@@ -143,13 +142,13 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
               children: [
                 Text(
                   song.title,
-                  style: AppTheme.midTextStyle,
+                  style: theme.midTextStyle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   song.artist ?? '未知',
-                  style: AppTheme.littleTextStyle,
+                  style: theme.littleTextStyle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -193,7 +192,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
           // 上一首
           IconButton(
-            icon: createIcon(TablerIcons.squareArrowLeftFilled),
+            icon: Icon(TablerIcons.squareArrowLeftFilled, size: 32),
             onPressed: () {
               // TODO: 桥接层 - 调用上一首
             },
@@ -203,10 +202,11 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
           // 播放 / 暂停
           IconButton(
-            icon: createIcon(
+            icon: Icon(
               playback.isPlaying
                   ? TablerIcons.playerPauseFilled
                   : TablerIcons.playerPlayFilled,
+              size: 32,
             ),
             onPressed: () {
               context.read<PlaybackProvider>().togglePlayPause();
@@ -216,7 +216,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
           // 下一首
           IconButton(
-            icon: createIcon(TablerIcons.squareArrowRightFilled),
+            icon: Icon(TablerIcons.squareArrowRightFilled, size: 32),
             onPressed: () {
               // TODO: 桥接层 - 调用下一首
             },
@@ -228,7 +228,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
 
           // 播放列表
           IconButton(
-            icon: createIcon(TablerIcons.listFilled),
+            icon: Icon(TablerIcons.listFilled, size: 32),
             onPressed: () {
               // TODO: 桥接层 - 打开播放列表
             },
@@ -257,7 +257,7 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
                   horizontal: 30,
                   vertical: 10,
                 ),
-                color: AppTheme.colorHover,
+                color: theme.colorHover,
 
                 // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
                 // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
@@ -334,7 +334,7 @@ class _PlayModeIcon extends StatelessWidget {
     }
 
     return IconButton(
-      icon: createIcon(icon),
+      icon: Icon(icon, size: 32),
       onPressed: onTap,
       tooltip: tooltip, // 悬浮时显示提示文字
       padding: EdgeInsets.zero,

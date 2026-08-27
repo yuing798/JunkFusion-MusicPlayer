@@ -3,14 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
 import '../providers/song_provider.dart';
 import '../theme/app_theme.dart';
-import 'ppp.dart';
-import 'song_detail_info.dart';
 
 // EachSong — 单首歌曲行
 //
@@ -40,6 +37,7 @@ class EachSong extends StatelessWidget {
     //context.watch<T>()：获取 + 订阅。当数据变化时，调用它的 Widget 会自动重绘
     //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
     final isCurrentSong = playback.currentSongId == song.songId;
+    final theme = context.watch<AppTheme>();
 
     Widget buildCoverAndPlayState() {
       return GestureDetector(
@@ -58,8 +56,8 @@ class EachSong extends StatelessWidget {
             (!isCurrentSong)
                 ? HoverPlayButton(hash: song.hash)
                 : (playback.isPlaying)
-                ? createIcon(TablerIcons.playerPauseFilled)
-                : createIcon(TablerIcons.playerPlayFilled),
+                ? Icon(TablerIcons.playerPauseFilled, size: 32)
+                : Icon(TablerIcons.playerPlayFilled, size: 32),
           ],
         ),
       );
@@ -78,7 +76,7 @@ class EachSong extends StatelessWidget {
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
-      color: isCurrentSong ? AppTheme.colorHover : AppTheme.colorCell,
+      color: isCurrentSong ? theme.colorHover : theme.colorCell,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -90,16 +88,22 @@ class EachSong extends StatelessWidget {
           // ── 第 2 列：歌名 + 艺术家 (flex: 1) ──
           Expanded(
             flex: 1, // flex 类似 CSS flex-grow
-            child: _buildSongNameArtist(),
+            child: _buildSongNameArtist(theme),
           ),
 
           const SizedBox(width: 4),
 
           // ── 第 3 列：专辑 (150px) ──
-          SizedBox(width: 150, child: _buildEllipsisText(song.album ?? '未知')),
+          SizedBox(
+            width: 150,
+            child: _buildEllipsisText(song.album ?? '未知', theme),
+          ),
 
           // ── 第 4 列：AI 分类 (120px) ──
-          SizedBox(width: 120, child: _buildEllipsisText(song.aiGenre ?? '')),
+          SizedBox(
+            width: 120,
+            child: _buildEllipsisText(song.aiGenre ?? '', theme),
+          ),
 
           // ── 第 5 列：播放次数 (80px) ──
           SizedBox(
@@ -107,7 +111,7 @@ class EachSong extends StatelessWidget {
             child: Center(
               child: Text(
                 '${song.playNum}', // `$` 字符串插值
-                style: AppTheme.littleTextStyle,
+                style: theme.littleTextStyle,
               ),
             ),
           ),
@@ -137,7 +141,7 @@ class EachSong extends StatelessWidget {
   // 构建第 2 列：歌名 + 艺术家
   //
   // 对应原 Vue .song-name-artist
-  Widget _buildSongNameArtist() {
+  Widget _buildSongNameArtist(AppTheme theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -145,7 +149,7 @@ class EachSong extends StatelessWidget {
         // 歌名（单行省略）
         Text(
           song.title,
-          style: AppTheme.midTextStyle,
+          style: theme.midTextStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis, // 溢出显示省略号
         ),
@@ -153,7 +157,7 @@ class EachSong extends StatelessWidget {
         // 艺术家（单行省略）
         Text(
           song.artist ?? '未知',
-          style: AppTheme.littleTextStyle,
+          style: theme.littleTextStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -164,11 +168,11 @@ class EachSong extends StatelessWidget {
   // 构建溢出省略文本
   //
   // 对应原 Vue .ellipsis-text
-  Widget _buildEllipsisText(String text) {
+  Widget _buildEllipsisText(String text, AppTheme theme) {
     return Center(
       child: Text(
         text,
-        style: AppTheme.midTextStyle.copyWith(color: AppTheme.colorTextSecond),
+        style: theme.midTextStyle,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
