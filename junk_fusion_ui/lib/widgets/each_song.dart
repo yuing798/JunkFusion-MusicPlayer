@@ -26,84 +26,94 @@ import '../theme/app_theme.dart';
 class EachSong extends StatelessWidget {
   // 歌曲数据
   final SongInfo song;
+  final void Function()? onSongPlay;
 
-  const EachSong({super.key, required this.song});
+  const EachSong({super.key, required this.song, this.onSongPlay});
 
   @override
   Widget build(BuildContext context) {
     // 监听播放状态（当前播放歌曲变化时刷新）
     final playback = context.watch<PlaybackProvider>();
-    final songprovi = context.watch<SongProvider>();
     //context.watch<T>()：获取 + 订阅。当数据变化时，调用它的 Widget 会自动重绘
     //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
     final isCurrentSong = playback.currentSongId == song.songId;
     final theme = context.watch<AppTheme>();
-
-    Widget buildCoverAndPlayState() {
-      return GestureDetector(
-        onTap: () {
-          //箭头函数后面只能接上一句表达式
-          if (isCurrentSong) {
-            context.read<PlaybackProvider>().togglePlayPause();
-          } else {
-            context.read<PlaybackProvider>().setNewSong(song.songId);
-          }
-        },
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 封面图（非当前歌曲时显示）
-            (!isCurrentSong)
-                ? HoverPlayButton(hash: song.hash)
-                : (playback.isPlaying)
-                ? Icon(TablerIcons.playerPauseFilled, size: 32)
-                : Icon(TablerIcons.playerPlayFilled, size: 32),
-          ],
-        ),
-      );
-    }
-
-    // 构建喜欢按钮
-    Widget buildLikeButton() {
-      return IconButton(
-        icon: (song!.isMyLike)
-            ? Icon(TablerIcons.heartFilled, color: Colors.red)
-            : Icon(TablerIcons.heart),
-        onPressed: () => context.read<SongProvider>().toggleMyLike(song.songId),
-      );
-    }
 
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       color: isCurrentSong ? theme.colorHover : theme.colorCell,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // ── 第 1 列：封面/播放状态 (50px) ──
-          SizedBox(width: 50, height: 50, child: buildCoverAndPlayState()),
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: GestureDetector(
+              onTap: () {
+                //箭头函数后面只能接上一句表达式
+                if (isCurrentSong) {
+                  context.read<PlaybackProvider>().togglePlayPause();
+                } else {
+                  context.read<PlaybackProvider>().setNewSong(song.songId);
+
+                  onSongPlay?.call();
+                }
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 封面图（非当前歌曲时显示）
+                  (!isCurrentSong)
+                      ? HoverPlayButton(hash: song.hash)
+                      : (playback.isPlaying)
+                      ? Icon(TablerIcons.playerPauseFilled, size: 32)
+                      : Icon(TablerIcons.playerPlayFilled, size: 32),
+                ],
+              ),
+            ),
+          ),
 
           const SizedBox(width: 4),
 
           // ── 第 2 列：歌名 + 艺术家 (flex: 1) ──
           Expanded(
-            flex: 1, // flex 类似 CSS flex-grow
-            child: _buildSongNameArtist(theme),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 歌名（单行省略）
+                Tooltip(
+                  message: song.title,
+                  child: Text(
+                    song.title,
+                    style: theme.midTextStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis, // 溢出显示省略号
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // 艺术家（单行省略）
+                Tooltip(
+                  message: song.artist ?? "未知",
+                  child: Text(
+                    song.artist ?? '未知',
+                    style: theme.littleTextStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
-
-          const SizedBox(width: 4),
 
           // ── 第 3 列：专辑 (150px) ──
           SizedBox(
-            width: 150,
+            width: 300,
             child: _buildEllipsisText(song.album ?? '未知', theme),
           ),
 
-          // ── 第 4 列：AI 分类 (120px) ──
-          SizedBox(
-            width: 120,
-            child: _buildEllipsisText(song.aiGenre ?? '', theme),
-          ),
+          SizedBox(width: 100),
 
           // ── 第 5 列：播放次数 (80px) ──
           SizedBox(
@@ -117,51 +127,18 @@ class EachSong extends StatelessWidget {
           ),
 
           // ── 第 6 列：喜欢按钮 (40px) ──
-          SizedBox(width: 40, child: buildLikeButton()),
-
-          // ── 第 7 列：歌曲详情弹窗 (40px) ──
-          // SizedBox(
-          //   width: 40,
-          //   child: PopupWindow(
-          //     title: '歌曲详情',
-          //     triggerBuilder: (open) =>
-          //         //   _CircleIconButton(icon: Icons.info_outline, onTap: open),
-          //         GestureDetector(
-          //           onTap: open,
-          //           child: Icon(TablerIcons.infoHexagonFilled),
-          //         ),
-          //     contentBuilder: () => SongDetailInfo(song: song),
-          //   ),
-          // ),
+          SizedBox(
+            width: 40,
+            child: IconButton(
+              icon: (song.isMyLike)
+                  ? Icon(TablerIcons.heartFilled, color: Colors.red)
+                  : Icon(TablerIcons.heart),
+              onPressed: () =>
+                  context.read<SongProvider>().toggleMyLike(song.songId),
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  // 构建第 2 列：歌名 + 艺术家
-  //
-  // 对应原 Vue .song-name-artist
-  Widget _buildSongNameArtist(AppTheme theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // 歌名（单行省略）
-        Text(
-          song.title,
-          style: theme.midTextStyle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis, // 溢出显示省略号
-        ),
-        const SizedBox(height: 2),
-        // 艺术家（单行省略）
-        Text(
-          song.artist ?? '未知',
-          style: theme.littleTextStyle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
     );
   }
 
@@ -169,12 +146,16 @@ class EachSong extends StatelessWidget {
   //
   // 对应原 Vue .ellipsis-text
   Widget _buildEllipsisText(String text, AppTheme theme) {
-    return Center(
-      child: Text(
-        text,
-        style: theme.midTextStyle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    return Align(
+      alignment: AlignmentGeometry.centerLeft,
+      child: Tooltip(
+        message: text,
+        child: Text(
+          text,
+          style: theme.midTextStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }

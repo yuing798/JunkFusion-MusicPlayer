@@ -37,6 +37,7 @@ class PlaybackProvider extends ChangeNotifier {
 
   List<SongInfo> _playList = [];
   List<SongInfo> get playList => _playList;
+  int get playListCount => _playList.length;
 
   // 播放模式枚举
   // 0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
@@ -48,6 +49,11 @@ class PlaybackProvider extends ChangeNotifier {
 
   void setSongDuration(double d) {
     _songDuration = d;
+  }
+
+  void setPlayList(List<SongInfo> playList) {
+    //设置播放列表
+    _playList = playList;
   }
 
   // 设置当前播放的歌曲 ID，并持久化存储

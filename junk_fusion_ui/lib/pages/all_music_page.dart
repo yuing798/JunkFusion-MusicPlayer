@@ -133,15 +133,102 @@ class _AllMusicPageState extends State<AllMusicPage> {
   Widget build(BuildContext context) {
     final sortedSongs = _getSortedSongs(context);
     context.watch<SongProvider>();
+    final theme = context.watch<AppTheme>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── 第 1 行：标题行 ──
-        _buildHeaderRow(context),
+        SizedBox(
+          height: 50,
+          child: Row(
+            children: [
+              Text('所有音乐', style: theme.bigTextStyle),
+              const SizedBox(width: 15),
+              Selector<SongProvider, int>(
+                builder: (_, value, _) {
+                  return Text('共 $value 首', style: theme.littleTextStyle);
+                },
+                selector: (_, songProvi) => songProvi.songCount,
+              ),
+            ],
+          ),
+        ),
 
         // ── 第 2 行：工具栏 ──
-        _buildToolbarRow(),
+        SizedBox(
+          height: 80,
+          child: Row(
+            children: [
+              // ── 左侧：导入按钮 ──
+              // 对应原 Vue .left-column
+              SizedBox(
+                height: 40,
+                child: TextButton(
+                  onPressed: _isImporting
+                      ? null
+                      : () {
+                          _songImport(context);
+                        },
+                  style: TextButton.styleFrom(
+                    backgroundColor: theme.colorHover,
+                    foregroundColor: theme.colorTextMain,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero, //  直角矩形
+                    ),
+                  ),
+                  child: Text(
+                    _isImporting ? '导入中...' : '导入文件',
+                    style: theme.midTextStyle,
+                  ),
+                ),
+              ),
+
+              // 弹性空间（把右侧控件推到最右边）
+              const Spacer(),
+
+              // ── 右侧：排序下拉 + 升降序按钮 ──
+              // 对应原 Vue .right-column
+              Row(
+                mainAxisSize: MainAxisSize.min, //根据子组件确定主轴长度
+                children: [
+                  // ── 排序方式下拉框 ──
+                  SizedBox(
+                    width: 200,
+                    child: ComboBox<SortMode>(
+                      value: _selectedSort,
+                      items: SortMode.values,
+                      itemBuilder: (mode) =>
+                          Text(mode.label, style: theme.comboTextStyle),
+                      onChanged: (mode) async {
+                        setState(() {
+                          _selectedSort = mode;
+                        });
+                        final frontCache = AppCache.frontCacheRef;
+                        frontCache.setInt("sortWays", mode.value);
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  // ── 升降序切换按钮 ──
+                  IconButton(
+                    icon: Icon(
+                      _isAscending
+                          ? TablerIcons.arrowBigDownLineFilled
+                          : TablerIcons.arrowBigUpLineFilled,
+                      size: 32,
+                    ),
+                    onPressed: _toggleAscending,
+                    tooltip: _isAscending ? '升序' : '降序',
+                    color: theme.colorTextMain,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
 
         // ── 第 3 部分：歌曲列表（虚拟滚动，填充剩余空间） ──
         Expanded(
@@ -184,129 +271,4 @@ class _AllMusicPageState extends State<AllMusicPage> {
       ],
     );
   }
-
-  // 构建标题行："所有音乐" + "共 N 首"
-  Widget _buildHeaderRow(BuildContext context) {
-    final theme = context.watch<AppTheme>();
-    return SizedBox(
-      height: 50,
-      child: Row(
-        children: [
-          Text('所有音乐', style: theme.bigTextStyle),
-          const SizedBox(width: 15),
-          Selector<SongProvider, int>(
-            builder: (_, value, _) {
-              return Text('共 $value 首', style: theme.littleTextStyle);
-            },
-            selector: (_, songProvi) => songProvi.songCount,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 构建工具栏行：导入按钮 + 排序下拉 + 升降序切换
-  Widget _buildToolbarRow() {
-    return SizedBox(
-      height: 80,
-      child: Row(
-        children: [
-          // ── 左侧：导入按钮 ──
-          // 对应原 Vue .left-column
-          _buildImportButton(context),
-
-          // 弹性空间（把右侧控件推到最右边）
-          const Spacer(),
-
-          // ── 右侧：排序下拉 + 升降序按钮 ──
-          // 对应原 Vue .right-column
-          _buildSortControls(context.watch<AppTheme>()),
-        ],
-      ),
-    );
-  }
-
-  // 构建"导入文件/扫描文件夹"按钮
-  Widget _buildImportButton(BuildContext context) {
-    final theme = context.watch<AppTheme>();
-    return SizedBox(
-      height: 40,
-      child: TextButton(
-        onPressed: _isImporting
-            ? null
-            : () {
-                _songImport(context);
-              },
-        style: TextButton.styleFrom(
-          backgroundColor: theme.colorHover,
-          foregroundColor: theme.colorTextMain,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, //  直角矩形
-          ),
-        ),
-        child: Text(
-          _isImporting ? '导入中...' : '导入文件',
-          style: theme.midTextStyle,
-        ),
-      ),
-    );
-  }
-
-  // 构建排序控件（下拉框 + 升降序切换）
-  Widget _buildSortControls(AppTheme theme) {
-    return Row(
-      mainAxisSize: MainAxisSize.min, //根据子组件确定主轴长度
-      children: [
-        // ── 排序方式下拉框 ──
-        SizedBox(
-          width: 200,
-          child: ComboBox<SortMode>(
-            value: _selectedSort,
-            items: SortMode.values,
-            itemBuilder: (mode) =>
-                Text(mode.label, style: theme.comboTextStyle),
-            onChanged: (mode) async {
-              setState(() {
-                _selectedSort = mode;
-              });
-              final frontCache = AppCache.frontCacheRef;
-              frontCache.setInt("sortWays", mode.value);
-            },
-          ),
-        ),
-
-        const SizedBox(width: 8),
-
-        // ── 升降序切换按钮 ──
-        IconButton(
-          icon: Icon(
-            _isAscending
-                ? TablerIcons.arrowBigDownLineFilled
-                : TablerIcons.arrowBigUpLineFilled,
-            size: 32,
-          ),
-          onPressed: _toggleAscending,
-          tooltip: _isAscending ? '升序' : '降序',
-          color: theme.colorTextMain,
-        ),
-      ],
-    );
-  }
 }
-
-// ════════════════════════════════════════════════════════════════
-// ListView.builder 虚拟滚动原理：
-//
-// Flutter 的 ListView.builder 天然是"懒加载"的：
-// 它只构建当前在屏幕上可见（加少量预渲染）的 item。
-//
-// 关键参数：
-// - `itemCount`：总 item 数量
-// - `itemExtent`：固定 item 高度（如果所有 item 等高的话）
-//   设置后性能大幅提升，因为不需要测量每个 item 的高度
-// - `itemBuilder`：只在 item 出现在视口中时才调用
-//
-// 这等价于 @tanstack/vue-virtual 的核心功能：
-//   Vue:  useVirtualizer({ count, estimateSize, overscan })
-//   Flutter: ListView.builder(itemCount, itemExtent)  // overscan 自动管理
-// ════════════════════════════════════════════════════════════════
