@@ -28,6 +28,8 @@ class SongProgressAreaState extends State<SongProgressArea>
   final ValueNotifier<double?> _hoverXNotifier = ValueNotifier(null);
   //包裹一个值，当这个值发生变化时，能主动通知依赖它的组件进行更新。
 
+  //TODO: 进度标签还没写，我现在还没有思路
+
   @override
   void initState() {
     super.initState();

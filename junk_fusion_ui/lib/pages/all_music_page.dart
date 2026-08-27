@@ -173,7 +173,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
           child: sortedSongs.isEmpty
               ? const Center(child: Text('暂无歌曲', style: AppTheme.midTextStyle))
               : DynMouseScroll(
-                  builder: (_, controler_, physics_) {
+                  builder: (context_, controler_, physics_) {
                     return ListView.builder(
                       //ListView.builder是虚拟滚动的，而ListView是全量创建的
                       controller: controler_,
@@ -184,6 +184,14 @@ class _AllMusicPageState extends State<AllMusicPage> {
                       // 对应原 Vue 虚拟滚动的 estimateSize: () => 80
                       itemExtent: 80,
                       // itemBuilder 构建每个 item
+                      padding: EdgeInsets.only(
+                        bottom:
+                            context_.select<PlaybackProvider, bool>(
+                              (provider) => provider.currentSongId != null,
+                            )
+                            ? 90
+                            : 0, //有歌曲的话应该padding，否则会被PlayBar给遮住
+                      ),
                       // `(context, index) => Widget`
                       itemBuilder: (context, index) {
                         final song = sortedSongs[index];

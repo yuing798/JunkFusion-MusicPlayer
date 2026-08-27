@@ -121,16 +121,16 @@ class PlayBarState extends State<PlayBar> with SingleTickerProviderStateMixin {
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
-                  cacheHeight: 50,
-                  cacheWidth: 50,
+                  // cacheHeight: 50,
+                  // cacheWidth: 50,
                 )
               : Image.asset(
                   "assets/image/JunkFusion.png",
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
-                  cacheHeight: 50,
-                  cacheWidth: 50,
+                  // cacheHeight: 50,
+                  // cacheWidth: 50,
                 ),
 
           const SizedBox(width: 10),
