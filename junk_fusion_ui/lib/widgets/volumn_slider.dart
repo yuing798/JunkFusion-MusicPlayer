@@ -18,16 +18,33 @@ class VolumeControllerButton extends StatefulWidget {
   }
 }
 
-class VolumeControllerButtonState extends State<VolumeControllerButton> {
+// 1. 这里混入 SingleTickerProviderStateMixin
+class VolumeControllerButtonState extends State<VolumeControllerButton>
+    with SingleTickerProviderStateMixin {
   OverlayEntry? _overlayEntry;
   bool _isHoveringButton = false;
   bool _isHoveringSlider = false;
   Timer? _closeTimer;
   double lastVolume = 0.0;
 
+  // 2. 将动画控制器移到这里统一管理
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    // 初始化动画控制器
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       double tempVolume = context.read<PlaybackProvider>().volume;
       if (tempVolume != 0.0) {
@@ -39,23 +56,26 @@ class VolumeControllerButtonState extends State<VolumeControllerButton> {
   @override
   void dispose() {
     _closeTimer?.cancel();
-    _removeOverlay();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _fadeController.dispose(); // 销毁控制器
     super.dispose();
   }
 
   // ---------- Overlay 管理 ----------
   void _showSlider() {
-    _removeOverlay();
+    // 3. 如果已经存在 Overlay，只播放进入动画，不重复创建
+    if (_overlayEntry != null) {
+      _fadeController.forward();
+      return;
+    }
+
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    //RenderBox 是渲染树（Render Tree）上负责“真实物理尺寸和位置”的底层对象
-    //获取当前音量按钮在屏幕上的“真实坐标和尺寸”，以便把 Overlay 浮层精准地定位在它上方。
     if (renderBox == null) return;
 
-    final Offset position = renderBox.localToGlobal(Offset.zero); //按钮的左上角
-    //将“本地坐标”转换为“全局屏幕坐标”
+    final Offset position = renderBox.localToGlobal(Offset.zero);
     final Size size = renderBox.size;
 
-    // 计算滑块位置：按钮上方居中（间距 10px）
     const double sliderWidth = 40.0;
     const double sliderHeight = 130.0;
     double left = position.dx + size.width / 2 - sliderWidth / 2;
@@ -66,16 +86,30 @@ class VolumeControllerButtonState extends State<VolumeControllerButton> {
       builder: (context) => Positioned(
         left: left,
         top: top,
-        child: _VolumeSlider(onEnter: _onSliderEnter, onExit: _onSliderExit),
+        // 4. 将 FadeTransition 移到这里，由父组件控制透明度
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _VolumeSlider(onEnter: _onSliderEnter, onExit: _onSliderExit),
+        ),
       ),
     );
-    //这个组件只有在鼠标悬浮到按钮上才会执行构造函数，所以直接在initstate中放forward是对的
+
     overlay!.insert(_overlayEntry!);
+    _fadeController.forward(); // 启动淡入动画
   }
 
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+  // 5. 将 remove 修改为异步，先退场后销毁
+  void _removeOverlay() async {
+    if (_overlayEntry == null) return;
+
+    // 播放退出动画并等待结束
+    await _fadeController.reverse();
+
+    // 关键判断：动画结束时，如果状态是 completely dismissed (代表中途没有再次触发 forward)，再移除 overlay
+    if (_fadeController.isDismissed && _overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+    }
   }
 
   // ---------- 悬停回调 ----------
@@ -83,9 +117,7 @@ class VolumeControllerButtonState extends State<VolumeControllerButton> {
     _isHoveringButton = true;
     _closeTimer?.cancel();
     _closeTimer = null;
-    if (_overlayEntry == null) {
-      _showSlider();
-    }
+    _showSlider(); // 直接调用即可，_showSlider 里写了拦截判断
   }
 
   void _onButtonExit() {
@@ -97,6 +129,8 @@ class VolumeControllerButtonState extends State<VolumeControllerButton> {
     _isHoveringSlider = true;
     _closeTimer?.cancel();
     _closeTimer = null;
+    // 如果鼠标移回滑块时，可能正在播放退出动画，立即重新正向播放
+    _fadeController.forward();
   }
 
   void _onSliderExit() {
@@ -108,7 +142,7 @@ class VolumeControllerButtonState extends State<VolumeControllerButton> {
     _closeTimer?.cancel();
     _closeTimer = Timer(const Duration(milliseconds: 200), () {
       if (!_isHoveringButton && !_isHoveringSlider) {
-        _removeOverlay();
+        _removeOverlay(); // 调用带动画的移除方法
       }
       _closeTimer = null;
     });
@@ -148,40 +182,13 @@ class VolumeControllerButtonState extends State<VolumeControllerButton> {
   }
 }
 
-// ---------- 滑块组件（带悬停检测） ----------
-class _VolumeSlider extends StatefulWidget {
+// ---------- 滑块组件（大幅精简） ----------
+// 由于动画被父组件接管，这里可以直接改为 StatelessWidget
+class _VolumeSlider extends StatelessWidget {
   final VoidCallback onEnter;
   final VoidCallback onExit;
+
   const _VolumeSlider({required this.onEnter, required this.onExit});
-
-  @override
-  State<_VolumeSlider> createState() => _VloumeSliderState();
-}
-
-class _VloumeSliderState extends State<_VolumeSlider>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opaqueAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _opaqueAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-    _controller.forward(); // 启动淡入动画
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,22 +197,24 @@ class _VloumeSliderState extends State<_VolumeSlider>
     );
 
     return MouseRegion(
-      onEnter: (_) => widget.onEnter(),
-      onExit: (_) => widget.onExit(),
-      child: FadeTransition(
-        opacity: _opaqueAnimation,
-        child: Material(
-          elevation: 8.0,
-          borderRadius: BorderRadius.circular(8),
+      onEnter: (_) => onEnter(),
+      onExit: (_) => onExit(),
+      child: Material(
+        // 移除了内部的 FadeTransition
+        elevation: 8.0,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 40,
+          height: 130,
           child: Column(
+            verticalDirection: VerticalDirection.up,
             children: [
-              RotatedBox(
-                quarterTurns: 3,
-                child: SizedBox(
-                  width: 120,
-                  height: 40,
+              Text("${(currentVolume * 100).toStringAsFixed(0)}%"),
+              Expanded(
+                child: RotatedBox(
+                  quarterTurns: 3,
                   child: Slider(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     value: currentVolume,
                     onChanged: (value) {
                       context.read<PlaybackProvider>().setVolume(value);
@@ -226,7 +235,6 @@ class _VloumeSliderState extends State<_VolumeSlider>
                   ),
                 ),
               ),
-              Text("${(currentVolume * 100).toStringAsFixed(0)}%"),
             ],
           ),
         ),
