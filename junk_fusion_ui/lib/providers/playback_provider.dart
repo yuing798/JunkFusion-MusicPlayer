@@ -47,13 +47,23 @@ class PlaybackProvider extends ChangeNotifier {
   double _songDuration = 0.0;
   double get songDuration => _songDuration;
 
+  double _volume = 0.0;
+  double get volume => _volume;
+
+  void setVolume(double value) {
+    _volume = value;
+    notifyListeners();
+  }
+
   void setSongDuration(double d) {
     _songDuration = d;
+    notifyListeners();
   }
 
   void setPlayList(List<SongInfo> playList) {
     //设置播放列表
     _playList = playList;
+    notifyListeners();
   }
 
   // 设置当前播放的歌曲 ID，并持久化存储

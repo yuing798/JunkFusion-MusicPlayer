@@ -6,21 +6,8 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <vector>
-
-juce::var DllUtils::uint8t2Object(const char* str) {
-
-    // 解析为 juce::var
-    juce::var parsed = juce::JSON::parse(juce::String(str));
-
-    // 检查是否为 DynamicObject
-    if (parsed.isObject()) {
-        juce::var obj = parsed.getDynamicObject();
-        return obj;
-    } else {
-        return juce::var();
-    }
-}
 
 const char* DllUtils::object2Uint8t(juce::var obj) {
 
@@ -43,11 +30,6 @@ juce::var DllUtils::charPtr2object(const char* ptr) {
     return obj;
 }
 
-void DllUtils::sendMessage2AudioProcess(juce::var obj) {
-    auto jsonStr{juce::JSON::toString(obj).toStdString()};
-    dllManager::getInstance().sendMessage2AudioProcess(jsonStr);
-}
-
 const char* DllUtils::copyStringOnHeap(juce::String& str) {
     const char* ptr{str.toRawUTF8()};
     auto length{strlen(ptr)};
@@ -55,6 +37,7 @@ const char* DllUtils::copyStringOnHeap(juce::String& str) {
     if (copyPtr) memcpy(copyPtr, ptr, length + 1);
     return copyPtr;
 }
+
 const char* DllUtils::copyStringOnHeap(std::string& str) {
     const char* ptr{str.c_str()};
     auto length{strlen(ptr)};

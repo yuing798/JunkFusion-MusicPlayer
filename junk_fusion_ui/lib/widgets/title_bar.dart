@@ -95,6 +95,11 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
               // print("用户点击了右上角的关闭按钮");
               windowManager.close();
             }, // 关闭窗口
+            style: IconButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0), // 0 → 矩形，可设其他值获得圆角矩形
+              ),
+            ),
           ),
         ],
       ),

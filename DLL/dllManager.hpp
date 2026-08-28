@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "fileManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
+#include "juce_osc/juce_osc.h"
 #include "libExport.h"
 #include "processManager/AudioProcessCoordinator.h"
 #include "processManager/oscSender.hpp"
@@ -54,7 +55,6 @@ public:
     std::function<void(const char*)> errorSendCallback; // cpp主动向前端发送错误数据
     std::function<void(double)> currentPTSCallback;     // 获取当前的播放进度条的callback
 
-    void sendMessage2AudioProcess(std::string msg) {
-        mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(msg);
-    }
+    void sendMessage2AudioProcess(juce::var& obj);
+    void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
 };

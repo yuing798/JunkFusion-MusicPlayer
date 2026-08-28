@@ -17,4 +17,8 @@ namespace AudioDefs {
     static constexpr const char* songPath = "songPath" ;
     static constexpr const char* targetPTS = "targetPTS" ;
     static constexpr const char* currentPTS = "currentPTS" ;
+    static constexpr const char* setSliderValue = "setSliderValue" ;
+    static constexpr const char* sliderParam = "sliderParam" ;
+    static constexpr const char* sliderValue = "sliderValue" ;
+    static constexpr const char* masterVolume = "/master/volume" ;
 }

@@ -19,6 +19,7 @@ import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/play_list.dart';
 import 'package:junk_fusion_ui/widgets/song_progress_area.dart';
 import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
+import 'package:junk_fusion_ui/widgets/volumn_slider.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
@@ -54,6 +55,9 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     //都要用 WidgetsBinding.instance.addPostFrameCallback 延迟到第一帧完成之后，避免在构建过程中引发 markNeedsBuild 异常。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PlaybackProvider>().restoreState();
+      context.read<PlaybackProvider>().setSongDuration(
+        context.read<PlaybackProvider>().songDuration,
+      );
     });
     // 初始化控制器
     _controller = AnimationController(
@@ -100,18 +104,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
       (provider) => provider.getSongInfo(songId),
     );
 
-    playback.setSongDuration(song.duration);
-
     final theme = context.watch<AppTheme>();
-
-    Widget buildLikeButton() {
-      return IconButton(
-        icon: (song.isMyLike)
-            ? Icon(TablerIcons.heartFilled, color: Colors.red)
-            : Icon(TablerIcons.heart),
-        onPressed: () => context.read<SongProvider>().toggleMyLike(song.songId),
-      );
-    }
 
     // 构建左区：封面 + 歌名/艺术家 + 喜欢 + 详情弹窗
     Widget buildLeftArea() {
@@ -140,31 +133,35 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           const SizedBox(width: 10),
 
           // ── 歌名 + 艺术家 ──
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  song.title,
-                  style: theme.midTextStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  song.artist ?? '未知',
-                  style: theme.littleTextStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                song.title,
+                style: theme.midTextStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                song.artist ?? '未知',
+                style: theme.littleTextStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
 
           const SizedBox(width: 10),
 
           // ── 喜欢按钮
-          buildLikeButton(),
+          IconButton(
+            icon: (song.isMyLike)
+                ? Icon(TablerIcons.heartFilled, color: Colors.red)
+                : Icon(TablerIcons.heart),
+            onPressed: () =>
+                context.read<SongProvider>().toggleMyLike(song.songId),
+          ),
         ],
       );
     }
@@ -266,7 +263,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
 
                     // ── 右区（预留） ──
                     // 和左区对称占位，后续放置音量/进度条等控件
-                    const Spacer(flex: 5),
+                    Expanded(flex: 5, child: VolumeControllerButton()),
                   ],
                 ),
               ),

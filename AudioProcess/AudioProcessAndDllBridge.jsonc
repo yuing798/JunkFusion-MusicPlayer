@@ -18,5 +18,10 @@
   "play":"",
   "songPath":"",//准备播放的歌曲路径
   "targetPTS":"",//目标进度条时间戳
-  "currentPTS":""//这个是从音频进程向UI发送的，上面那个反过来
+  "currentPTS":"",//这个是从音频进程向UI发送的，上面那个反过来
+
+  "setSliderValue":"",
+  "sliderParam":"",
+  "sliderValue":"",
+  "masterVolume":"/master/volume",//全局音量
 }

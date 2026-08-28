@@ -9,8 +9,6 @@
       "songs":"",//成功返回的歌曲数组
       "errorFiles":""//导入失败的文件
   },
-  "dllInit":{
-  },
   "toggleMyLike":{
     "songId":"",
     "successOrError":""
@@ -52,5 +50,9 @@
 
   "getTimeDomainSpec":{
     "specList":""//时域图数组
+  },
+
+  "sliderParam":{
+    "masterVolume":"/master/volume",//全局音量
   }
 }//node D:/audio_develop/Junk-Fusion/JunkFusionDLL/generateBridge.cjs执行

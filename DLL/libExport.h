@@ -26,6 +26,7 @@ extern "C" {
     LIB_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     LIB_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
     LIB_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
+    LIB_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
 
 #ifdef __cplusplus
 }

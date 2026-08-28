@@ -144,6 +144,23 @@ class JunkFusionDLLBindings {
   late final _saveComment = _saveCommentPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  void sendSliderValue(
+    ffi.Pointer<ffi.Char> identify,
+    double value,
+    int isOSC,
+  ) {
+    return _sendSliderValue(identify, value, isOSC);
+  }
+
+  late final _sendSliderValuePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Double, ffi.Int)
+        >
+      >('sendSliderValue');
+  late final _sendSliderValue = _sendSliderValuePtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>, double, int)>();
+
   ffi.Pointer<ffi.Char> someImport(ffi.Pointer<ffi.Char> arg0) {
     return _someImport(arg0);
   }

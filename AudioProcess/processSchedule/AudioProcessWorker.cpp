@@ -3,6 +3,7 @@
 #include "AudioProcessWorker.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_events/juce_events.h"
 #include "otherUtils.hpp"
 #include <spdlog/spdlog.h>
@@ -34,30 +35,39 @@ void AudioProcessorPuller::run() {
                 Utils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
-                if (auto obj = jsonStr.getDynamicObject()) {
-                    if (obj->hasProperty(AudioDefs::killAudioProcess)) {
-                        juce::MessageManager::callAsync([]() {
-                            juce::MessageManager::getInstance()->stopDispatchLoop();
-                        });
-                        continue;
-                    }
-                    if (obj->hasProperty(AudioDefs::play)) {
-                        spdlog::get(LogAudioID)->debug("收到播放指令");
-                        juce::var playInfo{obj->getProperty(AudioDefs::play)};
-                        if (auto playInfoObj = playInfo.getDynamicObject()) {
-                            auto songPath{playInfoObj->getProperty(AudioDefs::songPath)
-                                              .toString()
-                                              .toStdString()};
-                            double targetPTS{playInfoObj->getProperty(AudioDefs::targetPTS)};
+                auto obj = jsonStr.getDynamicObject();
+                jassert(obj);
+                if (obj->hasProperty(AudioDefs::killAudioProcess)) {
+                    juce::MessageManager::callAsync([]() {
+                        juce::MessageManager::getInstance()->stopDispatchLoop();
+                    });
+                    continue;
+                }
+                if (obj->hasProperty(AudioDefs::play)) {
+                    spdlog::get(LogAudioID)->debug("收到播放指令");
+                    juce::var playInfo{obj->getProperty(AudioDefs::play)};
+                    if (auto playInfoObj = playInfo.getDynamicObject()) {
+                        auto songPath{
+                            playInfoObj->getProperty(AudioDefs::songPath).toString().toStdString()
+                        };
+                        double targetPTS{playInfoObj->getProperty(AudioDefs::targetPTS)};
 
-                            if (onPlay) onPlay(songPath, targetPTS);
-                            continue;
-                        }
-                    }
-                    if (obj->hasProperty(AudioDefs::pause)) {
-                        spdlog::get(LogAudioID)->debug("收到暂停指令");
-                        if (onPausePlay) onPausePlay();
+                        if (onPlay) onPlay(songPath, targetPTS);
                         continue;
+                    }
+                }
+                if (obj->hasProperty(AudioDefs::pause)) {
+                    spdlog::get(LogAudioID)->debug("收到暂停指令");
+                    if (onPausePlay) onPausePlay();
+                    continue;
+                }
+                if (obj->hasProperty(AudioDefs::setSliderValue)) {
+                    auto ptr{obj->getProperty(AudioDefs::setSliderValue).getDynamicObject()};
+                    jassert(ptr);
+                    auto identifyParam{ptr->getProperty(AudioDefs::sliderParam).toString()};
+                    if (identifyParam == AudioDefs::masterVolume) {
+                        float value{ptr->getProperty(AudioDefs::sliderValue)};
+                        if (onMasterVolumeChange) onMasterVolumeChange(value);
                     }
                 }
             }

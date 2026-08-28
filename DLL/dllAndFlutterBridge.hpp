@@ -8,10 +8,6 @@ struct B_songImport{
     static constexpr const char* errorFiles = "errorFiles" ;
 };
 
-struct B_dllInit{
-    static constexpr const char* name = "dllInit" ;
-};
-
 struct B_toggleMyLike{
     static constexpr const char* name = "toggleMyLike" ;
     static constexpr const char* songId = "songId" ;
@@ -59,4 +55,9 @@ struct B_songInfo{
 struct B_getTimeDomainSpec{
     static constexpr const char* name = "getTimeDomainSpec" ;
     static constexpr const char* specList = "specList" ;
+};
+
+struct B_sliderParam{
+    static constexpr const char* name = "sliderParam" ;
+    static constexpr const char* masterVolume = "/master/volume" ;
 };

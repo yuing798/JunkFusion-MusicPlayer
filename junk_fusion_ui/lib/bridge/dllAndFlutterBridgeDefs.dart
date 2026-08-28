@@ -8,10 +8,6 @@ class B_songImport{
   static const String errorFiles = 'errorFiles';
 }
 
-class B_dllInit{
-  static const String name = 'dllInit';
-}
-
 class B_toggleMyLike{
   static const String name = 'toggleMyLike';
   static const String songId = 'songId';
@@ -59,4 +55,9 @@ class B_songInfo{
 class B_getTimeDomainSpec{
   static const String name = 'getTimeDomainSpec';
   static const String specList = 'specList';
+}
+
+class B_sliderParam{
+  static const String name = 'sliderParam';
+  static const String masterVolume = '/master/volume';
 }

@@ -24,11 +24,13 @@ private:
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
 
-    std::unique_ptr<AudioPreProcess> mPreProcess; // 音频预处理
+    std::unique_ptr<AudioPreProcess> mPreProcess;  // 音频预处理
     std::unique_ptr<DeviceManager> mDeviceManager; // 设备管理要在所有音频处理子类之前就析构
 
     double mSampleRate{44100.0};
     int mNumChannels{2};
+
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterVolume;
 
 public:
     GodProcessor(juce::StringArray initArgs);

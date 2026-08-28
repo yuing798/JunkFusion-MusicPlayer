@@ -60,6 +60,14 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
 
     mDeviceManager->connectProcessor(this);
+
+    mAudioProcessWorker->receiver->onMasterVolumeChange = [this](float value) {
+        masterVolume.setTargetValue(value);
+    };
+
+    mOscReceiver->onMasterVolumeChange = [this](float value) {
+        masterVolume.setTargetValue(value);
+    };
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -68,6 +76,9 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
     mNumChannels = outputLayout.size();
     mPreProcess->prepareToPlay(outputLayout, sampleRate, maximumExpectedSamplesPerBlock);
+
+    masterVolume.reset(sampleRate, 0.002);
+    masterVolume.setCurrentAndTargetValue(1.0);
 }
 
 void GodProcessor::releaseResources() {}
@@ -75,6 +86,14 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     juce::ignoreUnused(midiMessages);
 
     mPreProcess->processBlock(buffer);
+
+    for (int i = 0; i < buffer.getNumSamples(); i++) {
+        auto currentMasterVolume{masterVolume.getNextValue()};
+        for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
+            auto ptr{buffer.getWritePointer(ch)};
+            ptr[i] *= currentMasterVolume;
+        }
+    }
 }
 
 GodProcessor::~GodProcessor() {}

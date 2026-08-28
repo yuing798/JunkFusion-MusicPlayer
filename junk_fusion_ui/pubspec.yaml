@@ -53,7 +53,9 @@ dependencies:
   logger: ^2.7.0
   path_provider: ^2.1.6
   tray_manager: ^0.5.3
-  audio_video_progress_bar: ^2.0.3
+  audio_video_progress_bar: ^2.0.3 #进度条
+  # desktop_context_menu: ^0.1.1,
+  # super_context_menu: ^0.9.1
 
 dev_dependencies:
   flutter_test:

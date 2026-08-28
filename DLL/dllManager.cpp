@@ -70,6 +70,12 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
     db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
 }
+
+void dllManager::sendMessage2AudioProcess(juce::var& obj) {
+    auto jsonStr{juce::JSON::toString(obj).toStdString()};
+    mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(jsonStr);
+}
+
 dllManager::~dllManager() {
     spdlog::get(LogDllID)->debug("---------------------------------------");
     spdlog::shutdown();

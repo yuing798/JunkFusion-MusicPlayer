@@ -11,7 +11,7 @@ const defsPath = path.resolve(__dirname, 'dllAndFlutterBridge.jsonc');
 const defs = jsonc.parse(fs.readFileSync(defsPath, 'utf-8'));
 
 //生成 TypeScript 文件 (UI/src/bridge/bridge.generated.dart)
-const dartOutputPath = path.resolve(__dirname, '../junk_fusion_ui/lib/bridge/dll/dllAndFlutterBridgeDefs.dart');//vue端的桥接函数名称
+const dartOutputPath = path.resolve(__dirname, '../junk_fusion_ui/lib/bridge/dllAndFlutterBridgeDefs.dart');//vue端的桥接函数名称
 // ./ 表示“当前目录”，../ 表示“上一级目录（父目录）”
 const dartLines = []
 dartLines.push(`// ⚠️ This file is AUTO-GENERATED. DO NOT EDIT MANUALLY.`);

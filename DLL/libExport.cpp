@@ -5,6 +5,8 @@
 #include "dllUtils.hpp"
 #include "fileManage/dbModel.hpp"
 #include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
+#include "juce_osc/juce_osc.h"
 #include "otherUtils.hpp"
 #include "processManager/AudioDefs.hpp"
 #include <cstdlib>
@@ -90,12 +92,12 @@ extern "C" {
         playInfo.getDynamicObject()->setProperty(AudioDefs::targetPTS, currentPTS);
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::play, playInfo);
-        DllUtils::sendMessage2AudioProcess(obj);
+        dllManager::getInstance().sendMessage2AudioProcess(obj);
     }
     void pausePlay() {
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioDefs::pause, "");
-        DllUtils::sendMessage2AudioProcess(obj);
+        dllManager::getInstance().sendMessage2AudioProcess(obj);
     }
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().currentPTSCallback = doubleFunc;
@@ -114,5 +116,29 @@ extern "C" {
         auto ptr = DllUtils::object2Uint8t(obj);
 
         return ptr;
+    }
+    void sendSliderValue(const char* identify, double value, int isOSC) {
+        auto identifyParam = juce::String(identify);
+        if (isOSC) {
+            jassert(identifyParam.startsWith("/"));
+            juce::OSCMessage msg(identifyParam, static_cast<float>(value));
+            dllManager::getInstance().sendOSCMessage2AudioProcessor(msg);
+        } else {
+            juce::var obj{new juce::DynamicObject()};
+
+            juce::var paramAndValueObj{new juce::DynamicObject()};
+            {
+                auto ptr{paramAndValueObj.getDynamicObject()};
+                jassert(ptr);
+                ptr->setProperty(AudioDefs::sliderParam, identifyParam);
+                ptr->setProperty(AudioDefs::sliderValue, value);
+            }
+            {
+                auto ptr{obj.getDynamicObject()};
+                jassert(ptr);
+                ptr->setProperty(AudioDefs::setSliderValue, paramAndValueObj);
+            }
+            dllManager::getInstance().sendMessage2AudioProcess(obj);
+        }
     }
 }

@@ -110,32 +110,4 @@ class SongProvider extends ChangeNotifier {
     bindings.saveComment(songId, cPtr);
     malloc.free(cPtr);
   }
-
-  // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串
-  //可选：是否显示毫秒数
-  static String formatDuration(double seconds, [bool needMs = false]) {
-    if (seconds < 0) return '0:00';
-
-    // 1. 分离整数部分（秒）和小数部分（毫秒）
-    final totalSecs = seconds.floor(); // 向下取整，得到整秒
-    final milliseconds = ((seconds - totalSecs) * 1000).round();
-
-    // 2. 计算 时/分/秒
-    final hours = totalSecs ~/ 3600;
-    final minutes = (totalSecs % 3600) ~/ 60;
-    final secs = totalSecs % 60;
-
-    // 3. 拼接主要字符串
-    String result;
-    if (hours > 0) {
-      result =
-          '$hours:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-    } else {
-      result = '$minutes:${secs.toString().padLeft(2, '0')}';
-    }
-    if (needMs) {
-      result = '$result.${milliseconds.toString().padLeft(3, '0')}';
-    }
-    return result;
-  }
 }

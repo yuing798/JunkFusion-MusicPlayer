@@ -9,4 +9,5 @@ public:
     OscSender();
     ~OscSender();
     int getPort() noexcept { return port; };
+    void sendMsg(juce::OSCMessage& msg) { mSender.send(msg); }
 };

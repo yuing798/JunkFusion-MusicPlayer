@@ -54,13 +54,24 @@ void AudioProcessCoordinator::stop() {
     juce::var obj{new juce::DynamicObject()};
     obj.getDynamicObject()->setProperty(AudioDefs::killAudioProcess, "");
     auto jsonStr = juce::JSON::toString(obj).toStdString();
-    Utils::writeEmergencyLog("在AudioProcessCoordinator::stop()中通知音频进程自杀");
+    // Utils::writeEmergencyLog("在AudioProcessCoordinator::stop()中通知音频进程自杀");
     mAudioProcessPusher->sendMessage(jsonStr);
     mRunning = false;
+    for (int time = 0; time < 300; time++) {
+
+        if (!mChildProcess.isRunning()) {
+            return;
+        }
+
+        if (time == 299) {
+            mChildProcess.kill();
+        } // 3秒没反应直接强杀
+        juce::Thread::sleep(10);
+    }
 }
 
 AudioProcessCoordinator::~AudioProcessCoordinator() {
-    Utils::writeEmergencyLog("准备执行AudioProcessCoordinator的析构函数");
+    // Utils::writeEmergencyLog("准备执行AudioProcessCoordinator的析构函数");
     stop();
     juce::Thread::sleep(100);
     if (mAudioProcessPusher) {

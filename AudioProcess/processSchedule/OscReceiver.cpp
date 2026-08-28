@@ -1,4 +1,5 @@
 #include "./OscReceiver.hpp"
+#include "../AudioDefs.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
 #include <spdlog/spdlog.h>
@@ -17,7 +18,13 @@ OscReceiver::~OscReceiver() {
     mReceiver.disconnect();
 }
 void OscReceiver::oscMessageReceived(const juce::OSCMessage& message) {
-    juce::String msg = message.getAddressPattern().toString();
+    juce::String address = message.getAddressPattern().toString();
+    if (message.size() <= 0) return;
+    if (address == AudioDefs::masterVolume) {
+        if (!message[0].isFloat32()) return;
+        float masterVolume{message[0].getFloat32()};
+        if (onMasterVolumeChange) onMasterVolumeChange(masterVolume);
+    }
 }
 
 void OscReceiver::oscBundleReceived(const juce::OSCBundle& bundle) {}

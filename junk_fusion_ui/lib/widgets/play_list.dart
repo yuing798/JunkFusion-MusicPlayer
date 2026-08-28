@@ -221,7 +221,7 @@ class PlayList {
                                         ),
                                         const Spacer(),
                                         Text(
-                                          SongProvider.formatDuration(
+                                          UtilFunction.formatDuration(
                                             song.duration,
                                           ),
                                         ),
