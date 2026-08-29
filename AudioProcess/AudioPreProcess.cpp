@@ -21,11 +21,12 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
             auto jsonStr{juce::JSON::toString(obj).toStdString()};
             mWorker->sender->sendMessage(jsonStr);
         };
-        duck.decoder->onNatureComplete = [] {
+        duck.decoder->onNatureComplete = [this] {
             juce::var obj{new juce::DynamicObject()};
             auto ptr{obj.getDynamicObject()};
             jassert(ptr);
             ptr->setProperty(AudioDefs::onPlayNextSong, "");
+            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
         };
     }
     fadeInSinTable = AudioUtils::generateSinTable(0.5);
