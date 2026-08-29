@@ -41,7 +41,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final Animation<Offset> _slideAnimation;
   late final PlayList _playList;
 
-  int? _previousSongId; //缓存上一次的歌曲ID，防止重复触发动画
+  SongInfo? _previousSong; //缓存上一次的歌曲，防止重复触发动画
 
   double _height = 100;
 
@@ -51,14 +51,6 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
 
     _playList = PlayList(this);
 
-    //在 initState 中调用任何可能触发 setState 或 notifyListeners 的异步/同步操作，
-    //都要用 WidgetsBinding.instance.addPostFrameCallback 延迟到第一帧完成之后，避免在构建过程中引发 markNeedsBuild 异常。
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PlaybackProvider>().restoreState();
-      context.read<PlaybackProvider>().setSongDuration(
-        context.read<PlaybackProvider>().songDuration,
-      );
-    });
     // 初始化控制器
     _controller = AnimationController(
       vsync: this,
@@ -89,20 +81,16 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
 
-    final songId = playback.currentSongId;
-    final shouldShow = songId != null;
-    if (songId != _previousSongId) {
-      _previousSongId = songId;
+    final shouldShow = playback.currentSong != null;
+    if (playback.currentSong != _previousSong) {
+      _previousSong = playback.currentSong;
       if (shouldShow) {
         _controller.forward(); //滑入
       } else {
         _controller.reverse(); //滑出
       }
     }
-    if (songId == null) return const SizedBox.shrink();
-    final song = context.select<SongProvider, SongInfo>(
-      (provider) => provider.getSongInfo(songId),
-    );
+    if (playback.currentSong == null) return const SizedBox.shrink();
 
     final theme = context.watch<AppTheme>();
 
@@ -110,10 +98,10 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     Widget buildLeftArea() {
       return Row(
         children: [
-          (song.hash != null)
+          (playback.currentSong!.hash != null)
               ? Image.file(
                   File(
-                    '${AppCache.cacheDirString}/songImage/${song.hash}/original.jpg',
+                    '${AppCache.cacheDirString}/songImage/${playback.currentSong!.hash}/original.jpg',
                   ),
                   width: 50,
                   height: 50,
@@ -138,13 +126,13 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                song.title,
+                playback.currentSong!.title,
                 style: theme.midTextStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                song.artist ?? '未知',
+                playback.currentSong!.artist ?? '未知',
                 style: theme.littleTextStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -156,11 +144,12 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
 
           // ── 喜欢按钮
           IconButton(
-            icon: (song.isMyLike)
+            icon: (playback.currentSong!.isMyLike)
                 ? Icon(TablerIcons.heartFilled, color: Colors.red)
                 : Icon(TablerIcons.heart),
-            onPressed: () =>
-                context.read<SongProvider>().toggleMyLike(song.songId),
+            onPressed: () => context.read<SongProvider>().toggleMyLike(
+              playback.currentSong!.songId,
+            ),
           ),
         ],
       );

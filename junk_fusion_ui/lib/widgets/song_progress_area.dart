@@ -100,7 +100,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                   : (playback.currentTimeStamp * 1000).toInt(),
             ),
             total: Duration(
-              milliseconds: (playback.songDuration * 1000).toInt(),
+              milliseconds: (playback.currentSong!.duration * 1000).toInt(),
             ),
             onSeek: (value) {
               context.read<PlaybackProvider>().seekPreferPTS(
@@ -123,7 +123,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                         double targetTime = _calculateTime(
                           details.localPosition.dx,
                           constraints.maxWidth,
-                          playback.songDuration,
+                          playback.currentSong!.duration,
                         );
                         playback.seekPreferPTS(targetTime);
                       },
@@ -135,7 +135,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                           _waveformDragTime = _calculateTime(
                             details.localPosition.dx,
                             constraints.maxWidth,
-                            playback.songDuration,
+                            playback.currentSong!.duration,
                           );
                         });
                       },
@@ -146,7 +146,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                           _waveformDragTime = _calculateTime(
                             details.localPosition.dx,
                             constraints.maxWidth,
-                            playback.songDuration,
+                            playback.currentSong!.duration,
                           );
                         });
                       },

@@ -132,6 +132,7 @@ class PlayList {
                                     final song = context
                                         .watch<PlaybackProvider>()
                                         .playList[index];
+
                                     return Row(
                                       key: ValueKey(song.songId),
                                       // `ValueKey` 基于值的唯一 Key，帮助 Flutter 识别
@@ -145,23 +146,22 @@ class PlayList {
                                           child: GestureDetector(
                                             onTap: () {
                                               //箭头函数后面只能接上一句表达式
-                                              if (playback.currentSongId ==
-                                                  song.songId) {
+                                              if (playback.currentSong ==
+                                                  song) {
                                                 context
                                                     .read<PlaybackProvider>()
                                                     .togglePlayPause();
                                               } else {
                                                 context
                                                     .read<PlaybackProvider>()
-                                                    .setNewSong(song.songId);
+                                                    .setNewSong(song);
                                               }
                                             },
                                             child: Stack(
                                               alignment: Alignment.center,
                                               children: [
                                                 // 封面图（非当前歌曲时显示）
-                                                (playback.currentSongId !=
-                                                        song.songId)
+                                                (playback.currentSong != song)
                                                     ? HoverPlayButton(
                                                         hash: song.hash,
                                                       )
