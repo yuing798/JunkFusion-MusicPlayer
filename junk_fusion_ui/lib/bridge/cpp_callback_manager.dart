@@ -12,6 +12,7 @@ class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
   ffi.NativeCallable<StringFuncFunction>? _timeDomainSpecInsertOverCallback;
+  ffi.NativeCallable<VoidFuncFunction>? _onPlayNextSongCallback;
 
   void _handleErrorFromCpp(ffi.Pointer<ffi.Char> strPtr) {
     // 将 C 的 char* 转换为 Dart 的 String
@@ -49,12 +50,18 @@ class CppCallbackManager {
           print("重型歌曲插入任务完成:文件:$str");
         });
 
+    _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {
+      final context = navigatorKey.currentContext;
+      context?.read<PlaybackProvider>().playNextSong();
+    });
+
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
     bindings.registerTimeDomainSpecInsertOver(
       _timeDomainSpecInsertOverCallback!.nativeFunction,
     );
+    bindings.registerOnPlayNextSong(_onPlayNextSongCallback!.nativeFunction);
   }
 
   /// 3. 清理资源
@@ -66,10 +73,12 @@ class CppCallbackManager {
     bindings.registerTimeDomainSpecInsertOver(
       ffi.Pointer.fromAddress(0).cast(),
     );
+    bindings.registerOnPlayNextSong(ffi.Pointer.fromAddress(0).cast());
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _errorSendcallable?.close();
     _currentPTSCallback?.close();
     _timeDomainSpecInsertOverCallback?.close();
+    _onPlayNextSongCallback?.close();
   }
 }

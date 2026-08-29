@@ -21,4 +21,5 @@ namespace AudioDefs {
     static constexpr const char* sliderParam = "sliderParam" ;
     static constexpr const char* sliderValue = "sliderValue" ;
     static constexpr const char* masterVolume = "/master/volume" ;
+    static constexpr const char* onPlayNextSong = "onPlayNextSong" ;
 }

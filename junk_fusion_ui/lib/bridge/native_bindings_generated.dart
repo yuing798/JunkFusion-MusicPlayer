@@ -119,6 +119,17 @@ class JunkFusionDLLBindings {
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
       .asFunction<void Function(StringFunc)>();
 
+  void registerOnPlayNextSong(VoidFunc cb) {
+    return _registerOnPlayNextSong(cb);
+  }
+
+  late final _registerOnPlayNextSongPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(VoidFunc)>>(
+        'registerOnPlayNextSong',
+      );
+  late final _registerOnPlayNextSong = _registerOnPlayNextSongPtr
+      .asFunction<void Function(VoidFunc)>();
+
   void registerTimeDomainSpecInsertOver(StringFunc cb) {
     return _registerTimeDomainSpecInsertOver(cb);
   }
@@ -191,3 +202,6 @@ typedef DartDoubleFuncFunction = void Function(double);
 typedef StringFunc = ffi.Pointer<ffi.NativeFunction<StringFuncFunction>>;
 typedef StringFuncFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
 typedef DartStringFuncFunction = void Function(ffi.Pointer<ffi.Char> str);
+typedef VoidFunc = ffi.Pointer<ffi.NativeFunction<VoidFuncFunction>>;
+typedef VoidFuncFunction = ffi.Void Function();
+typedef DartVoidFuncFunction = void Function();

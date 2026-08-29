@@ -280,6 +280,7 @@ void FFmpegDecoder::run() {
             while (mRingBuffer->getFreeSpace() < buffer.getNumSamples()) {
                 // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
                 if (threadShouldExit()) {
+                    isNatureComplete = false;
                     break;
                 }
                 // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
@@ -288,6 +289,8 @@ void FFmpegDecoder::run() {
 
             if (!threadShouldExit()) {
                 mRingBuffer->pushAudioData(buffer);
+            } else {
+                isNatureComplete = false;
             }
         }
         // Utils::writeEmergencyLog("avcodec_receive_frame返回非零数据导致提前退出");
@@ -367,6 +370,7 @@ void FFmpegDecoder::run() {
         while (mRingBuffer->getFreeSpace() < buffer.getNumSamples()) {
             // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
             if (threadShouldExit()) {
+                isNatureComplete = false;
                 break;
             }
             // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
@@ -375,6 +379,8 @@ void FFmpegDecoder::run() {
 
         if (!threadShouldExit()) {
             mRingBuffer->pushAudioData(buffer);
+        } else {
+            isNatureComplete = false;
         }
     }
 
@@ -411,6 +417,7 @@ void FFmpegDecoder::run() {
 
             while (mRingBuffer->getFreeSpace() < ret) {
                 if (threadShouldExit()) {
+                    isNatureComplete = false;
                     break;
                 }
                 juce::Thread::sleep(5);
@@ -418,6 +425,7 @@ void FFmpegDecoder::run() {
 
             // 如果是因为切歌要求退出，直接打断最外层的 flush 循环，不要继续塞数据了
             if (threadShouldExit()) {
+                isNatureComplete = false;
                 break;
             }
 
@@ -436,9 +444,14 @@ void FFmpegDecoder::run() {
     swr_free(&swrContext);
     avcodec_free_context(&decoderContext);
     avformat_close_input(&inputContext);
+
+    if (isNatureComplete) {
+        if (onNatureComplete) onNatureComplete();
+    }
 }
 
 void FFmpegDecoder::play(std::string songPath, double targetPTS) {
+    isNatureComplete = true;
     targetSeconds = targetPTS;
     isRequestSeek = true;
     path = songPath;

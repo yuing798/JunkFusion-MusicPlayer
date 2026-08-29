@@ -52,8 +52,9 @@ public:
 
     ~dllManager();
 
-    std::function<void(const char*)> errorSendCallback; // cpp主动向前端发送错误数据
-    std::function<void(double)> currentPTSCallback;     // 获取当前的播放进度条的callback
+    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
+    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
+    std::function<void(void)> onPlayNextSong;
 
     void sendMessage2AudioProcess(juce::var& obj);
     void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }

@@ -8,6 +8,7 @@
 
 typedef void (*StringFunc)(const char* str);
 typedef void (*DoubleFunc)(double);
+typedef void (*VoidFunc)();
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,7 @@ extern "C" {
     LIB_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
     LIB_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
     LIB_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
+    LIB_EXPORT void registerOnPlayNextSong(VoidFunc cb);
 
 #ifdef __cplusplus
 }

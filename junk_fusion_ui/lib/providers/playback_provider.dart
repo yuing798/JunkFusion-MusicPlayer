@@ -141,4 +141,15 @@ class PlaybackProvider extends ChangeNotifier {
       await AppCache.frontCacheRef.setInt("currentSongId", _currentSongId!);
     }
   }
+
+  void playNextSong() {
+    final currentSongIndex = _playList.indexWhere(
+      (i) => i.songId == currentSongId,
+    );
+    if (currentSongIndex < _playList.length) {
+      bindings.play(_playList[currentSongIndex + 1].songId, 0.0);
+    } else {
+      _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+    }
+  }
 }

@@ -4,6 +4,7 @@
 #include "dllManager.hpp"
 #include "dllUtils.hpp"
 #include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
 #include "otherUtils.hpp"
 #include "spdlog/spdlog.h"
 #include <cstdlib>
@@ -165,9 +166,10 @@ void AudioProcessSuber::run() {
                 );
                 continue;
             };
-            if (obj.getDynamicObject()->hasProperty(AudioDefs::errorPopupWindowMsg)) {
-                auto receiverMsg =
-                    obj.getDynamicObject()->getProperty(AudioDefs::errorPopupWindowMsg).toString();
+            auto ptr{obj.getDynamicObject()};
+            jassert(ptr);
+            if (ptr->hasProperty(AudioDefs::errorPopupWindowMsg)) {
+                auto receiverMsg = ptr->getProperty(AudioDefs::errorPopupWindowMsg).toString();
                 spdlog::get(LogDllID)->debug(
                     "sub接收到发送错误弹窗消息:{}",
                     receiverMsg.toStdString()
@@ -175,13 +177,16 @@ void AudioProcessSuber::run() {
                 Utils::writeEmergencyLog("sub接收到发送错误弹窗消息");
                 auto cString{DllUtils::copyStringOnHeap(receiverMsg)};
 
-                if (dllManager::getInstance().errorSendCallback)
-                    dllManager::getInstance().errorSendCallback(cString);
+                if (dllManager::getInstance().onErrorSendCallback)
+                    dllManager::getInstance().onErrorSendCallback(cString);
                 continue;
-            } else if (obj.getDynamicObject()->hasProperty(AudioDefs::currentPTS)) {
-                double pts = obj.getDynamicObject()->getProperty(AudioDefs::currentPTS);
-                if (dllManager::getInstance().currentPTSCallback)
-                    dllManager::getInstance().currentPTSCallback(pts);
+            } else if (ptr->hasProperty(AudioDefs::currentPTS)) {
+                double pts = ptr->getProperty(AudioDefs::currentPTS);
+                if (dllManager::getInstance().onCurrentPTSCallback)
+                    dllManager::getInstance().onCurrentPTSCallback(pts);
+                continue;
+            }
+            if (ptr->hasProperty(AudioDefs::onPlayNextSong)) {
             }
         }
     }

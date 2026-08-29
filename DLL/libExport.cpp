@@ -82,7 +82,7 @@ extern "C" {
     }
 
     void registerErrorSendCallback(StringFunc cb) {
-        dllManager::getInstance().errorSendCallback = cb;
+        dllManager::getInstance().onErrorSendCallback = cb;
     }
     void play(long long songId, double currentPTS) {
         auto path = dllManager::getInstance().getSongsManager().getPathBySongId(songId);
@@ -100,7 +100,7 @@ extern "C" {
         dllManager::getInstance().sendMessage2AudioProcess(obj);
     }
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
-        dllManager::getInstance().currentPTSCallback = doubleFunc;
+        dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
     void registerTimeDomainSpecInsertOver(StringFunc cb) {
         dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
@@ -141,4 +141,5 @@ extern "C" {
             dllManager::getInstance().sendMessage2AudioProcess(obj);
         }
     }
+    void registerOnPlayNextSong(VoidFunc cb) { dllManager::getInstance().onPlayNextSong = cb; }
 }

@@ -2,6 +2,8 @@
 #include "AudioDefs.hpp"
 #include "AudioUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 
@@ -18,6 +20,12 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
             );
             auto jsonStr{juce::JSON::toString(obj).toStdString()};
             mWorker->sender->sendMessage(jsonStr);
+        };
+        duck.decoder->onNatureComplete = [] {
+            juce::var obj{new juce::DynamicObject()};
+            auto ptr{obj.getDynamicObject()};
+            jassert(ptr);
+            ptr->setProperty(AudioDefs::onPlayNextSong, "");
         };
     }
     fadeInSinTable = AudioUtils::generateSinTable(0.5);

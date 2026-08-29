@@ -24,4 +24,6 @@
   "sliderParam":"",
   "sliderValue":"",
   "masterVolume":"/master/volume",//全局音量
+  
+  "onPlayNextSong":"",//播放下一首歌的回调信号
 }
