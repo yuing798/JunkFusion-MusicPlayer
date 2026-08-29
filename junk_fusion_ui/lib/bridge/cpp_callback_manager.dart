@@ -35,6 +35,7 @@ class CppCallbackManager {
     _currentPTSCallback = ffi.NativeCallable<DoubleFuncFunction>.listener((
       double value,
     ) {
+      // print("准备设置当前的PTS ${value.toString()}");
       final context = navigatorKey.currentContext;
       if (context != null) {
         context.read<PlaybackProvider>().setCurrentPTS(value);

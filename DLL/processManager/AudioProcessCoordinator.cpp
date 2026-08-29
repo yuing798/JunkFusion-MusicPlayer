@@ -180,13 +180,19 @@ void AudioProcessSuber::run() {
                 if (dllManager::getInstance().onErrorSendCallback)
                     dllManager::getInstance().onErrorSendCallback(cString);
                 continue;
-            } else if (ptr->hasProperty(AudioDefs::currentPTS)) {
+            }
+            if (ptr->hasProperty(AudioDefs::currentPTS)) {
+
                 double pts = ptr->getProperty(AudioDefs::currentPTS);
+                // spdlog::get(LogDllID)->debug("suber接收到信息:准备发送当前的pts回调:{}", pts);
                 if (dllManager::getInstance().onCurrentPTSCallback)
                     dllManager::getInstance().onCurrentPTSCallback(pts);
                 continue;
             }
             if (ptr->hasProperty(AudioDefs::onPlayNextSong)) {
+                if (dllManager::getInstance().onPlayNextSong)
+                    dllManager::getInstance().onPlayNextSong();
+                continue;
             }
         }
     }

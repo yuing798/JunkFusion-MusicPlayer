@@ -32,8 +32,8 @@ class PlaybackProvider extends ChangeNotifier {
 
   // bool _hasFirstPlay = false; //是否已经进行了第一次播放
 
-  bool _isPTSLock = false; //在某些情况下，进度条不能被后端的回调改变
-  bool get isPTSLock => _isPTSLock;
+  // bool _isPTSLock = false; //在某些情况下，进度条不能被后端的回调改变
+  // bool get isPTSLock => _isPTSLock;
 
   List<SongInfo> _playList = [];
   List<SongInfo> get playList => _playList;
@@ -122,21 +122,25 @@ class PlaybackProvider extends ChangeNotifier {
 
   void seekPreferPTS(double targetSeconds) {
     //跳转到目标秒数
-    _currentTimeStamp = targetSeconds;
-    if (!_isPlaying) return;
 
-    bindings.play(_currentSongId!, targetSeconds);
+    _currentTimeStamp = targetSeconds;
+    print("seekCurrentPTS收到跳转到PTS通知:$targetSeconds");
+    if (_isPlaying) {
+      bindings.play(_currentSongId!, targetSeconds);
+    }
+    notifyListeners();
   }
 
   void setCurrentPTS(double currentPTS) {
-    if (_isPTSLock) return;
+    // if (_isPTSLock) return;
     _currentTimeStamp = currentPTS;
+    print("seekCurrentPTS收到设置当前PTS通知:$currentPTS");
     notifyListeners();
   }
 
   void saveState() async {
     //这个函数只在退出应用的时候调用
-    _isPTSLock = true;
+    // _isPTSLock = true;
     if (_currentSongId != null) {
       await AppCache.frontCacheRef.setInt("currentSongId", _currentSongId!);
     }
@@ -151,5 +155,6 @@ class PlaybackProvider extends ChangeNotifier {
     } else {
       _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
     }
+    notifyListeners();
   }
 }

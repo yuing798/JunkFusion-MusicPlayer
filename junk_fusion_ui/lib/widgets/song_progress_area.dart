@@ -68,7 +68,7 @@ class SongProgressAreaState extends State<SongProgressArea>
 
   @override
   Widget build(BuildContext context) {
-    final playback = context.read<PlaybackProvider>();
+    final playback = context.watch<PlaybackProvider>();
     final theme = context.watch<AppTheme>();
 
     return MouseRegion(
