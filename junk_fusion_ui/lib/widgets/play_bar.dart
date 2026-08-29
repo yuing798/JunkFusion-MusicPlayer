@@ -175,7 +175,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.squareArrowLeftFilled, size: 32),
             onPressed: () {
-              // TODO: 桥接层 - 调用上一首
+              context.read<PlaybackProvider>().playPreviousSong();
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -199,7 +199,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.squareArrowRightFilled, size: 32),
             onPressed: () {
-              // TODO: 桥接层 - 调用下一首
+              context.read<PlaybackProvider>().playNextSong();
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

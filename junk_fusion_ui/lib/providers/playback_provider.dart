@@ -186,16 +186,37 @@ class PlaybackProvider extends ChangeNotifier {
   }
 
   void playNextSong() {
-    print("playNextSong准备阶段歌曲为${_currentSong!.title}");
+    // print("playNextSong准备阶段歌曲为${_currentSong!.title}");
     final currentSongIndex = _playList.indexWhere(
       (i) => i.songId == _currentSong!.songId,
     );
     if (currentSongIndex < _playList.length - 1) {
       _currentSong = _playList[currentSongIndex + 1];
       bindings.play(_currentSong!.songId, 0.0);
-      print("改变后的歌曲为${_currentSong!.title}");
+      // print("改变后的歌曲为${_currentSong!.title}");
+      _isPlaying = true;
     } else {
       _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+      _isPlaying = false;
+    }
+
+    notifyListeners();
+  }
+
+  //播放播放列表的上一首歌曲
+  void playPreviousSong() {
+    // print("playNextSong准备阶段歌曲为${_currentSong!.title}");
+    final currentSongIndex = _playList.indexWhere(
+      (i) => i.songId == _currentSong!.songId,
+    );
+    if (currentSongIndex > 0) {
+      _currentSong = _playList[currentSongIndex - 1];
+      bindings.play(_currentSong!.songId, 0.0);
+      // print("改变后的歌曲为${_currentSong!.title}");
+      _isPlaying = true;
+    } else {
+      _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+      _isPlaying = false;
     }
 
     notifyListeners();
