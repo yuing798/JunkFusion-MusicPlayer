@@ -172,8 +172,14 @@ class VolumeControllerButtonState extends State<VolumeControllerButton>
           if (currentVolume != 0.0) {
             context.read<PlaybackProvider>().setVolume(0.0);
             lastVolume = currentVolume;
+            UtilFunction.sendSliderMsg(B_sliderParam.masterVolume, 0.0, false);
           } else {
             context.read<PlaybackProvider>().setVolume(lastVolume);
+            UtilFunction.sendSliderMsg(
+              B_sliderParam.masterVolume,
+              lastVolume,
+              false,
+            );
           }
         },
         icon: Icon(iconData, size: 24, color: theme.colorTextSecond),
