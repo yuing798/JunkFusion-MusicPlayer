@@ -3,6 +3,7 @@
 // ════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/pages/song_play_page.dart';
 import 'package:junk_fusion_ui/widgets/title_bar.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
@@ -104,6 +105,14 @@ class _AppState extends State<App> {
             bottom: 0,
             // height: 90,
             child: const PlayBar(),
+          ),
+
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            top: 0,
+            child: const SongPlayPage(),
           ),
         ],
       ),

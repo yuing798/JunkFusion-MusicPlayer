@@ -27,6 +27,7 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
             jassert(ptr);
             ptr->setProperty(AudioDefs::onPlayNextSong, "");
             mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+            stopTimer();
         };
     }
     fadeInSinTable = AudioUtils::generateSinTable(0.5);
