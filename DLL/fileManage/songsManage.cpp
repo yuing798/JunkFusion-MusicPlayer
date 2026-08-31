@@ -172,7 +172,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         onlineTask.needTrackNumber = true;
     }
     if ((pEntry = av_dict_get(pTags, "disc", nullptr, 0))) {
-        onlineTask.needDiscNumber = true;
+        info.discNumber = safeToInt(pEntry->value);
     }
     if ((pEntry = av_dict_get(pTags, "date", nullptr, 0))) info.year = safeToInt(pEntry->value);
     if ((pEntry = av_dict_get(pTags, "composer", nullptr, 0))) info.composer = pEntry->value;

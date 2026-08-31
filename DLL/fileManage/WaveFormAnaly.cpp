@@ -23,7 +23,8 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-WaveFormAnaly::WaveFormAnaly(SQLite::Database& db) : juce::Thread("WaveFormAnaly"), mDb(db) {}
+WaveFormAnaly::WaveFormAnaly(SQLite::Database& db)
+    : juce::Thread("WaveFormAnaly"), mDb(db), mOnlineGetMatedata(db) {}
 
 void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -35,32 +36,29 @@ void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
 void WaveFormAnaly::run() {
     while (!threadShouldExit()) {
         Task task;
+        bool hasTask = false;
+
+        // 1. 缩小锁的作用域，仅在弹出任务时持锁
         {
             std::lock_guard<std::mutex> lock(mtx);
-            if (mTaskQueue.empty()) {
-                wait(-1);
-                continue;
+            if (!mTaskQueue.empty()) {
+                task = std::move(mTaskQueue.front());
+                mTaskQueue.pop();
+                hasTask = true;
             }
-            task = std::move(mTaskQueue.front());
-            mTaskQueue.pop();
+        } // 锁在此处自动释放
+
+        // 2. 根据是否有任务决定处理还是休眠
+        if (hasTask) {
+            processSingleFile(task); // 在锁外执行耗时任务
+        } else {
+            // 在【无锁状态】下安全挂起等待新任务！
+            wait(-1);
         }
-        processSingleFile(task);
     }
 }
 
 void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
-
-    bool needOnlineSearch{
-        !(task.onlineTask.needArtist && task.onlineTask.needAlbum && task.onlineTask.needTitle &&
-          task.onlineTask.needDiscNumber && task.onlineTask.needTrackNumber)
-    }; // 是否需要联网搜索,五个里面有一个不存在就需要
-
-    ChromaprintContext* printContext{nullptr};
-    if (needOnlineSearch) {
-        // 音频指纹提取初始化
-        printContext = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
-        chromaprint_start(printContext, 11025, 1); // 指纹提取强制这个格式
-    }
 
     int result{0}; // 解码层结果，一般成功返回零
     AVFormatContext* inputContext{nullptr};
@@ -150,6 +148,19 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     auto* packet = av_packet_alloc();
     auto* frame = av_frame_alloc();
 
+    bool needOnlineSearch{
+        task.onlineTask.needAlbum || task.onlineTask.needArtist || task.onlineTask.needCover ||
+        task.onlineTask.needTitle || task.onlineTask.needTrackNumber
+    }; // 是否需要联网搜索,五个里面有一个不存在就需要
+
+    ChromaprintContext* printContext{nullptr};
+    if (needOnlineSearch) {
+        // 音频指纹提取初始化
+        printContext = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
+        chromaprint_start(printContext, 11025, 1); // 指纹提取强制这个格式
+    }
+    double currentSeconds{0.0}; // 指纹提取只提取前90秒
+
     while (av_read_frame(inputContext, packet) == 0) {
 
         if (packet->stream_index != currentIndex) {
@@ -202,8 +213,10 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
 
             pushDataIntoAudioGraph(outputArray, num4SwrSamples);
 
+            currentSeconds += (double)frame->nb_samples / (double)decoderPar->sample_rate;
+
             // 喂入指纹上下文
-            if (needOnlineSearch)
+            if (needOnlineSearch && currentSeconds < 90.0)
                 chromaprint_feed(printContext, (int16_t*)outputArray, num4SwrSamples);
 
             av_freep(&outputArray);
@@ -257,7 +270,10 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         }
 
         pushDataIntoAudioGraph(outputArray, result);
-        // if (needOnlineSearch) chromaprint_feed(printContext, (int16_t*)outputArray, result);
+
+        currentSeconds += (double)frame->nb_samples / (double)decoderPar->sample_rate;
+        if (needOnlineSearch && currentSeconds < 90.0)
+            chromaprint_feed(printContext, (int16_t*)outputArray, result);
 
         av_freep(&outputArray);
     }
@@ -274,7 +290,10 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             int ret = swr_convert(swrContext, &outputArray, maxFlushSamples, nullptr, 0);
             if (ret <= 0) break;
             pushDataIntoAudioGraph(outputArray, ret);
-            // if (needOnlineSearch) chromaprint_feed(printContext, (int16_t*)outputArray, ret);
+
+            currentSeconds += (double)maxFlushSamples / (double)decoderPar->sample_rate;
+            if (needOnlineSearch && currentSeconds < 90.0)
+                chromaprint_feed(printContext, (int16_t*)outputArray, ret);
         }
         // 释放 Flush 临时缓冲区
         if (outputArray != nullptr) {
@@ -294,7 +313,11 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             std::string printStr{printPtr};
             chromaprint_dealloc(printPtr);
             // TODO:这里就获取指纹了
-            spdlog::get(LogDllID)->debug("路径{}对应的音频指纹为{}", task.path, printStr);
+            // spdlog::get(LogDllID)->debug("路径{}对应的音频指纹为{}", task.path, printStr);
+            // OnlineGetMatedata::Task onlineTask{};
+            task.onlineTask.duration = duration;
+            task.onlineTask.print = std::move(printStr);
+            // mOnlineGetMatedata.setTask(std::move(task.onlineTask));
         }
         chromaprint_free(printContext);
     }

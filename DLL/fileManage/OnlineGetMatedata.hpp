@@ -15,11 +15,14 @@ public:
         //  */
         // bool isInput{true};
 
+        double duration{0.0};
+        std::string print; // 指纹
+
         bool needTitle{false};
         bool needArtist{false};
         bool needAlbum{false};
         bool needTrackNumber{false};
-        bool needDiscNumber{false};
+        // bool needDiscNumber{false};
         bool needCover{false};
 
         // bool needYear{false};
@@ -38,9 +41,6 @@ public:
     ~OnlineGetMatedata() = default;
     void run() override;
     void setTask(Task task);
-    void processSingleRequest(Task task);
 
-    // 根据三个标签搜索元数据(三个标签必须同时存在才能调用这个函数)
-    void searchDataByText(std::string title, std::string album, std::string artist);
-    // void searchDataByPrint(std::string print);
+    void searchDataByPrint(Task task);
 };

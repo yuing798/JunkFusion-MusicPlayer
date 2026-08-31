@@ -21,6 +21,7 @@ private:
     SQLite::Database& mDb;
     std::queue<Task> mTaskQueue;
     std::mutex mtx;
+    OnlineGetMatedata mOnlineGetMatedata;
 
 public:
     WaveFormAnaly(SQLite::Database& db);
