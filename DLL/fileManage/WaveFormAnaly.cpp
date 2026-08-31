@@ -148,10 +148,12 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     auto* packet = av_packet_alloc();
     auto* frame = av_frame_alloc();
 
-    bool needOnlineSearch{
-        task.onlineTask.needAlbum || task.onlineTask.needArtist || task.onlineTask.needCover ||
-        task.onlineTask.needTitle || task.onlineTask.needTrackNumber
-    }; // 是否需要联网搜索,五个里面有一个不存在就需要
+    // bool needOnlineSearch{
+    //     task.onlineTask.needAlbum || task.onlineTask.needArtist || task.onlineTask.needCover ||
+    //     task.onlineTask.needTitle || task.onlineTask.needTrackNumber
+    // }; // 是否需要联网搜索,五个里面有一个不存在就需要
+
+    bool needOnlineSearch{true}; // 这个测试用
 
     ChromaprintContext* printContext{nullptr};
     if (needOnlineSearch) {
@@ -317,7 +319,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             // OnlineGetMatedata::Task onlineTask{};
             task.onlineTask.duration = duration;
             task.onlineTask.print = std::move(printStr);
-            // mOnlineGetMatedata.setTask(std::move(task.onlineTask));
+            mOnlineGetMatedata.setTask(std::move(task.onlineTask));
         }
         chromaprint_free(printContext);
     }

@@ -46,7 +46,8 @@ void OnlineGetMatedata::run() {
 }
 
 void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
-    std::string client_key = "tvFS66WzNc";
+    spdlog::get(LogDllID)->debug("开始根据指纹搜索元数据");
+    std::string client_key = "lp1ajcs0Bd";
 
     // 发起 POST 请求
     cpr::Response res = cpr::Post(
@@ -55,7 +56,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         cpr::Payload{
             {"client", client_key},
             {"meta", "recordings+releases+tracks"}, // 一次性拿全元数据
-            {"duration", std::to_string(task.duration)},
+            {"duration", std::to_string((int)task.duration)},
             {"fingerprint", task.print},
             {"format", "json"}
         },
@@ -67,6 +68,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         spdlog::get(LogDllID)->debug("得到网络请求返回的表单数据:{}", res.text);
 
     } else {
-        spdlog::get(LogDllID)->debug("请求失败，错误码:{}", res.status_code);
+        spdlog::get(LogDllID)
+            ->error("请求失败！错误码: {} | 服务器返回的错误信息: {}", res.status_code, res.text);
     }
 }
