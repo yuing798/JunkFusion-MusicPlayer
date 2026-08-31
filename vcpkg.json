@@ -12,6 +12,8 @@
     "spdlog",
     "sqlitecpp",
     "hash-library",
-    "cppzmq"
+    "cppzmq",
+    "cpr",
+    "chromaprint"
   ]
 }

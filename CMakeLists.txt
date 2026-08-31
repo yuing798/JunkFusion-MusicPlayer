@@ -13,8 +13,11 @@ FetchContent_MakeAvailable(JUCE)
 find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-find_package(unofficial-hash-library CONFIG REQUIRED)
-find_package(cppzmq CONFIG REQUIRED)
+find_package(unofficial-hash-library CONFIG REQUIRED) #哈希算法
+find_package(cppzmq CONFIG REQUIRED) #tcp本地回环进程间通信
+find_package(cpr CONFIG REQUIRED) #网络通信服务
+find_package(Chromaprint CONFIG REQUIRED) #音频指纹提取
+# target_link_libraries(main PRIVATE cpr::cpr)
 
 
 if (MSVC)

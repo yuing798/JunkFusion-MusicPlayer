@@ -1,5 +1,6 @@
 #include "songsManage.hpp"
 #include "../dllManager.hpp"
+#include "WaveFormAnaly.hpp"
 #include "constants.h"
 #include "dbModel.hpp"
 #include "dllUtils.hpp"
@@ -28,7 +29,7 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-SongsManage::SongsManage(SQLite::Database& d) : db(d), mTimeDomainSpecInsert(d) {
+SongsManage::SongsManage(SQLite::Database& d) : db(d), mWaveFormAnaly(d) {
     try {
         db.exec(createSongsTableSQL);
     } catch (const std::exception& e) {
@@ -40,13 +41,14 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d), mTimeDomainSpecInsert(d) 
                 e.what()
             );
     }
-    mTimeDomainSpecInsert.onFileTaskOver = [this](const char* fileName) {
+    mWaveFormAnaly.onTimeDomainSpecInsertOver = [this](const char* fileName) {
         if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(fileName);
     };
 }
 
 InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     SongInfo info{};
+    OnlineGetMatedata::Task onlineTask{};
     std::string filePath = path.getFullPathName().toStdString();
     int64_t fileSize = path.getSize();
     std::string lastModifiedTime =
@@ -90,8 +92,6 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
 
     auto* pAudioStream = inputContext->streams[currentIndex];
     auto* decoderPar = pAudioStream->codecpar;
-
-    // 获取时域图
 
     if (currentIndex < 0) {
         avformat_close_input(&inputContext);
@@ -143,6 +143,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     if ((pEntry = av_dict_get(pTags, "title", nullptr, 0))) {
         info.title = pEntry->value;
     } else {
+        onlineTask.needTitle = true;
         info.title = juce::File(filePath).getFileNameWithoutExtension().toStdString();
     }
     auto safeToInt = [](const char* str) -> int {
@@ -153,14 +154,26 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         }
     };
 
-    if ((pEntry = av_dict_get(pTags, "artist", nullptr, 0))) info.artist = pEntry->value;
-    if ((pEntry = av_dict_get(pTags, "album", nullptr, 0))) info.album = pEntry->value;
+    if ((pEntry = av_dict_get(pTags, "artist", nullptr, 0))) {
+        info.artist = pEntry->value;
+    } else {
+        onlineTask.needArtist = true;
+    }
+    if ((pEntry = av_dict_get(pTags, "album", nullptr, 0))) {
+        info.album = pEntry->value;
+    } else {
+        onlineTask.needAlbum = true;
+    }
     if ((pEntry = av_dict_get(pTags, "album_artist", nullptr, 0))) info.albumArtist = pEntry->value;
     if ((pEntry = av_dict_get(pTags, "genre", nullptr, 0))) info.genre = pEntry->value;
-    if ((pEntry = av_dict_get(pTags, "track", nullptr, 0)))
+    if ((pEntry = av_dict_get(pTags, "track", nullptr, 0))) {
         info.trackNumber = safeToInt(pEntry->value);
-    if ((pEntry = av_dict_get(pTags, "disc", nullptr, 0)))
-        info.discNumber = safeToInt(pEntry->value);
+    } else {
+        onlineTask.needTrackNumber = true;
+    }
+    if ((pEntry = av_dict_get(pTags, "disc", nullptr, 0))) {
+        onlineTask.needDiscNumber = true;
+    }
     if ((pEntry = av_dict_get(pTags, "date", nullptr, 0))) info.year = safeToInt(pEntry->value);
     if ((pEntry = av_dict_get(pTags, "composer", nullptr, 0))) info.composer = pEntry->value;
 
@@ -205,6 +218,8 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
             }
 
         } while (0);
+    } else {
+        onlineTask.needCover = true;
     }
 
     avformat_close_input(&inputContext);
@@ -337,7 +352,11 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     InsertSongInfo insertSongInfo;
     insertSongInfo.info = info;
 
-    mTimeDomainSpecInsert.setTask(filePath);
+    WaveFormAnaly::Task waveFormAnalyTask{};
+    waveFormAnalyTask.onlineTask = onlineTask;
+    waveFormAnalyTask.path = filePath;
+
+    mWaveFormAnaly.setTask(waveFormAnalyTask);
 
     return insertSongInfo;
 }
