@@ -168,9 +168,10 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     if ((pEntry = av_dict_get(pTags, "genre", nullptr, 0))) info.genre = pEntry->value;
     if ((pEntry = av_dict_get(pTags, "track", nullptr, 0))) {
         info.trackNumber = safeToInt(pEntry->value);
-    } else {
-        onlineTask.needTrackNumber = true;
     }
+    // } else {
+    //     onlineTask.needTrackNumber = true;
+    // }
     if ((pEntry = av_dict_get(pTags, "disc", nullptr, 0))) {
         info.discNumber = safeToInt(pEntry->value);
     }

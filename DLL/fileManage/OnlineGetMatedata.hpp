@@ -1,3 +1,5 @@
+#pragma once
+
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <atomic>
@@ -21,7 +23,7 @@ public:
         bool needTitle{false};
         bool needArtist{false};
         bool needAlbum{false};
-        bool needTrackNumber{false};
+        // bool needTrackNumber{false};
         // bool needDiscNumber{false};
         bool needCover{false};
 

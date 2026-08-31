@@ -150,8 +150,8 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
 
     // bool needOnlineSearch{
     //     task.onlineTask.needAlbum || task.onlineTask.needArtist || task.onlineTask.needCover ||
-    //     task.onlineTask.needTitle || task.onlineTask.needTrackNumber
-    // }; // 是否需要联网搜索,五个里面有一个不存在就需要
+    //     task.onlineTask.needTitle
+    // }; // 是否需要联网搜索,四个里面有一个不存在就需要
 
     bool needOnlineSearch{true}; // 这个测试用
 
