@@ -9,6 +9,7 @@ FetchContent_Declare(
     GIT_TAG        8.0.12  
 )
 FetchContent_MakeAvailable(JUCE)
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 find_package(FFMPEG REQUIRED)
 find_package(SQLiteCpp REQUIRED)
@@ -17,6 +18,7 @@ find_package(unofficial-hash-library CONFIG REQUIRED) #哈希算法
 find_package(cppzmq CONFIG REQUIRED) #tcp本地回环进程间通信
 find_package(cpr CONFIG REQUIRED) #网络通信服务
 find_package(Chromaprint CONFIG REQUIRED) #音频指纹提取
+find_package(taglib CONFIG REQUIRED) #歌曲艺术家元数据获取
 # target_link_libraries(main PRIVATE cpr::cpr)
 
 

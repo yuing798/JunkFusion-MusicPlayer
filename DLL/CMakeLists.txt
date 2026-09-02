@@ -20,6 +20,7 @@ target_link_libraries(JunkFusionDLL
         juce::juce_osc
         cpr::cpr #网络请求库
         Chromaprint::chromaprint
+        TagLib::tag TagLib::tag_c TagLib::TagLib
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置
         juce::juce_recommended_lto_flags#链接时代码优化

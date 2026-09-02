@@ -3,7 +3,6 @@
 #include "./WaveFormAnaly.hpp"
 #include "dbModel.hpp"
 #include "juce_core/juce_core.h"
-#include "juce_gui_extra/juce_gui_extra.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <SQLiteCpp/Transaction.h>

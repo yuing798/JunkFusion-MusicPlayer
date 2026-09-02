@@ -5,7 +5,6 @@
 #include "dbModel.hpp"
 #include "dllUtils.hpp"
 #include "juce_core/juce_core.h"
-#include "juce_gui_basics/juce_gui_basics.h"
 #include "otherUtils.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
@@ -142,8 +141,9 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
 
     if ((pEntry = av_dict_get(pTags, "title", nullptr, 0))) {
         info.title = pEntry->value;
+        onlineTask.title = info.title;
     } else {
-        onlineTask.needTitle = true;
+        onlineTask.title = std::nullopt;
         info.title = juce::File(filePath).getFileNameWithoutExtension().toStdString();
     }
     auto safeToInt = [](const char* str) -> int {
@@ -156,13 +156,14 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
 
     if ((pEntry = av_dict_get(pTags, "artist", nullptr, 0))) {
         info.artist = pEntry->value;
+        onlineTask.artist = info.artist;
     } else {
-        onlineTask.needArtist = true;
+        onlineTask.artist = std::nullopt;
     }
     if ((pEntry = av_dict_get(pTags, "album", nullptr, 0))) {
         info.album = pEntry->value;
     } else {
-        onlineTask.needAlbum = true;
+        onlineTask.album = std::nullopt;
     }
     if ((pEntry = av_dict_get(pTags, "album_artist", nullptr, 0))) info.albumArtist = pEntry->value;
     if ((pEntry = av_dict_get(pTags, "genre", nullptr, 0))) info.genre = pEntry->value;
@@ -320,6 +321,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
 
             // ── 回写主键：UPDATE 后 info.songId 仍是 0，必须手动赋值 ──
             info.songId = existingId;
+            onlineTask.songId = existingId;
         } else {
             // ── 新文件：插入 songs 记录 ──
             SQLite::Statement insertSong(
@@ -339,6 +341,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
 
             // ── INSERT 后 SQLite 自动生成主键，必须读回否则 songId 始终 = 0 ──
             info.songId = db.getLastInsertRowid();
+            onlineTask.songId = info.songId;
         }
 
         // ── 全部成功，提交事务 ──

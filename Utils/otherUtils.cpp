@@ -1,7 +1,6 @@
 #include "otherUtils.hpp"
 #include "constants.h"
 #include "juce_core/juce_core.h"
-#include "juce_graphics/juce_graphics.h"
 #include <SQLiteCpp/Exception.h>
 #include <cstddef>
 #include <cstdio>
@@ -231,4 +230,62 @@ void Utils::checkCurrentThreadId(std::string identity) {
     writeEmergencyLog((identity + " thread id: " +
                        std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id())))
                           .c_str());
+}
+
+int Utils::levenshteinDistance(const juce::String& s1, const juce::String& s2) {
+    const int len1 = s1.length();
+    const int len2 = s2.length();
+    std::vector<std::vector<int>> dp(len1 + 1, std::vector<int>(len2 + 1));
+
+    for (int i = 0; i <= len1; ++i)
+        dp[i][0] = i;
+    for (int j = 0; j <= len2; ++j)
+        dp[0][j] = j;
+
+    for (int i = 1; i <= len1; ++i) {
+        for (int j = 1; j <= len2; ++j) {
+            int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+            dp[i][j] = std::min(
+                {dp[i - 1][j] + 1, // 删除
+                 dp[i][j - 1] + 1, // 插入
+                 dp[i - 1][j - 1] + cost}
+            ); // 替换
+        }
+    }
+    return dp[len1][len2];
+}
+
+// 计算相似度分数（0~1）
+double Utils::stringSimilarity(const juce::String& s1, const juce::String& s2) {
+    if (s1.isEmpty() && s2.isEmpty()) return 1.0;
+    int maxLen = std::max(s1.length(), s2.length());
+    if (maxLen == 0) return 1.0; // 两者都空
+    int distance = levenshteinDistance(s1, s2);
+    return 1.0 - static_cast<double>(distance) / maxLen;
+}
+
+Utils::Yvar Utils::Yvar::read(const char* key) const {
+    if (!value.isObject()) {
+        return {};
+    }
+    if (!value.hasProperty(key)) {
+        return {};
+    }
+    return value[key];
+}
+Utils::Yvar Utils::Yvar::read(int index) const {
+    if (!value.isArray()) {
+        return {};
+    }
+    if (index < 0 || index >= value.size()) {
+        return {};
+    }
+    return value[index];
+}
+double Utils::Yvar::toDouble() const {
+    if (value.isDouble()) {
+        return static_cast<double>(value);
+    } else {
+        return 0.0;
+    }
 }
