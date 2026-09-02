@@ -11,6 +11,7 @@
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <tpropertymap.h>
 #include <vector>
 
 class SongsManage {
@@ -18,7 +19,11 @@ private:
     SQLite::Database& db;
     WaveFormAnaly mWaveFormAnaly;
 
-    const int scrollPageRows = 200; // 滚动分页方式每一页的页数
+    // 获取元数据数组(比如多个艺术家)
+    std::vector<std::string> getTags(TagLib::PropertyMap& map, const char* key);
+
+    // 将字符串转换为数组并只提取从开头数的有效数据
+    int getTagInt(TagLib::PropertyMap& map, const char* key);
 
 public:
     explicit SongsManage(SQLite::Database& d);

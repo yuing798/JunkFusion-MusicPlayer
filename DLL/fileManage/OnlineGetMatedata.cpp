@@ -6,6 +6,8 @@
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "otherUtils.hpp"
 #include <SQLiteCpp/Database.h>
+#include <algorithm>
+#include <cpr/api.h>
 #include <cpr/cpr.h>
 #include <cpr/response.h>
 #include <cstdlib>
@@ -20,6 +22,17 @@
 
 OnlineGetMatedata::OnlineGetMatedata(SQLite::Database& db)
     : juce::Thread("OnlineGetMatedata"), db(db) {}
+
+bool OnlineGetMatedata::isVariousArtists(const std::string& name) {
+    std::string lower = name;
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
+    return (
+        lower.find("various") != std::string::npos || lower.find("群星") != std::string::npos ||
+        lower == "v.a." || lower == "va"
+    );
+}
 
 void OnlineGetMatedata::setTask(OnlineGetMatedata::Task task) {
     std::lock_guard<std::mutex> lock{mtx};
@@ -56,10 +69,10 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
     spdlog::get(LogDllID)->debug("开始根据指纹搜索元数据:歌曲ID:{}", task.songId);
 
     task.album = std::nullopt;
-    task.artist = std::nullopt;
+    task.artists = std::vector<std::string>{};
     task.needCover = true;
     task.title = std::nullopt; // 测试
-    std::string title, artist, album;
+    // std::string title, artist, album;
 
     // 发起 POST 请求
     cpr::Response res = cpr::Post(
@@ -79,11 +92,12 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         // std::cout << "请求成功！返回 JSON 数据：" << std::endl;
         spdlog::get(LogDllID)->debug("得到网络请求返回的表单数据:{}", res.text);
 
-        struct SearchScore {
+        struct RecordingResult { // 搜索到的recording结果
             double score{100.0}; // 最终匹配度得分
-            std::string recordingId;
+            int resultIndex{0};
+            int recordingIndex{0};
         };
-        std::vector<SearchScore> searchScores;
+        std::vector<RecordingResult> recordingResults;
 
         Utils::Yvar v{juce::JSON::fromString(juce::String(res.text))};
         auto results{v.read("results")};
@@ -99,93 +113,168 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                  recordingIndex < results.read(resultIndex).read("recordings").size();
                  recordingIndex++) {
 
-                SearchScore searchScore;
-                searchScore.score *= printScore;
+                RecordingResult recordingResult;
+                recordingResult.score *= printScore;
                 auto recording{results.read(resultIndex).read("recordings").read(recordingIndex)};
                 auto recordingDuration{recording.read("duration").toDouble()};
                 auto durationScore{1 - std::abs(recordingDuration - task.duration) / task.duration};
                 if (durationScore <= 0.85) {
                     continue;
                 } else {
-                    searchScore.score *= durationScore;
-                    searchScore.recordingId = recording.read("id").toString().toStdString();
+                    recordingResult.score *= durationScore;
                 } // 根据歌曲时长匹配分数
 
                 if (task.title != std::nullopt) {
-                    // 有原本的标题
+                    // 有原本的标题则进行相似度匹配
                     auto titleScore = Utils::stringSimilarity(
                         recording.read("title").toString(),
                         juce::String(task.title.value())
                     );
-                    searchScore.score *= titleScore;
+                    if (titleScore <= 0.7) {
+                        continue;
+                    }
+                    recordingResult.score *= titleScore;
                 }
+                if (!task.artists.empty()) {
+                    auto searchArtists{recording.read("artists")}; // 搜索到的艺术家列表
+                    // 1. 提取线上所有的艺术家名字到一个 std::vector 中，方便后续处理
+                    std::vector<juce::String> remoteArtistNames;
+                    for (int i = 0; i < searchArtists.size(); i++) {
+                        auto artist = searchArtists.read(i);
+                        remoteArtistNames.push_back(artist.read("name").toString());
+                    }
+
+                    if (!remoteArtistNames.empty()) {
+                        double totalArtistScore = 0.0;
+
+                        // 2. 遍历本地的每一个艺术家，去线上列表中找“最相似”的一个
+                        for (const auto& localArtistStr : task.artists) {
+                            juce::String localArtist(localArtistStr);
+                            double bestMatchForThisArtist = 0.0;
+
+                            for (const auto& remoteName : remoteArtistNames) {
+                                // 复用你现成的 Levenshtein 打分函数
+                                double sim = Utils::stringSimilarity(localArtist, remoteName);
+                                if (sim > bestMatchForThisArtist) {
+                                    bestMatchForThisArtist = sim;
+                                }
+                            }
+                            // 累加本地每个艺术家的最高得分
+                            totalArtistScore += bestMatchForThisArtist;
+                        }
+
+                        // 3. 计算基础得分：本地歌手匹配的平均分 (范围 0.0 ~ 1.0)
+                        double baseArtistScore = totalArtistScore / task.artists.size();
+
+                        // 4. (可选但推荐) 引入数量差异的轻微惩罚
+                        // 场景 A: 本地有 [周杰伦]，线上有 [周杰伦, 林迈可]。基础分为 1.0
+                        // (完全命中)，但我们略微扣一点分，因为线上信息更多。 场景 B: 本地有 [A, B,
+                        // C]，线上只有 [A]。这种情况应该重罚。
+                        double sizeRatio =
+                            (double)std::min(task.artists.size(), remoteArtistNames.size()) /
+                            (double)std::max(task.artists.size(), remoteArtistNames.size());
+
+                        // 权重分配：80%看重匹配度，20%看重数量是否一致 (权重比例你可以自己调)
+                        double finalArtistScore = (baseArtistScore * 0.8) + (sizeRatio * 0.2);
+
+                        // 5. 乘入总分
+                        recordingResult.score *= finalArtistScore;
+
+                    } else {
+                        // 如果线上没有返回艺术家，适当降分
+                        recordingResult.score *= 0.5;
+                    }
+                }
+                recordingResult.resultIndex = resultIndex;
+                recordingResult.recordingIndex = recordingIndex;
+
+                recordingResults.push_back(recordingResult);
+            }
+        }
+        // 得到最高分的recording结果
+        auto bestRecordingIt = std::max_element(
+            recordingResults.begin(),
+            recordingResults.end(),
+            [](const RecordingResult& a, const RecordingResult& b) {
+                return a.score < b.score; // 比较：a < b 则 a 更小
+            }
+        );
+
+        if (bestRecordingIt == recordingResults.end()) return;
+        auto releases{results.read(bestRecordingIt->resultIndex)
+                          .read("recordings")
+                          .read(bestRecordingIt->recordingIndex)
+                          .read("releases")};
+
+        struct ReleaseResult {
+            int releaseindex{0};
+            double score{100.0};
+        };
+        std::vector<ReleaseResult> releaseResults;
+
+        for (int releaseIndex = 0; releaseIndex < releases.size(); releaseIndex++) {
+            auto remoteAlbumTitle{releases.read(releaseIndex).read("title")};
+            if (task.album != std::nullopt) {
+                auto albumScore{
+                    Utils::stringSimilarity(task.album.value(), remoteAlbumTitle.toString())
+                };
+                if (albumScore <= 0.7) continue;
+                ReleaseResult releaseResult;
+                releaseResult.releaseindex = releaseIndex;
+                releaseResult.score = albumScore;
+                releaseResults.push_back(releaseResult);
             }
         }
 
-        int resultCount{0};
-        while (true) {
-            if (resultCount >= results.size()) {
-                spdlog::get(LogDllID)->info("查不到recordings");
-                return;
+        auto bestReleaseIt = std::max_element(
+            releaseResults.begin(),
+            releaseResults.end(),
+            [](const ReleaseResult& a, const ReleaseResult& b) {
+                return a.score < b.score; // 比较：a < b 则 a 更小
             }
-            if (results.read(resultCount).hasProperty("recordings")) break;
+        );
+        if (bestReleaseIt == releaseResults.end()) return;
 
-            resultCount++;
+        auto finalRecording{results.read(bestRecordingIt->resultIndex)
+                                .read("recordings")
+                                .read(bestRecordingIt->recordingIndex)};
+
+        std::string finalTitle{finalRecording.read("title").toString().toStdString()};
+
+        auto finalArtists{finalRecording.read("artists")};
+
+        std::vector<std::string> artistsVec;
+        for (int i = 0; i < finalArtists.size(); i++) {
+            auto artist{finalArtists.read(i).read("name").toString().toStdString()};
+            artistsVec.push_back(artist);
         }
-        if (v.read("results").read(resultCount).toDouble() < 0.9) {
-            spdlog::get(LogDllID)->debug("歌曲{}指纹匹配度过低，直接退出", task.songId);
-            return;
+        auto finalArtistStr{DllUtils::tagVector2String(artistsVec)};
+
+        auto finalRelease{finalRecording.read("releases").read(bestReleaseIt->releaseindex)};
+
+        auto finalAlbumStr{finalRelease.read("title").toString().toStdString()};
+
+        auto finalAlbumArtists{finalRelease.read("artists")};
+        std::string finalAlbumArtistsStr;
+        for (int i = 0; i < finalAlbumArtists.size(); i++) {
+            auto name{finalAlbumArtists.read(i).read("name").toString().toStdString()};
+            if (isVariousArtists(name)) {
+                // 如果是群星等名字不能发给apple做搜索，否则极大降低成功率
+                finalAlbumArtistsStr += name;
+                finalAlbumArtistsStr += " ";
+            }
         }
-        auto recordings{v.read("results").read(resultCount).read("recordings")};
+        cpr::Response coverSearch = cpr::Get(
+            cpr::Url{"https://itunes.apple.com/search"},
+            cpr::Parameters{
+                {"term", finalAlbumArtistsStr + finalAlbumStr},
+                {"media", "music"},
+                {"entity", "album"},
+                {"limit", "1"}
+            },
+            cpr::Timeout{10000}
+        );
 
-        auto recording{v.read("results").read(0).read("recordings").read(0)};
-
-        // auto release{recording["releases"][0]};
-        // auto releaseId{release["id"].toString().toStdString()}; //
-        // 这个是专辑的ID，用来搜索专辑图片
-        // if (task.needTitle) {
-        //     title = recording.read("releases")
-        //                 .read(0)
-        //                 .read("mediums")
-        //                 .read(0)
-        //                 .read("tracks")
-        //                 .read(0)
-        //                 .read("title")
-        //                 .toString()
-        //                 .toStdString();
-        //     spdlog::get(LogDllID)->debug("获取歌曲名:{}", title);
-        // }
-
-        // if (task.needArtist || task.needCover) {
-        //     // 因为多位艺术家需要直接去MB官方服务器才能查到
-        //     auto recordingId{
-        //         recording.read("id").toString().toStdString()
-        //     }; // 这个是歌曲的ID，用来搜索艺术家名称
-        //     cpr::Response artistsRes = cpr::Get(
-        //         cpr::Url{"https://musicbrainz.org/ws/2/recording/" + recordingId},
-        //         cpr::Parameters{
-        //             {"inc", "artists"}, // 核心参数：要求展开详细的艺术家数组
-        //             {"fmt", "json"}
-        //         },
-        //         // 强制要求：MusicBrainz 必须携带包含联系方式的 User-Agent，否则直接返回403 错误
-        //         cpr::Header{{"User-Agent", "JunkFusion/1.0.0 ( yusekx@gmail.com )"}},
-        //         cpr::Timeout{5000}
-        //     );
-        //     if (artistsRes.status_code == 200) {
-        //         spdlog::get(LogDllID)->debug("搜索艺术家名称返回:{}", artistsRes.text);
-        //     } else {
-        //         spdlog::get(LogDllID)->debug(
-        //             "搜索艺术家失败:错误代码{}:错误内容:{}",
-        //             artistsRes.status_code,
-        //             artistsRes.text
-        //         );
-        //     }
-        //     juce::Thread::sleep(1000); // 妈的MB服务器要求必须睡一秒才能再次发送
-        // }
-        // if (task.needAlbum) {
-        //     album = recording.read("releases").read(0).read("title").toString().toStdString();
-        //     spdlog::get(LogDllID)->debug("获取专辑名称:{}", album);
-        // }
         // if (task.needCover) {
         //     // auto releaseLen{recording["releases"].getArray()->size()};
         //     // spdlog::get(LogDllID)->debug("该歌曲一共有{}张release", releaseLen);

@@ -81,3 +81,11 @@ std::string DllUtils::escapeLucene(const std::string& input) {
     }
     return output;
 }
+
+std::string DllUtils::tagVector2String(std::vector<std::string>& tags) {
+    std::string result;
+    for (size_t i = 0; i < tags.size(); ++i) {
+        result += " / " + tags[i];
+    }
+    return result;
+}

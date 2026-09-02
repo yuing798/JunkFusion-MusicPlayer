@@ -153,7 +153,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     //     task.onlineTask.needTitle
     // }; // 是否需要联网搜索,四个里面有一个不存在就需要
 
-    bool needOnlineSearch{true}; // 这个测试用
+    bool needOnlineSearch{false}; // 这个测试用
 
     ChromaprintContext* printContext{nullptr};
     if (needOnlineSearch) {
