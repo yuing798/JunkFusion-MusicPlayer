@@ -17,6 +17,9 @@
 #include <sha1.h>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <taglib/fileref.h>
+#include <taglib/tag.h>
+#include <taglib/tpropertymap.h>
 #include <utility>
 #include <vector>
 
@@ -136,48 +139,140 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         info.bitDepth = decoderPar->bits_per_coded_sample;
     }
     // 提取文件层面的标签数据
-    AVDictionary* pTags = inputContext->metadata;
-    AVDictionaryEntry* pEntry = nullptr;
+    // AVDictionary* pTags = inputContext->metadata;
+    // AVDictionaryEntry* pEntry = nullptr;
 
-    if ((pEntry = av_dict_get(pTags, "title", nullptr, 0))) {
-        info.title = pEntry->value;
-        onlineTask.title = info.title;
-    } else {
-        onlineTask.title = std::nullopt;
-        info.title = juce::File(filePath).getFileNameWithoutExtension().toStdString();
-    }
-    auto safeToInt = [](const char* str) -> int {
-        try {
-            return std::stoi(str);
-        } catch (...) {
-            return 0;
-        }
-    };
-
-    if ((pEntry = av_dict_get(pTags, "artist", nullptr, 0))) {
-        info.artist = pEntry->value;
-        onlineTask.artist = info.artist;
-    } else {
-        onlineTask.artist = std::nullopt;
-    }
-    if ((pEntry = av_dict_get(pTags, "album", nullptr, 0))) {
-        info.album = pEntry->value;
-    } else {
-        onlineTask.album = std::nullopt;
-    }
-    if ((pEntry = av_dict_get(pTags, "album_artist", nullptr, 0))) info.albumArtist = pEntry->value;
-    if ((pEntry = av_dict_get(pTags, "genre", nullptr, 0))) info.genre = pEntry->value;
-    if ((pEntry = av_dict_get(pTags, "track", nullptr, 0))) {
-        info.trackNumber = safeToInt(pEntry->value);
-    }
+    // if ((pEntry = av_dict_get(pTags, "title", nullptr, 0))) {
+    //     info.title = pEntry->value;
+    //     onlineTask.title = info.title;
     // } else {
-    //     onlineTask.needTrackNumber = true;
+    //     onlineTask.title = std::nullopt;
+    //     info.title = juce::File(filePath).getFileNameWithoutExtension().toStdString();
     // }
-    if ((pEntry = av_dict_get(pTags, "disc", nullptr, 0))) {
-        info.discNumber = safeToInt(pEntry->value);
+    // auto safeToInt = [](const char* str) -> int {
+    //     try {
+    //         return std::stoi(str);
+    //     } catch (...) {
+    //         return 0;
+    //     }
+    // };
+
+    // if ((pEntry = av_dict_get(pTags, "artist", nullptr, 0))) {
+    //     info.artist = pEntry->value;
+    //     onlineTask.artist = info.artist;
+    // } else {
+    //     onlineTask.artist = std::nullopt;
+    // }
+    // if ((pEntry = av_dict_get(pTags, "album", nullptr, 0))) {
+    //     info.album = pEntry->value;
+    // } else {
+    //     onlineTask.album = std::nullopt;
+    // }
+    // if ((pEntry = av_dict_get(pTags, "album_artist", nullptr, 0))) info.albumArtist =
+    // pEntry->value; if ((pEntry = av_dict_get(pTags, "genre", nullptr, 0))) info.genre =
+    // pEntry->value; if ((pEntry = av_dict_get(pTags, "track", nullptr, 0))) {
+    //     info.trackNumber = safeToInt(pEntry->value);
+    // }
+    // if ((pEntry = av_dict_get(pTags, "disc", nullptr, 0))) {
+    //     info.discNumber = safeToInt(pEntry->value);
+    // }
+    // if ((pEntry = av_dict_get(pTags, "date", nullptr, 0))) info.year = safeToInt(pEntry->value);
+    // if ((pEntry = av_dict_get(pTags, "composer", nullptr, 0))) info.composer = pEntry->value;
+
+#if JUCE_WINDOWS
+    // Windows 下 TagLib 需要传入宽字符 (wchar_t) 才能支持中文路径
+    TagLib::FileRef f(path.getFullPathName().toWideCharPointer());
+#else
+    // macOS / Linux 下直接传 UTF-8 字符串即可
+    TagLib::FileRef f(path.getFullPathName().toUTF8());
+#endif
+
+    // 容错处理：如果标题为空，默认使用去后缀的文件名
+    auto defaultTitle = path.getFileNameWithoutExtension().toStdString();
+
+    if (!f.isNull() && f.file()) {
+        // 获取统一属性映射表 (PropertyMap)，这是抹平所有格式差异的核心！
+        TagLib::PropertyMap tags = f.file()->properties();
+
+        // --- 定义一个 Lambda：安全获取并拼接数组字符串 ---
+        auto getTagStr = [&](const char* key) -> std::optional<std::string> {
+            if (tags.contains(key) && !tags[key].isEmpty()) {
+                // 注意这里的魔法：tags[key] 返回的是 TagLib::StringList（数组）
+                // 把多名艺术家、多个流派用 ", " 完美拼接成一个阅读友好的字符串
+                // .to8Bit(true) 确保输出标准的 UTF-8 std::string
+                return tags[key].toString(" / ").to8Bit(true);
+            }
+            return std::nullopt;
+        };
+
+        // --- 定义一个 Lambda：安全转换为 int ---
+        auto getTagInt = [&](const char* key) -> int {
+            auto strOpt = getTagStr(key);
+            if (strOpt) {
+                try {
+                    return std::stoi(*strOpt);
+                } // std::stoi 解析 "2023-05-12" 会自动提取 2023
+                catch (...) {
+                    return 0;
+                }
+            }
+            return 0;
+        };
+
+        // ==========================================
+        // 开始逐一赋值 (全部使用 TagLib 官方标准 Key)
+        // ==========================================
+
+        // Title
+        auto titleOpt = getTagStr("TITLE");
+        if (titleOpt) {
+            info.title = *titleOpt;
+            onlineTask.title = info.title;
+        } else {
+            onlineTask.title = std::nullopt;
+            info.title = defaultTitle;
+        }
+
+        // Artist
+        auto artistOpt = getTagStr("ARTIST");
+        if (artistOpt) {
+            info.artist = *artistOpt;
+            onlineTask.artist = info.artist;
+        } else {
+            onlineTask.artist = std::nullopt;
+        }
+
+        // Album
+        auto albumOpt = getTagStr("ALBUM");
+        if (albumOpt) {
+            info.album = *albumOpt;
+            onlineTask.album = info.album;
+        } else {
+            onlineTask.album = std::nullopt;
+        }
+
+        // 其他附加信息
+        auto albumArtistOpt = getTagStr("ALBUMARTIST");
+        if (albumArtistOpt) info.albumArtist = *albumArtistOpt;
+
+        auto genreOpt = getTagStr("GENRE");
+        if (genreOpt) info.genre = *genreOpt;
+
+        auto composerOpt = getTagStr("COMPOSER");
+        if (composerOpt) info.composer = *composerOpt;
+
+        // 数值型信息
+        info.trackNumber = getTagInt("TRACKNUMBER");
+        info.discNumber = getTagInt("DISCNUMBER");
+        info.year = getTagInt("DATE");
+
+    } else {
+        // 如果 TagLib 读取失败 (例如文件损坏或格式不支持) 的降级处理
+        onlineTask.title = std::nullopt;
+        onlineTask.artist = std::nullopt;
+        onlineTask.album = std::nullopt;
+        info.title = defaultTitle;
     }
-    if ((pEntry = av_dict_get(pTags, "date", nullptr, 0))) info.year = safeToInt(pEntry->value);
-    if ((pEntry = av_dict_get(pTags, "composer", nullptr, 0))) info.composer = pEntry->value;
 
     // 这里进行封面提取
     AVPacket coverPacket;
