@@ -51,17 +51,17 @@ target_compile_definitions(JunkFusionAudioProcess PRIVATE
 )
 
 set_target_properties(JunkFusionDLL PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/$<CONFIG>_bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
 set_target_properties(JunkFusionAudioProcess PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/$<CONFIG>_bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
 
 #将复制动作绑定到这个自定义目标上
 add_custom_command(TARGET DeployRuntime POST_BUILD
     COMMAND ${CMAKE_COMMAND}
         # ★ 修复隐患一：从构建目录（CMAKE_BINARY_DIR）下找 bin
-        -D SRC_DIR="${CMAKE_SOURCE_DIR}/$<CONFIG>_bin"     
+        -D SRC_DIR="${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"     
         # 用 $<CONFIG> 自动识别当前编译配置（Debug/Release）
         -D DST_DIR="${CMAKE_SOURCE_DIR}/junk_fusion_ui/build/windows/x64/runner/$<CONFIG>"
         -P "${CMAKE_SOURCE_DIR}/cmake/DeployBinaries.cmake"

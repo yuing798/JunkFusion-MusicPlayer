@@ -103,17 +103,20 @@ std::vector<std::string> SongsManage::getTags(TagLib::PropertyMap& map, const ch
     return finalItems;
 }
 
-int SongsManage::getTagInt(TagLib::PropertyMap& map, const char* key) {
+std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* key) {
     auto tags{getTags(map, key)};
 
     try {
+        if (tags.empty()) {
+            return std::nullopt;
+        }
         return std::stoi(tags[0]);
     } // std::stoi 解析 "2023-05-12" 会自动提取 2023
     catch (...) {
-        return 0;
+        return std::nullopt;
     }
 
-    return 0;
+    return std::nullopt;
 }
 
 InsertSongInfo SongsManage::insertSong(const juce::File& path) {
@@ -258,7 +261,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         if (!genres.empty()) info.genre = DllUtils::tagVector2String(genres);
 
         auto composers = getTags(map, "COMPOSER");
-        if (!composers.empty()) info.composer = composers[0];
+        if (!composers.empty()) info.composer = DllUtils::tagVector2String(composers);
 
         // 数值型信息
         info.trackNumber = getTagInt(map, "TRACKNUMBER");

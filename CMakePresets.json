@@ -34,6 +34,18 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    },
+    {
+      "name": "vs-build",
+      "displayName": "Visual Studio Build",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/build/vs",
+      "environment": {
+        "VSLANG": "1033"
+      },
+      "cacheVariables": {
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/build/debug/vcpkg_installed"
+      }
     }
   ],
   "buildPresets": [
@@ -44,6 +56,10 @@
     {
       "name": "release",
       "configurePreset": "release"
+    },
+    {
+      "name":"vs-build",
+      "configurePreset": "vs-build"
     }
   ]
 }

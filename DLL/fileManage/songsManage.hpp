@@ -23,7 +23,7 @@ private:
     std::vector<std::string> getTags(TagLib::PropertyMap& map, const char* key);
 
     // 将字符串转换为数组并只提取从开头数的有效数据
-    int getTagInt(TagLib::PropertyMap& map, const char* key);
+    std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
 
 public:
     explicit SongsManage(SQLite::Database& d);

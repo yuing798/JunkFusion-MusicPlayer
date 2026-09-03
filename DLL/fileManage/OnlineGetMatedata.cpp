@@ -206,15 +206,19 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                           .read(bestRecordingIt->recordingIndex)
                           .read("releases")};
 
-        struct ReleaseResult {
-            int releaseindex{0};
-            double score{100.0};
-        };
-        std::vector<ReleaseResult> releaseResults;
+        int bestReleaseIndex{0};
+        if (task.album) {
+            // 没有本地读取到的专辑就不能走打分这条路了，因为没有其他判断依据
 
-        for (int releaseIndex = 0; releaseIndex < releases.size(); releaseIndex++) {
-            auto remoteAlbumTitle{releases.read(releaseIndex).read("title")};
-            if (task.album != std::nullopt) {
+            struct ReleaseResult {
+                int releaseindex{0};
+                double score{100.0};
+            };
+            std::vector<ReleaseResult> releaseResults;
+
+            for (int releaseIndex = 0; releaseIndex < releases.size(); releaseIndex++) {
+                auto remoteAlbumTitle{releases.read(releaseIndex).read("title")};
+
                 auto albumScore{
                     Utils::stringSimilarity(task.album.value(), remoteAlbumTitle.toString())
                 };
@@ -224,16 +228,17 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                 releaseResult.score = albumScore;
                 releaseResults.push_back(releaseResult);
             }
-        }
 
-        auto bestReleaseIt = std::max_element(
-            releaseResults.begin(),
-            releaseResults.end(),
-            [](const ReleaseResult& a, const ReleaseResult& b) {
-                return a.score < b.score; // 比较：a < b 则 a 更小
-            }
-        );
-        if (bestReleaseIt == releaseResults.end()) return;
+            auto bestReleaseIt = std::max_element(
+                releaseResults.begin(),
+                releaseResults.end(),
+                [](const ReleaseResult& a, const ReleaseResult& b) {
+                    return a.score < b.score; // 比较：a < b 则 a 更小
+                }
+            );
+            if (bestReleaseIt == releaseResults.end()) return;
+            bestReleaseIndex = bestReleaseIt->releaseindex;
+        }
 
         auto finalRecording{results.read(bestRecordingIt->resultIndex)
                                 .read("recordings")
@@ -250,30 +255,41 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         }
         auto finalArtistStr{DllUtils::tagVector2String(artistsVec)};
 
-        auto finalRelease{finalRecording.read("releases").read(bestReleaseIt->releaseindex)};
+        auto finalRelease{finalRecording.read("releases").read(bestReleaseIndex)};
 
         auto finalAlbumStr{finalRelease.read("title").toString().toStdString()};
 
-        auto finalAlbumArtists{finalRelease.read("artists")};
-        std::string finalAlbumArtistsStr;
-        for (int i = 0; i < finalAlbumArtists.size(); i++) {
-            auto name{finalAlbumArtists.read(i).read("name").toString().toStdString()};
-            if (isVariousArtists(name)) {
-                // 如果是群星等名字不能发给apple做搜索，否则极大降低成功率
-                finalAlbumArtistsStr += name;
-                finalAlbumArtistsStr += " ";
-            }
-        }
-        cpr::Response coverSearch = cpr::Get(
-            cpr::Url{"https://itunes.apple.com/search"},
-            cpr::Parameters{
-                {"term", finalAlbumArtistsStr + finalAlbumStr},
-                {"media", "music"},
-                {"entity", "album"},
-                {"limit", "1"}
-            },
-            cpr::Timeout{10000}
+        spdlog::get(LogDllID)->debug(
+            "id:{}:最终联网搜索获得的歌名:{},艺术家名:{},专辑名:{}",
+            task.songId,
+            finalTitle,
+            finalArtistStr,
+            finalAlbumStr
         );
+
+        // auto finalAlbumArtists{finalRelease.read("artists")};
+        // std::string finalAlbumArtistsStr;
+        // for (int i = 0; i < finalAlbumArtists.size(); i++) {
+        //     auto name{finalAlbumArtists.read(i).read("name").toString().toStdString()};
+        //     if (isVariousArtists(name)) {
+        //         // 如果是群星等名字不能发给apple做搜索，否则极大降低成功率
+        //         finalAlbumArtistsStr += name;
+        //         finalAlbumArtistsStr += " ";
+        //     }
+        // }
+        // cpr::Response coverSearch = cpr::Get(
+        //     cpr::Url{"https://itunes.apple.com/search"},
+        //     cpr::Parameters{
+        //         {"term", finalAlbumArtistsStr + finalAlbumStr},
+        //         {"media", "music"},
+        //         {"entity", "album"},
+        //         {"limit", "1"}
+        //     },
+        //     cpr::Timeout{10000}
+        // );
+
+        // if (coverSearch.status_code == 200) {
+        // }
 
         // if (task.needCover) {
         //     // auto releaseLen{recording["releases"].getArray()->size()};
