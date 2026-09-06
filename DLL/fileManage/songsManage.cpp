@@ -1,10 +1,12 @@
 #include "songsManage.hpp"
 #include "../dllManager.hpp"
 #include "WaveFormAnaly.hpp"
+#include "Yvar.hpp"
 #include "constants.h"
 #include "dbModel.hpp"
 #include "dllUtils.hpp"
 #include "juce_core/juce_core.h"
+#include "juce_core/system/juce_PlatformDefs.h"
 #include "otherUtils.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
@@ -47,19 +49,18 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d), mWaveFormAnaly(d) {
         if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(fileName);
     };
 }
-std::vector<std::string> SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
-    std::vector<std::string> tags;
+juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
     if (!map.contains(key) || map[key].isEmpty()) {
-        return tags;
+        return juce::StringArray{};
     }
 
     const TagLib::StringList& rawList = map[key];
-    std::vector<std::string> finalItems;
+    juce::StringArray finalItems;
 
     // 如果 TagLib 提取出了真正的多元素数组 (FLAC 或 ID3v2.4)
     if (rawList.size() > 1) {
         for (const auto& item : rawList) {
-            finalItems.push_back(item.to8Bit(true));
+            finalItems.add(item.to8Bit(true));
         }
     }
     // 如果 TagLib 只提取到了 1 个元素 (旧版 ID3v2.3 硬编码斜杠的情况)
@@ -82,7 +83,7 @@ std::vector<std::string> SongsManage::getTags(TagLib::PropertyMap& map, const ch
                     auto start = token.find_first_not_of(" ");
                     auto end = token.find_last_not_of(" ");
                     if (start != std::string::npos) {
-                        finalItems.push_back(token.substr(start, end - start + 1));
+                        finalItems.add(token.substr(start, end - start + 1));
                     }
                     token.clear();
                 } else {
@@ -93,10 +94,10 @@ std::vector<std::string> SongsManage::getTags(TagLib::PropertyMap& map, const ch
             auto start = token.find_first_not_of(" ");
             auto end = token.find_last_not_of(" ");
             if (start != std::string::npos) {
-                finalItems.push_back(token.substr(start, end - start + 1));
+                finalItems.add(token.substr(start, end - start + 1));
             }
         } else {
-            finalItems.push_back(rawStr);
+            finalItems.add(rawStr);
         }
     }
 
@@ -104,19 +105,21 @@ std::vector<std::string> SongsManage::getTags(TagLib::PropertyMap& map, const ch
 }
 
 std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* key) {
-    auto tags{getTags(map, key)};
+    // auto tags{getTags(map, key)};
+    if (!map.contains(key) || map[key].isEmpty()) {
+        return std::nullopt;
+    }
+    auto& rawList{map[key]};
 
     try {
-        if (tags.empty()) {
+        if (rawList.isEmpty()) {
             return std::nullopt;
         }
-        return std::stoi(tags[0]);
+        return std::stoi(rawList[0].to8Bit());
     } // std::stoi 解析 "2023-05-12" 会自动提取 2023
     catch (...) {
         return std::nullopt;
     }
-
-    return std::nullopt;
 }
 
 InsertSongInfo SongsManage::insertSong(const juce::File& path) {
@@ -210,115 +213,113 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         info.bitDepth = decoderPar->bits_per_coded_sample;
     }
 
+    // 这里进行tagLib的元数据提取
+    {
 #if _WIN32
-    // Windows 下 TagLib 需要传入宽字符 (wchar_t) 才能支持中文路径
-    TagLib::FileRef f(path.getFullPathName().toWideCharPointer());
+        // Windows 下 TagLib 需要传入宽字符 (wchar_t) 才能支持中文路径
+        TagLib::FileRef f(path.getFullPathName().toWideCharPointer());
 #else
-    // macOS / Linux 下直接传 UTF-8 字符串即可
-    TagLib::FileRef f(path.getFullPathName().toUTF8());
+        // macOS / Linux 下直接传 UTF-8 字符串即可
+        TagLib::FileRef f(path.getFullPathName().toUTF8());
 #endif
 
-    // 容错处理：如果标题为空，默认使用去后缀的文件名
-    auto defaultTitle = path.getFileNameWithoutExtension().toStdString();
+        // 容错处理：如果标题为空，默认使用去后缀的文件名
+        auto defaultTitle = path.getFileNameWithoutExtension().toStdString();
 
-    if (!f.isNull() && f.file()) {
-        // 获取统一属性映射表 (PropertyMap)，这是抹平所有格式差异的核心！
-        TagLib::PropertyMap map = f.file()->properties();
+        if (!f.isNull() && f.file()) {
+            // 获取统一属性映射表 (PropertyMap)，这是抹平所有格式差异的核心！
+            TagLib::PropertyMap map = f.file()->properties();
 
-        // Title
-        auto titles = getTags(map, "TITLE");
-        if (!titles.empty()) {
-            info.title = titles[0];
-            onlineTask.title = info.title;
+            // Title
+            auto titles = getTags(map, "TITLE");
+            if (!titles.isEmpty()) {
+                info.title = titles[0];
+                onlineTask.title = info.title;
+            } else {
+                info.title = defaultTitle;
+            }
+
+            // Artist
+            auto artists = getTags(map, "ARTIST");
+            if (!artists.isEmpty()) {
+                onlineTask.artists = artists;
+            } else {
+                onlineTask.artists = juce::StringArray{};
+            } // 艺术家让前端拼接，其他后端直接拼接
+
+            // Album
+            auto albums = getTags(map, "ALBUM");
+            if (!albums.isEmpty()) {
+                info.album = albums[0];
+                onlineTask.album = info.album;
+            }
+
+            // 其他附加信息
+            auto albumArtists = getTags(map, "ALBUMARTIST");
+            if (!albumArtists.isEmpty()) info.albumArtist = albumArtists.joinIntoString(" / ");
+
+            auto genres = getTags(map, "GENRE");
+            if (!genres.isEmpty()) info.genre = genres.joinIntoString(" / ");
+
+            auto composers = getTags(map, "COMPOSER");
+            if (!composers.isEmpty()) info.composer = composers.joinIntoString(" / ");
+
+            // 数值型信息
+            info.trackNumber = getTagInt(map, "TRACKNUMBER");
+            info.discNumber = getTagInt(map, "DISCNUMBER");
+            info.year = getTagInt(map, "DATE");
+
         } else {
-            onlineTask.title = std::nullopt;
             info.title = defaultTitle;
         }
-
-        // Artist
-        auto artists = getTags(map, "ARTIST");
-        if (!artists.empty()) {
-            onlineTask.artists = artists;
-            info.artist = DllUtils::tagVector2String(artists);
-        } else {
-            onlineTask.artists = std::vector<std::string>();
-        }
-
-        // Album
-        auto albums = getTags(map, "ALBUM");
-        if (!albums.empty()) {
-            info.album = albums[0];
-            onlineTask.album = info.album;
-        } else {
-            onlineTask.album = std::nullopt;
-        }
-
-        // 其他附加信息
-        auto albumArtists = getTags(map, "ALBUMARTIST");
-        if (!albumArtists.empty()) info.albumArtist = DllUtils::tagVector2String(albumArtists);
-
-        auto genres = getTags(map, "GENRE");
-        if (!genres.empty()) info.genre = DllUtils::tagVector2String(genres);
-
-        auto composers = getTags(map, "COMPOSER");
-        if (!composers.empty()) info.composer = DllUtils::tagVector2String(composers);
-
-        // 数值型信息
-        info.trackNumber = getTagInt(map, "TRACKNUMBER");
-        info.discNumber = getTagInt(map, "DISCNUMBER");
-        info.year = getTagInt(map, "DATE");
-
-    } else {
-        // 如果 TagLib 读取失败 (例如文件损坏或格式不支持) 的降级处理
-        onlineTask.title = std::nullopt;
-        onlineTask.artists = std::vector<std::string>();
-        onlineTask.album = std::nullopt;
-        info.title = defaultTitle;
     }
 
     // 这里进行封面提取
-    AVPacket coverPacket;
-    coverPacket.data = nullptr;
-    coverPacket.size = 0;
-    SHA1 sha1;
-    for (size_t i = 0; i < inputContext->nb_streams; i++) {
-        auto* stream{inputContext->streams[i]};
-        auto type{stream->codecpar->codec_type};
-        if (type == AVMEDIA_TYPE_ATTACHMENT ||
-            (type == AVMEDIA_TYPE_VIDEO && (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))) {
-            coverPacket = stream->attached_pic;
-            break;
-        }
-
-    } // 这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
-
-    if (coverPacket.data && coverPacket.size > 0) {
-        do {
-            info.hash = sha1(coverPacket.data, coverPacket.size);
-
-            juce::File hashImageDir{
-                dllManager::getInstance().getSongImageDir().getChildFile(info.hash.value())
-            };
-            // data存在说明一定有图片，所以直接使用.value()就行了
-            //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
-
-            if (hashImageDir.exists()) {
+    {
+        AVPacket coverPacket;
+        coverPacket.data = nullptr;
+        coverPacket.size = 0;
+        SHA1 sha1;
+        for (size_t i = 0; i < inputContext->nb_streams; i++) {
+            auto* stream{inputContext->streams[i]};
+            auto type{stream->codecpar->codec_type};
+            if (type == AVMEDIA_TYPE_ATTACHMENT ||
+                (type == AVMEDIA_TYPE_VIDEO &&
+                 (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))) {
+                coverPacket = stream->attached_pic;
                 break;
-            } else {
-                hashImageDir.createDirectory();
-            } // 如果这个目录已经存在，直接退出，避免保存两个相同图片
-
-            juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
-
-            juce::FileOutputStream outputStream(originalFile);
-            if (outputStream.openedOk()) {
-                outputStream.write(coverPacket.data, coverPacket.size);
-                outputStream.flush();
             }
 
-        } while (0);
-    } else {
-        onlineTask.needCover = true;
+        } // 这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
+
+        if (coverPacket.data && coverPacket.size > 0) {
+            do {
+                info.hash = sha1(coverPacket.data, coverPacket.size);
+
+                juce::File hashImageDir{
+                    dllManager::getInstance().getSongImageDir().getChildFile(info.hash)
+                };
+                // data存在说明一定有图片，所以直接使用.value()就行了
+                //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
+
+                if (hashImageDir.exists()) {
+                    break;
+                } else {
+                    hashImageDir.createDirectory();
+                } // 如果这个目录已经存在，直接退出，避免保存两个相同图片
+
+                juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
+
+                juce::FileOutputStream outputStream(originalFile);
+                if (outputStream.openedOk()) {
+                    outputStream.write(coverPacket.data, coverPacket.size);
+                    outputStream.flush();
+                }
+
+            } while (0);
+        } else {
+            onlineTask.needCover = true;
+        }
     }
 
     avformat_close_input(&inputContext);
@@ -326,9 +327,9 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&](SQLite::Statement& stmt) {
         // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
-        auto bindOptStr = [&](const char* name, const std::optional<std::string>& v) {
-            if (v.has_value())
-                stmt.bind(name, v.value());
+        auto bindOptStr = [&](const char* name, const juce::String& v) {
+            if (v.isNotEmpty())
+                stmt.bind(name, v.toStdString());
             else
                 stmt.bind(name); // 无第二个参数 → SQL NULL
         };
@@ -345,7 +346,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         stmt.bind(":fileSize", fileSize);
         stmt.bind(":lastModifiedTime", lastModifiedTime);
         stmt.bind(":duration", info.duration);
-        stmt.bind(":title", info.title);
+        stmt.bind(":title", info.title.toStdString());
         // ── FFmpeg 必选 int 字段 ──
         stmt.bind(":bitRate", info.bitRate);
         stmt.bind(":bitDepth", info.bitDepth);
@@ -355,8 +356,9 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
         } else {
             stmt.bind(":numChannels", numChannels);
         }
+        auto artistsStr{juce::JSON::toString(info.artists).toStdString()};
 
-        bindOptStr(":artist", info.artist);
+        bindOptStr(":artists", artistsStr);
         bindOptStr(":album", info.album);
         bindOptStr(":albumArtist", info.albumArtist);
         bindOptStr(":genre", info.genre);
@@ -402,7 +404,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
                 db,
                 "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
                 "lastModifiedTime = :lastModifiedTime, "
-                "duration = :duration, title = :title, artist = :artist, album = :album, "
+                "duration = :duration, title = :title, artists = :artists, album = :album, "
                 "albumArtist = :albumArtist, "
                 "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = "
                 ":year, composer = :composer, "
@@ -424,10 +426,10 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
             SQLite::Statement insertSong(
                 db,
                 "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
-                "duration, title, artist, album, albumArtist, "
+                "duration, title, artists, album, albumArtist, "
                 "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
                 "sampleRate, channelLayoutMask, numChannels, codecName, hash, timeDomainSpec) "
-                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artist, "
+                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artists, "
                 ":album, :albumArtist, "
                 ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
                 ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash, :timeDomainSpec)"
@@ -462,13 +464,13 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     return insertSongInfo;
 }
 
-std::vector<SongInfo> SongsManage::getAllSongs() {
-    std::vector<SongInfo> result;
+juce::Array<juce::var> SongsManage::getAllSongs() {
+    juce::Array<juce::var> result;
 
     try {
         std::string sql = R"(
             SELECT songId, 
-            duration, title, artist, album, albumArtist, 
+            duration, title, artists, album, albumArtist, 
             genre, trackNumber, discNumber, year, composer, 
             bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
             aiGenre, bpm, key, aiProcessed, 
@@ -479,15 +481,11 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
         SQLite::Statement query(db, sql);
 
         // ── 辅助：读取可能为 NULL 的 string 列 → std::optional<std::string> ──
-        auto optStrCol = [&](const char* colName) -> std::optional<std::string> {
+        auto optStrCol = [&](const char* colName) -> juce::String {
             auto col = query.getColumn(colName);
-            if (col.isNull()) return std::nullopt;
-            std::string s = col.getString();
-            if (s.empty()) {
-                return std::nullopt;
-            } else {
-                return s;
-            }
+            if (col.isNull()) return "";
+            auto s = juce::String(col.getString());
+            return s;
         };
         // ── 辅助：读取可能为 NULL 的 int 列 → std::optional<int> ──
         auto optIntCol = [&](const char* colName) -> std::optional<int> {
@@ -502,7 +500,13 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
 
             // ── 标签 ──
             info.title = query.getColumn("title").getString();
-            info.artist = optStrCol("artist");
+            auto artistStr = optStrCol("artists");
+            if (artistStr.isNotEmpty()) {
+                Yvar artists{juce::JSON::fromString(artistStr)};
+                for (int i = 0; i < artists.size(); i++) {
+                    info.artists.add(artists.read(i).toString());
+                }
+            }
             info.album = optStrCol("album");
             info.albumArtist = optStrCol("albumArtist");
             info.genre = optStrCol("genre");
@@ -540,7 +544,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
             info.playNum = query.getColumn("playNum").getInt();
             info.hash = optStrCol("hash");
 
-            result.push_back(std::move(info));
+            result.add(info.toJson());
         }
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
@@ -550,7 +554,7 @@ std::vector<SongInfo> SongsManage::getAllSongs() {
     return result;
 }
 
-std::string SongsManage::getPathBySongId(int64_t songId) {
+std::string SongsManage::getPath(int64_t songId) {
     spdlog::get(LogDllID)->debug("开始根据id搜索歌曲路径");
     std::string path;
     try {
@@ -608,7 +612,7 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
     }
 }
 
-juce::Array<double> SongsManage::getTimeDomainSpecBySongId(int64_t songId) {
+juce::Array<double> SongsManage::getTimeDomainSpec(int64_t songId) {
     try {
         SQLite::Statement sql(db, "SELECT timeDomainSpec FROM songs WHERE songId = :songId");
         sql.bind(":songId", songId);

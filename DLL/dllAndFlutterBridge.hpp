@@ -6,6 +6,8 @@ struct B_songImport{
     static constexpr const char* filePaths = "filePaths" ;
     static constexpr const char* songs = "songs" ;
     static constexpr const char* errorFiles = "errorFiles" ;
+    static constexpr const char* errorFileName = "errorFileName" ;
+    static constexpr const char* errorFileReason = "errorFileReason" ;
 };
 
 struct B_toggleMyLike{

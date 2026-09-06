@@ -7,7 +7,9 @@
   "songImport":{
       "filePaths":"",
       "songs":"",//成功返回的歌曲数组
-      "errorFiles":""//导入失败的文件
+      "errorFiles":"",//导入失败的文件
+      "errorFileName":"",//失败的文件名称
+      "errorFileReason":""//失败原因
   },
   "toggleMyLike":{
     "songId":"",

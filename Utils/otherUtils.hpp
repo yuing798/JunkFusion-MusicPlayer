@@ -57,21 +57,4 @@ namespace Utils {
     // 计算相似度分数（0 ~1）
     double stringSimilarity(const juce::String& s1, const juce::String& s2);
 
-    class Yvar {
-    private:
-        juce::var value{};
-
-    public:
-        Yvar() = default;
-        Yvar(juce::var value) : value(std::move(value)) {}
-
-        Yvar read(const char* key) const;
-        Yvar read(int index) const;
-
-        double toDouble() const;
-        juce::String toString() { return value.toString(); }
-        bool isVoid() { return value.isVoid(); }
-        bool hasProperty(const char* key) { return value.hasProperty(key); }
-        int size() { return value.size(); }
-    };
 } // namespace Utils

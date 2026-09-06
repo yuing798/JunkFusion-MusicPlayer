@@ -5,6 +5,7 @@ target_include_directories(JunkFusionAudioProcess
 target_sources(JunkFusionAudioProcess
     PRIVATE
         otherUtils.cpp
+        Yvar.cpp
 )
 target_include_directories(JunkFusionDLL
     PRIVATE 
@@ -13,4 +14,5 @@ target_include_directories(JunkFusionDLL
 target_sources(JunkFusionDLL
     PRIVATE
         otherUtils.cpp
+        Yvar.cpp
 )

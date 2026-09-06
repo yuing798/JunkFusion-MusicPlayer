@@ -19,9 +19,9 @@ public:
         std::string print; // 指纹
 
         // 以下三个如果有的话发送过来，进行查找打分
-        std::optional<juce::String> title;
-        std::vector<std::string> artists;
-        std::optional<juce::String> album;
+        juce::String title;
+        juce::StringArray artists;
+        juce::String album;
         bool needCover{false};
     };
 
@@ -30,6 +30,7 @@ private:
     std::queue<Task> mTaskQueue;
     std::mutex mtx;
     static constexpr const char* client_key = "lp1ajcs0Bd";
+    juce::String systemCountry; // 系统国家，用来专辑打分
 
     // 辅助函数：判断是否为“群星/合集”类通配名字
     bool isVariousArtists(const std::string& name);

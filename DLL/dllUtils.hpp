@@ -17,7 +17,4 @@ namespace DllUtils {
     // 对字符串进行Lucene特殊字符筛选并在前面加上反斜杠
     std::string escapeLucene(const std::string& input);
 
-    // 将数组转换为/进行分隔的字符串，一般在艺术家数组和体裁数组出现
-    std::string tagVector2String(std::vector<std::string>& tags);
-
 } // namespace DllUtils

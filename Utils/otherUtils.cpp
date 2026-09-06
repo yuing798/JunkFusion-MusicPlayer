@@ -263,29 +263,3 @@ double Utils::stringSimilarity(const juce::String& s1, const juce::String& s2) {
     int distance = levenshteinDistance(s1, s2);
     return 1.0 - static_cast<double>(distance) / maxLen;
 }
-
-Utils::Yvar Utils::Yvar::read(const char* key) const {
-    if (!value.isObject()) {
-        return {};
-    }
-    if (!value.hasProperty(key)) {
-        return {};
-    }
-    return value[key];
-}
-Utils::Yvar Utils::Yvar::read(int index) const {
-    if (!value.isArray()) {
-        return {};
-    }
-    if (index < 0 || index >= value.size()) {
-        return {};
-    }
-    return value[index];
-}
-double Utils::Yvar::toDouble() const {
-    if (value.isDouble()) {
-        return static_cast<double>(value);
-    } else {
-        return 0.0;
-    }
-}

@@ -6,6 +6,8 @@ class B_songImport{
   static const String filePaths = 'filePaths';
   static const String songs = 'songs';
   static const String errorFiles = 'errorFiles';
+  static const String errorFileName = 'errorFileName';
+  static const String errorFileReason = 'errorFileReason';
 }
 
 class B_toggleMyLike{
