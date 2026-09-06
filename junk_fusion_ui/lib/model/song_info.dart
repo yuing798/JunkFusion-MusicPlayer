@@ -21,7 +21,7 @@ abstract class SongInfo with _$SongInfo {
     required double duration,
     required String title,
 
-    String? artist,
+    List<String>? artists,
     String? album,
     String? albumArtist,
     String? genre,

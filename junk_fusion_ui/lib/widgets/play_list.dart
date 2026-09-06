@@ -205,9 +205,14 @@ class PlayList {
                                                   ),
                                                 ),
                                                 Tooltip(
-                                                  message: song.artist ?? "未知",
+                                                  message:
+                                                      song.artists?.join(
+                                                        " / ",
+                                                      ) ??
+                                                      "未知",
                                                   child: Text(
-                                                    song.artist ?? "未知",
+                                                    song.artists?.join(" / ") ??
+                                                        "未知",
                                                     style: context
                                                         .watch<AppTheme>()
                                                         .littleTextStyle,
