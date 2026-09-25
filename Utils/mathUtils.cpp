@@ -5,7 +5,7 @@ std::vector<float> MathUtils::generateSinTable(double num4pi) {
     std::vector<float> tableBuffer;
 
     tableBuffer.resize(MathUtils::lookupTableSize);
-    tableBuffer.clear();
+    // tableBuffer.clear();
 
     for (int index = 0; index < MathUtils::lookupTableSize; index++) {
 
@@ -20,7 +20,7 @@ std::vector<float> MathUtils::generateCosTable(double num4pi) {
     std::vector<float> tableBuffer;
 
     tableBuffer.resize(MathUtils::lookupTableSize);
-    tableBuffer.clear();
+    // tableBuffer.clear();
 
     for (int index = 0; index < MathUtils::lookupTableSize; index++) {
 

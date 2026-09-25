@@ -3,6 +3,7 @@ import 'dart:ffi' as ffi;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,12 +59,23 @@ class UtilFunction {
 
   //发送滑块信息，
   static void sendSliderMsg(String identifyParam, double value, bool isOsc) {
-    final identifyPtr = identifyParam.toNativeUtf8().cast<ffi.Char>();
+    final identifyPtr = string2cPtr(identifyParam);
     bindings.sendSliderValue(
       identifyPtr,
       value,
       isOsc ? 1 : 0,
     ); //dart没有bool转为int的运算符
     malloc.free(identifyPtr);
+  }
+
+  static String cPtr2String(ffi.Pointer<ffi.Char> ptr) {
+    final dartString = ptr.cast<Utf8>().toDartString();
+    bindings.freeString(ptr);
+    return dartString;
+  }
+
+  static ffi.Pointer<ffi.Char> string2cPtr(String str) {
+    final ptr = str.toNativeUtf8().cast<ffi.Char>();
+    return ptr;
   }
 }

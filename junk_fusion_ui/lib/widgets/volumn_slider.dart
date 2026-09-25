@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
+import 'package:junk_fusion_ui/Macro/sliderParam.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
@@ -172,11 +172,11 @@ class VolumeControllerButtonState extends State<VolumeControllerButton>
           if (currentVolume != 0.0) {
             context.read<PlaybackProvider>().setVolume(0.0);
             lastVolume = currentVolume;
-            UtilFunction.sendSliderMsg(B_sliderParam.masterVolume, 0.0, false);
+            UtilFunction.sendSliderMsg(SliderParam.masterVolume, 0.0, false);
           } else {
             context.read<PlaybackProvider>().setVolume(lastVolume);
             UtilFunction.sendSliderMsg(
-              B_sliderParam.masterVolume,
+              SliderParam.masterVolume,
               lastVolume,
               false,
             );
@@ -225,7 +225,7 @@ class _VolumeSlider extends StatelessWidget {
                     onChanged: (value) {
                       context.read<PlaybackProvider>().setVolume(value);
                       UtilFunction.sendSliderMsg(
-                        B_sliderParam.masterVolume,
+                        SliderParam.masterVolume,
                         value,
                         true,
                       );
@@ -233,7 +233,7 @@ class _VolumeSlider extends StatelessWidget {
                     onChangeEnd: (value) {
                       context.read<PlaybackProvider>().setVolume(value);
                       UtilFunction.sendSliderMsg(
-                        B_sliderParam.masterVolume,
+                        SliderParam.masterVolume,
                         value,
                         false,
                       );

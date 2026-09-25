@@ -44,6 +44,7 @@ bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce
             logger->critical("启动后端进程失败: {}", exeFile.getFullPathName().toStdString());
         return false;
     }
+    OtherUtils::writeEmergencyLog("能够走到这一步");
     if (logger) logger->info("后端进程已启动: {}", exeFile.getFullPathName().toStdString());
 
     mRunning = true;

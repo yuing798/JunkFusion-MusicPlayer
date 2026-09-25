@@ -32,7 +32,8 @@ extern "C" {
     DLL_EXPORT void registerOnLightSongDataImportOver(
         StringFunc cb
     ); // 轻量歌曲数据导入完成的回调，这个回调是发送所有歌曲信息
-    DLL_EXPORT void registerOnGetAllSongsOver(StringFunc cb);
+    // DLL_EXPORT void registerOnGetAllSongsOver(StringFunc cb);
+    DLL_EXPORT const char* getAllSongs();
 
 #ifdef __cplusplus
 }

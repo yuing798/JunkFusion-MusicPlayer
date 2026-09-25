@@ -70,12 +70,6 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 
     // 把 db 指针或引用传给各表
     songs = std::make_unique<SongsManage>(*db);
-
-    auto songsList = songs->getAllSongs();
-    auto obj{new juce::DynamicObject()};
-    obj->setProperty(CoordinatorMacro::songsList, songsList);
-
-    if (onGetAllSongOver) onGetAllSongOver(ConvertUtils::object2Uint8t(obj));
 }
 
 void dllManager::sendMessage2AudioProcess(juce::var& obj) {

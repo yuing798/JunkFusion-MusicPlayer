@@ -8,7 +8,9 @@ import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
+import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
+import 'package:junk_fusion_ui/Macro/sliderParam.dart';
+import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
@@ -71,7 +73,8 @@ class PlaybackProvider extends ChangeNotifier {
     // print(dartStr);
     final obj = jsonDecode(dartStr) as Map<String, dynamic>;
     bindings.freeString(ptr);
-    final timeDomainSpec = obj[B_getTimeDomainSpec.specList] as List<dynamic>;
+    final timeDomainSpec =
+        obj[CoordinatorMacro.timeDomainSpecs] as List<dynamic>;
     _timeDomainSpec = timeDomainSpec
         .map((e) => (e as num).toDouble())
         .toList(); //歌曲时域图数据
@@ -93,7 +96,7 @@ class PlaybackProvider extends ChangeNotifier {
     if (songId != null) _currentSong = songProvider.getSongInfo(songId);
 
     _volume = AppCache.frontCacheRef.getDouble("masterVolume") ?? 0.0;
-    UtilFunction.sendSliderMsg(B_sliderParam.masterVolume, _volume, false);
+    UtilFunction.sendSliderMsg(SliderParam.masterVolume, _volume, false);
     _currentTimeStamp = AppCache.frontCacheRef.getDouble("pts") ?? 0.0;
     {
       String jsonString =

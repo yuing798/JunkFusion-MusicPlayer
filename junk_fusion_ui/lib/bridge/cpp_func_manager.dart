@@ -33,29 +33,21 @@ class CppCallbackManager {
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
   ffi.NativeCallable<StringFuncFunction>? _timeDomainSpecInsertOverCallback;
   ffi.NativeCallable<VoidFuncFunction>? _onPlayNextSongCallback;
-  ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
+  // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
 
-  void _handleErrorFromCpp(ffi.Pointer<ffi.Char> strPtr) {
-    // 将 C 的 char* 转换为 Dart 的 String
-    final errorMessage = strPtr.cast<Utf8>().toDartString();
-    bindings.freeString(strPtr); //释放cpp分配的堆内存
-
-    print("收到来自 C++ 的错误通知: $errorMessage");
-
-    // TODO: 在这里触发错误弹窗逻辑
-  }
-
   /// 2. 注册回调到 C++
-  void setupCallbacks() {
-    final context = navigatorKey.currentContext;
+  void setupCallbacks(SongProvider songProvider, PlaybackProvider playback) {
+    _errorSendcallable = ffi.NativeCallable<StringFuncFunction>.listener((
+      ffi.Pointer<ffi.Char> ptr,
+    ) {
+      // 将 C 的 char* 转换为 Dart 的 String
+      final errorMessage = UtilFunction.cPtr2String(ptr);
 
-    final playback = context!.read<PlaybackProvider>();
-    final songsProvider = context!.read<SongProvider>();
+      print("收到来自 C++ 的错误通知: $errorMessage");
 
-    _errorSendcallable = ffi.NativeCallable<StringFuncFunction>.listener(
-      _handleErrorFromCpp,
-    );
+      // TODO: 在这里触发错误弹窗逻辑
+    });
     _currentPTSCallback = ffi.NativeCallable<DoubleFuncFunction>.listener((
       double value,
     ) {
@@ -65,8 +57,8 @@ class CppCallbackManager {
         ffi.NativeCallable<StringFuncFunction>.listener((
           ffi.Pointer<ffi.Char> ptr,
         ) {
-          String str = ptr.cast<Utf8>().toDartString();
-          bindings.freeString(ptr);
+          String str = UtilFunction.cPtr2String(ptr);
+
           // TODO:重型歌曲插入任务完成
           print("重型歌曲插入任务完成:文件:$str");
         });
@@ -74,32 +66,31 @@ class CppCallbackManager {
     _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {
       playback.playNextSong();
     });
-    _onGetAllSongsOver = ffi.NativeCallable<StringFuncFunction>.listener((
-      ffi.Pointer<ffi.Char> ptr,
-    ) {
-      final dartString = ptr.cast<Utf8>().toDartString();
-      bindings.freeString(ptr);
-      Map<String, dynamic> obj = jsonDecode(dartString);
-      final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
-      List<SongInfo> songsList = [];
-      for (int i = 0; i < songsRaw.length; i++) {
-        songsList.add(SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>));
-      }
-      songsProvider.addNewSong(songsList);
-    });
+    // _onGetAllSongsOver = ffi.NativeCallable<StringFuncFunction>.listener((
+    //   ffi.Pointer<ffi.Char> ptr,
+    // ) {
+    //   final dartString = ptr.cast<Utf8>().toDartString();
+    //   bindings.freeString(ptr);
+    //   Map<String, dynamic> obj = jsonDecode(dartString);
+    //   final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
+    //   List<SongInfo> songsList = [];
+    //   for (int i = 0; i < songsRaw.length; i++) {
+    //     songsList.add(SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>));
+    //   }
+    //   songsProvider.addNewSong(songsList);
+    // });
 
     _onLightSongDataImportOver = ffi.NativeCallable<StringFuncFunction>.listener((
       ffi.Pointer<ffi.Char> ptr,
     ) {
-      final dartString = ptr.cast<Utf8>().toDartString();
-      bindings.freeString(ptr);
+      final dartString = UtilFunction.cPtr2String(ptr);
       Map<String, dynamic> obj = jsonDecode(dartString);
       final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
       List<SongInfo> songsList = [];
       for (int i = 0; i < songsRaw.length; i++) {
         songsList.add(SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>));
       }
-      songsProvider.addNewSong(songsList);
+      songProvider.addNewSong(songsList);
 
       final errorFiles = obj[CoordinatorMacro.errorFiles] as List<dynamic>;
 
@@ -129,7 +120,7 @@ class CppCallbackManager {
       _timeDomainSpecInsertOverCallback!.nativeFunction,
     );
     bindings.registerOnPlayNextSong(_onPlayNextSongCallback!.nativeFunction);
-    bindings.registerOnGetAllSongsOver(_onGetAllSongsOver!.nativeFunction);
+    // bindings.registerOnGetAllSongsOver(_onGetAllSongsOver!.nativeFunction);
     bindings.registerOnLightSongDataImportOver(
       _onLightSongDataImportOver!.nativeFunction,
     );
@@ -141,7 +132,7 @@ class CppCallbackManager {
     bindings.registerCurrentPTSCallback(ffi.nullptr);
     bindings.registerTimeDomainSpecInsertOver(ffi.nullptr);
     bindings.registerOnPlayNextSong(ffi.nullptr);
-    bindings.registerOnGetAllSongsOver(ffi.nullptr);
+    // bindings.registerOnGetAllSongsOver(ffi.nullptr);
     bindings.registerOnLightSongDataImportOver(ffi.nullptr);
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
@@ -149,7 +140,7 @@ class CppCallbackManager {
     _currentPTSCallback?.close();
     _timeDomainSpecInsertOverCallback?.close();
     _onPlayNextSongCallback?.close();
-    _onGetAllSongsOver?.close();
+    // _onGetAllSongsOver?.close();
     _onLightSongDataImportOver?.close();
   }
 }

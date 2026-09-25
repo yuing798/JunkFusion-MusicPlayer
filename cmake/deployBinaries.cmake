@@ -10,6 +10,7 @@ file(MAKE_DIRECTORY "${DST_DIR}")
 file(GLOB FILES_TO_COPY # GLOB CMake 的文件操作命令之一，用于通配符匹配
      "${SRC_DIR}/*.dll" #FILES_TO_COPY：变量名，匹配到的文件路径列表将存储于此
      "${SRC_DIR}/*.exe"
+     "${SRC_DIR}/*.pdb"
 )
 
 foreach(FILE ${FILES_TO_COPY})

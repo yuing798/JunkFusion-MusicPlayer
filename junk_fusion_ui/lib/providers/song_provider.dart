@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
@@ -23,6 +24,17 @@ class SongProvider extends ChangeNotifier {
   // 按 ID 查找歌曲
   SongInfo getSongInfo(int songId) {
     return _songs.where((s) => s.songId == songId).first;
+  }
+
+  void getAllSongs() {
+    final ptr = bindings.getAllSongs();
+    final dartString = UtilFunction.cPtr2String(ptr);
+    Map<String, dynamic> obj = jsonDecode(dartString);
+    final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
+    for (final song in songsRaw) {
+      _songs.add(SongInfo.fromJson(song as Map<String, dynamic>));
+    }
+    notifyListeners();
   }
 
   void addNewSong(List<SongInfo> songsList) {
@@ -75,28 +87,6 @@ class SongProvider extends ChangeNotifier {
       final cPtr = pathsPtr.toNativeUtf8().cast<Char>();
       // print("3");
       bindings.someImport(cPtr);
-
-      // print("完成隔离区函数");
-      final errorFiles = results[B_songImport.errorFiles] as List<String>;
-      final songsList = results[B_songImport.songs] as List<SongInfo>;
-      _songs.addAll(songsList);
-
-      if (errorFiles.isEmpty) {
-        DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");
-      } else {
-        final buffer = StringBuffer()
-          ..write(
-            '歌曲导入完成，总共导入${songsList.length + errorFiles.length}首，成功${songsList.length}首\n失败文件:\n',
-          );
-
-        for (final file in errorFiles) {
-          buffer.writeln(file); // writeln 会自动加上换行符
-        }
-
-        final message = buffer.toString();
-        DialogUtil.showInfoDialog(message);
-      }
-      notifyListeners();
     }
   }
 

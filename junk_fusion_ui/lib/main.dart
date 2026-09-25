@@ -3,7 +3,7 @@ import 'dart:ffi' as dart_ffi;
 
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/bridge/cpp_callback_manager.dart';
+import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
@@ -50,15 +50,11 @@ void main() async {
     cacheDirPath.createSync(recursive: true);
   }
   AppCache.cacheDirString = cacheDirPath.path;
-  final cacheDirPtr = AppCache.cacheDirString
-      .toNativeUtf8()
-      .cast<dart_ffi.Char>();
+  final cacheDirPtr = UtilFunction.string2cPtr(AppCache.cacheDirString);
   // print("exe所在目录和缓存目录分别为：");
   // print(AppCache.getExeDirectory());
   // print(AppCache.cacheDirString);
-  final exeDirPtr = AppCache.getExeDirectory()
-      .toNativeUtf8()
-      .cast<dart_ffi.Char>();
+  final exeDirPtr = UtilFunction.string2cPtr(AppCache.getExeDirectory());
   bindings.dllInit(cacheDirPtr, exeDirPtr); //dll初始化
   ffi.malloc.free(cacheDirPtr);
   ffi.malloc.free(exeDirPtr);
@@ -67,9 +63,6 @@ void main() async {
 
   final songProvider = SongProvider();
   final playbackProvider = PlaybackProvider(songProvider: songProvider);
-  songProvider.getAllSongs().then(
-    (_) => playbackProvider.restoreState(),
-  ); //全量获取歌曲元数据
 
   runApp(
     JunkFusionApp(
@@ -104,11 +97,16 @@ class JunkFusionAppState extends State<JunkFusionApp>
     super.initState();
     windowManager.addListener(this);
     trayManager.addListener(this);
-    cppCallbackManager.setupCallbacks();
+    cppCallbackManager.setupCallbacks(
+      widget.songProvider,
+      widget.playbackProvider,
+    );
     _initSystemTray();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadWindowState();
+      widget.songProvider.getAllSongs();
+      widget.playbackProvider.restoreState();
     });
   }
 

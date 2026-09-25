@@ -4,7 +4,6 @@
 #include "fileManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_osc/juce_osc.h"
-#include "libExport.h"
 #include "processSchedule/AudioProcessCoordinator.h"
 #include "processSchedule/OscSender.hpp"
 #include <SQLiteCpp/Database.h>
@@ -56,7 +55,7 @@ public:
     std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
     std::function<void(void)> onPlayNextSong;
     std::function<void(const char*)> onLightSongDataImportOver;
-    std::function<void(const char*)> onGetAllSongOver;
+    // std::function<void(const char*)> onGetAllSongOver;
 
     void sendMessage2AudioProcess(juce::var& obj);
     void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }

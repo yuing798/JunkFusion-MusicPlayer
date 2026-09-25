@@ -25,7 +25,7 @@ extern "C" {
 
 FFmpegDecoder::FFmpegDecoder(AudioRingBuffer* ringBuffer)
     : juce::Thread("Decoder"), mRingBuffer(ringBuffer) {
-    setPriority(juce::Thread::Priority::high); // 高优先级
+    // setPriority(juce::Thread::Priority::high); // 高优先级
 }
 
 FFmpegDecoder::~FFmpegDecoder() { stopThread(2000); }

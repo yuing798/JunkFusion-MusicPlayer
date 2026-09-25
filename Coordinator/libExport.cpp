@@ -1,5 +1,6 @@
 #include "./libExport.h"
 #include "./dllManager.hpp"
+#include "Coordinator/libExport.h"
 #include "Macro/audioMacro.hpp"
 #include "Macro/coordinatorMacro.hpp"
 #include "Utils/Yvar.hpp"
@@ -149,7 +150,14 @@ extern "C" {
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
-    void registerOnGetAllSongsOver(StringFunc cb) {
-        dllManager::getInstance().onGetAllSongOver = cb;
+    // void registerOnGetAllSongsOver(StringFunc cb) {
+    //     dllManager::getInstance().onGetAllSongOver = cb;
+    // }
+    const char* getAllSongs() {
+        auto songsList = dllManager::getInstance().getSongsManager().getAllSongs();
+        auto obj{new juce::DynamicObject()};
+        obj->setProperty(CoordinatorMacro::songsList, songsList);
+
+        return ConvertUtils::object2Uint8t(obj);
     }
 }

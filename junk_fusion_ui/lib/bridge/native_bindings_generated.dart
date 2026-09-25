@@ -56,6 +56,18 @@ class JunkFusionDLLBindings {
   late final _freeString = _freeStringPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
+  /// DLL_EXPORT void registerOnGetAllSongsOver(StringFunc cb);
+  ffi.Pointer<ffi.Char> getAllSongs() {
+    return _getAllSongs();
+  }
+
+  late final _getAllSongsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllSongs',
+      );
+  late final _getAllSongs = _getAllSongsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
     return _getTimeDomainSpecBySongId(songId);
   }
@@ -106,17 +118,6 @@ class JunkFusionDLLBindings {
         'registerErrorSendCallback',
       );
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
-      .asFunction<void Function(StringFunc)>();
-
-  void registerOnGetAllSongsOver(StringFunc cb) {
-    return _registerOnGetAllSongsOver(cb);
-  }
-
-  late final _registerOnGetAllSongsOverPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
-        'registerOnGetAllSongsOver',
-      );
-  late final _registerOnGetAllSongsOver = _registerOnGetAllSongsOverPtr
       .asFunction<void Function(StringFunc)>();
 
   void registerOnLightSongDataImportOver(StringFunc cb) {
