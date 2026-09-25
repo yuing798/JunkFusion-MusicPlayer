@@ -1,10 +1,11 @@
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ffi/ffi.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
+import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
@@ -24,9 +25,8 @@ class SongProvider extends ChangeNotifier {
     return _songs.where((s) => s.songId == songId).first;
   }
 
-  Future<void> getAllSongs() async {
-    final results = await sendDLLIsolateTask(B_getAllSongs.name, {});
-    _songs = results[B_getAllSongs.songsList] as List<SongInfo>;
+  void addNewSong(List<SongInfo> songsList) {
+    _songs.addAll(songsList);
     notifyListeners();
   }
 
@@ -70,21 +70,16 @@ class SongProvider extends ChangeNotifier {
           .whereType<String>() // 过滤掉 null，转换为 Iterable<String>
           .toList(); // 转为 List<String>
 
-      // 接下来，把这个 filePath 通过 Isolate 或直接传给 DLL
-      // sendTask('processAudioFile', {'path': filePath});
-      final results = await sendDLLIsolateTask(B_songImport.name, {
-        B_songImport.filePaths: filePaths,
-      });
+      String pathsPtr = jsonEncode(filePaths);
+      // print("2");
+      final cPtr = pathsPtr.toNativeUtf8().cast<Char>();
+      // print("3");
+      bindings.someImport(cPtr);
+
       // print("完成隔离区函数");
       final errorFiles = results[B_songImport.errorFiles] as List<String>;
       final songsList = results[B_songImport.songs] as List<SongInfo>;
       _songs.addAll(songsList);
-
-      // for (final song in _songs) {
-      //   print(song.songId);
-      //   print(song.title);
-      //   print("11111");
-      // }
 
       if (errorFiles.isEmpty) {
         DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");

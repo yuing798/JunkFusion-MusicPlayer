@@ -1,5 +1,7 @@
 #include "./dllManager.hpp"
+#include "Macro/coordinatorMacro.hpp"
 #include "Utils/constants.h"
+#include "Utils/convertUtils.hpp"
 #include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "processSchedule/OscSender.hpp"
@@ -63,12 +65,17 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         dbFile.getFullPathName().toStdString(),
         SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
     );
+    db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
+    db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
 
     // 把 db 指针或引用传给各表
     songs = std::make_unique<SongsManage>(*db);
 
-    db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
-    db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
+    auto songsList = songs->getAllSongs();
+    auto obj{new juce::DynamicObject()};
+    obj->setProperty(CoordinatorMacro::songsList, songsList);
+
+    if (onGetAllSongOver) onGetAllSongOver(ConvertUtils::object2Uint8t(obj));
 }
 
 void dllManager::sendMessage2AudioProcess(juce::var& obj) {

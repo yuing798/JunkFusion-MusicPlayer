@@ -1,182 +1,168 @@
-import 'dart:convert';
-import 'dart:ffi';
-import 'dart:io';
-import 'dart:async';
-import 'dart:isolate';
+// import 'dart:convert';
+// import 'dart:ffi';
+// import 'dart:io';
+// import 'dart:async';
+// import 'dart:isolate';
 
-import 'package:ffi/ffi.dart';
-import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
-import 'package:junk_fusion_ui/bridge/native_bindings_generated.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+// import 'package:ffi/ffi.dart';
+// import 'package:junk_fusion_ui/bridge/dllAndFlutterBridgeDefs.dart';
+// import 'package:junk_fusion_ui/bridge/native_bindings_generated.dart';
+// import 'package:junk_fusion_ui/model/song_info.dart';
+// import 'package:junk_fusion_ui/utils/utils.dart';
 
-final DynamicLibrary _libPath = () {
-  final libName = Platform.isWindows
-      ? "JunkFusionDLL.dll"
-      : Platform.isMacOS
-      ? "JunkFusionDLL.dylib"
-      : "JunkFusionDLL.so";
+// Future<Map<String, Object?>> sendDLLIsolateTask(
+//   String funcName,
+//   Map<String, dynamic> params,
+// ) async {
+//   final completer = Completer<Map<String, Object?>>();
+//   final id = _nextRequestId++;
 
-  return DynamicLibrary.open(
-    "${AppCache.getExeDirectory()}${Platform.pathSeparator}$libName",
-  );
-}();
+//   final port = await isolateSendPort;
+//   // 把 Completer 存起来，等待响应回来时被取走
+//   _pendingRequests[id] = completer;
 
-final bindings = JunkFusionDLLBindings(_libPath);
+//   // 发送带 ID 的请求给辅助隔离区
+//   port.send(_TaskRequest(id, funcName, params));
 
-Future<Map<String, Object?>> sendDLLIsolateTask(
-  String funcName,
-  Map<String, dynamic> params,
-) async {
-  final completer = Completer<Map<String, Object?>>();
-  final id = _nextRequestId++;
+//   // 把 Future 返回给外部调用者
+//   return completer.future;
+// }
 
-  final port = await isolateSendPort;
-  // 把 Completer 存起来，等待响应回来时被取走
-  _pendingRequests[id] = completer;
+// class _TaskRequest {
+//   final int id;
+//   final String funcName; //函数名称
+//   final Map<String, Object?> params; //传参列表
+//   //Object：代表 “所有非空类型（Non-nullable）的基类”
 
-  // 发送带 ID 的请求给辅助隔离区
-  port.send(_TaskRequest(id, funcName, params));
+//   const _TaskRequest(this.id, this.funcName, this.params); //required只能使用在命名参数里面
+// }
 
-  // 把 Future 返回给外部调用者
-  return completer.future;
-}
+// class _TaskResponse {
+//   final int id;
+//   final Map<String, Object?> results;
 
-class _TaskRequest {
-  final int id;
-  final String funcName; //函数名称
-  final Map<String, Object?> params; //传参列表
-  //Object：代表 “所有非空类型（Non-nullable）的基类”
+//   const _TaskResponse(this.id, this.results);
+// }
 
-  const _TaskRequest(this.id, this.funcName, this.params); //required只能使用在命名参数里面
-}
+// final Map<int, Completer<Map<String, Object?>>> _pendingRequests = {};
+// int _nextRequestId = 0;
 
-class _TaskResponse {
-  final int id;
-  final Map<String, Object?> results;
+// Future<SendPort> isolateSendPort = () async {
+//   final initCompleter = Completer<SendPort>();
 
-  const _TaskResponse(this.id, this.results);
-}
+//   final receivePort = ReceivePort()
+//     ..listen((dynamic data) {
+//       if (data is SendPort) {
+//         // The helper isolate sent us the port on which we can sent it requests.
+//         initCompleter.complete(data);
+//         return;
+//       }
+//       if (data is _TaskResponse) {
+//         // 把辅助隔离区中的异常打印到终端（否则静默崩溃无法调试）
+//         // print("接收到回复消息");
+//         // if (data.results.containsKey('error')) {
+//         //   print('❌ DLL Isolate 错误: ${data.results['error']}');
+//         //   print('堆栈: ${data.results['stack']}');
+//         // }
+//         // 根据响应中的 id 取出对应的 Completer
+//         final completer = _pendingRequests.remove(data.id);
+//         if (completer != null && !completer.isCompleted) {
+//           // 这里就把结果“发送到外部”了——因为 completer.future 正被外部 await
+//           completer.complete(data.results);
+//         }
+//         return;
+//       }
+//       throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
+//     });
 
-final Map<int, Completer<Map<String, Object?>>> _pendingRequests = {};
-int _nextRequestId = 0;
+//   // Start the helper isolate.
+//   await Isolate.spawn((SendPort sendPort) async {
+//     final ReceivePort helperReceivePort = ReceivePort()
+//       ..listen((dynamic data) {
+//         // On the helper isolate listen to requests and respond to them.
+//         // print("开始执行DLL隔离区函数");
+//         if (data is _TaskRequest) {
+//           try {
+//             final name = data.funcName;
+//             final params = data.params;
+//             Map<String, Object?> results = {}; //Map为空和NULL是两种东西
+//             if (name == B_getAllSongs.name) {
+//               // print("开始全量加载歌曲元数据");
+//               final cPtr = bindings.getAllSongs();
+//               final dartString = cPtr.cast<Utf8>().toDartString(); //解码
+//               Map<String, dynamic> obj = jsonDecode(dartString);
+//               bindings.freeString(cPtr);
+//               assert(obj.containsKey(B_getAllSongs.songsList));
+//               final songs = obj[B_getAllSongs.songsList] as List<dynamic>;
+//               List<SongInfo> songsList = [];
+//               for (int i = 0; i < songs.length; i++) {
+//                 final song = songs[i];
+//                 songsList.add(SongInfo.fromJson(song as Map<String, dynamic>));
+//               }
+//               results[B_getAllSongs.songsList] = songsList;
+//             } else if (name == B_songImport.name) {
+//               // print("开始导入文件");
+//               assert(params.containsKey(B_songImport.filePaths));
+//               // print("1");
+//               String jsonStr = jsonEncode(params);
+//               // print("2");
+//               final cPtr = jsonStr.toNativeUtf8().cast<Char>();
+//               // print("3");
+//               final resultPtr = bindings.someImport(cPtr);
+//               // print("4");
+//               final resultJsonString = resultPtr.cast<Utf8>().toDartString();
+//               //   print(resultJsonString);
+//               // print("5");
+//               bindings.freeString(resultPtr);
+//               // print("6");
+//               malloc.free(cPtr);
+//               // print("导入成功");
 
-Future<SendPort> isolateSendPort = () async {
-  final initCompleter = Completer<SendPort>();
+//               final resultObj =
+//                   jsonDecode(resultJsonString) as Map<String, dynamic>;
 
-  final receivePort = ReceivePort()
-    ..listen((dynamic data) {
-      if (data is SendPort) {
-        // The helper isolate sent us the port on which we can sent it requests.
-        initCompleter.complete(data);
-        return;
-      }
-      if (data is _TaskResponse) {
-        // 把辅助隔离区中的异常打印到终端（否则静默崩溃无法调试）
-        // print("接收到回复消息");
-        // if (data.results.containsKey('error')) {
-        //   print('❌ DLL Isolate 错误: ${data.results['error']}');
-        //   print('堆栈: ${data.results['stack']}');
-        // }
-        // 根据响应中的 id 取出对应的 Completer
-        final completer = _pendingRequests.remove(data.id);
-        if (completer != null && !completer.isCompleted) {
-          // 这里就把结果“发送到外部”了——因为 completer.future 正被外部 await
-          completer.complete(data.results);
-        }
-        return;
-      }
-      throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
-    });
+//               // 用 List<dynamic> 接收，避免空数组时 as List<Map<...>> 类型转换失败
+//               //对象只能用as Map<String,dynamic>接收,数组只能用List<dynamic>接收
+//               //第一次写jsonDecode(resultJsonString) as Map<String, Object?>;没有报错的原因是Object是dynamic的基类
+//               //向上转型永远成功
+//               final songsRaw = resultObj[B_songImport.songs] as List<dynamic>;
+//               final errorFilesRaw =
+//                   resultObj[B_songImport.errorFiles] as Map<String, dynamic>;
 
-  // Start the helper isolate.
-  await Isolate.spawn((SendPort sendPort) async {
-    final ReceivePort helperReceivePort = ReceivePort()
-      ..listen((dynamic data) {
-        // On the helper isolate listen to requests and respond to them.
-        // print("开始执行DLL隔离区函数");
-        if (data is _TaskRequest) {
-          try {
-            final name = data.funcName;
-            final params = data.params;
-            Map<String, Object?> results = {}; //Map为空和NULL是两种东西
-            if (name == B_getAllSongs.name) {
-              // print("开始全量加载歌曲元数据");
-              final cPtr = bindings.getAllSongs();
-              final dartString = cPtr.cast<Utf8>().toDartString(); //解码
-              Map<String, dynamic> obj = jsonDecode(dartString);
-              bindings.freeString(cPtr);
-              assert(obj.containsKey(B_getAllSongs.songsList));
-              final songs = obj[B_getAllSongs.songsList] as List<dynamic>;
-              List<SongInfo> songsList = [];
-              for (int i = 0; i < songs.length; i++) {
-                final song = songs[i];
-                songsList.add(SongInfo.fromJson(song as Map<String, dynamic>));
-              }
-              results[B_getAllSongs.songsList] = songsList;
-            } else if (name == B_songImport.name) {
-              // print("开始导入文件");
-              assert(params.containsKey(B_songImport.filePaths));
-              // print("1");
-              String jsonStr = jsonEncode(params);
-              // print("2");
-              final cPtr = jsonStr.toNativeUtf8().cast<Char>();
-              // print("3");
-              final resultPtr = bindings.someImport(cPtr);
-              // print("4");
-              final resultJsonString = resultPtr.cast<Utf8>().toDartString();
-              //   print(resultJsonString);
-              // print("5");
-              bindings.freeString(resultPtr);
-              // print("6");
-              malloc.free(cPtr);
-              // print("导入成功");
+//               List<SongInfo> songsList = [];
+//               for (int i = 0; i < songsRaw.length; i++) {
+//                 songsList.add(
+//                   SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>),
+//                 );
+//               }
+//               List<String> errorFiles = [];
+//               errorFilesRaw.forEach((key, value) {
+//                 errorFiles.add("$key:$value");
+//               });
+//               results[B_songImport.songs] = songsList;
+//               results[B_songImport.errorFiles] = errorFiles;
+//             }
+//             // print("准备发送回复消息");
+//             sendPort.send(_TaskResponse(data.id, results));
+//           } catch (e, stack) {
+//             // print("堆栈错误");
+//             sendPort.send(
+//               _TaskResponse(data.id, {'error': '$e', 'stack': '$stack'}),
+//             );
+//           }
+//         } else {
+//           // print("类型错误");
+//           sendPort.send(
+//             _TaskResponse(data.id, {
+//               'error': 'Unsupported message type: ${data.runtimeType}',
+//             }),
+//           );
+//         }
+//       });
 
-              final resultObj =
-                  jsonDecode(resultJsonString) as Map<String, dynamic>;
+//     // Send the port to the main isolate on which we can receive requests.
+//     sendPort.send(helperReceivePort.sendPort); //建立主副隔离区的双向通信
+//   }, receivePort.sendPort);
 
-              // 用 List<dynamic> 接收，避免空数组时 as List<Map<...>> 类型转换失败
-              //对象只能用as Map<String,dynamic>接收,数组只能用List<dynamic>接收
-              //第一次写jsonDecode(resultJsonString) as Map<String, Object?>;没有报错的原因是Object是dynamic的基类
-              //向上转型永远成功
-              final songsRaw = resultObj[B_songImport.songs] as List<dynamic>;
-              final errorFilesRaw =
-                  resultObj[B_songImport.errorFiles] as Map<String, dynamic>;
-
-              List<SongInfo> songsList = [];
-              for (int i = 0; i < songsRaw.length; i++) {
-                songsList.add(
-                  SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>),
-                );
-              }
-              List<String> errorFiles = [];
-              errorFilesRaw.forEach((key, value) {
-                errorFiles.add("$key:$value");
-              });
-              results[B_songImport.songs] = songsList;
-              results[B_songImport.errorFiles] = errorFiles;
-            }
-            // print("准备发送回复消息");
-            sendPort.send(_TaskResponse(data.id, results));
-          } catch (e, stack) {
-            // print("堆栈错误");
-            sendPort.send(
-              _TaskResponse(data.id, {'error': '$e', 'stack': '$stack'}),
-            );
-          }
-        } else {
-          // print("类型错误");
-          sendPort.send(
-            _TaskResponse(data.id, {
-              'error': 'Unsupported message type: ${data.runtimeType}',
-            }),
-          );
-        }
-      });
-
-    // Send the port to the main isolate on which we can receive requests.
-    sendPort.send(helperReceivePort.sendPort); //建立主副隔离区的双向通信
-  }, receivePort.sendPort);
-
-  return initCompleter.future;
-}(); //立即执行函数只执行一次，且后续永远不会因为任何变量“改变”而重新执行
+//   return initCompleter.future;
+// }(); //立即执行函数只执行一次，且后续永远不会因为任何变量“改变”而重新执行

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Macro/SongInfo.hpp"
+#include "Macro/SongInfoMacro.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
 #include <optional>

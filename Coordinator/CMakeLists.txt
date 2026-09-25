@@ -1,5 +1,5 @@
 
-add_library(JunkFusionCoordinator STATIC)
+add_library(JunkFusionCoordinator SHARED)
 
 target_link_directories(JunkFusionCoordinator
     PRIVATE

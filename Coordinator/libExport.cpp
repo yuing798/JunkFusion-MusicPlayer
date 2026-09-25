@@ -1,7 +1,7 @@
 #include "./libExport.h"
 #include "./dllManager.hpp"
 #include "Macro/audioMacro.hpp"
-#include "Macro/coordinatorAndUIBridge.hpp"
+#include "Macro/coordinatorMacro.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
@@ -23,12 +23,6 @@ extern "C" {
     }
     int toggleMyLike(long long songId) {
         return dllManager::getInstance().getSongsManager().reverseMyLike(songId);
-    }
-    const char* getAllSongs() {
-        auto songs = dllManager::getInstance().getSongsManager().getAllSongs();
-        auto obj{new juce::DynamicObject()};
-        obj->setProperty(CoordinatorMacro::songsList, songs);
-        return ConvertUtils::object2Uint8t(obj);
     }
     void saveComment(long long songId, const char* commentText) {
         dllManager::getInstance().getSongsManager().saveComment(commentText, songId);
@@ -154,5 +148,8 @@ extern "C" {
 
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
+    }
+    void registerOnGetAllSongsOver(StringFunc cb) {
+        dllManager::getInstance().onGetAllSongOver = cb;
     }
 }

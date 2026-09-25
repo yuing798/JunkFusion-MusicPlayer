@@ -56,17 +56,6 @@ class JunkFusionDLLBindings {
   late final _freeString = _freeStringPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
-  ffi.Pointer<ffi.Char> getAllSongs() {
-    return _getAllSongs();
-  }
-
-  late final _getAllSongsPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-        'getAllSongs',
-      );
-  late final _getAllSongs = _getAllSongsPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function()>();
-
   ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
     return _getTimeDomainSpecBySongId(songId);
   }
@@ -118,6 +107,29 @@ class JunkFusionDLLBindings {
       );
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
       .asFunction<void Function(StringFunc)>();
+
+  void registerOnGetAllSongsOver(StringFunc cb) {
+    return _registerOnGetAllSongsOver(cb);
+  }
+
+  late final _registerOnGetAllSongsOverPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
+        'registerOnGetAllSongsOver',
+      );
+  late final _registerOnGetAllSongsOver = _registerOnGetAllSongsOverPtr
+      .asFunction<void Function(StringFunc)>();
+
+  void registerOnLightSongDataImportOver(StringFunc cb) {
+    return _registerOnLightSongDataImportOver(cb);
+  }
+
+  late final _registerOnLightSongDataImportOverPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
+        'registerOnLightSongDataImportOver',
+      );
+  late final _registerOnLightSongDataImportOver =
+      _registerOnLightSongDataImportOverPtr
+          .asFunction<void Function(StringFunc)>();
 
   void registerOnPlayNextSong(VoidFunc cb) {
     return _registerOnPlayNextSong(cb);
@@ -172,18 +184,16 @@ class JunkFusionDLLBindings {
   late final _sendSliderValue = _sendSliderValuePtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, double, int)>();
 
-  ffi.Pointer<ffi.Char> someImport(ffi.Pointer<ffi.Char> arg0) {
+  void someImport(ffi.Pointer<ffi.Char> arg0) {
     return _someImport(arg0);
   }
 
   late final _someImportPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
-        >
-      >('someImport');
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'someImport',
+      );
   late final _someImport = _someImportPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
   int toggleMyLike(int songId) {
     return _toggleMyLike(songId);

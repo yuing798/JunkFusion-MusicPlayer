@@ -4,9 +4,9 @@ description: "auto generate dll bridge in dart"
 output: "lib/bridge/native_bindings_generated.dart"
 headers:
   entry-points:
-    - "../DLL/libExport.h"
+    - "../Coordinator/libExport.h"
   include-directives:
-    - "../DLL/libExport.h"
+    - "../Coordinator/libExport.h"
 comments:
   style: any
   length: full
