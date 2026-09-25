@@ -39,13 +39,11 @@ extern "C" {
             free(str);
         }
     }
-    const char* someImport(const char* jsonStr) {
+    void someImport(const char* jsonStr) {
         auto logger{spdlog::get(LogDllID)};
         // logger->info("接收到的信息为：{}", jsonStr);
         logger->info("开始导入歌曲");
         Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
-        // auto obj = DllUtils::charPtr2object(jsonStr);
-        // auto filePaths =
         auto filePaths{obj.read(CoordinatorMacro::filePaths)};
         juce::Array<juce::var> songs;
         juce::Array<juce::var> errorFiles;
@@ -82,7 +80,10 @@ extern "C" {
             // successFilesString
         };
         logger->info(resultStr);
-        return ConvertUtils::object2Uint8t(resultObj);
+        if (dllManager::getInstance().onLightSongDataImportOver)
+            dllManager::getInstance().onLightSongDataImportOver(
+                ConvertUtils::object2Uint8t(resultObj)
+            );
     }
     void closeBackend() {
         spdlog::get(LogDllID)->debug("准备关闭后端");
@@ -150,4 +151,8 @@ extern "C" {
         }
     }
     void registerOnPlayNextSong(VoidFunc cb) { dllManager::getInstance().onPlayNextSong = cb; }
+
+    void registerOnLightSongDataImportOver(StringFunc cb) {
+        dllManager::getInstance().onLightSongDataImportOver = cb;
+    }
 }

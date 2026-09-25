@@ -69,4 +69,26 @@ for(let i=0;i<outputPaths.length;i++){
     fs.writeFileSync(outputPaths[i], jsContent);
     console.log("js file generate success");
   }
+  if(extension === "dart"){
+    const dartLines = []
+    dartLines.push('//warning:this file will be generated auto,dont modify it by yourself\n');
+    dartLines.push('\n');
+    dartLines.push(`abstract class ${nameSpaceName} {\n`);
+
+    for(const key of Object.keys(defs)){
+      dartLines.push("  ");
+      if(defs[key] !== ""){
+        dartLines.push(`static const String ${key} = "${defs[key]}";`);
+      }else{
+        dartLines.push(`static const String ${key} = "${key}";`);
+      }
+
+      dartLines.push("\n");
+    }
+    dartLines.push("}\n");
+
+    const dartContent = dartLines.join('')
+    fs.writeFileSync(outputPaths[i], dartContent);
+    console.log("dart file generate success");
+  }
 }

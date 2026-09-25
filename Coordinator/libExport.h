@@ -1,9 +1,9 @@
 #ifndef LIB_EXPORT_H
 #define LIB_EXPORT_H
 #ifdef _WIN32
-    #define __declspec(dllexport)
+    #define DLL_EXPORT __declspec(dllexport)
 #else
-    #define __attribute__((visibility("default")))
+    #define DLL_EXPORT __attribute__((visibility("default")))
 #endif
 
 typedef void (*StringFunc)(const char* str);
@@ -14,22 +14,25 @@ typedef void (*VoidFunc)();
 extern "C" {
 #endif
 
-    void dllInit(const char* cacheDirId,
-                 const char* exeDirPtr); // dll初始化
-    int toggleMyLike(long long songId);
-    const char* getAllSongs();
-    void saveComment(long long songId, const char* commentText);
-    void freeString(char* str);
-    const char* someImport(const char*);
-    void closeBackend(); // dll注销
-    void registerErrorSendCallback(StringFunc cb);
-    void play(long long songId, double targetPTS);
-    void pausePlay(); // 暂停播放
-    void registerCurrentPTSCallback(DoubleFunc doubleFunc);
-    void registerTimeDomainSpecInsertOver(StringFunc cb);
-    const char* getTimeDomainSpecBySongId(long long songId);
-    void sendSliderValue(const char* identify, double value, int isOSC);
-    void registerOnPlayNextSong(VoidFunc cb);
+    DLL_EXPORT void dllInit(const char* cacheDirId,
+                            const char* exeDirPtr); // dll初始化
+    DLL_EXPORT int toggleMyLike(long long songId);
+    DLL_EXPORT const char* getAllSongs();
+    DLL_EXPORT void saveComment(long long songId, const char* commentText);
+    DLL_EXPORT void freeString(char* str);
+    DLL_EXPORT void someImport(const char*);
+    DLL_EXPORT void closeBackend(); // dll注销
+    DLL_EXPORT void registerErrorSendCallback(StringFunc cb);
+    DLL_EXPORT void play(long long songId, double targetPTS);
+    DLL_EXPORT void pausePlay(); // 暂停播放
+    DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
+    DLL_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
+    DLL_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
+    DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
+    DLL_EXPORT void registerOnPlayNextSong(VoidFunc cb); // 请求播放下一首歌曲
+    DLL_EXPORT void registerOnLightSongDataImportOver(
+        StringFunc cb
+    ); // 轻量歌曲数据导入完成的回调，这个回调是发送所有歌曲信息
 
 #ifdef __cplusplus
 }
