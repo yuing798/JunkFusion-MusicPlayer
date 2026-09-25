@@ -27,8 +27,8 @@ if (MSVC)
     add_compile_options(/utf-8)
 endif()
 
-add_subdirectory(DLL)
-add_subdirectory(AudioProcess)
+add_subdirectory(Coordinator)
+add_subdirectory(AudioProcessor)
 add_subdirectory(Utils)
 
 
@@ -36,26 +36,36 @@ add_subdirectory(Utils)
 #add_custom_target 定义了一个不生成具体文件的构建目标
 #DEPENDS:它强制 CMake 在构建 DeployRuntime 之前，必须先构建完成这两个项目。
 add_custom_target(DeployRuntime ALL
-    DEPENDS JunkFusionDLL JunkFusionAudioProcess  # 依赖两个核心目标
+    DEPENDS JunkFusionCoordinator JunkFusionAudioProcess  # 依赖两个核心目标
     COMMENT "准备部署运行时库到 Flutter 目录..."
 )
 
 # $<CONFIG> 是 CMake 中极其核心的一个生成器表达式（Generator Expression），它的含义非常直白：
 # 它会在构建（编译）时，被替换为当前激活的构建配置名称
 # 他对应的是当前的CMAKE_BUILD_TYPE
-target_compile_definitions(JunkFusionDLL PRIVATE
+target_compile_definitions(JunkFusionCoordinator PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
 target_compile_definitions(JunkFusionAudioProcess PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
 
-set_target_properties(JunkFusionDLL PROPERTIES
+set_target_properties(JunkFusionCoordinator PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
 set_target_properties(JunkFusionAudioProcess PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
+
+target_link_libraries(JunkFusionCoordinator 
+    PRIVATE
+        JunkFusionUtils
+)
+target_link_libraries(JunkFusionAudioProcess
+    PRIVATE
+        JunkFusionUtils
+)
+
 
 #将复制动作绑定到这个自定义目标上
 add_custom_command(TARGET DeployRuntime POST_BUILD

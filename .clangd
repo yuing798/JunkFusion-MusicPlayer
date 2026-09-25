@@ -1,7 +1,4 @@
 # .clangd
-Diagnostics:
-  Suppress:
-    - -Wunused-const-variable
 
 CompileFlags:
   CompilationDatabase: "build/debug"

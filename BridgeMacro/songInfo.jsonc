@@ -1,0 +1,26 @@
+{
+  //歌曲信息
+  "songId":"",
+  "duration":"",
+  "title":"",
+  "artist":"",
+  "album":"",
+  "albumArtist":"",
+  "genre":"",
+  "trackNumber":"",
+  "discNumber":"",
+  "year":"",
+  "composer":"",
+  "bitRate":"",
+  "sampleRate":"",
+  "channelLayout":"",
+  "bitDepth":"",
+  "codecName":"",
+  "aiGenre":"",
+  "bpm":"",
+  "key":"",
+  "isMyLike":"",
+  "comment":"",
+  "playNum":"",
+  "hash":""
+}

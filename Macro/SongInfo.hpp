@@ -1,0 +1,27 @@
+//warning:this file will be generated auto,dont modify it by yourself
+#pragma once
+namespace SongInfoMacro{
+    static constexpr const char* songId = "songId" ;
+    static constexpr const char* duration = "duration" ;
+    static constexpr const char* title = "title" ;
+    static constexpr const char* artist = "artist" ;
+    static constexpr const char* album = "album" ;
+    static constexpr const char* albumArtist = "albumArtist" ;
+    static constexpr const char* genre = "genre" ;
+    static constexpr const char* trackNumber = "trackNumber" ;
+    static constexpr const char* discNumber = "discNumber" ;
+    static constexpr const char* year = "year" ;
+    static constexpr const char* composer = "composer" ;
+    static constexpr const char* bitRate = "bitRate" ;
+    static constexpr const char* sampleRate = "sampleRate" ;
+    static constexpr const char* channelLayout = "channelLayout" ;
+    static constexpr const char* bitDepth = "bitDepth" ;
+    static constexpr const char* codecName = "codecName" ;
+    static constexpr const char* aiGenre = "aiGenre" ;
+    static constexpr const char* bpm = "bpm" ;
+    static constexpr const char* key = "key" ;
+    static constexpr const char* isMyLike = "isMyLike" ;
+    static constexpr const char* comment = "comment" ;
+    static constexpr const char* playNum = "playNum" ;
+    static constexpr const char* hash = "hash" ;
+}

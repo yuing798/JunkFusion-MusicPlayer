@@ -1,6 +1,8 @@
 #pragma once
 
 #include "juce_core/juce_core.h"
+
+// 用于安全读取json的类
 class Yvar {
 private:
     juce::var value{};

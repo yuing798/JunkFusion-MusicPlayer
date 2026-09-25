@@ -1,0 +1,10 @@
+{
+
+  "filePaths":"",//文件路径数组
+  "errorFiles":"",//失败的文件数组
+  "errorFileName":"",//失败的文件名称
+  "errorFileReason":"",//失败原因
+  "songId":"",
+  "songsList":"songsList",//歌曲列表
+  "timeDomainSpecs":""//时域图数组
+}

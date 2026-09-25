@@ -1,6 +1,5 @@
 #pragma once
 #include "juce_core/juce_core.h"
-#include <SQLiteCpp/Exception.h>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -12,30 +11,9 @@
 #include <vector>
 #include <zmq.hpp>
 
-// class logSystem {
-// private:
-//     static constexpr size_t numLogs{7};
+namespace OtherUtils {
 
-//     // ── 日志器实例 ──
-//     // 3: ai_worker.log     — AI 跨进程 IPC (Info, async)
-//     // 4: vst_host.log      — VST/AU 插件宿主 (Warn)
-//     // 5: crash.log         — 全进程崩溃转储 (Fatal)
-//     // 6: all.log           — 全量汇聚开发调试 (Debug, async, release 关闭)
-
-//     std::shared_ptr<spdlog::logger> schedulerLogger;
-//     std::shared_ptr<spdlog::logger> aiLogger;
-//     std::shared_ptr<spdlog::logger> vstLogger;
-//     std::shared_ptr<spdlog::logger> crashLogger;
-//     std::shared_ptr<spdlog::logger> allLogger;
-
-// public:
-//     logSystem();
-//     // void sqlError(SQLite::Exception&);
-
-//     void init();
-// };
-
-namespace Utils {
+    void initAudioLogger(juce::File cacheDir); // 初始化日志
     // 输出错误码
     std::string ffmpegErrorOutput(int result);
 
@@ -57,4 +35,4 @@ namespace Utils {
     // 计算相似度分数（0 ~1）
     double stringSimilarity(const juce::String& s1, const juce::String& s2);
 
-} // namespace Utils
+} // namespace OtherUtils
