@@ -39,11 +39,13 @@ extern "C" {
             auto logger{spdlog::get(LogDllID)};
             // logger->info("接收到的信息为：{}", jsonStr);
             logger->info("开始导入歌曲");
+            // logger->debug("jsonStr == {}", jsonStr);
             Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
             auto filePaths{obj.read(CoordinatorMacro::filePaths)};
             juce::Array<juce::var> songs;
             juce::Array<juce::var> errorFiles;
             for (int i = 0; i < filePaths.size(); i++) {
+                logger->debug("获取导入路径:{}", filePaths.read(i).toString().toStdString());
                 auto path = juce::File(filePaths.read(i).toString());
                 auto result = dllManager::getInstance().getSongsManager().insertSong(path);
                 if (result.errorMsg.empty()) {

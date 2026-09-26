@@ -32,8 +32,8 @@ class SongProvider extends ChangeNotifier {
     Map<String, dynamic> obj = jsonDecode(dartString);
     final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
     for (final song in songsRaw) {
-      print("歌曲信息为");
-      print(song);
+      // print("歌曲信息为");
+      // print(song);
       _songs.add(SongInfo.fromJson(song as Map<String, dynamic>));
     }
     notifyListeners();
@@ -84,10 +84,12 @@ class SongProvider extends ChangeNotifier {
           .whereType<String>() // 过滤掉 null，转换为 Iterable<String>
           .toList(); // 转为 List<String>
 
-      String pathsPtr = jsonEncode(filePaths);
-      // print("2");
-      final cPtr = pathsPtr.toNativeUtf8().cast<Char>();
-      // print("3");
+      Map<String, List<String>> jsonMap = {
+        CoordinatorMacro.filePaths: filePaths,
+      };
+
+      String jsonMapStr = jsonEncode(jsonMap);
+      final cPtr = UtilFunction.string2cPtr(jsonMapStr);
       bindings.someImport(cPtr);
     }
   }
