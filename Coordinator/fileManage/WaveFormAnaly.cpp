@@ -6,7 +6,9 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <array>
 #include <chromaprint.h>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <mutex>
@@ -14,7 +16,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -62,6 +63,7 @@ void WaveFormAnaly::run() {
 void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
 
     int result{0}; // 解码层结果，一般成功返回零
+    av_log_set_level(AV_LOG_ERROR);
     AVFormatContext* inputContext{nullptr};
     avformat_open_input(&inputContext, task.path.c_str(), nullptr, nullptr);
     avformat_find_stream_info(inputContext, nullptr);
@@ -72,8 +74,10 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
 
     // 时长（秒）
     double duration{0.0f};
-    if (inputContext->duration != AV_NOPTS_VALUE) {
+    if (pAudioStream->duration != AV_NOPTS_VALUE) {
         duration = pAudioStream->duration * av_q2d(pAudioStream->time_base);
+    } else if (inputContext->duration != AV_NOPTS_VALUE) {
+        duration = inputContext->duration / (double)AV_TIME_BASE;
     }
     auto* decoderPar = pAudioStream->codecpar;
 
@@ -97,25 +101,21 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         );
     swr_init(swrContext);
 
-    juce::AudioBuffer<double> blobBuffer; // 存入数据库的波形图数组
+    std::array<double, 128> blobBuffer{}; // 存入数据库的波形图数组,前端显示128根柱子
 
-    int64_t totalSamples = static_cast<int64_t>(duration * (double)decoderPar->sample_rate);
+    int64_t totalSamples{static_cast<int64_t>(duration * (double)11025)};
 
-    // 前端显示128根柱子
-    blobBuffer.setSize(1, 128);
-    blobBuffer.clear();
-    auto samplePerLeftBin = static_cast<int64_t>(totalSamples / 128); // 每根柱子容纳多少个采样点
+    auto samplePerLeftBin{static_cast<int64_t>(totalSamples / 128)}; // 每根柱子容纳多少个采样点
     auto samplePerRightBin{
         samplePerLeftBin + 1
     }; // 靠右的格子为靠左的加一，因为总数可能不会被128整除
-    auto num4LeftBin{totalSamples - 128 * samplePerLeftBin}; // 左边柱子的数目
+    auto num4LeftBin{samplePerRightBin * 128 - totalSamples}; // 左边柱子的数目
 
     int binCount{0};         // 帧循环中使用了多少根柱子
     int sampleCount{0};      // 每个柱子中已经存储了多少个样本点
     double squarePlus{0.0f}; // 平方和
 
     auto pushDataIntoAudioGraph = [&](uint8_t* outputArray, int swrResult) {
-        auto* dest = blobBuffer.getWritePointer(0);
         const int16_t* src = reinterpret_cast<const int16_t*>(outputArray);
         for (int i = 0; i < swrResult; i++) {
             if (binCount >= 128) return;
@@ -129,7 +129,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
                     sampleCount = 0;
 
                     auto rms{std::sqrt(squarePlus / samplePerLeftBin)};
-                    dest[binCount] = rms;
+                    blobBuffer[binCount] = rms;
                     binCount++;
                     squarePlus = 0.0f;
                 }
@@ -138,7 +138,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
                     sampleCount = 0;
 
                     auto rms{std::sqrt(squarePlus / samplePerRightBin)};
-                    dest[binCount] = rms;
+                    blobBuffer[binCount] = rms;
                     binCount++;
                     squarePlus = 0.0f;
                 }
@@ -188,7 +188,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
                 nullptr,      // 物理字节大小
                 1,
                 numOutputSamples,
-                AV_SAMPLE_FMT_DBLP, // 指纹提取要求单通道且原始PCM格式
+                AV_SAMPLE_FMT_S16P, // 指纹提取要求单通道且原始PCM格式
                 0
             );
 
@@ -212,11 +212,11 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
                 continue;
             }
 
-            av_frame_unref(frame);
-
             pushDataIntoAudioGraph(outputArray, num4SwrSamples);
 
             currentSeconds += (double)frame->nb_samples / (double)decoderPar->sample_rate;
+
+            av_frame_unref(frame);
 
             // 喂入指纹上下文
             if (needOnlineSearch && currentSeconds < 90.0)
@@ -263,18 +263,14 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             frame->nb_samples
         ); // 执行重采样，返回实际重采样完的样本点个数
 
-        av_frame_unref(frame); // 这时候frame已经没有用了
-        // 这个函数的目的是清空重置，而av_frame_free的作用是彻底删除
-        // 前面那个可以理解做清空数组，后面那个意味着连数组的内存也一起销毁
-
         if (result <= 0) {
             av_freep(&outputArray);
             continue;
         }
 
         pushDataIntoAudioGraph(outputArray, result);
-
         currentSeconds += (double)frame->nb_samples / (double)decoderPar->sample_rate;
+        av_frame_unref(frame);
         if (needOnlineSearch && currentSeconds < 90.0)
             chromaprint_feed(printContext, (int16_t*)outputArray, result);
 
@@ -294,7 +290,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             if (ret <= 0) break;
             pushDataIntoAudioGraph(outputArray, ret);
 
-            currentSeconds += (double)maxFlushSamples / (double)decoderPar->sample_rate;
+            currentSeconds += (double)ret / (double)decoderPar->sample_rate;
             if (needOnlineSearch && currentSeconds < 90.0)
                 chromaprint_feed(printContext, (int16_t*)outputArray, ret);
         }
@@ -303,6 +299,13 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             av_freep(&outputArray);
         }
     }
+
+    if (binCount < 128 && sampleCount > 0) {
+        // 此时 squarePlus 里面装的就是最后剩下的那些样本的平方和
+        blobBuffer[binCount] = std::sqrt(squarePlus / sampleCount);
+        binCount++;
+    }
+
     av_frame_free(&frame);
     av_packet_free(&packet);
     swr_free(&swrContext);
@@ -332,23 +335,23 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         );
         sql.bind(
             ":timeDomainSpec",
-            blobBuffer.getReadPointer(0),
-            static_cast<int>(blobBuffer.getNumSamples() * sizeof(double))
+            blobBuffer.data(),
+            static_cast<int>(blobBuffer.size() * sizeof(double))
         ); // 时域图
         sql.bind(":filePath", task.path);
 
-        // std::string spdlogStr{""};
-        // spdlog::get(LogDllID)->debug(
-        //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
-        //     file,
-        //     buffer.getNumSamples(),
-        //     static_cast<int>(buffer.getNumSamples() * sizeof(double))
-        // );
-        // for (int i = 0; i < buffer.getNumSamples(); i++) {
+        std::string spdlogStr{""};
+        spdlog::get(LogDllID)->debug(
+            "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
+            task.path,
+            blobBuffer.size(),
+            static_cast<int>(blobBuffer.size() * sizeof(double))
+        );
+        for (size_t i = 0; i < blobBuffer.size(); i++) {
 
-        //     spdlogStr += std::to_string(buffer.getReadPointer(0)[i]) + " ";
-        // }
-        // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
+            spdlogStr += std::to_string(blobBuffer[i]) + " ";
+        }
+        spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
 
         sql.exec();
         auto fileName{juce::File(task.path).getFileName()};

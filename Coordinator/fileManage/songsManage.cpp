@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+
 #include <memory>
 #include <optional>
 #include <sha1.h>
@@ -28,6 +29,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/dict.h>
+#include <libavutil/log.h>
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
 }
@@ -124,6 +126,7 @@ std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* 
 InsertSongInfo SongsManage::insertSong(const juce::File& path) {
     SongInfo info{};
     OnlineGetMatedata::Task onlineTask{};
+    av_log_set_level(AV_LOG_ERROR);
     std::string filePath = path.getFullPathName().toStdString();
     int64_t fileSize = path.getSize();
     std::string lastModifiedTime =

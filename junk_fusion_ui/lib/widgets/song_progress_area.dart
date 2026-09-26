@@ -172,7 +172,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                               child: CustomPaint(
                                 painter: SpectrumPainter(
                                   data: playback.timeDomainSpec,
-                                  waveColor: theme.colorCell,
+                                  waveColor: theme.colorShadow,
                                 ),
                               ),
                             ),
