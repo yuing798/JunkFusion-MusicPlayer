@@ -88,11 +88,12 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
 
     SwrContext* swrContext{nullptr};
     AVChannelLayout mono = AV_CHANNEL_LAYOUT_MONO;
+    const int targetSampleRate{11025};
     swr_alloc_set_opts2( // 下面初始化重采样器
             &swrContext, 
             &mono,//单通道 
             AV_SAMPLE_FMT_S16P,
-            11025, //Chromaprint 输入音频的格式必须是11025
+            targetSampleRate, //Chromaprint 输出音频采样率必须为11025
             &decoderPar->ch_layout,
             static_cast<AVSampleFormat>(decoderPar->format), 
             decoderPar->sample_rate, 
@@ -103,7 +104,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
 
     std::array<double, 128> blobBuffer{}; // 存入数据库的波形图数组,前端显示128根柱子
 
-    int64_t totalSamples{static_cast<int64_t>(duration * (double)11025)};
+    int64_t totalSamples{static_cast<int64_t>(duration * (double)targetSampleRate)};
 
     auto samplePerLeftBin{static_cast<int64_t>(totalSamples / 128)}; // 每根柱子容纳多少个采样点
     auto samplePerRightBin{
@@ -160,7 +161,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     if (needOnlineSearch) {
         // 音频指纹提取初始化
         printContext = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
-        chromaprint_start(printContext, 11025, 1); // 指纹提取强制这个格式
+        chromaprint_start(printContext, targetSampleRate, 1); // 指纹提取强制这个格式
     }
     double currentSeconds{0.0}; // 指纹提取只提取前90秒
 
@@ -178,9 +179,12 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
                 swr_get_delay(swrContext, decoderPar->sample_rate) + frame->nb_samples
             };
 
-            auto numOutputSamples{
-                av_rescale_rnd(numInputSamples, 11025, decoderPar->sample_rate, AV_ROUND_UP)
-            };
+            auto numOutputSamples{av_rescale_rnd(
+                numInputSamples,
+                targetSampleRate,
+                decoderPar->sample_rate,
+                AV_ROUND_UP
+            )};
 
             uint8_t* outputArray{nullptr};
             result = av_samples_alloc(
@@ -234,7 +238,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         };
 
         auto numOutputSamples{
-            av_rescale_rnd(numInputSamples, 11025, decoderPar->sample_rate, AV_ROUND_UP)
+            av_rescale_rnd(numInputSamples, targetSampleRate, decoderPar->sample_rate, AV_ROUND_UP)
         };
 
         uint8_t* outputArray{nullptr};
@@ -340,18 +344,18 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         ); // 时域图
         sql.bind(":filePath", task.path);
 
-        std::string spdlogStr{""};
-        spdlog::get(LogDllID)->debug(
-            "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
-            task.path,
-            blobBuffer.size(),
-            static_cast<int>(blobBuffer.size() * sizeof(double))
-        );
-        for (size_t i = 0; i < blobBuffer.size(); i++) {
+        // std::string spdlogStr{""};
+        // spdlog::get(LogDllID)->debug(
+        //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
+        //     task.path,
+        //     blobBuffer.size(),
+        //     static_cast<int>(blobBuffer.size() * sizeof(double))
+        // );
+        // for (size_t i = 0; i < blobBuffer.size(); i++) {
 
-            spdlogStr += std::to_string(blobBuffer[i]) + " ";
-        }
-        spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
+        //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
+        // }
+        // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
 
         sql.exec();
         auto fileName{juce::File(task.path).getFileName()};

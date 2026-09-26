@@ -33,6 +33,8 @@ private:
 
     // 辅助函数：判断是否为“群星/合集”类通配名字
     bool isVariousArtists(const std::string& name);
+    // 搜索专辑图片，因为可能需要分为多次搜索
+    std::optional<std::string> searchCoverURL(std::string term, std::string entity);
 
 public:
     OnlineGetMatedata(SQLite::Database& db);

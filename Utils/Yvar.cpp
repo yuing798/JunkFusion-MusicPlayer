@@ -25,6 +25,13 @@ double Yvar::toDouble() const {
         return 0.0;
     }
 }
+double Yvar::toInt() const {
+    if (value.isInt()) {
+        return static_cast<int>(value);
+    } else {
+        return -1;
+    }
+}
 
 juce::String Yvar::toString() {
 

@@ -64,7 +64,7 @@ dev_dependencies:
     sdk: flutter
   build_runner: ^2.15.1
   freezed: ^3.2.5
-  json_serializable: ^6.8.0 # 👈 新增：用于生成 JSON 解析代码
+  json_serializable: ^6.8.0 # 用于生成 JSON 解析代码
   ffigen: ^21.0.0
   rename_app: ^1.6.6 #用来改变APP名称的依赖包
   flutter_launcher_icons: ^0.14.4 #用来修改应用图标

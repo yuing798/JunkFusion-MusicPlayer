@@ -18,6 +18,7 @@ public:
     Yvar read(int index) const;
 
     double toDouble() const;
+    double toInt() const;
     juce::String toString();
     bool isVoid() { return value.isVoid(); }
     bool hasProperty(const char* key) { return value.hasProperty(key); }

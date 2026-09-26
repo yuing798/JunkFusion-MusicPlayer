@@ -49,6 +49,9 @@ target_compile_definitions(JunkFusionCoordinator PRIVATE
 target_compile_definitions(JunkFusionAudioProcess PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
+target_compile_definitions(JunkFusionUtils PRIVATE
+    $<$<CONFIG:Debug>:JF_DEBUG>
+)
 
 set_target_properties(JunkFusionCoordinator PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
