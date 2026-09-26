@@ -4,7 +4,7 @@ abstract class SongInfoMacro {
   static const String songId = "songId";
   static const String duration = "duration";
   static const String title = "title";
-  static const String artist = "artist";
+  static const String artists = "artists";
   static const String album = "album";
   static const String albumArtist = "albumArtist";
   static const String genre = "genre";

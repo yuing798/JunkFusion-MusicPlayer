@@ -243,6 +243,7 @@ InsertSongInfo SongsManage::insertSong(const juce::File& path) {
             auto artists = getTags(map, "ARTIST");
             if (!artists.isEmpty()) {
                 onlineTask.artists = artists;
+                info.artists = artists;
             } else {
                 onlineTask.artists = juce::StringArray{};
             } // 艺术家让前端拼接，其他后端直接拼接

@@ -4,7 +4,7 @@ namespace SongInfoMacro{
     static constexpr const char* songId = "songId" ;
     static constexpr const char* duration = "duration" ;
     static constexpr const char* title = "title" ;
-    static constexpr const char* artist = "artist" ;
+    static constexpr const char* artists = "artists" ;
     static constexpr const char* album = "album" ;
     static constexpr const char* albumArtist = "albumArtist" ;
     static constexpr const char* genre = "genre" ;

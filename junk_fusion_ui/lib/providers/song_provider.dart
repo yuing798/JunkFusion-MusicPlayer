@@ -32,6 +32,8 @@ class SongProvider extends ChangeNotifier {
     Map<String, dynamic> obj = jsonDecode(dartString);
     final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
     for (final song in songsRaw) {
+      print("歌曲信息为");
+      print(song);
       _songs.add(SongInfo.fromJson(song as Map<String, dynamic>));
     }
     notifyListeners();

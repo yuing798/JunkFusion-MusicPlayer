@@ -17,4 +17,7 @@ namespace ConvertUtils {
     // 对字符串进行Lucene特殊字符筛选并在前面加上反斜杠
     std::string escapeLucene(const std::string& input);
 
+    // juce::StringArray转换为juce::Array<juce::var>
+    juce::Array<juce::var> stringArray2ArrayVar(juce::StringArray arr);
+
 } // namespace ConvertUtils

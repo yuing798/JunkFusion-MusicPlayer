@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Macro/SongInfoMacro.hpp"
+#include "Utils/convertUtils.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
+
 
 struct SongInfo {
     int64_t songId{0};
@@ -68,7 +70,7 @@ struct SongInfo {
 
         // ── 2. 标签信息 ──
         ptr->setProperty(SongInfoMacro::title, title);
-        ptr->setProperty(SongInfoMacro::artist, artists);
+        ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
         ptr->setProperty(SongInfoMacro::album, optStr(album));
         ptr->setProperty(SongInfoMacro::albumArtist, optStr(albumArtist));
         ptr->setProperty(SongInfoMacro::genre, optStr(genre));
@@ -98,7 +100,7 @@ struct SongInfo {
 
         return juce::var(obj);
         // 这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
-    } // 将songInfo转化为var，才能推送给js端
+    } // 将songInfo转化为var，才能推送给前端
 };
 
 struct InsertSongInfo {

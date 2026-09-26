@@ -35,50 +35,53 @@ extern "C" {
         }
     }
     void someImport(const char* jsonStr) {
-        auto logger{spdlog::get(LogDllID)};
-        // logger->info("接收到的信息为：{}", jsonStr);
-        logger->info("开始导入歌曲");
-        Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
-        auto filePaths{obj.read(CoordinatorMacro::filePaths)};
-        juce::Array<juce::var> songs;
-        juce::Array<juce::var> errorFiles;
-        for (int i = 0; i < filePaths.size(); i++) {
-            auto path = juce::File(filePaths.read(i).toString());
-            auto result = dllManager::getInstance().getSongsManager().insertSong(path);
-            if (result.errorMsg.empty()) {
-                songs.add(result.info.toJson());
-                // successFilesString += path.getFileName().toStdString() + "\n";
-            } else {
-                auto fileNameStr = path.getFileName();
-                juce::var errorFileObj{new juce::DynamicObject()};
+        juce::Thread::launch([jsonStr]() {
+            auto logger{spdlog::get(LogDllID)};
+            // logger->info("接收到的信息为：{}", jsonStr);
+            logger->info("开始导入歌曲");
+            Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
+            auto filePaths{obj.read(CoordinatorMacro::filePaths)};
+            juce::Array<juce::var> songs;
+            juce::Array<juce::var> errorFiles;
+            for (int i = 0; i < filePaths.size(); i++) {
+                auto path = juce::File(filePaths.read(i).toString());
+                auto result = dllManager::getInstance().getSongsManager().insertSong(path);
+                if (result.errorMsg.empty()) {
+                    songs.add(result.info.toJson());
+                    // successFilesString += path.getFileName().toStdString() + "\n";
+                } else {
+                    auto fileNameStr = path.getFileName();
+                    juce::var errorFileObj{new juce::DynamicObject()};
 
-                errorFileObj.getDynamicObject()->setProperty(
-                    CoordinatorMacro::errorFileName,
-                    fileNameStr
-                );
-                errorFileObj.getDynamicObject()->setProperty(
-                    CoordinatorMacro::errorFileReason,
-                    juce::String(result.errorMsg)
-                );
-                errorFiles.add(errorFileObj);
+                    errorFileObj.getDynamicObject()->setProperty(
+                        CoordinatorMacro::errorFileName,
+                        fileNameStr
+                    );
+                    errorFileObj.getDynamicObject()->setProperty(
+                        CoordinatorMacro::errorFileReason,
+                        juce::String(result.errorMsg)
+                    );
+                    errorFiles.add(errorFileObj);
+                }
             }
-        }
-        juce::var resultObj{new juce::DynamicObject()};
-        resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songs);
+            juce::var resultObj{new juce::DynamicObject()};
+            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songs);
 
-        resultObj.getDynamicObject()->setProperty(CoordinatorMacro::errorFiles, errorFiles);
-        std::string resultStr{
-            "导入歌曲完成，成功" + std::to_string(songs.size()) + "首，失败" +
-            std::to_string(errorFiles.size()) + "首\n失败文件：\n" +
-            juce::JSON::toString(errorFiles).toStdString()
-            // + "成功文件" +
-            // successFilesString
-        };
-        logger->info(resultStr);
-        if (dllManager::getInstance().onLightSongDataImportOver)
-            dllManager::getInstance().onLightSongDataImportOver(
-                ConvertUtils::object2Uint8t(resultObj)
-            );
+            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::errorFiles, errorFiles);
+            std::string resultStr{
+                "导入歌曲完成，成功" + std::to_string(songs.size()) + "首，失败" +
+                std::to_string(errorFiles.size()) + "首\n失败文件：\n" +
+                juce::JSON::toString(errorFiles).toStdString()
+                // + "成功文件" +
+                // successFilesString
+            };
+            logger->info(resultStr);
+            if (dllManager::getInstance().onLightSongDataImportOver)
+                dllManager::getInstance().onLightSongDataImportOver(
+                    ConvertUtils::object2Uint8t(resultObj)
+                );
+        });
+        return;
     }
     void closeBackend() {
         spdlog::get(LogDllID)->debug("准备关闭后端");
