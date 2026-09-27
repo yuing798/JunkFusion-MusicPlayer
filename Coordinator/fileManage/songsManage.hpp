@@ -21,15 +21,18 @@ private:
 
     // 获取元数据数组(比如多个艺术家)
     juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
-
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
 
 public:
     explicit SongsManage(SQLite::Database& d);
     // ~SongsManage();
+    struct InsertState {
+        std::string path;
+        std::string msg; // 如果成功没有信息
+    };
 
-    InsertSongInfo insertSong(const juce::File& path);
+    std::vector<InsertState> insertSongs(std::vector<juce::File>& paths);
 
     juce::Array<juce::var> getAllSongs();
 

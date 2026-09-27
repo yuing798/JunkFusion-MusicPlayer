@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-
 struct SongInfo {
     int64_t songId{0};
 
@@ -101,11 +100,6 @@ struct SongInfo {
         return juce::var(obj);
         // 这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
     } // 将songInfo转化为var，才能推送给前端
-};
-
-struct InsertSongInfo {
-    SongInfo info;
-    std::string errorMsg;
 };
 
 // songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）

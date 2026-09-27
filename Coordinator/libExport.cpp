@@ -42,46 +42,45 @@ extern "C" {
             // logger->debug("jsonStr == {}", jsonStr);
             Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
             auto filePaths{obj.read(CoordinatorMacro::filePaths)};
-            juce::Array<juce::var> songs;
-            juce::Array<juce::var> errorFiles;
+            std::vector<juce::File> paths;
             for (int i = 0; i < filePaths.size(); i++) {
-                logger->debug("获取导入路径:{}", filePaths.read(i).toString().toStdString());
-                auto path = juce::File(filePaths.read(i).toString());
-                auto result = dllManager::getInstance().getSongsManager().insertSong(path);
-                if (result.errorMsg.empty()) {
-                    songs.add(result.info.toJson());
-                    // successFilesString += path.getFileName().toStdString() + "\n";
-                } else {
-                    auto fileNameStr = path.getFileName();
-                    juce::var errorFileObj{new juce::DynamicObject()};
-
-                    errorFileObj.getDynamicObject()->setProperty(
-                        CoordinatorMacro::errorFileName,
-                        fileNameStr
-                    );
-                    errorFileObj.getDynamicObject()->setProperty(
-                        CoordinatorMacro::errorFileReason,
-                        juce::String(result.errorMsg)
-                    );
-                    errorFiles.add(errorFileObj);
-                }
+                paths.push_back(juce::File{filePaths.read(i).toString()});
             }
-            juce::var resultObj{new juce::DynamicObject()};
-            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songs);
+            auto insertStates{dllManager::getInstance().getSongsManager().insertSongs(paths)};
+            // if (result.errorMsg.empty()) {
+            //     songs.add(result.info.toJson());
+            //     // successFilesString += path.getFileName().toStdString() + "\n";
+            // } else {
+            //     auto fileNameStr = path.getFileName();
+            //     juce::var errorFileObj{new juce::DynamicObject()};
 
-            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::errorFiles, errorFiles);
-            std::string resultStr{
-                "导入歌曲完成，成功" + std::to_string(songs.size()) + "首，失败" +
-                std::to_string(errorFiles.size()) + "首\n失败文件：\n" +
-                juce::JSON::toString(errorFiles).toStdString()
-                // + "成功文件" +
-                // successFilesString
-            };
-            logger->info(resultStr);
-            if (dllManager::getInstance().onLightSongDataImportOver)
-                dllManager::getInstance().onLightSongDataImportOver(
-                    ConvertUtils::object2Uint8t(resultObj)
-                );
+            //     errorFileObj.getDynamicObject()->setProperty(
+            //         CoordinatorMacro::errorFileName,
+            //         fileNameStr
+            //     );
+            //     errorFileObj.getDynamicObject()->setProperty(
+            //         CoordinatorMacro::errorFileReason,
+            //         juce::String(result.errorMsg)
+            //     );
+            //     errorFiles.add(errorFileObj);
+            // }
+
+            // juce::var resultObj{new juce::DynamicObject()};
+            // resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songs);
+
+            // resultObj.getDynamicObject()->setProperty(CoordinatorMacro::errorFiles, errorFiles);
+            // std::string resultStr{
+            //     "导入歌曲完成，成功" + std::to_string(songs.size()) + "首，失败" +
+            //     std::to_string(errorFiles.size()) + "首\n失败文件：\n" +
+            //     juce::JSON::toString(errorFiles).toStdString()
+            //     // + "成功文件" +
+            //     // successFilesString
+            // };
+            // logger->info(resultStr);
+            // if (dllManager::getInstance().onLightSongDataImportOver)
+            //     dllManager::getInstance().onLightSongDataImportOver(
+            //         ConvertUtils::object2Uint8t(resultObj)
+            //     );
         });
         return;
     }
@@ -155,9 +154,9 @@ extern "C" {
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
-    // void registerOnGetAllSongsOver(StringFunc cb) {
-    //     dllManager::getInstance().onGetAllSongOver = cb;
-    // }
+    void registerOnOnlineGetMatedataOver(StringFunc cb) {
+        dllManager::getInstance().onOnlineGetMatedataOver = cb;
+    }
     const char* getAllSongs() {
         auto songsList = dllManager::getInstance().getSongsManager().getAllSongs();
         auto obj{new juce::DynamicObject()};

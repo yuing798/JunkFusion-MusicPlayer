@@ -123,349 +123,363 @@ std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* 
     }
 }
 
-InsertSongInfo SongsManage::insertSong(const juce::File& path) {
-    SongInfo info{};
-    OnlineGetMatedata::Task onlineTask{};
-    av_log_set_level(AV_LOG_ERROR);
-    std::string filePath = path.getFullPathName().toStdString();
-    int64_t fileSize = path.getSize();
-    std::string lastModifiedTime =
-        path.getLastModificationTime().toString(true, true).toStdString();
+std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce::File>& paths) {
+    std::vector<InsertState> insertStates;
+    for (auto& path : paths) {
+        InsertState state;
+        state.path = path.getFileName().toStdString();
+        SongInfo info{};
+        OnlineGetMatedata::Task onlineTask{};
+        av_log_set_level(AV_LOG_ERROR);
+        std::string filePath = path.getFullPathName().toStdString();
+        int64_t fileSize = path.getSize();
+        std::string lastModifiedTime =
+            path.getLastModificationTime().toString(true, true).toStdString();
 
-    auto logger{spdlog::get(LogDllID)};
+        auto logger{spdlog::get(LogDllID)};
 
-    // ffmpeg解码层信息
-    int result{0}; // 解码层结果，一般成功返回零
-    AVFormatContext* inputContext{nullptr};
-    result = avformat_open_input(&inputContext, filePath.c_str(), nullptr, nullptr);
-    if (result != 0) {
-        // 非多媒体文件也会返回AVERROR
-        // SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
-        if (logger)
-            logger->warn(
-                "多媒体文件无法打开或者打开的是非多媒体文件:{}",
-                OtherUtils ::ffmpegErrorOutput(result)
-            );
-        avformat_close_input(&inputContext);
-        InsertSongInfo errorInfo;
-        errorInfo.errorMsg = "多媒体文件无法打开";
-        return errorInfo;
-    }
-    result = avformat_find_stream_info(inputContext, nullptr);
-    if (result < 0) {
-        // SPDLOG:无法找到流信息
-        if (logger)
-            logger->error("无法找到该文件的流信息:{}", OtherUtils::ffmpegErrorOutput(result));
-        avformat_close_input(&inputContext);
-        InsertSongInfo errorInfo;
-        errorInfo.errorMsg = "无法找到该文件的流信息";
-        return errorInfo;
-    }
+        // ffmpeg解码层信息
+        int result{0}; // 解码层结果，一般成功返回零
+        AVFormatContext* inputContext{nullptr};
+        result = avformat_open_input(&inputContext, filePath.c_str(), nullptr, nullptr);
+        if (result != 0) {
+            // 非多媒体文件也会返回AVERROR
+            // SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
+            if (logger)
+                logger->warn(
+                    "多媒体文件无法打开或者打开的是非多媒体文件:{}",
+                    OtherUtils ::ffmpegErrorOutput(result)
+                );
+            avformat_close_input(&inputContext);
 
-    // 时长（秒）
-    if (inputContext->duration != AV_NOPTS_VALUE) {
-        info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
-    }
+            state.msg = "多媒体文件无法打开";
+            insertStates.push_back(state);
+            continue;
+        }
+        result = avformat_find_stream_info(inputContext, nullptr);
+        if (result < 0) {
+            // SPDLOG:无法找到流信息
+            if (logger)
+                logger->error("无法找到该文件的流信息:{}", OtherUtils::ffmpegErrorOutput(result));
+            avformat_close_input(&inputContext);
 
-    auto currentIndex{av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)};
+            state.msg = "无法找到该文件的流信息";
+            insertStates.push_back(state);
+            continue;
+        }
 
-    auto* pAudioStream = inputContext->streams[currentIndex];
-    auto* decoderPar = pAudioStream->codecpar;
+        // 时长（秒）
+        if (inputContext->duration != AV_NOPTS_VALUE) {
+            info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
+        }
 
-    if (currentIndex < 0) {
-        avformat_close_input(&inputContext);
-        InsertSongInfo errorInfo;
-        errorInfo.errorMsg = "无法找到该文件的音频流";
-        return errorInfo;
-    }
+        auto currentIndex{
+            av_find_best_stream(inputContext, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0)
+        };
 
-    info.codecName = avcodec_get_name(decoderPar->codec_id);
+        auto* pAudioStream = inputContext->streams[currentIndex];
+        auto* decoderPar = pAudioStream->codecpar;
 
-    // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
-    info.bitRate = decoderPar->bit_rate / 1000;
-    if (info.bitRate <= 0 && info.duration > 0.0 && fileSize > 0) {
-        info.bitRate = static_cast<int>(fileSize * 8.0 / info.duration / 1000.0);
-    }
+        if (currentIndex < 0) {
+            avformat_close_input(&inputContext);
 
-    // 采样率（Hz）
-    info.sampleRate = decoderPar->sample_rate;
+            state.msg = "无法找到该文件的音频流";
+            insertStates.push_back(state);
+            continue;
+        }
 
-    // 通道数
-    uint64_t channelLayoutMask{0}; // 通道布局掩码
-    int numChannels{0};            // 这两个先判断掩码是否有，没有再改用通道数
-    if (decoderPar->ch_layout.order == AV_CHANNEL_ORDER_NATIVE) {
-        channelLayoutMask = decoderPar->ch_layout.u.mask;
-    }
-    if (channelLayoutMask == 0) { // 掩码为0说明是不正常文件
-        numChannels = decoderPar->ch_layout.nb_channels;
-        info.channelLayout = juce::String(numChannels) + "声道";
-    } else {
-        AVChannelLayout layout;
-        av_channel_layout_from_mask(&layout, channelLayoutMask);
-        char layoutBuffer[64] = {0};
-        av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
+        info.codecName = avcodec_get_name(decoderPar->codec_id);
 
-        info.channelLayout = juce::String(layoutBuffer);
-    }
+        // 比特率（kbps）——先取编码器报告值，缺失时用文件大小估算
+        info.bitRate = decoderPar->bit_rate / 1000;
+        if (info.bitRate <= 0 && info.duration > 0.0 && fileSize > 0) {
+            info.bitRate = static_cast<int>(fileSize * 8.0 / info.duration / 1000.0);
+        }
 
-    // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
-    int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(decoderPar->format));
-    if (bytesPerSample > 0) {
-        info.bitDepth = bytesPerSample * 8;
-    } else {
-        info.bitDepth = decoderPar->bits_per_coded_sample;
-    }
+        // 采样率（Hz）
+        info.sampleRate = decoderPar->sample_rate;
 
-    // 这里进行tagLib的元数据提取
-    {
+        // 通道数
+        uint64_t channelLayoutMask{0}; // 通道布局掩码
+        int numChannels{0};            // 这两个先判断掩码是否有，没有再改用通道数
+        if (decoderPar->ch_layout.order == AV_CHANNEL_ORDER_NATIVE) {
+            channelLayoutMask = decoderPar->ch_layout.u.mask;
+        }
+        if (channelLayoutMask == 0) { // 掩码为0说明是不正常文件
+            numChannels = decoderPar->ch_layout.nb_channels;
+            info.channelLayout = juce::String(numChannels) + "声道";
+        } else {
+            AVChannelLayout layout;
+            av_channel_layout_from_mask(&layout, channelLayoutMask);
+            char layoutBuffer[64] = {0};
+            av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
+
+            info.channelLayout = juce::String(layoutBuffer);
+        }
+
+        // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
+        int bytesPerSample =
+            av_get_bytes_per_sample(static_cast<AVSampleFormat>(decoderPar->format));
+        if (bytesPerSample > 0) {
+            info.bitDepth = bytesPerSample * 8;
+        } else {
+            info.bitDepth = decoderPar->bits_per_coded_sample;
+        }
+
+        // 这里进行tagLib的元数据提取
+        {
 #if _WIN32
-        // Windows 下 TagLib 需要传入宽字符 (wchar_t) 才能支持中文路径
-        TagLib::FileRef f(path.getFullPathName().toWideCharPointer());
+            // Windows 下 TagLib 需要传入宽字符 (wchar_t) 才能支持中文路径
+            TagLib::FileRef f(path.getFullPathName().toWideCharPointer());
 #else
-        // macOS / Linux 下直接传 UTF-8 字符串即可
-        TagLib::FileRef f(path.getFullPathName().toUTF8());
+            // macOS / Linux 下直接传 UTF-8 字符串即可
+            TagLib::FileRef f(path.getFullPathName().toUTF8());
 #endif
 
-        // 容错处理：如果标题为空，默认使用去后缀的文件名
-        auto defaultTitle = path.getFileNameWithoutExtension().toStdString();
+            // 容错处理：如果标题为空，默认使用去后缀的文件名
+            auto defaultTitle = path.getFileNameWithoutExtension().toStdString();
 
-        if (!f.isNull() && f.file()) {
-            // 获取统一属性映射表 (PropertyMap)，这是抹平所有格式差异的核心！
-            TagLib::PropertyMap map = f.file()->properties();
+            if (!f.isNull() && f.file()) {
+                // 获取统一属性映射表 (PropertyMap)，这是抹平所有格式差异的核心！
+                TagLib::PropertyMap map = f.file()->properties();
 
-            // Title
-            auto titles = getTags(map, "TITLE");
-            if (!titles.isEmpty()) {
-                info.title = titles[0];
-                onlineTask.title = info.title;
+                // Title
+                auto titles = getTags(map, "TITLE");
+                if (!titles.isEmpty()) {
+                    info.title = titles[0];
+                    onlineTask.title = info.title;
+                } else {
+                    info.title = defaultTitle;
+                }
+
+                // Artist
+                auto artists = getTags(map, "ARTIST");
+                if (!artists.isEmpty()) {
+                    onlineTask.artists = artists;
+                    info.artists = artists;
+                } else {
+                    onlineTask.artists = juce::StringArray{};
+                } // 艺术家让前端拼接，其他后端直接拼接
+
+                // Album
+                auto albums = getTags(map, "ALBUM");
+                if (!albums.isEmpty()) {
+                    info.album = albums[0];
+                    onlineTask.album = info.album;
+                }
+
+                // 其他附加信息
+                auto albumArtists = getTags(map, "ALBUMARTIST");
+                if (!albumArtists.isEmpty()) info.albumArtist = albumArtists.joinIntoString(" / ");
+
+                auto genres = getTags(map, "GENRE");
+                if (!genres.isEmpty()) info.genre = genres.joinIntoString(" / ");
+
+                auto composers = getTags(map, "COMPOSER");
+                if (!composers.isEmpty()) info.composer = composers.joinIntoString(" / ");
+
+                // 数值型信息
+                info.trackNumber = getTagInt(map, "TRACKNUMBER");
+                info.discNumber = getTagInt(map, "DISCNUMBER");
+                info.year = getTagInt(map, "DATE");
+
             } else {
                 info.title = defaultTitle;
             }
-
-            // Artist
-            auto artists = getTags(map, "ARTIST");
-            if (!artists.isEmpty()) {
-                onlineTask.artists = artists;
-                info.artists = artists;
-            } else {
-                onlineTask.artists = juce::StringArray{};
-            } // 艺术家让前端拼接，其他后端直接拼接
-
-            // Album
-            auto albums = getTags(map, "ALBUM");
-            if (!albums.isEmpty()) {
-                info.album = albums[0];
-                onlineTask.album = info.album;
-            }
-
-            // 其他附加信息
-            auto albumArtists = getTags(map, "ALBUMARTIST");
-            if (!albumArtists.isEmpty()) info.albumArtist = albumArtists.joinIntoString(" / ");
-
-            auto genres = getTags(map, "GENRE");
-            if (!genres.isEmpty()) info.genre = genres.joinIntoString(" / ");
-
-            auto composers = getTags(map, "COMPOSER");
-            if (!composers.isEmpty()) info.composer = composers.joinIntoString(" / ");
-
-            // 数值型信息
-            info.trackNumber = getTagInt(map, "TRACKNUMBER");
-            info.discNumber = getTagInt(map, "DISCNUMBER");
-            info.year = getTagInt(map, "DATE");
-
-        } else {
-            info.title = defaultTitle;
         }
-    }
 
-    // 这里进行封面提取
-    {
-        AVPacket coverPacket;
-        coverPacket.data = nullptr;
-        coverPacket.size = 0;
-        SHA1 sha1;
-        for (size_t i = 0; i < inputContext->nb_streams; i++) {
-            auto* stream{inputContext->streams[i]};
-            auto type{stream->codecpar->codec_type};
-            if (type == AVMEDIA_TYPE_ATTACHMENT ||
-                (type == AVMEDIA_TYPE_VIDEO &&
-                 (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))) {
-                coverPacket = stream->attached_pic;
-                break;
-            }
-
-        } // 这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
-
-        if (coverPacket.data && coverPacket.size > 0) {
-            do {
-                info.hash = sha1(coverPacket.data, coverPacket.size);
-
-                juce::File hashImageDir{
-                    dllManager::getInstance().getSongImageDir().getChildFile(info.hash)
-                };
-                // data存在说明一定有图片，所以直接使用.value()就行了
-                //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
-
-                if (hashImageDir.exists()) {
-                    break;
-                } else {
-                    hashImageDir.createDirectory();
-                } // 如果这个目录已经存在，直接退出，避免保存两个相同图片
-
-                juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
-
-                juce::FileOutputStream outputStream(originalFile);
-                if (outputStream.openedOk()) {
-                    outputStream.write(coverPacket.data, coverPacket.size);
-                    outputStream.flush();
-                }
-
-            } while (0);
-        } else {
-            onlineTask.needCover = true;
-        }
-    }
-
-    avformat_close_input(&inputContext);
-
-    // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
-    auto bindSongFields = [&](SQLite::Statement& stmt) {
-        // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
-        auto bindOptStr = [&](const char* name, const juce::String& v) {
-            if (v.isNotEmpty())
-                stmt.bind(name, v.toStdString());
-            else
-                stmt.bind(name); // 无第二个参数 → SQL NULL
-        };
-        // ── 可选 int 字段 ──
-        auto bindOptInt = [&](const char* name, const std::optional<int>& v) {
-            if (v.has_value())
-                stmt.bind(name, v.value());
-            else
-                stmt.bind(name);
-        };
-
-        // ── 必选字段 ──
-        stmt.bind(":filePath", filePath);
-        stmt.bind(":fileSize", fileSize);
-        stmt.bind(":lastModifiedTime", lastModifiedTime);
-        stmt.bind(":duration", info.duration);
-        stmt.bind(":title", info.title.toStdString());
-        // ── FFmpeg 必选 int 字段 ──
-        stmt.bind(":bitRate", info.bitRate);
-        stmt.bind(":bitDepth", info.bitDepth);
-        stmt.bind(":sampleRate", info.sampleRate);
-        if (channelLayoutMask != 0) {
-            stmt.bind(":channelLayoutMask", static_cast<int64_t>(channelLayoutMask));
-        } else {
-            stmt.bind(":numChannels", numChannels);
-        }
-        auto artistsStr{juce::JSON::toString(info.artists).toStdString()};
-
-        bindOptStr(":artists", artistsStr);
-        bindOptStr(":album", info.album);
-        bindOptStr(":albumArtist", info.albumArtist);
-        bindOptStr(":genre", info.genre);
-        bindOptInt(":trackNumber", info.trackNumber);
-        bindOptInt(":discNumber", info.discNumber);
-        bindOptInt(":year", info.year);
-        bindOptStr(":composer", info.composer);
-        bindOptStr(":codecName", info.codecName);
-        bindOptStr(":hash", info.hash);
-    };
-
-    try {
-        // ── 第 1 道防线：代码层查询 file_path，比较 size 和 last_modified_time ──
-        int64_t existingId = -1;
-
+        // 这里进行封面提取
         {
-            SQLite::Statement checkQuery(
-                db,
-                "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = :filePath"
-            );
-            checkQuery.bind(":filePath", filePath);
-
-            if (checkQuery.executeStep()) {
-                existingId = checkQuery.getColumn("songId").getInt64();
-                int64_t existingSize = checkQuery.getColumn("fileSize").getInt64();
-                std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
-
-                // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
-                if (fileSize == existingSize && lastModifiedTime == existingTime) {
-                    InsertSongInfo errorInfo;
-                    errorInfo.errorMsg = "该文件已经存在";
-                    return errorInfo;
+            AVPacket coverPacket;
+            coverPacket.data = nullptr;
+            coverPacket.size = 0;
+            SHA1 sha1;
+            for (size_t i = 0; i < inputContext->nb_streams; i++) {
+                auto* stream{inputContext->streams[i]};
+                auto type{stream->codecpar->codec_type};
+                if (type == AVMEDIA_TYPE_ATTACHMENT ||
+                    (type == AVMEDIA_TYPE_VIDEO &&
+                     (stream->disposition & AV_DISPOSITION_ATTACHED_PIC))) {
+                    coverPacket = stream->attached_pic;
+                    break;
                 }
+
+            } // 这里只是做出了图片编码，但是没有解码，不能获得宽度和高度
+
+            if (coverPacket.data && coverPacket.size > 0) {
+                do {
+                    info.hash = sha1(coverPacket.data, coverPacket.size);
+
+                    juce::File hashImageDir{
+                        dllManager::getInstance().getSongImageDir().getChildFile(info.hash)
+                    };
+                    // data存在说明一定有图片，所以直接使用.value()就行了
+                    //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中
+
+                    if (hashImageDir.exists()) {
+                        break;
+                    } else {
+                        hashImageDir.createDirectory();
+                    } // 如果这个目录已经存在，直接退出，避免保存两个相同图片
+
+                    juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
+
+                    juce::FileOutputStream outputStream(originalFile);
+                    if (outputStream.openedOk()) {
+                        outputStream.write(coverPacket.data, coverPacket.size);
+                        outputStream.flush();
+                    }
+
+                } while (0);
+            } else {
+                onlineTask.needCover = true;
             }
         }
 
-        // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
-        SQLite::Transaction transaction(db);
+        avformat_close_input(&inputContext);
 
-        if (existingId >= 0) {
-            // ── 文件已变更：更新 songs 记录 ──
-            SQLite::Statement updateSong(
-                db,
-                "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
-                "lastModifiedTime = :lastModifiedTime, "
-                "duration = :duration, title = :title, artists = :artists, album = :album, "
-                "albumArtist = :albumArtist, "
-                "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = "
-                ":year, composer = :composer, "
-                "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
-                "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, codecName = "
-                ":codecName, numChannels = :numChannels "
-                "WHERE songId = :songId"
-            );
+        // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
+        auto bindSongFields = [&](SQLite::Statement& stmt) {
+            // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
+            auto bindOptStr = [&](const char* name, const juce::String& v) {
+                if (v.isNotEmpty())
+                    stmt.bind(name, v.toStdString());
+                else
+                    stmt.bind(name); // 无第二个参数 → SQL NULL
+            };
+            // ── 可选 int 字段 ──
+            auto bindOptInt = [&](const char* name, const std::optional<int>& v) {
+                if (v.has_value())
+                    stmt.bind(name, v.value());
+                else
+                    stmt.bind(name);
+            };
 
-            bindSongFields(updateSong);
-            updateSong.bind(":songId", existingId);
-            updateSong.exec();
+            // ── 必选字段 ──
+            stmt.bind(":filePath", filePath);
+            stmt.bind(":fileSize", fileSize);
+            stmt.bind(":lastModifiedTime", lastModifiedTime);
+            stmt.bind(":duration", info.duration);
+            stmt.bind(":title", info.title.toStdString());
+            // ── FFmpeg 必选 int 字段 ──
+            stmt.bind(":bitRate", info.bitRate);
+            stmt.bind(":bitDepth", info.bitDepth);
+            stmt.bind(":sampleRate", info.sampleRate);
+            if (channelLayoutMask != 0) {
+                stmt.bind(":channelLayoutMask", static_cast<int64_t>(channelLayoutMask));
+            } else {
+                stmt.bind(":numChannels", numChannels);
+            }
+            auto artistsStr{juce::JSON::toString(info.artists).toStdString()};
 
-            // ── 回写主键：UPDATE 后 info.songId 仍是 0，必须手动赋值 ──
-            info.songId = existingId;
-            onlineTask.songId = existingId;
-        } else {
-            // ── 新文件：插入 songs 记录 ──
-            SQLite::Statement insertSong(
-                db,
-                "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
-                "duration, title, artists, album, albumArtist, "
-                "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
-                "sampleRate, channelLayoutMask, numChannels, codecName, hash, timeDomainSpec) "
-                "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artists, "
-                ":album, :albumArtist, "
-                ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
-                ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash, :timeDomainSpec)"
-            );
+            bindOptStr(":artists", artistsStr);
+            bindOptStr(":album", info.album);
+            bindOptStr(":albumArtist", info.albumArtist);
+            bindOptStr(":genre", info.genre);
+            bindOptInt(":trackNumber", info.trackNumber);
+            bindOptInt(":discNumber", info.discNumber);
+            bindOptInt(":year", info.year);
+            bindOptStr(":composer", info.composer);
+            bindOptStr(":codecName", info.codecName);
+            bindOptStr(":hash", info.hash);
+        };
 
-            bindSongFields(insertSong);
-            insertSong.exec();
+        try {
+            // ── 第 1 道防线：代码层查询 file_path，比较 size 和 last_modified_time ──
+            int64_t existingId = -1;
 
-            // ── INSERT 后 SQLite 自动生成主键，必须读回否则 songId 始终 = 0 ──
-            info.songId = db.getLastInsertRowid();
-            onlineTask.songId = info.songId;
+            {
+                SQLite::Statement checkQuery(
+                    db,
+                    "SELECT songId, fileSize, lastModifiedTime FROM songs WHERE filePath = "
+                    ":filePath"
+                );
+                checkQuery.bind(":filePath", filePath);
+
+                if (checkQuery.executeStep()) {
+                    existingId = checkQuery.getColumn("songId").getInt64();
+                    int64_t existingSize = checkQuery.getColumn("fileSize").getInt64();
+                    std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
+
+                    // 文件大小和最后修改时间完全相同 → 视为同一文件，跳过插入
+                    if (fileSize == existingSize && lastModifiedTime == existingTime) {
+
+                        state.msg = "该文件已存在";
+                        insertStates.push_back(state);
+                        continue;
+                    }
+                }
+            }
+
+            // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
+            SQLite::Transaction transaction(db);
+
+            if (existingId >= 0) {
+                // ── 文件已变更：更新 songs 记录 ──
+                SQLite::Statement updateSong(
+                    db,
+                    "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
+                    "lastModifiedTime = :lastModifiedTime, "
+                    "duration = :duration, title = :title, artists = :artists, album = :album, "
+                    "albumArtist = :albumArtist, "
+                    "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, year = "
+                    ":year, composer = :composer, "
+                    "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
+                    "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, codecName = "
+                    ":codecName, numChannels = :numChannels "
+                    "WHERE songId = :songId"
+                );
+
+                bindSongFields(updateSong);
+                updateSong.bind(":songId", existingId);
+                updateSong.exec();
+
+                // ── 回写主键：UPDATE 后 info.songId 仍是 0，必须手动赋值 ──
+                info.songId = existingId;
+                onlineTask.songId = existingId;
+            } else {
+                // ── 新文件：插入 songs 记录 ──
+                SQLite::Statement insert(
+                    db,
+                    "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
+                    "duration, title, artists, album, albumArtist, "
+                    "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
+                    "sampleRate, channelLayoutMask, numChannels, codecName, hash, timeDomainSpec) "
+                    "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, :artists, "
+                    ":album, :albumArtist, "
+                    ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
+                    ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash, "
+                    ":timeDomainSpec)"
+                );
+
+                bindSongFields(insert);
+                insert.exec();
+
+                // ── INSERT 后 SQLite 自动生成主键，必须读回否则 songId 始终 = 0 ──
+                info.songId = db.getLastInsertRowid();
+                onlineTask.songId = info.songId;
+            }
+
+            // ── 全部成功，提交事务 ──
+            transaction.commit();
+        } catch (const SQLite::Exception& e) {
+            if (logger) logger->error("insert song error:{}", e.what());
+
+            state.msg = "数据库错误";
+            insertStates.push_back(state);
+            continue;
         }
 
-        // ── 全部成功，提交事务 ──
-        transaction.commit();
-    } catch (const SQLite::Exception& e) {
-        if (logger) logger->error("insert song error:{}", e.what());
-        InsertSongInfo errorInfo;
-        errorInfo.errorMsg = "数据库错误";
-        return errorInfo;
+        WaveFormAnaly::Task waveFormAnalyTask{};
+        waveFormAnalyTask.onlineTask = onlineTask;
+        waveFormAnalyTask.path = filePath;
+
+        mWaveFormAnaly.setTask(waveFormAnalyTask);
+
+        insertStates.push_back(state);
     }
 
-    InsertSongInfo insertSongInfo;
-    insertSongInfo.info = info;
-
-    WaveFormAnaly::Task waveFormAnalyTask{};
-    waveFormAnalyTask.onlineTask = onlineTask;
-    waveFormAnalyTask.path = filePath;
-
-    mWaveFormAnaly.setTask(waveFormAnalyTask);
-
-    return insertSongInfo;
+    return insertStates;
 }
 
 juce::Array<juce::var> SongsManage::getAllSongs() {
