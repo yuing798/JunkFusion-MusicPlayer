@@ -620,7 +620,8 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
 
         SQLite::Statement query(db, sql);
 
-        searchSongInfo(query);
+        auto info{searchSongInfo(query)};
+        result.add(info.toJson());
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
         logger->error("getAllSongs发生失败:{}", e.what());
@@ -710,5 +711,3 @@ juce::Array<double> SongsManage::getTimeDomainSpec(int64_t songId) {
         return {};
     }
 }
-
-// SongsManage::~SongsManage() {}
