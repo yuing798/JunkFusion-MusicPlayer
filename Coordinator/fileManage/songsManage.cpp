@@ -703,7 +703,7 @@ juce::Array<double> SongsManage::getTimeDomainSpec(int64_t songId) {
             std::memcpy(buffer.data(), blob, size);
             return buffer;
         } else {
-            throw SQLite::Exception("无法执行时域图读取");
+            return juce::Array<double>{}; // 查不到返回空数组即可，不用通知前端
         }
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)

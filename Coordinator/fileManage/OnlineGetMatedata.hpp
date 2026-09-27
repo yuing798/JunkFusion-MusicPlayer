@@ -4,6 +4,7 @@
 #include <SQLiteCpp/Database.h>
 #include <atomic>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -43,4 +44,5 @@ public:
     void setTask(Task task);
 
     void searchDataByPrint(Task task);
+    std::function<void(const char*)> onSearchOver;
 };

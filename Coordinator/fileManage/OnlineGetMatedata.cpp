@@ -1,7 +1,9 @@
 #include "./OnlineGetMatedata.hpp"
 #include "../dllManager.hpp"
+#include "Macro/SongInfoMacro.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
+#include "Utils/convertUtils.hpp"
 #include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
@@ -90,11 +92,15 @@ void OnlineGetMatedata::run() {
 void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
     spdlog::get(LogDllID)->debug("开始根据指纹搜索元数据:歌曲ID:{}", task.songId);
 
-    task.album = "";
-    task.artists = juce::StringArray{};
-    task.needCover = true;
-    task.title = ""; // 测试
+    // task.album = "";
+    // task.artists = juce::StringArray{};
+    // task.needCover = true;
+    // task.title = ""; // 测试
     // std::string title, artist, album;
+    juce::String finalTitle;
+    juce::StringArray finalArtistsArr;
+    juce::String finalAlbum;
+    juce::String finalCoverHash;
 
     // 发起 POST 请求
     cpr::Response res = cpr::Post(
@@ -111,7 +117,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
     );
 
     if (res.status_code == 200) {
-        spdlog::get(LogDllID)->debug("得到网络请求返回的表单数据:{}", res.text);
+        // spdlog::get(LogDllID)->debug("得到网络请求返回的表单数据:{}", res.text);
 
         struct RecordingResult { // 搜索到的recording结果
             double score{100.0}; // 最终匹配度得分
@@ -287,26 +293,25 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         bestReleaseIndex = bestReleaseIt->releaseindex;
         // }
 
-        std::string finalTitle{finalRecording.read("title").toString().toStdString()};
+        finalTitle = finalRecording.read("title").toString().toStdString();
 
         auto finalArtists{finalRecording.read("artists")};
 
-        juce::StringArray artistsVec;
         for (int i = 0; i < finalArtists.size(); i++) {
             auto artist{finalArtists.read(i).read("name").toString()};
-            artistsVec.add(artist);
+            finalArtistsArr.add(artist);
         }
 
         auto finalRelease{finalRecording.read("releases").read(bestReleaseIndex)};
 
-        auto finalAlbumStr{finalRelease.read("title").toString().toStdString()};
+        finalAlbum = finalRelease.read("title").toString();
 
         spdlog::get(LogDllID)->debug(
             "id:{}:最终联网搜索获得的歌名:{},艺术家组合名:{},专辑名:{}",
             task.songId,
-            finalTitle,
-            artistsVec.joinIntoString(" / ").toStdString(),
-            finalAlbumStr
+            finalTitle.toStdString(),
+            finalArtistsArr.joinIntoString(" / ").toStdString(),
+            finalAlbum.toStdString()
         );
         if (task.needCover) {
             // if (artistsVec.empty()) break;
@@ -326,14 +331,14 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                     break; // 搜索专辑图只需主艺术家名
                 }
             }
-            if (primaryArtist.empty() && !artistsVec.isEmpty()) {
-                primaryArtist = artistsVec[0].toStdString();
+            if (primaryArtist.empty() && !finalArtistsArr.isEmpty()) {
+                primaryArtist = finalArtistsArr[0].toStdString();
             } // 如果专辑艺术家不可用的话，发送歌曲艺术家
 
-            auto searchTerms{primaryArtist + " " + finalAlbumStr};
+            auto searchTerms{primaryArtist + " " + finalAlbum.toStdString()};
             auto coverURL{searchCoverURL(searchTerms, "album")};
             if (coverURL == std::nullopt) {
-                searchTerms = primaryArtist + " " + finalTitle;
+                searchTerms = primaryArtist + " " + finalTitle.toStdString();
                 coverURL = searchCoverURL(searchTerms, "song");
                 // 艺术家加上专辑名走不到就改用歌曲名称
                 if (coverURL == std::nullopt) {
@@ -359,6 +364,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                     SHA1 sha1;
                     auto hash = sha1(imgRes.text.data(), imgRes.text.size());
                     spdlog::get(LogDllID)->debug("联网搜索到图片哈希值:{}", hash);
+                    finalCoverHash = juce::String(hash);
 
                     juce::File hashImageDir{
                         dllManager::getInstance().getSongImageDir().getChildFile(hash)
@@ -392,5 +398,24 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
             );
         }
         spdlog::get(LogDllID)->debug("联网搜索歌曲元数据完成，歌曲ID:{}", task.songId);
+
+        juce::var resultObj{new juce::DynamicObject()};
+        if (task.title.isEmpty()) {
+            resultObj.getDynamicObject()->setProperty(SongInfoMacro::title, finalTitle);
+        }
+        if (task.artists.isEmpty()) {
+            resultObj.getDynamicObject()->setProperty(
+                SongInfoMacro::artists,
+                ConvertUtils::stringArray2ArrayVar(finalArtistsArr)
+            );
+        }
+        if (task.album.isEmpty()) {
+            resultObj.getDynamicObject()->setProperty(SongInfoMacro::album, finalAlbum);
+        }
+        if (task.needCover) {
+            resultObj.getDynamicObject()->setProperty(SongInfoMacro::hash, finalCoverHash);
+        }
+
+        if (onSearchOver) onSearchOver(ConvertUtils::object2Uint8t(resultObj));
     }
 }

@@ -150,12 +150,12 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     auto* packet = av_packet_alloc();
     auto* frame = av_frame_alloc();
 
-    // bool needOnlineSearch{
-    //     task.onlineTask.needAlbum || task.onlineTask.needArtist || task.onlineTask.needCover ||
-    //     task.onlineTask.needTitle
-    // }; // 是否需要联网搜索,四个里面有一个不存在就需要
+    bool needOnlineSearch{
+        task.onlineTask.album.isEmpty() || task.onlineTask.needCover ||
+        task.onlineTask.artists.isEmpty() || task.onlineTask.title.isEmpty()
+    }; // 是否需要联网搜索,四个里面有一个不存在就需要
 
-    bool needOnlineSearch{true}; // 这个测试用
+    // bool needOnlineSearch{true}; // 这个测试用
 
     ChromaprintContext* printContext{nullptr};
     if (needOnlineSearch) {
@@ -322,9 +322,6 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         if (chromaprint_get_fingerprint(printContext, &printPtr) == 1) {
             std::string printStr{printPtr};
             chromaprint_dealloc(printPtr);
-            // TODO:这里就获取指纹了
-            // spdlog::get(LogDllID)->debug("路径{}对应的音频指纹为{}", task.path, printStr);
-            // OnlineGetMatedata::Task onlineTask{};
             task.onlineTask.duration = duration;
             task.onlineTask.print = std::move(printStr);
             mOnlineGetMatedata.setTask(std::move(task.onlineTask));
@@ -358,10 +355,10 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
 
         sql.exec();
-        auto fileName{juce::File(task.path).getFileName()};
-        auto cString{ConvertUtils::copyStringOnHeap(fileName)};
+        // auto fileName{juce::File(task.path).getFileName()};
+        // auto cString{ConvertUtils::copyStringOnHeap(fileName)};
 
-        if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(cString);
+        // if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(cString);
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->error("WaveFormAnaly线程发生数据库错误:{}", e.what());
     }
