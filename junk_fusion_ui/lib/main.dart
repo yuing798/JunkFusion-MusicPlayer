@@ -106,7 +106,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadWindowState();
       widget.songProvider.getAllSongs();
-      widget.playbackProvider.restoreState();
+      widget.playbackProvider.initPlaybackProvider();
     });
   }
 
@@ -233,18 +233,13 @@ class JunkFusionAppState extends State<JunkFusionApp>
     // print("托盘触发退出，开始安全清理系统...");
 
     _saveWindowState();
-
-    widget.playbackProvider.saveState(); //这种方法读到的既不是watch也不是read,只是一个普通的方法调用
-
+    widget.playbackProvider.saveState();
     // 2. 释放 Dart 端内存
     cppCallbackManager.dispose();
-
     // 3. 关闭 C++ 后端
     bindings.closeBackend();
-
-    // 4. 清理托盘图标 (这一步很重要，不然程序退出了托盘区还会残留一个“幽灵图标”，直到鼠标划过才消失)
+    // 4. 清理托盘图标
     await trayManager.destroy();
-
     // 5. 彻底干掉进程
     await windowManager.destroy();
   }

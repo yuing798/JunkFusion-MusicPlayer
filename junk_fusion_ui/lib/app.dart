@@ -65,7 +65,7 @@ class _AppState extends State<App> {
       body: Stack(
         children: [
           // 同步播放状态到 Windows 任务栏（无可见 UI）
-          const WindowsTaskbarController(),
+          // const WindowsTaskbarController(),
 
           // --- 主内容区域（占满剩余空间，底部留 90px 给 PlayBar） ---
           // Positioned 替代了原来的 Expanded：Stack 的子元素不支持 Expanded

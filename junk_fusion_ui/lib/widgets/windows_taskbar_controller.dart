@@ -1,122 +1,76 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
-import 'package:junk_fusion_ui/providers/playback_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:windows_taskbar/windows_taskbar.dart';
+// import 'dart:io';
+// import 'package:flutter/material.dart';
+// import 'package:junk_fusion_ui/model/song_info.dart';
+// import 'package:junk_fusion_ui/providers/playback_provider.dart';
+// import 'package:provider/provider.dart';
+// import 'package:window_manager/window_manager.dart';
+// import 'package:windows_taskbar/windows_taskbar.dart';
 
-class WindowsTaskbarController extends StatefulWidget {
-  const WindowsTaskbarController({super.key});
+// class WindowsTaskberManager {
+//   int? _lastSongId;
+//   bool? _lastIsPlaying;
+//   final PlaybackProvider playbackProvider;
 
-  @override
-  State<WindowsTaskbarController> createState() =>
-      _WindowsTaskbarControllerState();
-}
+//   WindowsTaskberManager({required this.playbackProvider});
 
-class _WindowsTaskbarControllerState extends State<WindowsTaskbarController> {
-  int? _lastSongId;
-  bool? _lastIsPlaying;
-  PlaybackProvider? _playbackProvider;
+//   void initState() {
+//     // 确保只在 Windows 平台执行
+//     if (!Platform.isWindows) return;
 
-  @override
-  void initState() {
-    super.initState();
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       // 添加监听器：只要数据变了，就触发 _sync
+//       playbackProvider.addListener(_onPlaybackChanged);
 
-    // 确保只在 Windows 平台执行
-    if (!Platform.isWindows) return;
+//       // 初始化时主动同步一次
+//       _onPlaybackChanged();
+//     });
+//   }
 
-    // 核心修复：必须等 Flutter 第一帧渲染完毕（Windows 窗口句柄创建完成）后再去调用系统 API
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 拿到 Provider 实例（这里用 read，不触发 build）
-      _playbackProvider = context.read<PlaybackProvider>();
+//   void dispose() {
+//     // 组件销毁时务必移除监听，防止内存泄漏
+//     playbackProvider.removeListener(_onPlaybackChanged);
+//   }
 
-      // 添加监听器：只要数据变了，就触发 _sync
-      _playbackProvider?.addListener(_onPlaybackChanged);
+//   // 这里的函数专门处理状态变化，完全脱离了 build 渲染管线
+//   void _onPlaybackChanged() {
+//     _sync();
+//   }
 
-      // 初始化时主动同步一次
-      _onPlaybackChanged();
-    });
-  }
+//   void _sync() async {
+//     final song = playback.currentSong;
 
-  @override
-  void dispose() {
-    // 组件销毁时务必移除监听，防止内存泄漏
-    _playbackProvider?.removeListener(_onPlaybackChanged);
-    super.dispose();
-  }
+//     if (song == null) {
+//       if (_lastSongId != null) {
+//         _lastSongId = null;
+//         _lastIsPlaying = null;
+//         WindowsTaskbar.resetThumbnailToolbar();
 
-  // 这里的函数专门处理状态变化，完全脱离了 build 渲染管线
-  void _onPlaybackChanged() {
-    if (_playbackProvider == null) return;
-    _sync(_playbackProvider!);
-  }
+//         // 【修改点 1】：改用 windowManager 安全地设置标题
+//         await windowManager.setTitle('Junk Fusion');
+//       }
+//       return;
+//     }
 
-  void _sync(PlaybackProvider playback) async {
-    final song = playback.currentSong;
+//     final title = _formatTitle(song);
 
-    if (song == null) {
-      if (_lastSongId != null) {
-        _lastSongId = null;
-        _lastIsPlaying = null;
-        WindowsTaskbar.resetThumbnailToolbar();
+//     if (song.songId != _lastSongId) {
+//       _lastSongId = song.songId;
 
-        // 【修改点 1】：改用 windowManager 安全地设置标题
-        await windowManager.setTitle('Junk Fusion');
-      }
-      return;
-    }
+//       // 【修改点 2】：废弃 WindowsTaskbar 的标题方法，使用 windowManager
+//       await windowManager.setTitle(title);
+//     }
 
-    final title = _formatTitle(song);
+//     if (song.songId != _lastSongId || playback.isPlaying != _lastIsPlaying) {
+//       _lastIsPlaying = playback.isPlaying;
 
-    if (song.songId != _lastSongId) {
-      _lastSongId = song.songId;
+//       // 现在可以安全地解开按钮的注释了！
+//       WindowsTaskbar.setThumbnailToolbar(_buildButtons(playback));
+//     }
+//   }
 
-      // 【修改点 2】：废弃 WindowsTaskbar 的标题方法，使用 windowManager
-      await windowManager.setTitle(title);
-    }
+//   String _formatTitle(SongInfo song) {
+//     final artist = song.artists.isEmpty ? '未知' : song.artists.join(' / ');
+//     return '${song.title} - $artist';
+//   }
 
-    if (song.songId != _lastSongId || playback.isPlaying != _lastIsPlaying) {
-      _lastIsPlaying = playback.isPlaying;
-
-      // 现在可以安全地解开按钮的注释了！
-      WindowsTaskbar.setThumbnailToolbar(_buildButtons(playback));
-    }
-  }
-
-  String _formatTitle(SongInfo song) {
-    final artist = song.artists.isEmpty ? '未知' : song.artists.join(' / ');
-    return '${song.title} - $artist';
-  }
-
-  List<ThumbnailToolbarButton> _buildButtons(PlaybackProvider playback) {
-    final isPlaying = playback.isPlaying;
-    return [
-      ThumbnailToolbarButton(
-        ThumbnailToolbarAssetIcon('assets/image/player-skip-back_24x24.ico'),
-        '上一首',
-        () => playback.playPreviousSong(),
-      ),
-      ThumbnailToolbarButton(
-        ThumbnailToolbarAssetIcon(
-          isPlaying
-              ? 'assets/image/player-pause_24x24.ico'
-              : 'assets/image/player-play_24x24.ico',
-        ),
-        isPlaying ? '暂停' : '播放',
-        () => playback.togglePlayPause(),
-      ),
-      ThumbnailToolbarButton(
-        ThumbnailToolbarAssetIcon('assets/image/player-skip-forward_24x24.ico'),
-        '下一首',
-        () => playback.playNextSong(),
-      ),
-    ];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // build 必须是纯净的，只返回一个空的占位符
-    return const SizedBox.shrink();
-  }
-}
+// }

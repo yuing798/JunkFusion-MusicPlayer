@@ -1,6 +1,3 @@
-// ════════════════════════════════════════════════════════════════
-// playback_provider.dart — 播放状态管理
-// ════════════════════════════════════════════════════════════════
 import 'dart:async';
 import 'dart:convert';
 
@@ -16,6 +13,7 @@ import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:windows_taskbar/windows_taskbar.dart';
 
 class PlaybackProvider extends ChangeNotifier {
   final SongProvider songProvider;
@@ -87,22 +85,19 @@ class PlaybackProvider extends ChangeNotifier {
     bindings.play(song.songId, 0.0);
   }
 
-  // 从持久化存储恢复当前播放歌曲
-  void restoreCurrentSong() async {}
-
   void restoreState() {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
 
-    print(
-      '[PlaybackProvider.restoreState] 缓存 currentSongId=$songId，当前 songs 数量=${songProvider.songCount}',
-    );
+    // print(
+    //   '[PlaybackProvider.restoreState] 缓存 currentSongId=$songId，当前 songs 数量=${songProvider.songCount}',
+    // );
     if (songId != null) {
       _currentSong = songProvider.getSongInfo(songId);
-      if (_currentSong == null) {
-        print(
-          '[PlaybackProvider.restoreState] 缓存中的歌曲($songId)不在已加载列表中，跳过恢复',
-        );
-      }
+      // if (_currentSong == null) {
+      //   print(
+      //     '[PlaybackProvider.restoreState] 缓存中的歌曲($songId)不在已加载列表中，跳过恢复',
+      //   );
+      // }
     }
 
     _volume = AppCache.frontCacheRef.getDouble("masterVolume") ?? 0.0;
@@ -131,6 +126,68 @@ class PlaybackProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  void initPlaybackProvider() {
+    restoreState();
+    if (currentSong != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setWindowTaskbarBtn();
+        WindowsTaskbar.setThumbnailTooltip(
+          "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+        );
+        WindowsTaskbar.setWindowTitle(
+          "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+        );
+      });
+    }
+  }
+
+  void _setWindowTaskbarBtn() {
+    WindowsTaskbar.setThumbnailToolbar([
+      ThumbnailToolbarButton(
+        ThumbnailToolbarAssetIcon('assets/image/player-skip-back_24x24.ico'),
+        '上一首',
+        () {
+          playPreviousSong();
+          if (currentSong != null) {
+            WindowsTaskbar.setThumbnailTooltip(
+              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+            );
+            WindowsTaskbar.setWindowTitle(
+              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+            );
+          }
+        },
+      ),
+      ThumbnailToolbarButton(
+        ThumbnailToolbarAssetIcon(
+          isPlaying
+              ? 'assets/image/player-pause_24x24.ico'
+              : 'assets/image/player-play_24x24.ico',
+        ),
+        isPlaying ? '暂停' : '播放',
+        () {
+          togglePlayPause();
+          _setWindowTaskbarBtn();
+        },
+      ),
+      ThumbnailToolbarButton(
+        ThumbnailToolbarAssetIcon('assets/image/player-skip-forward_24x24.ico'),
+        '下一首',
+        () {
+          playNextSong();
+          if (currentSong != null) {
+            WindowsTaskbar.setThumbnailTooltip(
+              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+            );
+            WindowsTaskbar.setWindowTitle(
+              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+            );
+          }
+        },
+      ),
+    ]);
   }
 
   Future<void> saveState() async {
