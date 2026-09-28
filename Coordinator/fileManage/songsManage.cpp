@@ -192,6 +192,136 @@ SongInfo SongsManage::searchSongInfo(SQLite::Statement& query) {
     return info;
 }
 
+SongInfo SongsManage::getSongInfo(juce::String path) {
+    try {
+        SQLite::Statement query{
+            db,
+            R"(
+                SELECT songId, 
+                duration, title, artists, album, albumArtist, 
+                genre, trackNumber, discNumber, year, composer, 
+                bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
+                aiGenre, bpm, key, aiProcessed, 
+                isMyLike, comment, playNum, hash
+                FROM songs WHERE filePath = :filePath
+            )"
+        };
+        query.bind(":filePath", path.toStdString());
+
+        SongInfo info{searchSongInfo(query)};
+        return info;
+
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->info("SongsManage::getSongInfo(juce::String path)错误:{}", e.what());
+        return {};
+    }
+}
+
+SongInfo SongsManage::getSongInfo(int64_t songId) {
+    try {
+        SQLite::Statement query{
+            db,
+            R"(
+                SELECT songId, 
+                duration, title, artists, album, albumArtist, 
+                genre, trackNumber, discNumber, year, composer, 
+                bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
+                aiGenre, bpm, key, aiProcessed, 
+                isMyLike, comment, playNum, hash
+                FROM songs WHERE songId = :songId
+            )"
+        };
+        query.bind(":songId", songId);
+
+        SongInfo info{searchSongInfo(query)};
+        return info;
+
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->info(
+            "SongsManage::getSongInfo(int64_t songId)发生数据库错误:{}",
+            e.what()
+        );
+        return {};
+    }
+}
+
+juce::Array<juce::var> SongsManage::getAllSongs() {
+    juce::Array<juce::var> results;
+
+    try {
+        std::string sql = R"(
+            SELECT songId, 
+            duration, title, artists, album, albumArtist, 
+            genre, trackNumber, discNumber, year, composer, 
+            bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
+            aiGenre, bpm, key, aiProcessed, 
+            isMyLike, comment, playNum, hash
+            FROM songs 
+        )"; // 按照顺序查询的sql语句
+
+        SQLite::Statement query(db, sql);
+
+        while (query.executeStep()) {
+            SongInfo info{};
+
+            info.songId = query.getColumn("songId").getInt64();
+            info.duration = query.getColumn("duration").getDouble();
+
+            // ── 标签 ──
+            info.title = query.getColumn("title").getString();
+            auto artistStr = optStrCol(query, "artists");
+            if (artistStr.isNotEmpty()) {
+                Yvar artists{juce::JSON::fromString(artistStr)};
+                for (int i = 0; i < artists.size(); i++) {
+                    info.artists.add(artists.read(i).toString());
+                }
+            }
+            info.album = optStrCol(query, "album");
+            info.albumArtist = optStrCol(query, "albumArtist");
+            info.genre = optStrCol(query, "genre");
+            info.trackNumber = optIntCol(query, "trackNumber");
+            info.discNumber = optIntCol(query, "discNumber");
+            info.year = optIntCol(query, "year");
+            info.composer = optStrCol(query, "composer");
+
+            // ── FFmpeg 解码层 ──
+            info.bitRate = query.getColumn("bitRate").getInt64();
+            info.bitDepth = query.getColumn("bitDepth").getInt();
+            info.sampleRate = query.getColumn("sampleRate").getInt();
+
+            auto channelLayoutMask = query.getColumn("channelLayoutMask").getInt64();
+            int numChannels = query.getColumn("numChannels").getInt();
+            if (channelLayoutMask == 0) {
+                info.channelLayout = juce::String(numChannels) + "声道";
+            } else {
+                AVChannelLayout layout;
+                av_channel_layout_from_mask(&layout, channelLayoutMask);
+                char layoutBuffer[64] = {0};
+                av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
+                info.channelLayout = juce::String(layoutBuffer);
+            }
+            info.codecName = optStrCol(query, "codecName");
+
+            // ── AI 分析 ──
+            info.aiGenre = optStrCol(query, "aiGenre");
+            info.bpm = optIntCol(query, "bpm");
+            info.key = optStrCol(query, "key");
+
+            // ── 用户信息 ──
+            info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
+            info.comment = optStrCol(query, "comment");
+            info.playNum = query.getColumn("playNum").getInt();
+            info.hash = optStrCol(query, "hash");
+            results.add(info.toJson());
+        }
+    } catch (const SQLite::Exception& e) {
+        auto logger = spdlog::get(LogDllID);
+        logger->error("getAllSongs发生失败:{}", e.what());
+    }
+
+    return results;
+}
+
 std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce::File>& paths) {
     std::vector<InsertState> insertStates;
     for (auto& path : paths) {
@@ -549,85 +679,6 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
     }
 
     return insertStates;
-}
-
-SongInfo SongsManage::getSongInfo(juce::String path) {
-    try {
-        SQLite::Statement query{
-            db,
-            R"(
-                SELECT songId, 
-                duration, title, artists, album, albumArtist, 
-                genre, trackNumber, discNumber, year, composer, 
-                bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
-                aiGenre, bpm, key, aiProcessed, 
-                isMyLike, comment, playNum, hash
-                FROM songs WHERE filePath = :filePath
-            )"
-        };
-        query.bind(":filePath", path.toStdString());
-
-        SongInfo info{searchSongInfo(query)};
-        return info;
-
-    } catch (SQLite::Exception& e) {
-        spdlog::get(LogDllID)->info("SongsManage::getSongInfo(juce::String path)错误:{}", e.what());
-        return {};
-    }
-}
-
-SongInfo SongsManage::getSongInfo(int64_t songId) {
-    try {
-        SQLite::Statement query{
-            db,
-            R"(
-                SELECT songId, 
-                duration, title, artists, album, albumArtist, 
-                genre, trackNumber, discNumber, year, composer, 
-                bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
-                aiGenre, bpm, key, aiProcessed, 
-                isMyLike, comment, playNum, hash
-                FROM songs WHERE songId = :songId
-            )"
-        };
-        query.bind(":songId", songId);
-
-        SongInfo info{searchSongInfo(query)};
-        return info;
-
-    } catch (SQLite::Exception& e) {
-        spdlog::get(LogDllID)->info(
-            "SongsManage::getSongInfo(int64_t songId)发生数据库错误:{}",
-            e.what()
-        );
-        return {};
-    }
-}
-
-juce::Array<juce::var> SongsManage::getAllSongs() {
-    juce::Array<juce::var> result;
-
-    try {
-        std::string sql = R"(
-            SELECT songId, 
-            duration, title, artists, album, albumArtist, 
-            genre, trackNumber, discNumber, year, composer, 
-            bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
-            aiGenre, bpm, key, aiProcessed, 
-            isMyLike, comment, playNum, hash
-            FROM songs 
-        )"; // 按照顺序查询的sql语句
-
-        SQLite::Statement query(db, sql);
-
-        auto info{searchSongInfo(query)};
-        result.add(info.toJson());
-    } catch (const SQLite::Exception& e) {
-        auto logger = spdlog::get(LogDllID);
-        logger->error("getAllSongs发生失败:{}", e.what());
-    }
-
-    return result;
 }
 
 std::string SongsManage::getPath(int64_t songId) {

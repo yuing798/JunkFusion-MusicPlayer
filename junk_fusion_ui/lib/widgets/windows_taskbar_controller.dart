@@ -1,23 +1,11 @@
-// ════════════════════════════════════════════════════════════════
-// windows_taskbar_controller.dart — Windows 任务栏缩略图视图
-//
-// 负责同步播放状态到 Windows 任务栏：
-//   1. 任务栏按钮标题：`歌曲名 - 歌手`（setWindowTitle）
-//   2. 缩略图底部三个图标：上一首 / 播放暂停 / 下一首（setThumbnailToolbar）
-//   3. 鼠标悬停在缩略图上时显示完整标题，避免标题过长被省略号截断（setThumbnailTooltip）
-//
-// 本组件无任何可见 UI，仅挂载在 Widget Tree 中监听 PlaybackProvider 变化。
-// ════════════════════════════════════════════════════════════════
-
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
-/// WindowsTaskbarController — 无画布组件，负责把播放状态同步到 Windows 任务栏
 class WindowsTaskbarController extends StatefulWidget {
   const WindowsTaskbarController({super.key});
 
@@ -27,72 +15,88 @@ class WindowsTaskbarController extends StatefulWidget {
 }
 
 class _WindowsTaskbarControllerState extends State<WindowsTaskbarController> {
-  // 缓存上一次同步的歌曲 ID 与播放状态，避免重复调用系统接口
   int? _lastSongId;
   bool? _lastIsPlaying;
+  PlaybackProvider? _playbackProvider;
 
   @override
-  Widget build(BuildContext context) {
-    // windows_taskbar 是 Windows 专用插件，其他平台直接跳过
-    if (Platform.isWindows) {
-      final playback = context.watch<PlaybackProvider>();
-      _sync(playback);
-    }
-    return const SizedBox.shrink();
+  void initState() {
+    super.initState();
+
+    // 确保只在 Windows 平台执行
+    if (!Platform.isWindows) return;
+
+    // 核心修复：必须等 Flutter 第一帧渲染完毕（Windows 窗口句柄创建完成）后再去调用系统 API
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 拿到 Provider 实例（这里用 read，不触发 build）
+      _playbackProvider = context.read<PlaybackProvider>();
+
+      // 添加监听器：只要数据变了，就触发 _sync
+      _playbackProvider?.addListener(_onPlaybackChanged);
+
+      // 初始化时主动同步一次
+      _onPlaybackChanged();
+    });
   }
 
-  /// 把当前播放状态同步到任务栏
-  void _sync(PlaybackProvider playback) {
+  @override
+  void dispose() {
+    // 组件销毁时务必移除监听，防止内存泄漏
+    _playbackProvider?.removeListener(_onPlaybackChanged);
+    super.dispose();
+  }
+
+  // 这里的函数专门处理状态变化，完全脱离了 build 渲染管线
+  void _onPlaybackChanged() {
+    if (_playbackProvider == null) return;
+    _sync(_playbackProvider!);
+  }
+
+  void _sync(PlaybackProvider playback) async {
     final song = playback.currentSong;
 
-    // 无歌曲：清空任务栏上的歌曲信息
     if (song == null) {
       if (_lastSongId != null) {
         _lastSongId = null;
         _lastIsPlaying = null;
         WindowsTaskbar.resetThumbnailToolbar();
-        WindowsTaskbar.setWindowTitle('Junk Fusion');
-        WindowsTaskbar.setThumbnailTooltip('Junk Fusion');
+
+        // 【修改点 1】：改用 windowManager 安全地设置标题
+        await windowManager.setTitle('Junk Fusion');
       }
       return;
     }
 
     final title = _formatTitle(song);
 
-    // 歌曲切换：更新标题与悬停提示
     if (song.songId != _lastSongId) {
       _lastSongId = song.songId;
-      WindowsTaskbar.setWindowTitle(title);
-      WindowsTaskbar.setThumbnailTooltip(title);
+
+      // 【修改点 2】：废弃 WindowsTaskbar 的标题方法，使用 windowManager
+      await windowManager.setTitle(title);
     }
 
-    // 歌曲切换或播放状态变化：重建缩略图底部三个按钮
     if (song.songId != _lastSongId || playback.isPlaying != _lastIsPlaying) {
       _lastIsPlaying = playback.isPlaying;
+
+      // 现在可以安全地解开按钮的注释了！
       WindowsTaskbar.setThumbnailToolbar(_buildButtons(playback));
     }
   }
 
-  /// 组装 `歌曲名 - 歌手` 标题
   String _formatTitle(SongInfo song) {
     final artist = song.artists.isEmpty ? '未知' : song.artists.join(' / ');
     return '${song.title} - $artist';
   }
 
-  /// 构建缩略图底部三个按钮：上一首 / 播放暂停 / 下一首
   List<ThumbnailToolbarButton> _buildButtons(PlaybackProvider playback) {
     final isPlaying = playback.isPlaying;
-
     return [
-      // 上一首
       ThumbnailToolbarButton(
-        ThumbnailToolbarAssetIcon(
-          'assets/image/player-skip-back_24x24.ico',
-        ),
+        ThumbnailToolbarAssetIcon('assets/image/player-skip-back_24x24.ico'),
         '上一首',
         () => playback.playPreviousSong(),
       ),
-      // 播放 / 暂停（随状态切换图标）
       ThumbnailToolbarButton(
         ThumbnailToolbarAssetIcon(
           isPlaying
@@ -102,14 +106,17 @@ class _WindowsTaskbarControllerState extends State<WindowsTaskbarController> {
         isPlaying ? '暂停' : '播放',
         () => playback.togglePlayPause(),
       ),
-      // 下一首
       ThumbnailToolbarButton(
-        ThumbnailToolbarAssetIcon(
-          'assets/image/player-skip-forward_24x24.ico',
-        ),
+        ThumbnailToolbarAssetIcon('assets/image/player-skip-forward_24x24.ico'),
         '下一首',
         () => playback.playNextSong(),
       ),
     ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // build 必须是纯净的，只返回一个空的占位符
+    return const SizedBox.shrink();
   }
 }

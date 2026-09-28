@@ -22,12 +22,21 @@ class SongProvider extends ChangeNotifier {
   int get songCount => _songs.length;
 
   // 按 ID 查找歌曲
-  SongInfo getSongInfo(int songId) {
-    return _songs.where((s) => s.songId == songId).first;
+  // 找不到时返回 null，避免调用方因 .first 抛 "Bad state: No element"
+  SongInfo? getSongInfo(int songId) {
+    for (final song in _songs) {
+      if (song.songId == songId) return song;
+    }
+    print(
+      '[SongProvider.getSongInfo] 未找到 songId=$songId，当前 _songs 数量=${_songs.length}',
+    );
+    return null;
   }
 
   void getAllSongs() {
+    print("准备后端getAllSongs");
     final ptr = bindings.getAllSongs();
+    // print("获得getAllSongs返回的指针");
     final dartString = UtilFunction.cPtr2String(ptr);
     Map<String, dynamic> obj = jsonDecode(dartString);
     final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;

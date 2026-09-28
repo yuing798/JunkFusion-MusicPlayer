@@ -93,7 +93,17 @@ class PlaybackProvider extends ChangeNotifier {
   void restoreState() {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
 
-    if (songId != null) _currentSong = songProvider.getSongInfo(songId);
+    print(
+      '[PlaybackProvider.restoreState] 缓存 currentSongId=$songId，当前 songs 数量=${songProvider.songCount}',
+    );
+    if (songId != null) {
+      _currentSong = songProvider.getSongInfo(songId);
+      if (_currentSong == null) {
+        print(
+          '[PlaybackProvider.restoreState] 缓存中的歌曲($songId)不在已加载列表中，跳过恢复',
+        );
+      }
+    }
 
     _volume = AppCache.frontCacheRef.getDouble("masterVolume") ?? 0.0;
     UtilFunction.sendSliderMsg(SliderParam.masterVolume, _volume, false);
