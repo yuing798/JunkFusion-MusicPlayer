@@ -46,8 +46,8 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d), mWaveFormAnaly(d) {
                 e.what()
             );
     }
-    mWaveFormAnaly.onTimeDomainSpecInsertOver = [this](const char* fileName) {
-        if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(fileName);
+    mWaveFormAnaly.onOnlineGetMatedataOver = [this](const char* jsonStr) {
+        if (onOnLineGetMatedataOver) onOnLineGetMatedataOver(jsonStr);
     };
 }
 juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {

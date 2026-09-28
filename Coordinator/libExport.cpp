@@ -128,9 +128,9 @@ extern "C" {
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
-    void registerTimeDomainSpecInsertOver(StringFunc cb) {
-        dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
-    }
+    // void registerTimeDomainSpecInsertOver(StringFunc cb) {
+    //     dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
+    // }
     const char* getTimeDomainSpecBySongId(long long songId) {
         auto vec = dllManager::getInstance().getSongsManager().getTimeDomainSpec(songId);
         juce::Array<juce::var> arr;
@@ -173,7 +173,7 @@ extern "C" {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
     void registerOnOnlineGetMatedataOver(StringFunc cb) {
-        dllManager::getInstance().onOnlineGetMatedataOver = cb;
+        dllManager::getInstance().getSongsManager().onOnLineGetMatedataOver = cb;
     }
     const char* getAllSongs() {
         auto songsList = dllManager::getInstance().getSongsManager().getAllSongs();

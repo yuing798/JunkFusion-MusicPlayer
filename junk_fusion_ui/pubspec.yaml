@@ -58,6 +58,7 @@ dependencies:
   # desktop_context_menu: ^0.1.1,
   # super_context_menu: ^0.9.1
   windows_taskbar: ^1.1.2 #windows平台鼠标悬停在任务栏图标上的播放控制功能
+  win32: ^5.9.0
 
 dev_dependencies:
   flutter_test:

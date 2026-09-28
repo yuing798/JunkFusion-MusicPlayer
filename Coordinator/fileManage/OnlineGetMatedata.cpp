@@ -399,23 +399,39 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         }
         spdlog::get(LogDllID)->debug("联网搜索歌曲元数据完成，歌曲ID:{}", task.songId);
 
+        bool foundValue{false}; // 是否联网搜索到了想要的内容
         juce::var resultObj{new juce::DynamicObject()};
         if (task.title.isEmpty()) {
-            resultObj.getDynamicObject()->setProperty(SongInfoMacro::title, finalTitle);
+            if (finalTitle.isNotEmpty()) {
+                resultObj.getDynamicObject()->setProperty(SongInfoMacro::title, finalTitle);
+                foundValue = true;
+            }
         }
         if (task.artists.isEmpty()) {
-            resultObj.getDynamicObject()->setProperty(
-                SongInfoMacro::artists,
-                ConvertUtils::stringArray2ArrayVar(finalArtistsArr)
-            );
+            if (!finalArtistsArr.isEmpty()) {
+                resultObj.getDynamicObject()->setProperty(
+                    SongInfoMacro::artists,
+                    ConvertUtils::stringArray2ArrayVar(finalArtistsArr)
+                );
+                foundValue = true;
+            }
         }
         if (task.album.isEmpty()) {
-            resultObj.getDynamicObject()->setProperty(SongInfoMacro::album, finalAlbum);
+            if (finalAlbum.isNotEmpty()) {
+                resultObj.getDynamicObject()->setProperty(SongInfoMacro::album, finalAlbum);
+                foundValue = true;
+            }
         }
         if (task.needCover) {
-            resultObj.getDynamicObject()->setProperty(SongInfoMacro::hash, finalCoverHash);
+            if (finalCoverHash.isNotEmpty()) {
+                resultObj.getDynamicObject()->setProperty(SongInfoMacro::hash, finalCoverHash);
+                foundValue = true;
+            }
         }
 
-        if (onSearchOver) onSearchOver(ConvertUtils::object2Uint8t(resultObj));
+        if (onSearchOver && foundValue) {
+            resultObj.getDynamicObject()->setProperty(SongInfoMacro::songId, task.songId);
+            onSearchOver(ConvertUtils::object2Uint8t(resultObj));
+        }
     }
 }

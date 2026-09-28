@@ -26,7 +26,11 @@ extern "C" {
 }
 
 WaveFormAnaly::WaveFormAnaly(SQLite::Database& db)
-    : juce::Thread("WaveFormAnaly"), mDb(db), mOnlineGetMatedata(db) {}
+    : juce::Thread("WaveFormAnaly"), mDb(db), mOnlineGetMatedata(db) {
+    mOnlineGetMatedata.onSearchOver = [this](const char* json) {
+        if (onOnlineGetMatedataOver) onOnlineGetMatedataOver(json);
+    };
+}
 
 void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
     std::lock_guard<std::mutex> lock(mtx);

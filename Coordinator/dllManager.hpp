@@ -55,7 +55,7 @@ public:
     std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
     std::function<void(void)> onPlayNextSong;
     std::function<void(const char*)> onLightSongDataImportOver;
-    std::function<void(const char*)> onOnlineGetMatedataOver;
+    // std::function<void(const char*)> onOnlineGetMatedataOver;
     // std::function<void(const char*)> onGetAllSongOver;
 
     void sendMessage2AudioProcess(juce::var& obj);

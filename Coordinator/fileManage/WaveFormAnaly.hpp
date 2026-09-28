@@ -29,5 +29,5 @@ public:
     void run() override;
     void setTask(Task task);
     void processSingleFile(Task task);
-    std::function<void(const char*)> onTimeDomainSpecInsertOver; // 时域图插入任务完成时通知前端
+    std::function<void(const char*)> onOnlineGetMatedataOver;
 };

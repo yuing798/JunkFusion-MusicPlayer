@@ -56,7 +56,6 @@ class JunkFusionDLLBindings {
   late final _freeString = _freeStringPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
-  /// DLL_EXPORT void registerOnGetAllSongsOver(StringFunc cb);
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }
@@ -68,6 +67,7 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  /// DLL_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
   ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
     return _getTimeDomainSpecBySongId(songId);
   }
@@ -132,6 +132,18 @@ class JunkFusionDLLBindings {
       _registerOnLightSongDataImportOverPtr
           .asFunction<void Function(StringFunc)>();
 
+  void registerOnOnlineGetMatedataOver(StringFunc cb) {
+    return _registerOnOnlineGetMatedataOver(cb);
+  }
+
+  late final _registerOnOnlineGetMatedataOverPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
+        'registerOnOnlineGetMatedataOver',
+      );
+  late final _registerOnOnlineGetMatedataOver =
+      _registerOnOnlineGetMatedataOverPtr
+          .asFunction<void Function(StringFunc)>();
+
   void registerOnPlayNextSong(VoidFunc cb) {
     return _registerOnPlayNextSong(cb);
   }
@@ -142,18 +154,6 @@ class JunkFusionDLLBindings {
       );
   late final _registerOnPlayNextSong = _registerOnPlayNextSongPtr
       .asFunction<void Function(VoidFunc)>();
-
-  void registerTimeDomainSpecInsertOver(StringFunc cb) {
-    return _registerTimeDomainSpecInsertOver(cb);
-  }
-
-  late final _registerTimeDomainSpecInsertOverPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
-        'registerTimeDomainSpecInsertOver',
-      );
-  late final _registerTimeDomainSpecInsertOver =
-      _registerTimeDomainSpecInsertOverPtr
-          .asFunction<void Function(StringFunc)>();
 
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
     return _saveComment(songId, commentText);

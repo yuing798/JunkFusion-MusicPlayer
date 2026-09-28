@@ -31,7 +31,7 @@ final bindings = JunkFusionDLLBindings(_libPath);
 class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
-  ffi.NativeCallable<StringFuncFunction>? _timeDomainSpecInsertOverCallback;
+  ffi.NativeCallable<StringFuncFunction>? _onOnlineGetMatedataOver;
   ffi.NativeCallable<VoidFuncFunction>? _onPlayNextSongCallback;
   // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
@@ -53,15 +53,14 @@ class CppCallbackManager {
     ) {
       playback.setCurrentPTS(value);
     });
-    _timeDomainSpecInsertOverCallback =
-        ffi.NativeCallable<StringFuncFunction>.listener((
-          ffi.Pointer<ffi.Char> ptr,
-        ) {
-          String str = UtilFunction.cPtr2String(ptr);
+    _onOnlineGetMatedataOver = ffi.NativeCallable<StringFuncFunction>.listener((
+      ffi.Pointer<ffi.Char> ptr,
+    ) {
+      String str = UtilFunction.cPtr2String(ptr);
 
-          // TODO:重型歌曲插入任务完成
-          print("重型歌曲插入任务完成:文件:$str");
-        });
+      // TODO:重型歌曲插入任务完成
+      print("重型歌曲插入任务完成:文件:$str");
+    });
 
     _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {
       playback.playNextSong();
@@ -116,8 +115,8 @@ class CppCallbackManager {
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
-    bindings.registerTimeDomainSpecInsertOver(
-      _timeDomainSpecInsertOverCallback!.nativeFunction,
+    bindings.registerOnOnlineGetMatedataOver(
+      _onOnlineGetMatedataOver!.nativeFunction,
     );
     bindings.registerOnPlayNextSong(_onPlayNextSongCallback!.nativeFunction);
     // bindings.registerOnGetAllSongsOver(_onGetAllSongsOver!.nativeFunction);
@@ -130,7 +129,7 @@ class CppCallbackManager {
   void dispose() {
     bindings.registerErrorSendCallback(ffi.nullptr); //给cpp的函数指针先分配一个nullPtr
     bindings.registerCurrentPTSCallback(ffi.nullptr);
-    bindings.registerTimeDomainSpecInsertOver(ffi.nullptr);
+    bindings.registerOnOnlineGetMatedataOver(ffi.nullptr);
     bindings.registerOnPlayNextSong(ffi.nullptr);
     // bindings.registerOnGetAllSongsOver(ffi.nullptr);
     bindings.registerOnLightSongDataImportOver(ffi.nullptr);
@@ -138,7 +137,7 @@ class CppCallbackManager {
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _errorSendcallable?.close();
     _currentPTSCallback?.close();
-    _timeDomainSpecInsertOverCallback?.close();
+    _onOnlineGetMatedataOver?.close();
     _onPlayNextSongCallback?.close();
     // _onGetAllSongsOver?.close();
     _onLightSongDataImportOver?.close();
