@@ -134,10 +134,10 @@ class PlaybackProvider extends ChangeNotifier {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _setWindowTaskbarBtn();
         WindowsTaskbar.setThumbnailTooltip(
-          "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+          "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
         );
         WindowsTaskbar.setWindowTitle(
-          "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+          "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
         );
       });
     }
@@ -152,10 +152,10 @@ class PlaybackProvider extends ChangeNotifier {
           playPreviousSong();
           if (currentSong != null) {
             WindowsTaskbar.setThumbnailTooltip(
-              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+              "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
             );
             WindowsTaskbar.setWindowTitle(
-              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+              "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
             );
           }
         },
@@ -179,10 +179,10 @@ class PlaybackProvider extends ChangeNotifier {
           playNextSong();
           if (currentSong != null) {
             WindowsTaskbar.setThumbnailTooltip(
-              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+              "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
             );
             WindowsTaskbar.setWindowTitle(
-              "${currentSong!.title} - ${currentSong!.artists.join(" / ")}",
+              "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
             );
           }
         },

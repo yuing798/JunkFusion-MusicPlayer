@@ -1,11 +1,6 @@
-// ════════════════════════════════════════════════════════════════
-// app.dart — 应用根组件
-// ════════════════════════════════════════════════════════════════
-
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/pages/song_play_page.dart';
 import 'package:junk_fusion_ui/widgets/title_bar.dart';
-import 'package:junk_fusion_ui/widgets/windows_taskbar_controller.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'widgets/left_column.dart';

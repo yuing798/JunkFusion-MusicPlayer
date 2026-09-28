@@ -108,4 +108,29 @@ class SongProvider extends ChangeNotifier {
     bindings.saveComment(songId, cPtr);
     malloc.free(cPtr);
   }
+
+  //更新某条歌曲
+  void updateSongInfo({
+    required int songId,
+    String? title,
+    String? album,
+    List<String>? artists,
+    String? hash,
+  }) {
+    final index = _songs.indexWhere((s) => s.songId == songId);
+    if (index == -1) return;
+
+    final old = _songs[index];
+    final updated = old.copyWith(
+      title: title ?? old.title,
+      album: album,
+      hash: hash,
+      artists: artists,
+    );
+
+    if (updated == old) return;
+
+    _songs[index] = updated;
+    notifyListeners();
+  }
 }

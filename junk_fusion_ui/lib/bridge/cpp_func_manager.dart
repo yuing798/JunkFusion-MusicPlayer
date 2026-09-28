@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'package:ffi/ffi.dart';
+import 'package:junk_fusion_ui/Macro/SongInfoMacro.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
@@ -57,9 +58,23 @@ class CppCallbackManager {
       ffi.Pointer<ffi.Char> ptr,
     ) {
       String str = UtilFunction.cPtr2String(ptr);
+      final obj = jsonDecode(str) as Map<String, dynamic>;
 
-      // TODO:重型歌曲插入任务完成
-      print("重型歌曲插入任务完成:文件:$str");
+      final songId = obj[SongInfoMacro.songId] as int;
+      final title = obj[SongInfoMacro.title] as String?;
+      final album = obj[SongInfoMacro.album] as String?;
+      final hash = obj[SongInfoMacro.hash] as String?;
+      final artists = obj[SongInfoMacro.artists] == null
+          ? null
+          : List<String>.from(obj[SongInfoMacro.artists] as List);
+
+      songProvider.updateSongInfo(
+        songId: songId,
+        title: title,
+        album: album,
+        hash: hash,
+        artists: artists,
+      );
     });
 
     _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {

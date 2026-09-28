@@ -10,7 +10,9 @@ _SongInfo _$SongInfoFromJson(Map<String, dynamic> json) => _SongInfo(
   songId: (json['songId'] as num).toInt(),
   duration: (json['duration'] as num).toDouble(),
   title: json['title'] as String,
-  artists: (json['artists'] as List<dynamic>).map((e) => e as String).toList(),
+  artists: (json['artists'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   album: json['album'] as String?,
   albumArtist: json['albumArtist'] as String?,
   genre: json['genre'] as String?,

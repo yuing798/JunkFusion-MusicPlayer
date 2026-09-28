@@ -132,9 +132,9 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                playback.currentSong!.artists.isEmpty
+                playback.currentSong!.artists == null
                     ? "未知"
-                    : playback.currentSong!.artists.join(" / "),
+                    : playback.currentSong!.artists!.join(" / "),
                 style: theme.littleTextStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

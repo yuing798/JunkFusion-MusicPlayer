@@ -95,11 +95,11 @@ class EachSong extends StatelessWidget {
                 const SizedBox(height: 2),
                 // 艺术家（单行省略）
                 Tooltip(
-                  message: song.artists.isEmpty
+                  message: song.artists == null
                       ? "未知"
-                      : song.artists.join(" / "),
+                      : song.artists!.join(" / "),
                   child: Text(
-                    song.artists.isEmpty ? "未知" : song.artists.join(" / "),
+                    song.artists == null ? "未知" : song.artists!.join(" / "),
                     style: theme.littleTextStyle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
