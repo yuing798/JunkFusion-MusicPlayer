@@ -69,7 +69,7 @@ class CppCallbackManager {
       //     : List<String>.from(obj[SongInfoMacro.artists] as List);
 
       print(
-        "准备根据联网获取的数据更新歌曲元数据信息:$songId ",
+        "准备根据联网获取的数据更新歌曲元数据信息:songId:$songId ",
 
         // $title $album $hash ${artists?.join(" / ")},
       );
@@ -80,19 +80,6 @@ class CppCallbackManager {
     _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {
       playback.playNextSong();
     });
-    // _onGetAllSongsOver = ffi.NativeCallable<StringFuncFunction>.listener((
-    //   ffi.Pointer<ffi.Char> ptr,
-    // ) {
-    //   final dartString = ptr.cast<Utf8>().toDartString();
-    //   bindings.freeString(ptr);
-    //   Map<String, dynamic> obj = jsonDecode(dartString);
-    //   final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
-    //   List<SongInfo> songsList = [];
-    //   for (int i = 0; i < songsRaw.length; i++) {
-    //     songsList.add(SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>));
-    //   }
-    //   songsProvider.addNewSong(songsList);
-    // });
 
     _onLightSongDataImportOver = ffi.NativeCallable<StringFuncFunction>.listener((
       ffi.Pointer<ffi.Char> ptr,
