@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
-import 'package:ffi/ffi.dart';
+import 'package:ffi/ffi.dart' as ffi;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
-import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
@@ -24,13 +23,11 @@ class SongProvider extends ChangeNotifier {
   // 按 ID 查找歌曲
   // 找不到时返回 null，避免调用方因 .first 抛 "Bad state: No element"
   SongInfo? getSongInfo(int songId) {
-    for (final song in _songs) {
-      if (song.songId == songId) return song;
-    }
-    print(
-      '[SongProvider.getSongInfo] 未找到 songId=$songId，当前 _songs 数量=${_songs.length}',
-    );
-    return null;
+    return _songs.where((s) => s.songId == songId).firstOrNull;
+    // print(
+    //   '[SongProvider.getSongInfo] 未找到 songId=$songId，当前 _songs 数量=${_songs.length}',
+    // );
+    // return null;
   }
 
   void getAllSongs() {
@@ -80,10 +77,9 @@ class SongProvider extends ChangeNotifier {
     // 调用 pickFiles，传入配置参数
     FilePickerResult? result = await FilePicker.pickFiles(
       dialogTitle: '请选择音视频文件',
-      initialDirectory: AppCache.getExeDirectory(),
+      initialDirectory: AppCache.appDocDir,
       allowMultiple: true,
       lockParentWindow: true,
-      // cancelUploadOnWindowBlur: false, //失焦时自动取消导入窗口，这个只在web中有用
     );
 
     if (result != null) {
@@ -100,13 +96,14 @@ class SongProvider extends ChangeNotifier {
       String jsonMapStr = jsonEncode(jsonMap);
       final cPtr = UtilFunction.string2cPtr(jsonMapStr);
       bindings.someImport(cPtr);
+      ffi.malloc.free(cPtr);
     }
   }
 
   void saveComment(int songId, String text) {
-    final cPtr = text.toNativeUtf8().cast<Char>();
+    final cPtr = UtilFunction.string2cPtr(text);
     bindings.saveComment(songId, cPtr);
-    malloc.free(cPtr);
+    ffi.malloc.free(cPtr);
   }
 
   //更新某条歌曲

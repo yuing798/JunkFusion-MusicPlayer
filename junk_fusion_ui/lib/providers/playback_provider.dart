@@ -110,7 +110,12 @@ class PlaybackProvider extends ChangeNotifier {
         final tempList = jsonDecode(jsonString) as List<dynamic>;
         for (final one in tempList) {
           final id = (one as num).toInt();
-          _playList.add(songProvider.songs.firstWhere((i) => i.songId == id));
+          final info = songProvider.songs
+              .where((i) => i.songId == id)
+              .firstOrNull;
+          if (info != null) {
+            _playList.add(info);
+          }
         }
       }
     }

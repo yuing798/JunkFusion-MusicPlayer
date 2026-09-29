@@ -60,6 +60,7 @@ void main() async {
   ffi.malloc.free(exeDirPtr);
 
   AppCache.frontCacheRef = await SharedPreferences.getInstance(); //初始化前端缓存指针
+  AppCache.appDocDir = (await getApplicationDocumentsDirectory()).path;
 
   final songProvider = SongProvider();
   final playbackProvider = PlaybackProvider(songProvider: songProvider);

@@ -26,6 +26,8 @@ class AppCache {
     defaultWindowWidth,
     defaultWindowHeight,
   );
+
+  static late String appDocDir;
 }
 
 class UtilFunction {
