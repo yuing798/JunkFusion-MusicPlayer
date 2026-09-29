@@ -107,22 +107,15 @@ class SongProvider extends ChangeNotifier {
   }
 
   //更新某条歌曲
-  void updateSongInfo({
-    required int songId,
-    String? title,
-    String? album,
-    List<String>? artists,
-    String? hash,
-  }) {
+  void requestUpdateSongInfo({required int songId}) {
     final index = _songs.indexWhere((s) => s.songId == songId);
     if (index == -1) return;
 
     final old = _songs[index];
-    final updated = old.copyWith(
-      title: title ?? old.title,
-      album: album,
-      hash: hash,
-      artists: artists,
+    final updated = SongInfo.fromJson(
+      jsonDecode(
+        UtilFunction.cPtr2String(bindings.getSongInfoBySongId(songId)),
+      ),
     );
 
     if (updated == old) return;

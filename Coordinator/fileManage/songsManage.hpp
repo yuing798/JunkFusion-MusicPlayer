@@ -34,7 +34,7 @@ public:
     explicit SongsManage(SQLite::Database& d);
     // ~SongsManage();
     struct InsertState {
-        std::string path;
+        juce::File path;
         std::string msg; // 如果成功没有信息
     };
 

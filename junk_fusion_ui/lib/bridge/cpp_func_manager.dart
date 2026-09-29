@@ -61,20 +61,20 @@ class CppCallbackManager {
       final obj = jsonDecode(str) as Map<String, dynamic>;
 
       final songId = obj[SongInfoMacro.songId] as int;
-      final title = obj[SongInfoMacro.title] as String?;
-      final album = obj[SongInfoMacro.album] as String?;
-      final hash = obj[SongInfoMacro.hash] as String?;
-      final artists = obj[SongInfoMacro.artists] == null
-          ? null
-          : List<String>.from(obj[SongInfoMacro.artists] as List);
+      // final title = obj[SongInfoMacro.title] as String?;
+      // final album = obj[SongInfoMacro.album] as String?;
+      // final hash = obj[SongInfoMacro.hash] as String?;
+      // final artists = obj[SongInfoMacro.artists] == null
+      //     ? null
+      //     : List<String>.from(obj[SongInfoMacro.artists] as List);
 
-      songProvider.updateSongInfo(
-        songId: songId,
-        title: title,
-        album: album,
-        hash: hash,
-        artists: artists,
+      print(
+        "准备根据联网获取的数据更新歌曲元数据信息:$songId ",
+
+        // $title $album $hash ${artists?.join(" / ")},
       );
+
+      songProvider.requestUpdateSongInfo(songId: songId);
     });
 
     _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {

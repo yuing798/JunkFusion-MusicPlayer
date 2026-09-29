@@ -67,6 +67,17 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  ffi.Pointer<ffi.Char> getSongInfoBySongId(int songId) {
+    return _getSongInfoBySongId(songId);
+  }
+
+  late final _getSongInfoBySongIdPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getSongInfoBySongId',
+      );
+  late final _getSongInfoBySongId = _getSongInfoBySongIdPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
   /// DLL_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
   ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
     return _getTimeDomainSpecBySongId(songId);

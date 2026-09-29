@@ -32,6 +32,7 @@ extern "C" {
     DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调
     DLL_EXPORT void registerOnOnlineGetMatedataOver(StringFunc cb);
     DLL_EXPORT const char* getAllSongs();
+    DLL_EXPORT const char* getSongInfoBySongId(long long songId);
 
 #ifdef __cplusplus
 }

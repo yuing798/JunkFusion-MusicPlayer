@@ -38,7 +38,7 @@ extern "C" {
         juce::Thread::launch([jsonStr]() {
             auto logger{spdlog::get(LogDllID)};
             logger->info("开始导入歌曲");
-            // logger->debug("jsonStr == {}", jsonStr);
+            logger->debug("jsonStr == {}", jsonStr);
             Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
             auto filePaths{obj.read(CoordinatorMacro::filePaths)};
             std::vector<juce::File> paths;
@@ -48,14 +48,14 @@ extern "C" {
             auto insertStates{dllManager::getInstance().getSongsManager().insertSongs(paths)};
 
             juce::Array<juce::var> errorFiles;
-            std::vector<std::string> successPaths;
+            std::vector<juce::File> successPaths;
 
             for (auto& insertState : insertStates) {
                 if (!insertState.msg.empty()) {
                     juce::var obj{new juce::DynamicObject()};
                     obj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileName,
-                        juce::String(insertState.path)
+                        insertState.path.getFileName()
                     );
                     obj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileReason,
@@ -87,7 +87,7 @@ extern "C" {
                     songInfos.add(
                         dllManager::getInstance()
                             .getSongsManager()
-                            .getSongInfo(successPath)
+                            .getSongInfo(successPath.getFullPathName())
                             .toJson()
                     );
                 }
@@ -181,5 +181,9 @@ extern "C" {
         obj->setProperty(CoordinatorMacro::songsList, songsList);
 
         return ConvertUtils::object2Uint8t(obj);
+    }
+    const char* getSongInfoBySongId(long long songId) {
+        auto info{dllManager::getInstance().getSongsManager().getSongInfo(songId)};
+        return ConvertUtils::object2Uint8t(info.toJson());
     }
 }

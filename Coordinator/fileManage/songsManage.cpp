@@ -326,7 +326,7 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
     std::vector<InsertState> insertStates;
     for (auto& path : paths) {
         InsertState state;
-        state.path = path.getFileName().toStdString();
+        state.path = path;
         SongInfo info{};
         OnlineGetMatedata::Task onlineTask{};
         av_log_set_level(AV_LOG_ERROR);

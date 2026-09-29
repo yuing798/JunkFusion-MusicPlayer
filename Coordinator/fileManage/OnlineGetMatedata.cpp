@@ -8,6 +8,8 @@
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Exception.h>
+#include <SQLiteCpp/Statement.h>
 #include <algorithm>
 #include <cpr/api.h>
 #include <cpr/cpr.h>
@@ -236,7 +238,8 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                                 .read(bestRecordingIt->recordingIndex)};
         auto releases{finalRecording.read("releases")};
 
-        spdlog::get(LogDllID)->debug("获取到的releases内容:{}", releases.toString().toStdString());
+        // spdlog::get(LogDllID)->debug("获取到的releases内容:{}",
+        // releases.toString().toStdString());
 
         int bestReleaseIndex{0};
         struct ReleaseResult {
@@ -317,10 +320,10 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
             // if (artistsVec.empty()) break;
 
             auto finalAlbumArtists{finalRelease.read("artists")};
-            spdlog::get(LogDllID)->debug(
-                "获取专辑艺术家返回:{}",
-                finalAlbumArtists.toString().toStdString()
-            );
+            // spdlog::get(LogDllID)->debug(
+            //     "获取专辑艺术家返回:{}",
+            //     finalAlbumArtists.toString().toStdString()
+            // );
 
             std::string primaryArtist;
             for (int i = 0; i < finalAlbumArtists.size(); i++) {
@@ -353,7 +356,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                 coverURL.value().replace(pos, 13, "1000x1000bb.jpg"); // 替换为目标分辨率
             }
 
-            spdlog::get(LogDllID)->debug("准备下载高清封面: {}", coverURL.value());
+            // spdlog::get(LogDllID)->debug("准备下载高清封面: {}", coverURL.value());
 
             // 5. 发起第二次请求：真正下载图片数据
             cpr::Response imgRes = cpr::Get(cpr::Url{coverURL.value()}, cpr::Timeout{10000});
@@ -400,34 +403,61 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         spdlog::get(LogDllID)->debug("联网搜索歌曲元数据完成，歌曲ID:{}", task.songId);
 
         bool foundValue{false}; // 是否联网搜索到了想要的内容
-        juce::var resultObj{new juce::DynamicObject()};
+        std::string sqlStr = "UPDATE songs SET";
         if (task.title.isEmpty()) {
             if (finalTitle.isNotEmpty()) {
-                resultObj.getDynamicObject()->setProperty(SongInfoMacro::title, finalTitle);
+                sqlStr += " title = :title, ";
                 foundValue = true;
             }
         }
         if (task.artists.isEmpty()) {
             if (!finalArtistsArr.isEmpty()) {
-                resultObj.getDynamicObject()->setProperty(
-                    SongInfoMacro::artists,
-                    ConvertUtils::stringArray2ArrayVar(finalArtistsArr)
-                );
+                sqlStr += " artists = :artists, ";
                 foundValue = true;
             }
         }
         if (task.album.isEmpty()) {
             if (finalAlbum.isNotEmpty()) {
-                resultObj.getDynamicObject()->setProperty(SongInfoMacro::album, finalAlbum);
+                sqlStr += " album = :album, ";
                 foundValue = true;
             }
         }
         if (task.needCover) {
             if (finalCoverHash.isNotEmpty()) {
-                resultObj.getDynamicObject()->setProperty(SongInfoMacro::hash, finalCoverHash);
+                sqlStr += " hash = :hash, ";
                 foundValue = true;
             }
         }
+        sqlStr += " WHERE songId = :songId";
+
+        try {
+            SQLite::Statement sql{db, sqlStr};
+            if (task.title.isEmpty()) {
+                if (finalTitle.isNotEmpty()) {
+                    sql.bind(":title", finalTitle.toStdString());
+                }
+            }
+            if (task.artists.isEmpty()) {
+                if (!finalArtistsArr.isEmpty()) {
+                    sql.bind(":artists", juce::JSON::toString(finalArtistsArr).toStdString());
+                }
+            }
+            if (task.album.isEmpty()) {
+                if (finalAlbum.isNotEmpty()) {
+                    sql.bind(":album", finalAlbum.toStdString());
+                }
+            }
+            if (task.needCover) {
+                if (finalCoverHash.isNotEmpty()) {
+                    sql.bind(":hash", finalCoverHash.toStdString());
+                }
+            }
+            sql.exec();
+        } catch (SQLite::Exception& e) {
+            spdlog::get(LogDllID)->debug("联网搜索写入数据库失败:{}", e.what());
+        }
+
+        juce::var resultObj{new juce::DynamicObject()};
 
         if (onSearchOver && foundValue) {
             resultObj.getDynamicObject()->setProperty(SongInfoMacro::songId, task.songId);
