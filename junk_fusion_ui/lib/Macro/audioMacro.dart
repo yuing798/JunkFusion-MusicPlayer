@@ -21,4 +21,5 @@ abstract class AudioMacro {
   static const String sliderParam = "sliderParam";
   static const String sliderValue = "sliderValue";
   static const String onPlayNextSong = "onPlayNextSong";
+  static const String updatePlayCount = "updatePlayCount";
 }

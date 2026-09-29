@@ -41,7 +41,7 @@ private:
     std::string currentSongPath; // 当前播放的歌曲路径
     AudioProcessWorker* mWorker; // 进程间调度者
 
-    std::atomic<int> mCurrentPlaySamples; // 当前这首歌曲播放了多少个样本
+    std::atomic<int64_t> mCurrentPlaySamples; // 当前这首歌曲播放了多少个样本
 
 public:
     AudioPreProcess(AudioProcessWorker* worker);

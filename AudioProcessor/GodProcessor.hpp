@@ -14,6 +14,7 @@
 #include "zmq.hpp"
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <spdlog/logger.h>
 

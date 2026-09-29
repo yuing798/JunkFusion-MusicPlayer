@@ -7,5 +7,6 @@
 1. 完成任务后不要自行build
 2. 进行架构调整的时候建议看一下我的git记录
 3. 我没叫你做的事情决定禁止做，你可以向我提议，但是禁止亲自做
-4.  业务bug和性能bug(应用崩溃，空指针，白屏)的危险等级同样高，禁止为了解决性能bug引入业务bug
-5.  所有日志放在C:\Users\sakuyayuing\AppData\Local\Junk Fusion\Junk Fusion\log文件夹中，需要时自行查阅
+4. 业务bug和性能bug(应用崩溃，空指针，白屏)的危险等级同样高，禁止为了解决性能bug引入业务bug
+5. 所有日志放在C:\Users\sakuyayuing\AppData\Local\Junk Fusion\Junk Fusion\log文件夹中，需要时自行查阅
+6. 你在写代码的时候，遇到不确定的内容请使用TODO，FIXME标识先待定，之后我会亲自补充

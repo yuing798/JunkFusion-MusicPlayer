@@ -25,4 +25,5 @@
   "sliderValue":"",
   
   "onPlayNextSong":"",//播放下一首歌的回调信号
+  "updatePlayCount":"",//请求更新播放次数
 }
