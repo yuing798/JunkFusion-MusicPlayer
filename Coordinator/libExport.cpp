@@ -174,8 +174,8 @@ extern "C" {
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
-    void registerOnOnlineGetMatedataOver(StringFunc cb) {
-        dllManager::getInstance().getSongsManager().onOnLineGetMatedataOver = cb;
+    void registerOnUpdateSongInfo(Int64Func cb) {
+        dllManager::getInstance().getSongsManager().OnUpdateSongInfo = cb;
     }
     const char* getAllSongs() {
         auto songsList = dllManager::getInstance().getSongsManager().getAllSongs();

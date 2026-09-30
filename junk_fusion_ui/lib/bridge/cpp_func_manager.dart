@@ -32,7 +32,7 @@ final bindings = JunkFusionDLLBindings(_libPath);
 class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
-  ffi.NativeCallable<StringFuncFunction>? _onOnlineGetMatedataOver;
+  ffi.NativeCallable<Int64FuncFunction>? _onUpdateSongInfo;
   ffi.NativeCallable<VoidFuncFunction>? _onPlayNextSongCallback;
   // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
@@ -54,25 +54,10 @@ class CppCallbackManager {
     ) {
       playback.setCurrentPTS(value);
     });
-    _onOnlineGetMatedataOver = ffi.NativeCallable<StringFuncFunction>.listener((
-      ffi.Pointer<ffi.Char> ptr,
+    _onUpdateSongInfo = ffi.NativeCallable<Int64FuncFunction>.listener((
+      int songId,
     ) {
-      String str = UtilFunction.cPtr2String(ptr);
-      final obj = jsonDecode(str) as Map<String, dynamic>;
-
-      final songId = obj[SongInfoMacro.songId] as int;
-      // final title = obj[SongInfoMacro.title] as String?;
-      // final album = obj[SongInfoMacro.album] as String?;
-      // final hash = obj[SongInfoMacro.hash] as String?;
-      // final artists = obj[SongInfoMacro.artists] == null
-      //     ? null
-      //     : List<String>.from(obj[SongInfoMacro.artists] as List);
-
-      print(
-        "准备根据联网获取的数据更新歌曲元数据信息:songId:$songId ",
-
-        // $title $album $hash ${artists?.join(" / ")},
-      );
+      print("准备更新歌曲元数据信息:songId:$songId ");
 
       songProvider.requestUpdateSongInfo(songId: songId);
     });
@@ -117,9 +102,7 @@ class CppCallbackManager {
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
-    bindings.registerOnOnlineGetMatedataOver(
-      _onOnlineGetMatedataOver!.nativeFunction,
-    );
+    bindings.registerOnUpdateSongInfo(_onUpdateSongInfo!.nativeFunction);
     bindings.registerOnPlayNextSong(_onPlayNextSongCallback!.nativeFunction);
     // bindings.registerOnGetAllSongsOver(_onGetAllSongsOver!.nativeFunction);
     bindings.registerOnLightSongDataImportOver(
@@ -131,7 +114,7 @@ class CppCallbackManager {
   void dispose() {
     bindings.registerErrorSendCallback(ffi.nullptr); //给cpp的函数指针先分配一个nullPtr
     bindings.registerCurrentPTSCallback(ffi.nullptr);
-    bindings.registerOnOnlineGetMatedataOver(ffi.nullptr);
+    bindings.registerOnUpdateSongInfo(ffi.nullptr);
     bindings.registerOnPlayNextSong(ffi.nullptr);
     // bindings.registerOnGetAllSongsOver(ffi.nullptr);
     bindings.registerOnLightSongDataImportOver(ffi.nullptr);
@@ -139,7 +122,7 @@ class CppCallbackManager {
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _errorSendcallable?.close();
     _currentPTSCallback?.close();
-    _onOnlineGetMatedataOver?.close();
+    _onUpdateSongInfo?.close();
     _onPlayNextSongCallback?.close();
     // _onGetAllSongsOver?.close();
     _onLightSongDataImportOver?.close();

@@ -1,6 +1,7 @@
 #include "AudioProcessCoordinator.h"
 #include "../dllManager.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
 #include "Utils/otherUtils.hpp"
@@ -156,8 +157,8 @@ void AudioProcessSuber::run() {
         if (rst.has_value()) {
             // Utils::writeEmergencyLog("suber收到消息");
             std::string data(static_cast<char*>(msg.data()), msg.size());
-            juce::var obj = juce::JSON::fromString(juce::String(data));
-            if (obj.isVoid() || !obj.isObject()) {
+            Yvar obj = juce::JSON::fromString(juce::String(data));
+            if (!obj.isObject()) {
                 OtherUtils::writeEmergencyLog(
                     "AudioProcessSuber接收到未知格式:" + obj.toString().toStdString()
                 );
@@ -167,10 +168,8 @@ void AudioProcessSuber::run() {
                 );
                 continue;
             };
-            auto ptr{obj.getDynamicObject()};
-            jassert(ptr);
-            if (ptr->hasProperty(AudioMacro::errorPopupWindowMsg)) {
-                auto receiverMsg = ptr->getProperty(AudioMacro::errorPopupWindowMsg).toString();
+            if (obj.hasProperty(AudioMacro::errorPopupWindowMsg)) {
+                auto receiverMsg = obj.read(AudioMacro::errorPopupWindowMsg).toString();
                 spdlog::get(LogDllID)->debug(
                     "sub接收到发送错误弹窗消息:{}",
                     receiverMsg.toStdString()
@@ -182,18 +181,22 @@ void AudioProcessSuber::run() {
                     dllManager::getInstance().onErrorSendCallback(cString);
                 continue;
             }
-            if (ptr->hasProperty(AudioMacro::currentPTS)) {
+            if (obj.hasProperty(AudioMacro::currentPTS)) {
 
-                double pts = ptr->getProperty(AudioMacro::currentPTS);
+                double pts = obj.read(AudioMacro::currentPTS).toDouble();
                 // spdlog::get(LogDllID)->debug("suber接收到信息:准备发送当前的pts回调:{}", pts);
                 if (dllManager::getInstance().onCurrentPTSCallback)
                     dllManager::getInstance().onCurrentPTSCallback(pts);
                 continue;
             }
-            if (ptr->hasProperty(AudioMacro::onPlayNextSong)) {
+            if (obj.hasProperty(AudioMacro::onPlayNextSong)) {
                 if (dllManager::getInstance().onPlayNextSong)
                     dllManager::getInstance().onPlayNextSong();
                 continue;
+            }
+            if (obj.hasProperty(AudioMacro::updatePlayCount)) {
+                auto path{obj.read(AudioMacro::updatePlayCount).toString()};
+                dllManager::getInstance().getSongsManager().updatePlayCount(path.toStdString());
             }
         }
     }

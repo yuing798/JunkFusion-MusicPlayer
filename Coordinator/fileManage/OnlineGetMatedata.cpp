@@ -514,9 +514,9 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
 
         juce::var resultObj{new juce::DynamicObject()};
 
-        if (onSearchOver && foundValue) {
-            resultObj.getDynamicObject()->setProperty(SongInfoMacro::songId, task.songId);
-            onSearchOver(ConvertUtils::object2Uint8t(resultObj));
+        if (foundValue) {
+            if (dllManager::getInstance().getSongsManager().OnUpdateSongInfo)
+                dllManager::getInstance().getSongsManager().OnUpdateSongInfo(task.songId);
         }
     }
 }

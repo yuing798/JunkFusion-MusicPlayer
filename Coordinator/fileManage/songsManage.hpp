@@ -16,7 +16,6 @@
 #include <tpropertymap.h>
 #include <vector>
 
-
 class SongsManage {
 private:
     SQLite::Database& db;
@@ -49,6 +48,8 @@ public:
     bool reverseMyLike(int64_t id);
     PlayInfo getPlayInfo(int64_t songId); // 根据ID获得路径和歌曲时长
     void saveComment(juce::String text, int64_t songId);
-    std::function<void(const char*)> onOnLineGetMatedataOver;
+    std::function<void(int64_t songId)> OnUpdateSongInfo;
     juce::Array<double> getTimeDomainSpec(int64_t songId); // 根据ID号获取时域图
+
+    bool updatePlayCount(std::string path);
 };

@@ -15,7 +15,6 @@
 #include <cstdint>
 #include <cstring>
 
-
 #include <memory>
 #include <optional>
 #include <sha1.h>
@@ -48,9 +47,6 @@ SongsManage::SongsManage(SQLite::Database& d) : db(d), mWaveFormAnaly(d) {
                 e.what()
             );
     }
-    mWaveFormAnaly.onOnlineGetMatedataOver = [this](const char* jsonStr) {
-        if (onOnLineGetMatedataOver) onOnLineGetMatedataOver(jsonStr);
-    };
 }
 juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
     if (!map.contains(key) || map[key].isEmpty()) {
@@ -764,5 +760,27 @@ juce::Array<double> SongsManage::getTimeDomainSpec(int64_t songId) {
         spdlog::get(LogDllID)
             ->error("getTimeDomainSpecBySongId错误:id:{},原因:{}", songId, e.what());
         return {};
+    }
+}
+
+bool SongsManage::updatePlayCount(std::string path) {
+    try {
+        SQLite::Statement sql{
+            db,
+            "UPDATE songs SET playNum = (playNum + 1) WHERE filePath = :filePath RETURNING songId"
+        };
+
+        sql.bind(":filePath", path);
+        if (sql.executeStep()) {
+            int64_t songId{sql.getColumn("songId").getInt64()};
+            if (OnUpdateSongInfo) OnUpdateSongInfo(songId);
+        }
+        return true;
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->debug(
+            "SongsManage::updatePlayCount(std::string path)发生错误:{}",
+            e.what()
+        );
+        return false;
     }
 }

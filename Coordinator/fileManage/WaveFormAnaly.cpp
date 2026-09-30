@@ -26,11 +26,7 @@ extern "C" {
 }
 
 WaveFormAnaly::WaveFormAnaly(SQLite::Database& db)
-    : juce::Thread("WaveFormAnaly"), mDb(db), mOnlineGetMatedata(db) {
-    mOnlineGetMatedata.onSearchOver = [this](const char* json) {
-        if (onOnlineGetMatedataOver) onOnlineGetMatedataOver(json);
-    };
-}
+    : juce::Thread("WaveFormAnaly"), mDb(db), mOnlineGetMatedata(db) {}
 
 void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -44,7 +40,6 @@ void WaveFormAnaly::run() {
         Task task;
         bool hasTask = false;
 
-        // 1. 缩小锁的作用域，仅在弹出任务时持锁
         {
             std::lock_guard<std::mutex> lock(mtx);
             if (!mTaskQueue.empty()) {
@@ -52,13 +47,11 @@ void WaveFormAnaly::run() {
                 mTaskQueue.pop();
                 hasTask = true;
             }
-        } // 锁在此处自动释放
+        }
 
-        // 2. 根据是否有任务决定处理还是休眠
         if (hasTask) {
-            processSingleFile(task); // 在锁外执行耗时任务
+            processSingleFile(task);
         } else {
-            // 在【无锁状态】下安全挂起等待新任务！
             wait(-1);
         }
     }

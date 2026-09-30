@@ -29,5 +29,4 @@ public:
     void run() override;
     void setTask(Task task);
     void processSingleFile(Task task);
-    std::function<void(const char*)> onOnlineGetMatedataOver;
 };

@@ -46,5 +46,4 @@ public:
     void setTask(Task task);
 
     void searchDataByPrint(Task task);
-    std::function<void(const char*)> onSearchOver;
 };

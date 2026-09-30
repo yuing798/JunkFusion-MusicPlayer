@@ -143,18 +143,6 @@ class JunkFusionDLLBindings {
       _registerOnLightSongDataImportOverPtr
           .asFunction<void Function(StringFunc)>();
 
-  void registerOnOnlineGetMatedataOver(StringFunc cb) {
-    return _registerOnOnlineGetMatedataOver(cb);
-  }
-
-  late final _registerOnOnlineGetMatedataOverPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
-        'registerOnOnlineGetMatedataOver',
-      );
-  late final _registerOnOnlineGetMatedataOver =
-      _registerOnOnlineGetMatedataOverPtr
-          .asFunction<void Function(StringFunc)>();
-
   void registerOnPlayNextSong(VoidFunc cb) {
     return _registerOnPlayNextSong(cb);
   }
@@ -165,6 +153,17 @@ class JunkFusionDLLBindings {
       );
   late final _registerOnPlayNextSong = _registerOnPlayNextSongPtr
       .asFunction<void Function(VoidFunc)>();
+
+  void registerOnUpdateSongInfo(Int64Func cb) {
+    return _registerOnUpdateSongInfo(cb);
+  }
+
+  late final _registerOnUpdateSongInfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(Int64Func)>>(
+        'registerOnUpdateSongInfo',
+      );
+  late final _registerOnUpdateSongInfo = _registerOnUpdateSongInfoPtr
+      .asFunction<void Function(Int64Func)>();
 
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
     return _saveComment(songId, commentText);
@@ -221,6 +220,9 @@ class JunkFusionDLLBindings {
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;
 typedef DoubleFuncFunction = ffi.Void Function(ffi.Double);
 typedef DartDoubleFuncFunction = void Function(double);
+typedef Int64Func = ffi.Pointer<ffi.NativeFunction<Int64FuncFunction>>;
+typedef Int64FuncFunction = ffi.Void Function(ffi.LongLong);
+typedef DartInt64FuncFunction = void Function(int);
 typedef StringFunc = ffi.Pointer<ffi.NativeFunction<StringFuncFunction>>;
 typedef StringFuncFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
 typedef DartStringFuncFunction = void Function(ffi.Pointer<ffi.Char> str);
