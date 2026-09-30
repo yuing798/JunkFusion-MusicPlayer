@@ -11,6 +11,7 @@ private:
     double mSampleRate{44100.0};
     std::string mPath;
     int64_t mCurrentSampleCount{0};
+    bool hadUpdate{false}; // 这首歌是否已经更新
 
     void updatePlayCount();
 

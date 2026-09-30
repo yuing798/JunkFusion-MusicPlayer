@@ -21,6 +21,7 @@ void PlayCount::setNewSong(std::string path, double duration) {
     if (mPath == path) return;
     mPath = path;
     mCurrentSampleCount = 0;
+    hadUpdate = false;
     auto targetUptateSeconds{std::min(duration * 0.5, 15.0 + 3.0 * std::sqrt(duration))};
     mTargetUpdateSample = static_cast<int>(targetUptateSeconds * mSampleRate);
 }
@@ -29,7 +30,8 @@ void PlayCount::prepareToPlay(double sampleRate) { mSampleRate = sampleRate; }
 void PlayCount::processBlock(int numSamplesThisBuffer, bool isFullMute) {
     if (isFullMute) return;
     mCurrentSampleCount += numSamplesThisBuffer;
-    if (mCurrentSampleCount >= mTargetUpdateSample) {
+    if (mCurrentSampleCount >= mTargetUpdateSample && !hadUpdate) {
         updatePlayCount();
+        hadUpdate = true;
     }
 }

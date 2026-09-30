@@ -21,7 +21,7 @@ public:
     int toInt() const;
     float toFloat32() const;
 
-    const char* toRawUTF8() { return value.toString().toRawUTF8(); }
+    const char* toRawUTF8() { return toString().toRawUTF8(); }
     juce::String toString();
     bool isVoid() { return value.isVoid(); }
     bool isObject() { return value.isObject(); }
