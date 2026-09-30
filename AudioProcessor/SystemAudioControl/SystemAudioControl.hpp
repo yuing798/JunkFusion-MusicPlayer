@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "juce_core/juce_core.h"
 class SystemAudioControl {
 public:
