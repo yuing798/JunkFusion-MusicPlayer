@@ -1,6 +1,7 @@
 # Junk-Fusion音乐播放器项目
 
 这是一个以flutter做UI,juce做为音频引擎，FFmpeg做编码层，onnx runtime做AI推理层，spdlog做日志分析的音乐播放器项目，flutter作为前端UI
+主要目标为覆盖三桌面平台:macos,windows,linux
 
 ## 软件工程规范
 
