@@ -41,7 +41,7 @@ private:
     std::string currentSongPath; // 当前播放的歌曲路径
     AudioProcessWorker* mWorker; // 进程间调度者
 
-    std::atomic<int64_t> mCurrentPlaySamples; // 当前这首歌曲播放了多少个样本
+    std::atomic<int64_t> mCurrentPtsSamples; // 当前这首歌曲的进度条在多少个样本处
 
 public:
     AudioPreProcess(AudioProcessWorker* worker);
@@ -55,4 +55,5 @@ public:
     void play(std::string songPath, double targetPTS);
     void pausePlay();
     void timerCallback() override;
+    bool getIsFullMute() { return isFullMute; }
 };

@@ -6,7 +6,7 @@
 #include <string>
 class PlayCount {
 private:
-    AudioProcessWorker& mWorker;
+    AudioProcessWorker* mWorker;
     int64_t mTargetUpdateSample{0}; // 目标采样点数
     double mSampleRate{44100.0};
     std::string mPath;
@@ -15,7 +15,7 @@ private:
     void updatePlayCount();
 
 public:
-    PlayCount(AudioProcessWorker& w) : mWorker(w) {}
+    PlayCount(AudioProcessWorker* w) : mWorker(w) {}
 
     /**
      * @brief Set the Target Update Sample object
@@ -31,5 +31,8 @@ public:
     //  * @param currentSamples 当前播放样本数
     //  */
     // void checkForUpdate(int64_t currentSamples);
-    void processBlock(juce::AudioBuffer<float>&);
+    void processBlock(juce::AudioBuffer<float>&, bool isFullMute);
+
+    // 停止计数
+    void pauseCount();
 };

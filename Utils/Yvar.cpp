@@ -25,11 +25,19 @@ double Yvar::toDouble() const {
         return 0.0;
     }
 }
-double Yvar::toInt() const {
+int Yvar::toInt() const {
     if (value.isInt()) {
         return static_cast<int>(value);
     } else {
         return -1;
+    }
+}
+
+float Yvar::toFloat32() const {
+    if (value.isDouble()) {
+        return static_cast<float>(value);
+    } else {
+        return 0.0f;
     }
 }
 
@@ -41,12 +49,3 @@ juce::String Yvar::toString() {
         return value.toString();
     }
 }
-
-// void Yvar::write(Yvar v) {
-//     if (!value.isArray()) return;
-//     value.getArray()->add(v.value);
-// }
-// void Yvar::write(const char* key, Yvar v) {
-//     if (!value.isObject()) return;
-//     value.getDynamicObject()->setProperty(key, v.value);
-// }

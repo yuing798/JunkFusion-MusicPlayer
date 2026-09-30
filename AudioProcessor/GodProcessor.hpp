@@ -3,6 +3,7 @@
 #include "AudioPreProcess.hpp"
 #include "AudioRingBuffer.hpp"
 #include "DeviceManager.hpp"
+#include "PlayCount.hpp"
 #include "Utils/constants.h"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -32,6 +33,8 @@ private:
     int mNumChannels{2};
 
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterVolume;
+
+    std::unique_ptr<PlayCount> mPlayCount;
 
 public:
     GodProcessor(juce::StringArray initArgs);

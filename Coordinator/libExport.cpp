@@ -1,13 +1,14 @@
 #include "./libExport.h"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
+#include "Macro/SongInfoMacro.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Macro/coordinatorMacro.hpp"
+#include "Model/SongInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
 #include "Utils/otherUtils.hpp"
-#include "fileManage/dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_osc/juce_osc.h"
@@ -110,12 +111,13 @@ extern "C" {
     void registerErrorSendCallback(StringFunc cb) {
         dllManager::getInstance().onErrorSendCallback = cb;
     }
-    void play(long long songId, double currentPTS) {
-        auto path = dllManager::getInstance().getSongsManager().getPath(songId);
+    void play(long long songId, double targetPTS) {
+        auto info = dllManager::getInstance().getSongsManager().getPlayInfo(songId);
         juce::var playInfo{new juce::DynamicObject()};
 
-        playInfo.getDynamicObject()->setProperty(AudioMacro::songPath, juce::String(path));
-        playInfo.getDynamicObject()->setProperty(AudioMacro::targetPTS, currentPTS);
+        playInfo.getDynamicObject()->setProperty(SongInfoMacro::path, juce::String(info.path));
+        playInfo.getDynamicObject()->setProperty(AudioMacro::targetPTS, targetPTS);
+        playInfo.getDynamicObject()->setProperty(SongInfoMacro::duration, info.duration);
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(AudioMacro::play, playInfo);
         dllManager::getInstance().sendMessage2AudioProcess(obj);

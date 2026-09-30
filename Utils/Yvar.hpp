@@ -18,11 +18,13 @@ public:
     Yvar read(int index) const;
 
     double toDouble() const;
-    double toInt() const;
+    int toInt() const;
+    float toFloat32() const;
+
+    const char* toRawUTF8() { return value.toString().toRawUTF8(); }
     juce::String toString();
     bool isVoid() { return value.isVoid(); }
+    bool isObject() { return value.isObject(); }
     bool hasProperty(const char* key) { return value.hasProperty(key); }
     int size() { return value.size(); }
-    // void write(Yvar v);
-    // void write(const char* key, Yvar v);
 };

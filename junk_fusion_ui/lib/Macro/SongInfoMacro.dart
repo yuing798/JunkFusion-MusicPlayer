@@ -1,6 +1,7 @@
 //warning:this file will be generated auto,dont modify it by yourself
 
 abstract class SongInfoMacro {
+  static const String path = "path";
   static const String songId = "songId";
   static const String duration = "duration";
   static const String title = "title";

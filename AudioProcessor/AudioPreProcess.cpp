@@ -33,12 +33,7 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
     fadeInSinTable = MathUtils::generateSinTable(0.5);
     fadeOutCosTable = MathUtils::generateCosTable(0.5);
 
-    // 播放新歌
-    mWorker->receiver->onPlay = [this](std::string songPath, double targetPTS) {
-        play(songPath, targetPTS);
-    };
-
-    // 停止播放
+    // 停止播放，不代表现在开始完全静音
     mWorker->receiver->onPausePlay = [this]() { pausePlay(); };
 }
 void AudioPreProcess::prepareToPlay(
@@ -141,12 +136,12 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
         }
     }
     for (int i = 0; i < buffer.getNumSamples(); i++) {
-        if (!isFullMute) mCurrentPlaySamples++;
+        if (!isFullMute) mCurrentPtsSamples++;
     }
 }
 
 void AudioPreProcess::timerCallback() {
-    double currentSeconds = mCurrentPlaySamples / mSampleRate;
+    double currentSeconds = mCurrentPtsSamples / mSampleRate;
     juce::var obj{new juce::DynamicObject()};
     obj.getDynamicObject()->setProperty(AudioMacro::currentPTS, currentSeconds);
     auto msg = juce::JSON::toString(obj).toStdString();
@@ -160,7 +155,7 @@ void AudioPreProcess::pausePlay() {
 
 void AudioPreProcess::play(std::string songPath, double targetPTS) {
     mainPlayDuckIndex = !mainPlayDuckIndex;
-    mCurrentPlaySamples = (int)(targetPTS * mSampleRate);
+    mCurrentPtsSamples = (int)(targetPTS * mSampleRate);
     if (currentSongPath != songPath) {
         isSongChange = true;
     } else {

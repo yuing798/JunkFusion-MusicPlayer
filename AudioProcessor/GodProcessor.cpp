@@ -3,10 +3,7 @@
 #include "AudioRingBuffer.hpp"
 #include "DeviceManager.hpp"
 #include "Macro/audioMacro.hpp"
-#include "Utils/constants.h"
-#include "Utils/convertUtils.hpp"
-#include "Utils/otherUtils.hpp"
-#include "ffmpegDecoder.hpp"
+#include "PlayCount.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "processSchedule/AudioProcessWorker.hpp"
@@ -17,8 +14,6 @@
 #include <string>
 
 GodProcessor::GodProcessor(juce::StringArray initArgs) {
-
-    // Utils::writeEmergencyLog("开始执行GodProcessor的构造函数");
 
     std::string pushPullPort;
     std::string pubSubPort;
@@ -56,10 +51,9 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     juce::File configFile = mCacheDir.getChildFile("JFConfig.xml");
     if (!configFile.existsAsFile()) configFile.create();
     mDeviceManager = std::make_unique<DeviceManager>(std::move(configFile));
-
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
-
     mDeviceManager->connectProcessor(this);
+    mPlayCount = std::make_unique<PlayCount>(mAudioProcessWorker.get());
 
     mAudioProcessWorker->receiver->onMasterVolumeChange = [this](float value) {
         masterVolume.setTargetValue(value);
@@ -68,6 +62,13 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     mOscReceiver->onMasterVolumeChange = [this](float value) {
         masterVolume.setTargetValue(value);
     };
+
+    // 播放新歌
+    mAudioProcessWorker->receiver->onPlay =
+        [this](std::string songPath, double targetPTS, double duration) {
+            mPreProcess->play(songPath, targetPTS);
+            mPlayCount->setNewSong(songPath, duration);
+        };
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -79,6 +80,8 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
 
     masterVolume.reset(sampleRate, 0.002);
     masterVolume.setCurrentAndTargetValue(1.0);
+
+    mPlayCount->prepareToPlay(sampleRate);
 }
 
 void GodProcessor::releaseResources() {}
@@ -86,6 +89,8 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     juce::ignoreUnused(midiMessages);
 
     mPreProcess->processBlock(buffer);
+
+    mPlayCount->processBlock(buffer, mPreProcess->getIsFullMute());
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         auto currentMasterVolume{masterVolume.getNextValue()};

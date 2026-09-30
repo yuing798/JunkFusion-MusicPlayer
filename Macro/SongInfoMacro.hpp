@@ -1,6 +1,7 @@
 //warning:this file will be generated auto,dont modify it by yourself
 #pragma once
 namespace SongInfoMacro{
+    static constexpr const char* path = "path" ;
     static constexpr const char* songId = "songId" ;
     static constexpr const char* duration = "duration" ;
     static constexpr const char* title = "title" ;

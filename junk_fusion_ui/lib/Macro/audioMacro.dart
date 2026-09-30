@@ -14,7 +14,6 @@ abstract class AudioMacro {
   static const String pause = "pause";
   static const String songChangeCrossFadeLength = "songChangeCrossFadeLength";
   static const String play = "play";
-  static const String songPath = "songPath";
   static const String targetPTS = "targetPTS";
   static const String currentPTS = "currentPTS";
   static const String setSliderValue = "setSliderValue";

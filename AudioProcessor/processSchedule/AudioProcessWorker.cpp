@@ -1,7 +1,9 @@
 #include "./AudioProcessWorker.hpp"
 #include "AudioProcessWorker.hpp"
+#include "Macro/SongInfoMacro.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Macro/sliderParam.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
@@ -12,7 +14,7 @@
 
 AudioProcessorPuller::AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort)
     : juce::Thread("AudioProcessorPuller"), context(ctx), mPushPullPort(pushPullPort) {
-    OtherUtils::writeEmergencyLog("AudioProcessorPuller构造函数执行完成");
+    // OtherUtils::writeEmergencyLog("AudioProcessorPuller构造函数执行完成");
 }
 
 void AudioProcessorPuller::run() {
@@ -31,43 +33,41 @@ void AudioProcessorPuller::run() {
             OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
             spdlog::get(LogAudioID)->debug("音频进程pusller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
-            auto jsonStr{juce::JSON::fromString(juce::String(command))};
-            if (jsonStr.isVoid() || !jsonStr.isObject()) {
+            Yvar jsonObj{juce::JSON::fromString(juce::String(command))};
+            if (!jsonObj.isObject()) {
                 OtherUtils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
-                auto obj = jsonStr.getDynamicObject();
-                jassert(obj);
-                if (obj->hasProperty(AudioMacro::killAudioProcess)) {
+                if (jsonObj.hasProperty(AudioMacro::killAudioProcess)) {
                     juce::MessageManager::callAsync([]() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();
                     });
                     continue;
                 }
-                if (obj->hasProperty(AudioMacro::play)) {
+                if (jsonObj.hasProperty(AudioMacro::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
-                    juce::var playInfo{obj->getProperty(AudioMacro::play)};
-                    if (auto playInfoObj = playInfo.getDynamicObject()) {
-                        auto songPath{
-                            playInfoObj->getProperty(AudioMacro::songPath).toString().toStdString()
-                        };
-                        double targetPTS{playInfoObj->getProperty(AudioMacro::targetPTS)};
+                    auto playInfo{jsonObj.read(AudioMacro::play)};
+                    auto songPath{playInfo.read(SongInfoMacro::path).toString().toStdString()};
+                    double targetPTS{playInfo.read(AudioMacro::targetPTS).toDouble()};
+                    double duration{playInfo.read(SongInfoMacro::duration).toDouble()};
 
-                        if (onPlay) onPlay(songPath, targetPTS);
-                        continue;
-                    }
+                    if (onPlay) onPlay(songPath, targetPTS, duration);
+                    continue;
                 }
-                if (obj->hasProperty(AudioMacro::pause)) {
+                if (jsonObj.hasProperty(AudioMacro::pause)) {
                     spdlog::get(LogAudioID)->debug("收到暂停指令");
                     if (onPausePlay) onPausePlay();
                     continue;
                 }
-                if (obj->hasProperty(AudioMacro::setSliderValue)) {
-                    auto ptr{obj->getProperty(AudioMacro::setSliderValue).getDynamicObject()};
-                    jassert(ptr);
-                    auto identifyParam{ptr->getProperty(AudioMacro::sliderParam).toString()};
+                if (jsonObj.hasProperty(AudioMacro::setSliderValue)) {
+                    auto identifyParam{jsonObj.read(AudioMacro::setSliderValue)
+                                           .read(AudioMacro::sliderParam)
+                                           .toRawUTF8()};
                     if (identifyParam == SliderParam::masterVolume) {
-                        float value{ptr->getProperty(AudioMacro::sliderValue)};
+                        float value{jsonObj.read(AudioMacro::setSliderValue)
+                                        .read(AudioMacro::sliderValue)
+                                        .toFloat32()};
+
                         if (onMasterVolumeChange) onMasterVolumeChange(value);
                     }
                 }

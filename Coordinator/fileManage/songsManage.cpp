@@ -1,10 +1,11 @@
-#include "songsManage.hpp"
+#include "./songsManage.hpp"
+#include "../Model/PlayInfo.hpp"
+#include "../Model/SongInfo.hpp"
 #include "../dllManager.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
 #include "WaveFormAnaly.hpp"
-#include "dbModel.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <SQLiteCpp/Database.h>
@@ -13,6 +14,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+
 
 #include <memory>
 #include <optional>
@@ -681,9 +683,9 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
     return insertStates;
 }
 
-std::string SongsManage::getPath(int64_t songId) {
-    spdlog::get(LogDllID)->debug("开始根据id搜索歌曲路径");
-    std::string path;
+PlayInfo SongsManage::getPlayInfo(int64_t songId) {
+    spdlog::get(LogDllID)->debug("开始根据id搜索歌曲信息");
+    PlayInfo info{};
     try {
         SQLite::Statement sql(
             db,
@@ -693,16 +695,18 @@ std::string SongsManage::getPath(int64_t songId) {
         );
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
-            path = sql.getColumn("filePath").getString();
+            info.path = sql.getColumn("filePath").getString();
+            info.duration = sql.getColumn("duration").getDouble();
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, path);
-        return path;
+        spdlog::get(LogDllID)
+            ->debug("成功获取:id:{},路径:{},持续时间:{}", songId, info.path, info.duration);
+        return info;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};
         logger->error("SongsManage::getPlayInfoBySongId(int64_t songId)发生错误:{}", e.what());
-        return "";
+        return {};
     }
 }
 
