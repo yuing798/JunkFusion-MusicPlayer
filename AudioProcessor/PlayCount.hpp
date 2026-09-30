@@ -25,13 +25,7 @@ public:
     void setNewSong(std::string path, double duration);
     void prepareToPlay(double sampleRate);
 
-    // /**
-    //  * @brief 传入当前播放样本数来检查是否需要更新
-    //  *
-    //  * @param currentSamples 当前播放样本数
-    //  */
-    // void checkForUpdate(int64_t currentSamples);
-    void processBlock(juce::AudioBuffer<float>&, bool isFullMute);
+    void processBlock(int numSamplesThisBuffer, bool isFullMute);
 
     // 停止计数
     void pauseCount();

@@ -14,7 +14,7 @@ void PlayCount::updatePlayCount() {
         ptr->setProperty(AudioMacro::updatePlayCount, juce::String(mPath));
     }
     mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
-    spdlog::get(LogAudioID)->debug("通知协调者更新播放次数:路径:{}", mPath);
+    // spdlog::get(LogAudioID)->debug("通知协调者更新播放次数:路径:{}", mPath);
 }
 
 void PlayCount::setNewSong(std::string path, double duration) {
@@ -26,10 +26,9 @@ void PlayCount::setNewSong(std::string path, double duration) {
 }
 void PlayCount::prepareToPlay(double sampleRate) { mSampleRate = sampleRate; }
 
-void PlayCount::processBlock(juce::AudioBuffer<float>& buffer, bool isFullMute) {
+void PlayCount::processBlock(int numSamplesThisBuffer, bool isFullMute) {
     if (isFullMute) return;
-    auto numSamples{buffer.getNumSamples()};
-    mCurrentSampleCount += numSamples;
+    mCurrentSampleCount += numSamplesThisBuffer;
     if (mCurrentSampleCount >= mTargetUpdateSample) {
         updatePlayCount();
     }
