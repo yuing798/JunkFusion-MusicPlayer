@@ -160,7 +160,11 @@ static bool replyEmpty(DBusConnection* connection, DBusMessage* msg) {
 // ---------------------------------------------------------------------------
 // D-Bus 消息分发（注册对象路径后，所有对本服务的调用都进这里）
 // ---------------------------------------------------------------------------
-DBusHandlerResult handleMessage(DBusConnection* connection, DBusMessage* msg, void* userData) {
+DBusHandlerResult LinuxSystemAudioControl::handleMessage(
+    DBusConnection* connection,
+    DBusMessage* msg,
+    void* userData
+) {
     auto* self = static_cast<LinuxSystemAudioControl*>(userData);
     const char* interface = dbus_message_get_interface(msg);
     const char* member = dbus_message_get_member(msg);
