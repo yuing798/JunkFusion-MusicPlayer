@@ -15,6 +15,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <winrt/impl/Windows.Media.0.h>
 
 using namespace winrt::Windows::Media;
 using namespace winrt::Windows::Media::Control;
@@ -41,6 +42,9 @@ struct WindowsSystemAudioControl::Impl {
     winrt::event_token pauseToken{};
     winrt::event_token nextToken{};
     winrt::event_token previousToken{};
+    winrt::event_token fastForwardToken{};
+    winrt::event_token rewindToken{};
+    winrt::event_token stopToken{};
     bool eventsRegistered{false};
 
     // 获取 SMTC 实例，失败返回 false
@@ -74,7 +78,7 @@ bool WindowsSystemAudioControl::initialize() {
     }
 
     if (!mImpl->resolveSmtc()) {
-        // TODO(连接): 此处需要调用方提供一个日志回调/工具，失败时打印错误日志
+        if (onLog) onLog("解析STMC失败");
         return false;
     }
 
@@ -84,14 +88,16 @@ bool WindowsSystemAudioControl::initialize() {
         mImpl->smtc.IsPauseEnabled(true);
         mImpl->smtc.IsNextEnabled(true);
         mImpl->smtc.IsPreviousEnabled(true);
+        mImpl->smtc.IsFastForwardEnabled(true);
+        mImpl->smtc.IsRewindEnabled(true);
+        mImpl->smtc.IsStopEnabled(true);
     } catch (...) {
-        // TODO(连接): 打印初始化异常日志
+        if (onLog) onLog("windows系统音频控制初始化失败");
         return false;
     }
 
     mImpl->smtc.PlaybackStatus(MediaPlaybackStatus::Closed);
 
-    // 注册媒体按键事件；回调全部切回主线程触发（WinRT 事件线程不能直接碰业务/UI 状态）
     auto onPlayEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Play && onPlay) {
             onPlay();
@@ -102,6 +108,7 @@ bool WindowsSystemAudioControl::initialize() {
             onPause();
         }
     };
+
     auto onNextEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Next && onNext) {
             onNext();
@@ -112,6 +119,22 @@ bool WindowsSystemAudioControl::initialize() {
             onPrevious();
         }
     };
+    auto onFastForwardEvt = [this](auto&&, auto&& e) {
+        if (e.Button() == SystemMediaTransportControlsButton::FastForward && onFastForward) {
+            onFastForward();
+        }
+    };
+    auto onRewindEvt = [this](auto&&, auto&& e) {
+        if (e.Button() == SystemMediaTransportControlsButton::Rewind && onRewind) {
+            onRewind();
+        }
+    };
+    auto onStopEvt = [this](auto&&, auto&& e) {
+        if (e.Button() == SystemMediaTransportControlsButton::Stop && onStop) {
+            onStop();
+        }
+    };
+
     // FIXME(连接): 系统媒体按键无法区分“快进”与“快退”，onSeek 的方向在此处理不了。
     //             若需要 seek，请改用 TimelineProperties 的 PositionChangeRequested 事件，
     //             或自行扩展基类接口增加 onSeekForward / onSeekBackward 回调。
@@ -119,6 +142,8 @@ bool WindowsSystemAudioControl::initialize() {
     mImpl->pauseToken = mImpl->smtc.ButtonPressed(onPauseEvt);
     mImpl->nextToken = mImpl->smtc.ButtonPressed(onNextEvt);
     mImpl->previousToken = mImpl->smtc.ButtonPressed(onPrevEvt);
+    mImpl->fastForwardToken = mImpl->smtc.ButtonPressed(onFastForward);
+    mImpl->rewindToken = mImpl->smtc.ButtonPressed(onRewind);
 
     mImpl->eventsRegistered = true;
     mImpl->initialized.store(true);
@@ -138,7 +163,7 @@ void WindowsSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
         );
         mImpl->displayUpdater.Update();
     } catch (...) {
-        // TODO(连接): 打印元数据更新失败日志
+        if (onLog) onLog("更新元数据失败");
     }
 }
 
@@ -153,7 +178,7 @@ void WindowsSystemAudioControl::updatePlaybackState(PlaybackState state) {
                                          : MediaPlaybackStatus::Paused
         );
     } catch (...) {
-        // TODO(连接): 打印播放状态更新失败日志
+        if (onLog) onLog("更新播放状态失败");
     }
 }
 
@@ -168,12 +193,15 @@ void WindowsSystemAudioControl::shutdown() {
             mImpl->smtc.ButtonPressed(mImpl->pauseToken);
             mImpl->smtc.ButtonPressed(mImpl->nextToken);
             mImpl->smtc.ButtonPressed(mImpl->previousToken);
+            mImpl->smtc.ButtonPressed(mImpl->fastForwardToken);
+            mImpl->smtc.ButtonPressed(mImpl->rewindToken);
+            mImpl->smtc.ButtonPressed(mImpl->stopToken);
         }
         if (mImpl->smtc) {
             mImpl->smtc.IsEnabled(false);
         }
     } catch (...) {
-        // TODO(连接): 打印释放异常日志
+        if (onLog) onLog("windows系统音频控制释放资源异常");
     }
 
     mImpl->eventsRegistered = false;
