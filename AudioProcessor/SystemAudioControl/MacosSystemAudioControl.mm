@@ -32,18 +32,6 @@ static id makeCommandTarget(MPRemoteCommand* command, void (^handler)(MPRemoteCo
         }];
 }
 
-static std::string
-joinIntoString(const std::vector<std::string>& stringArray, std::string separtor) {
-    std::string finalS;
-    for (size_t i = 0; i < stringArray.size(); i++) {
-        finalS += stringArray[i];
-        if (i < stringArray.size() - 1) {
-            finalS += separtor;
-        }
-    }
-    return finalS;
-}
-
 MacosSystemAudioControl::MacosSystemAudioControl() : mImpl(std::make_unique<Impl>()) {}
 
 MacosSystemAudioControl::~MacosSystemAudioControl() { shutdown(); }
@@ -131,10 +119,14 @@ void MacosSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
     @autoreleasepool {
         NSMutableDictionary* nowPlaying = [NSMutableDictionary dictionary];
 
-        std::string title = metadata.title;
+        // 1. 将 std::string 转换为 NSString
+        NSString* title = [NSString stringWithUTF8String:metadata.title.c_str()];
         nowPlaying[MPMediaItemPropertyTitle] = title;
-        nowPlaying[MPMediaItemPropertyArtist] =
-            SystemAudioControl::joinIntoString(metadata.artists, " / ");
+
+        // 2. 先算出拼接后的 std::string，再转换为 NSString
+        std::string artistsStr = SystemAudioControl::joinIntoString(metadata.artists, " / ");
+        NSString* artists = [NSString stringWithUTF8String:artistsStr.c_str()];
+        nowPlaying[MPMediaItemPropertyArtist] = artists;
 
         // FIXME(连接): 封面图尚未接入——MediaMetadata 结构体目前没有 cover 字段，
         //             若要显示封面请扩展 MediaMetadata 增加封面数据/路径，再填充
