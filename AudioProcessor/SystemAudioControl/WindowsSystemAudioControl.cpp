@@ -1,4 +1,5 @@
 #include "WindowsSystemAudioControl.hpp"
+#include "SystemAudioControl.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -17,18 +18,6 @@
 
 using namespace winrt::Windows::Media;
 using namespace winrt::Windows::Media::Control;
-
-static std::string
-joinIntoString(const std::vector<std::string>& stringArray, std::string separtor) {
-    std::string finalS;
-    for (size_t i = 0; i < stringArray.size(); i++) {
-        finalS += stringArray[i];
-        if (i < stringArray.size() - 1) {
-            finalS += separtor;
-        }
-    }
-    return finalS;
-}
 
 static std::wstring Utf8ToWide(const std::string& utf8) {
     if (utf8.empty()) return {};
@@ -145,7 +134,7 @@ void WindowsSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
         mImpl->displayUpdater.Type(MediaPlaybackType::Music);
         mImpl->displayUpdater.MusicProperties().Title(Utf8ToWide(metadata.title));
         mImpl->displayUpdater.MusicProperties().Artist(
-            Utf8ToWide(joinIntoString(metadata.artists, " / "))
+            Utf8ToWide(SystemAudioControl::joinIntoString(metadata.artists, " / "))
         );
         mImpl->displayUpdater.Update();
     } catch (...) {

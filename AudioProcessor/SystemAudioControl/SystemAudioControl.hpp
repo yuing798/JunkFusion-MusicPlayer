@@ -13,6 +13,18 @@ public:
         std::vector<std::string> artists;
     };
 
+    static std::string
+    joinIntoString(const std::vector<std::string>& stringArray, std::string separtor) {
+        std::string finalS;
+        for (size_t i = 0; i < stringArray.size(); i++) {
+            finalS += stringArray[i];
+            if (i < stringArray.size() - 1) {
+                finalS += separtor;
+            }
+        }
+        return finalS;
+    }
+
     enum class PlaybackState { Play, Pause };
 
     virtual bool initialize() = 0;                         // 注册系统媒体会话

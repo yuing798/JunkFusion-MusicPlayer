@@ -22,8 +22,8 @@ if (WIN32)
     target_link_libraries(SystemAudioControl PUBLIC onecoreuap)
 elseif (APPLE)
     # 更规范做法：把 .cpp 改名为 .mm，然后删掉下面这行 set_source_files_properties
-    set_source_files_properties(MacosSystemAudioControl.cpp PROPERTIES COMPILE_FLAGS "-x objective-c++")
-    target_sources(SystemAudioControl PRIVATE MacosSystemAudioControl.cpp)
+    # set_source_files_properties(MacosSystemAudioControl.cpp PROPERTIES COMPILE_FLAGS "-x objective-c++")
+    target_sources(SystemAudioControl PRIVATE MacosSystemAudioControl.mm)
     target_link_libraries(SystemAudioControl PUBLIC
         "-framework Foundation"
         "-framework MediaPlayer"
