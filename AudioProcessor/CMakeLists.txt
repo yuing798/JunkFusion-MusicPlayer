@@ -14,6 +14,7 @@ target_sources(JunkFusionAudioProcess
 )
 
 add_subdirectory(processSchedule)
+add_subdirectory(SystemAudioControl)
 
 target_compile_definitions(JunkFusionAudioProcess
     PRIVATE

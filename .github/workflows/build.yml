@@ -1,0 +1,27 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux 依赖
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libdbus-1-dev
+
+      - name: 配置（只配置 SystemAudioControl 子目录）
+        # 使用 -S 指定 SystemAudioControl 作为独立项目进行配置
+        run: cmake -B build -S AudioProcessor/SystemAudioControl -DCMAKE_BUILD_TYPE=Release
+
+      - name: 编译
+        # 直接编译（此时 build 树里只有 SystemAudioControl 一个 target）
+        run: cmake --build build --config Release

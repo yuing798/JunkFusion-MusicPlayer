@@ -1,15 +1,16 @@
 #pragma once
 
 #include <functional>
+#include <string>
+#include <vector>
 
-#include "juce_core/juce_core.h"
 class SystemAudioControl {
 public:
     virtual ~SystemAudioControl() = default;
 
     struct MediaMetadata {
-        juce::String title;
-        juce::StringArray artists;
+        std::string title;
+        std::vector<std::string> artists;
     };
 
     enum class PlaybackState { Play, Pause };

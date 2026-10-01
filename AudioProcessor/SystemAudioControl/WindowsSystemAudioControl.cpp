@@ -1,25 +1,46 @@
 #include "WindowsSystemAudioControl.hpp"
 
-#include <winrt/Windows.Foundation.h>
+#include <cstddef>
+#include <vector>
+#include <windows.h>
+// #include <winnls.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Media.h>
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Media.Control.h>
 #include <winrt/Windows.Media.Playback.h>
+#include <winrt/Windows.Media.h>
 #include <winrt/base.h>
 
 #include <atomic>
 #include <memory>
 #include <string>
 
-// 让 juce::String 可以方便地转成 std::wstring 使用
-namespace {
-    std::wstring toWide(const juce::String& s) { return s.toWideCharPointer(); }
-} // namespace
+using namespace winrt::Windows::Media;
+using namespace winrt::Windows::Media::Control;
+
+static std::string
+joinIntoString(const std::vector<std::string>& stringArray, std::string separtor) {
+    std::string finalS;
+    for (size_t i = 0; i < stringArray.size(); i++) {
+        finalS += stringArray[i];
+        if (i < stringArray.size() - 1) {
+            finalS += separtor;
+        }
+    }
+    return finalS;
+}
+
+static std::wstring Utf8ToWide(const std::string& utf8) {
+    if (utf8.empty()) return {};
+    int size =
+        MultiByteToWideChar(CP_UTF8, 0, utf8.data(), static_cast<int>(utf8.size()), nullptr, 0);
+    std::wstring wide(size, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, utf8.data(), static_cast<int>(utf8.size()), wide.data(), size);
+    return wide;
+}
 
 // 平台实现细节全部收敛进 Impl，避免在头文件暴露 WinRT 头
 struct WindowsSystemAudioControl::Impl {
-    using namespace winrt::Windows::Media;
-    using namespace winrt::Windows::Media::Control;
 
     SystemMediaTransportControls smtc{nullptr};
     SystemMediaTransportControlsDisplayUpdater displayUpdater{nullptr};
@@ -56,9 +77,7 @@ struct WindowsSystemAudioControl::Impl {
 
 WindowsSystemAudioControl::WindowsSystemAudioControl() : mImpl(std::make_unique<Impl>()) {}
 
-WindowsSystemAudioControl::~WindowsSystemAudioControl() {
-    shutdown();
-}
+WindowsSystemAudioControl::~WindowsSystemAudioControl() { shutdown(); }
 
 bool WindowsSystemAudioControl::initialize() {
     if (mImpl->initialized.load()) {
@@ -86,22 +105,22 @@ bool WindowsSystemAudioControl::initialize() {
     // 注册媒体按键事件；回调全部切回主线程触发（WinRT 事件线程不能直接碰业务/UI 状态）
     auto onPlayEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Play && onPlay) {
-            juce::MessageManager::callAsync([this] { onPlay(); });
+            onPlay();
         }
     };
     auto onPauseEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Pause && onPause) {
-            juce::MessageManager::callAsync([this] { onPause(); });
+            onPause();
         }
     };
     auto onNextEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Next && onNext) {
-            juce::MessageManager::callAsync([this] { onNext(); });
+            onNext();
         }
     };
     auto onPrevEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Previous && onPrevious) {
-            juce::MessageManager::callAsync([this] { onPrevious(); });
+            onPrevious();
         }
     };
     // FIXME(连接): 系统媒体按键无法区分“快进”与“快退”，onSeek 的方向在此处理不了。
@@ -124,8 +143,10 @@ void WindowsSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
 
     try {
         mImpl->displayUpdater.Type(MediaPlaybackType::Music);
-        mImpl->displayUpdater.MusicProperties().Title(toWide(metadata.title));
-        mImpl->displayUpdater.MusicProperties().Artist(toWide(metadata.artists.joinIntoString(u", ")));
+        mImpl->displayUpdater.MusicProperties().Title(Utf8ToWide(metadata.title));
+        mImpl->displayUpdater.MusicProperties().Artist(
+            Utf8ToWide(joinIntoString(metadata.artists, " / "))
+        );
         mImpl->displayUpdater.Update();
     } catch (...) {
         // TODO(连接): 打印元数据更新失败日志
@@ -138,9 +159,10 @@ void WindowsSystemAudioControl::updatePlaybackState(PlaybackState state) {
     }
 
     try {
-        mImpl->smtc.PlaybackStatus(state == PlaybackState::Play
-                                       ? MediaPlaybackStatus::Playing
-                                       : MediaPlaybackStatus::Paused);
+        mImpl->smtc.PlaybackStatus(
+            state == PlaybackState::Play ? MediaPlaybackStatus::Playing
+                                         : MediaPlaybackStatus::Paused
+        );
     } catch (...) {
         // TODO(连接): 打印播放状态更新失败日志
     }
