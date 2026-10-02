@@ -1,5 +1,6 @@
 #include "./AudioPreProcess.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Model/PlayInfo.hpp"
 #include "SystemAudioControl/LinuxSystemAudioControl.hpp"
 #include "SystemAudioControl/MacosSystemAudioControl.hpp"
 #include "Utils/mathUtils.hpp"
@@ -9,6 +10,7 @@
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
+
 
 AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), mPlayCount(worker) {
     for (auto& duck : mDucks) {
@@ -43,9 +45,9 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
     };
 
     // 播放新歌
-    mWorker->receiver->onPlay = [this](std::string songPath, double targetPTS, double duration) {
-        play(songPath, targetPTS);
-        mPlayCount.setNewSong(songPath, duration);
+    mWorker->receiver->onPlay = [this](PlayInfo info, double targetPts) {
+        play(info.path.toStdString(), targetPts);
+        mPlayCount.setNewSong(info.path.toStdString(), info.duration);
     };
 
     // 设置系统音频管理类
@@ -70,7 +72,7 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
                 ptr->error(str);
             }
         };
-        // mSystemAudioControl->onPlay
+        mSystemAudioControl->onPlay = [this]() { play(currentSongPath, mCurrentPtsSamples); };
     }
 }
 void AudioPreProcess::prepareToPlay(

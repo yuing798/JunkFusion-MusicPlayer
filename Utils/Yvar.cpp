@@ -1,4 +1,5 @@
 #include "./Yvar.hpp"
+#include "juce_core/juce_core.h"
 
 Yvar Yvar::read(const char* key) const {
     if (!value.isObject()) {
@@ -48,4 +49,12 @@ juce::String Yvar::toString() {
     } else {
         return value.toString();
     }
+}
+juce::StringArray Yvar::toStringArray() const {
+    if (!value.isArray()) return juce::StringArray{};
+    juce::StringArray arr;
+    for (int i = 0; i < value.size(); i++) {
+        arr.add(read(i).toString());
+    }
+    return arr;
 }

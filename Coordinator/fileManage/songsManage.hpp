@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Model/PlayInfo.hpp"
-#include "../Model/SongInfo.hpp"
 #include "./WaveFormAnaly.hpp"
+#include "Model/PlayInfo.hpp"
+#include "Model/SongInfo.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
@@ -15,6 +15,7 @@
 #include <string>
 #include <tpropertymap.h>
 #include <vector>
+
 
 class SongsManage {
 private:

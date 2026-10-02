@@ -1,7 +1,8 @@
 #include "./songsManage.hpp"
-#include "../Model/PlayInfo.hpp"
-#include "../Model/SongInfo.hpp"
 #include "../dllManager.hpp"
+#include "Coordinator/fileManage/dbTable.hpp"
+#include "Model/PlayInfo.hpp"
+#include "Model/SongInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
@@ -686,18 +687,22 @@ PlayInfo SongsManage::getPlayInfo(int64_t songId) {
         SQLite::Statement sql(
             db,
             R"(
-            SELECT filePath, duration
+            SELECT filePath, duration, title, artists, hash
             FROM songs WHERE songId = :songId)"
         );
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
             info.path = sql.getColumn("filePath").getString();
             info.duration = sql.getColumn("duration").getDouble();
+            info.title = sql.getColumn("title").getString();
+            Yvar originArtists{juce::String(sql.getColumn("artists").getString())};
+            info.artists = originArtists.toStringArray();
+            info.hash = sql.getColumn("hash").getString();
+
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        spdlog::get(LogDllID)
-            ->debug("成功获取:id:{},路径:{},持续时间:{}", songId, info.path, info.duration);
+        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, info.path.toStdString());
         return info;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};

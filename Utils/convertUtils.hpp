@@ -1,5 +1,6 @@
 #pragma once
 #include "juce_core/juce_core.h"
+#include <optional>
 #include <string>
 
 namespace ConvertUtils {
@@ -19,5 +20,8 @@ namespace ConvertUtils {
 
     // juce::StringArray转换为juce::Array<juce::var>
     juce::Array<juce::var> stringArray2ArrayVar(juce::StringArray arr);
+
+    juce::var optionalIntToVar(const std::optional<int>& value);
+    juce::var juceStringToVar(const juce::String& value);
 
 } // namespace ConvertUtils

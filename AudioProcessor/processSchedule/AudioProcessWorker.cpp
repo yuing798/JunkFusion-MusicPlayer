@@ -3,6 +3,7 @@
 #include "Macro/SongInfoMacro.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Macro/sliderParam.hpp"
+#include "Model/PlayInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
@@ -46,12 +47,13 @@ void AudioProcessorPuller::run() {
                 }
                 if (jsonObj.hasProperty(AudioMacro::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
-                    auto playInfo{jsonObj.read(AudioMacro::play)};
-                    auto songPath{playInfo.read(SongInfoMacro::path).toString().toStdString()};
-                    double targetPTS{playInfo.read(AudioMacro::targetPTS).toDouble()};
-                    double duration{playInfo.read(SongInfoMacro::duration).toDouble()};
+                    auto playObj{jsonObj.read(AudioMacro::play)};
+                    double targetPTS{playObj.read(AudioMacro::targetPTS).toDouble()};
+                    auto playInfoObj{jsonObj.read(AudioMacro::playInfo)};
 
-                    if (onPlay) onPlay(songPath, targetPTS, duration);
+                    auto info{PlayInfo::fromJson(playInfoObj)};
+
+                    if (onPlay) onPlay(info, targetPTS);
                     continue;
                 }
                 if (jsonObj.hasProperty(AudioMacro::pause)) {

@@ -20,6 +20,7 @@ public:
     double toDouble() const;
     int toInt() const;
     float toFloat32() const;
+    juce::StringArray toStringArray() const;
 
     const char* toRawUTF8() { return toString().toRawUTF8(); }
     juce::String toString();

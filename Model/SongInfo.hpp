@@ -52,13 +52,6 @@ struct SongInfo {
     juce::var toJson() {
         juce::var obj{new juce::DynamicObject()};
 
-        // ── 辅助：optional<string> → juce::var ──
-        auto optStr = [](const juce::String& v) -> juce::var {
-            return v.isNotEmpty() ? juce::var(v) : juce::var();
-        };
-        auto optInt = [](const std::optional<int>& v) -> juce::var {
-            return v.has_value() ? juce::var(v.value()) : juce::var();
-        };
         auto ptr{obj.getDynamicObject()};
 
         // ── 0. 主键 ──
@@ -70,69 +63,33 @@ struct SongInfo {
         // ── 2. 标签信息 ──
         ptr->setProperty(SongInfoMacro::title, title);
         ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
-        ptr->setProperty(SongInfoMacro::album, optStr(album));
-        ptr->setProperty(SongInfoMacro::albumArtist, optStr(albumArtist));
-        ptr->setProperty(SongInfoMacro::genre, optStr(genre));
-        ptr->setProperty(SongInfoMacro::trackNumber, optInt(trackNumber));
-        ptr->setProperty(SongInfoMacro::discNumber, optInt(discNumber));
-        ptr->setProperty(SongInfoMacro::year, optInt(year));
-        ptr->setProperty(SongInfoMacro::composer, optStr(composer));
+        ptr->setProperty(SongInfoMacro::album, ConvertUtils::juceStringToVar(album));
+        ptr->setProperty(SongInfoMacro::albumArtist, ConvertUtils::juceStringToVar(albumArtist));
+        ptr->setProperty(SongInfoMacro::genre, ConvertUtils::juceStringToVar(genre));
+        ptr->setProperty(SongInfoMacro::trackNumber, ConvertUtils::optionalIntToVar(trackNumber));
+        ptr->setProperty(SongInfoMacro::discNumber, ConvertUtils::optionalIntToVar(discNumber));
+        ptr->setProperty(SongInfoMacro::year, ConvertUtils::optionalIntToVar(year));
+        ptr->setProperty(SongInfoMacro::composer, ConvertUtils::juceStringToVar(composer));
 
         // ── 3. FFmpeg 解码层 ──
         ptr->setProperty(SongInfoMacro::bitRate, bitRate);
         ptr->setProperty(SongInfoMacro::sampleRate, sampleRate);
         ptr->setProperty(SongInfoMacro::channelLayout, channelLayout);
         ptr->setProperty(SongInfoMacro::bitDepth, bitDepth);
-        ptr->setProperty(SongInfoMacro::codecName, optStr(codecName));
+        ptr->setProperty(SongInfoMacro::codecName, ConvertUtils::juceStringToVar(codecName));
 
         // ── 4. AI 分析 ──
-        ptr->setProperty(SongInfoMacro::aiGenre, optStr(aiGenre));
-        ptr->setProperty(SongInfoMacro::bpm, optInt(bpm));
-        ptr->setProperty(SongInfoMacro::key, optStr(key));
+        ptr->setProperty(SongInfoMacro::aiGenre, ConvertUtils::juceStringToVar(aiGenre));
+        ptr->setProperty(SongInfoMacro::bpm, ConvertUtils::optionalIntToVar(bpm));
+        ptr->setProperty(SongInfoMacro::key, ConvertUtils::juceStringToVar(key));
 
         // ── 5. 用户信息 ──
         ptr->setProperty(SongInfoMacro::isMyLike, isMyLike);
-        ptr->setProperty(SongInfoMacro::comment, optStr(comment));
+        ptr->setProperty(SongInfoMacro::comment, ConvertUtils::juceStringToVar(comment));
         ptr->setProperty(SongInfoMacro::playNum, playNum);
 
-        ptr->setProperty(SongInfoMacro::hash, optStr(hash));
+        ptr->setProperty(SongInfoMacro::hash, ConvertUtils::juceStringToVar(hash));
 
-        return juce::var(obj);
-        // 这里不使用delete的原因是juce::var是引用计数的，共享所有权了，会自动delete
+        return obj;
     } // 将songInfo转化为var，才能推送给前端
 };
-
-// songs 表：存储所有歌曲信息（文件层信息 + FFmpeg 解码层信息 + AI 分析信息 + 用户信息）
-inline const char* createSongsTableSQL = R"(
-    CREATE TABLE IF NOT EXISTS songs (
-        songId             INTEGER PRIMARY KEY AUTOINCREMENT,
-        filePath           TEXT    UNIQUE NOT NULL,
-        fileSize           INTEGER NOT NULL,
-        lastModifiedTime   TEXT    NOT NULL,
-        duration           REAL,
-        title              TEXT,
-        artists             TEXT,
-        album              TEXT,
-        albumArtist        TEXT,
-        genre              TEXT,
-        trackNumber        INTEGER,
-        discNumber         INTEGER,
-        year               INTEGER,
-        composer           TEXT,
-        bitRate            INTEGER,
-        bitDepth           INTEGER,
-        sampleRate         INTEGER,
-        channelLayoutMask INTEGER,
-        numChannels INYEGER,
-        codecName TEXT, 
-        aiGenre            TEXT,
-        bpm                INTEGER,
-        key                TEXT,
-        aiProcessed        INTEGER DEFAULT 0,
-        isMyLike           INTEGER DEFAULT 0,
-        comment            TEXT,
-        playNum       INTEGER DEFAULT 0,
-        hash TEXT,
-        timeDomainSpec BLOB
-    )
-)";

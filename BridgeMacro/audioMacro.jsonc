@@ -16,7 +16,9 @@
   "songChangeCrossFadeLength":"",
   
   "play":"",
+  "playInfo":"",
   "targetPTS":"",//目标进度条时间戳
+  
   "currentPTS":"",//这个是从音频进程向UI发送的，上面那个反过来
 
   "setSliderValue":"",

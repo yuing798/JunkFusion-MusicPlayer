@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -83,4 +84,11 @@ juce::Array<juce::var> ConvertUtils::stringArray2ArrayVar(juce::StringArray arr)
         varArr.add(juce::var(singleStr));
     }
     return varArr;
+}
+
+juce::var ConvertUtils::juceStringToVar(const juce::String& v) {
+    return v.isNotEmpty() ? juce::var(v) : juce::var();
+}
+juce::var ConvertUtils::optionalIntToVar(const std::optional<int>& v) {
+    return v.has_value() ? juce::var(v.value()) : juce::var();
 }
