@@ -2,6 +2,7 @@
 
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "processSchedule/AudioProcessWorker.hpp"
+#include <atomic>
 #include <cstdint>
 #include <string>
 class PlayCount {
@@ -10,7 +11,7 @@ private:
     int64_t mTargetUpdateSample{0}; // 目标采样点数
     double mSampleRate{44100.0};
     std::string mPath;
-    int64_t mCurrentSampleCount{0};
+    std::atomic<int64_t> mCurrentSampleCount{0};
     bool hadUpdate{false}; // 这首歌是否已经更新
 
     void updatePlayCount();
@@ -29,5 +30,5 @@ public:
     void processBlock(int numSamplesThisBuffer, bool isFullMute);
 
     // 停止计数
-    void pauseCount();
+    // void pauseCount();
 };

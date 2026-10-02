@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AudioRingBuffer.hpp"
+#include "PlayCount.hpp"
 #include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "ffmpegDecoder.hpp"
@@ -8,6 +9,7 @@
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -42,9 +44,10 @@ private:
     std::string currentSongPath; // 当前播放的歌曲路径
     AudioProcessWorker* mWorker; // 进程间调度者
 
-    std::atomic<int64_t> mCurrentPtsSamples; // 当前这首歌曲的进度条在多少个样本处
+    std::atomic<int64_t> mCurrentPtsSamples{0}; // 当前这首歌曲的进度条在多少个样本处(用于进度条)
 
     std::unique_ptr<SystemAudioControl> mSystemAudioControl;
+    PlayCount mPlayCount;
 
 public:
     AudioPreProcess(AudioProcessWorker* worker);

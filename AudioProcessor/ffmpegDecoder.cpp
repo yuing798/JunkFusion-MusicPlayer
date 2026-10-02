@@ -280,7 +280,7 @@ void FFmpegDecoder::run() {
                 // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
                 if (threadShouldExit()) {
                     isNatureComplete = false;
-                    spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
+                    // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
                     break;
                 }
                 // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
@@ -291,7 +291,7 @@ void FFmpegDecoder::run() {
                 mRingBuffer->pushAudioData(buffer);
             } else {
                 isNatureComplete = false;
-                spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
+                // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
             }
         }
         // OtherUtils::writeEmergencyLog("avcodec_receive_frame返回非零数据导致提前退出");
@@ -372,7 +372,7 @@ void FFmpegDecoder::run() {
             // 如果在等待期间，主线程要求停止解码，则必须立刻跳出，防止死锁挂起
             if (threadShouldExit()) {
                 isNatureComplete = false;
-                spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
+                // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
                 break;
             }
             // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
@@ -383,7 +383,7 @@ void FFmpegDecoder::run() {
             mRingBuffer->pushAudioData(buffer);
         } else {
             isNatureComplete = false;
-            spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
+            // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
         }
     }
 
@@ -420,7 +420,7 @@ void FFmpegDecoder::run() {
 
             while (mRingBuffer->getFreeSpace() < ret) {
                 if (threadShouldExit()) {
-                    spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
+                    // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
                     isNatureComplete = false;
                     break;
                 }
@@ -429,7 +429,7 @@ void FFmpegDecoder::run() {
 
             // 如果是因为切歌要求退出，直接打断最外层的 flush 循环，不要继续塞数据了
             if (threadShouldExit()) {
-                spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
+                // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
                 isNatureComplete = false;
                 break;
             }
@@ -451,7 +451,7 @@ void FFmpegDecoder::run() {
     avformat_close_input(&inputContext);
 
     if (isNatureComplete) {
-        spdlog::get(LogAudioID)->debug("解码函数自然完成:路径:{}", path);
+        // spdlog::get(LogAudioID)->debug("解码函数自然完成:路径:{}", path);
         if (onNatureComplete) onNatureComplete();
     }
 }

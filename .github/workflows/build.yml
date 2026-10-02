@@ -1,6 +1,12 @@
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - system-audio-control
+  pull_request:
+    branches:
+      - system-audio-control
 
 jobs:
   build:

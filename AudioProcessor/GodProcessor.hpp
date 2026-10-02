@@ -30,7 +30,6 @@ private:
     double mSampleRate{44100.0};
     int mNumChannels{2};
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterVolume;
-    std::unique_ptr<PlayCount> mPlayCount;
 
 public:
     GodProcessor(juce::StringArray initArgs);

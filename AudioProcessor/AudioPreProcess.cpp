@@ -10,7 +10,7 @@
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 
-AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
+AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), mPlayCount(worker) {
     for (auto& duck : mDucks) {
         duck.ringBuffer = std::make_unique<AudioRingBuffer>(1000); // 中转站分配1秒
         duck.decoder = std::make_unique<FFmpegDecoder>(duck.ringBuffer.get());
@@ -37,7 +37,16 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
     fadeOutCosTable = MathUtils::generateCosTable(0.5);
 
     // 停止播放，不代表现在开始完全静音
-    mWorker->receiver->onPausePlay = [this]() { pausePlay(); };
+    mWorker->receiver->onPausePlay = [this]() {
+        pausePlay();
+        // mPlayCount.pauseCount();
+    };
+
+    // 播放新歌
+    mWorker->receiver->onPlay = [this](std::string songPath, double targetPTS, double duration) {
+        play(songPath, targetPTS);
+        mPlayCount.setNewSong(songPath, duration);
+    };
 
     // 设置系统音频管理类
     {
@@ -81,6 +90,8 @@ void AudioPreProcess::prepareToPlay(
     smoothedPTSChangeCrossFadeMs.setCurrentAndTargetValue(40.0f);
     smoothedPlayPause.reset(sampleRate, 0.5f);
     smoothedPlayPause.setCurrentAndTargetValue(0.0f);
+
+    mPlayCount.prepareToPlay(sampleRate);
 }
 
 void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
@@ -166,6 +177,8 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         if (!isFullMute) mCurrentPtsSamples++;
     }
+
+    mPlayCount.processBlock(buffer.getNumSamples(), isFullMute);
 }
 
 void AudioPreProcess::timerCallback() {

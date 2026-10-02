@@ -47,8 +47,6 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
 
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
 
-    mPlayCount = std::make_unique<PlayCount>(mAudioProcessWorker.get());
-
     mAudioProcessWorker->receiver->onMasterVolumeChange = [this](float value) {
         masterVolume.setTargetValue(value);
     };
@@ -56,13 +54,6 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     mOscReceiver->onMasterVolumeChange = [this](float value) {
         masterVolume.setTargetValue(value);
     };
-
-    // 播放新歌
-    mAudioProcessWorker->receiver->onPlay =
-        [this](std::string songPath, double targetPTS, double duration) {
-            mPreProcess->play(songPath, targetPTS);
-            mPlayCount->setNewSong(songPath, duration);
-        };
 
     // OtherUtils::writeEmergencyLog("GodProcessor构造函数执行完成");
 
@@ -84,8 +75,6 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
 
     masterVolume.reset(sampleRate, 0.002);
     masterVolume.setCurrentAndTargetValue(1.0);
-
-    mPlayCount->prepareToPlay(sampleRate);
 }
 
 void GodProcessor::releaseResources() {}
@@ -93,8 +82,6 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     juce::ignoreUnused(midiMessages);
 
     mPreProcess->processBlock(buffer);
-
-    mPlayCount->processBlock(buffer.getNumSamples(), mPreProcess->getIsFullMute());
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         auto currentMasterVolume{masterVolume.getNextValue()};
