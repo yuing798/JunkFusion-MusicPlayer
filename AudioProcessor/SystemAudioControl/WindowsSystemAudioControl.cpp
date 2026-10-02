@@ -44,7 +44,7 @@ struct WindowsSystemAudioControl::Impl {
     winrt::event_token previousToken{};
     winrt::event_token fastForwardToken{};
     winrt::event_token rewindToken{};
-    winrt::event_token stopToken{};
+    // winrt::event_token stopToken{};
     bool eventsRegistered{false};
 
     // 获取 SMTC 实例，失败返回 false
@@ -90,7 +90,7 @@ bool WindowsSystemAudioControl::initialize() {
         mImpl->smtc.IsPreviousEnabled(true);
         mImpl->smtc.IsFastForwardEnabled(true);
         mImpl->smtc.IsRewindEnabled(true);
-        mImpl->smtc.IsStopEnabled(true);
+        // mImpl->smtc.IsStopEnabled(true);
     } catch (...) {
         if (onLog) onLog("windows系统音频控制初始化失败");
         return false;
@@ -129,11 +129,11 @@ bool WindowsSystemAudioControl::initialize() {
             onRewind();
         }
     };
-    auto onStopEvt = [this](auto&&, auto&& e) {
-        if (e.Button() == SystemMediaTransportControlsButton::Stop && onStop) {
-            onStop();
-        }
-    };
+    // auto onStopEvt = [this](auto&&, auto&& e) {
+    //     if (e.Button() == SystemMediaTransportControlsButton::Stop && onStop) {
+    //         onStop();
+    //     }
+    // };
 
     // FIXME(连接): 系统媒体按键无法区分“快进”与“快退”，onSeek 的方向在此处理不了。
     //             若需要 seek，请改用 TimelineProperties 的 PositionChangeRequested 事件，
@@ -142,8 +142,8 @@ bool WindowsSystemAudioControl::initialize() {
     mImpl->pauseToken = mImpl->smtc.ButtonPressed(onPauseEvt);
     mImpl->nextToken = mImpl->smtc.ButtonPressed(onNextEvt);
     mImpl->previousToken = mImpl->smtc.ButtonPressed(onPrevEvt);
-    mImpl->fastForwardToken = mImpl->smtc.ButtonPressed(onFastForward);
-    mImpl->rewindToken = mImpl->smtc.ButtonPressed(onRewind);
+    mImpl->fastForwardToken = mImpl->smtc.ButtonPressed(onFastForwardEvt);
+    mImpl->rewindToken = mImpl->smtc.ButtonPressed(onRewindEvt);
 
     mImpl->eventsRegistered = true;
     mImpl->initialized.store(true);
@@ -195,7 +195,7 @@ void WindowsSystemAudioControl::shutdown() {
             mImpl->smtc.ButtonPressed(mImpl->previousToken);
             mImpl->smtc.ButtonPressed(mImpl->fastForwardToken);
             mImpl->smtc.ButtonPressed(mImpl->rewindToken);
-            mImpl->smtc.ButtonPressed(mImpl->stopToken);
+            // mImpl->smtc.ButtonPressed(mImpl->stopToken);
         }
         if (mImpl->smtc) {
             mImpl->smtc.IsEnabled(false);

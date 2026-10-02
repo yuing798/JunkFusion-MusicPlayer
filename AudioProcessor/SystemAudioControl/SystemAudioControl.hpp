@@ -35,7 +35,7 @@ public:
     // 回调：系统按键
     std::function<void()> onPlay;
     std::function<void()> onPause;
-    std::function<void()> onStop;
+    // std::function<void()> onStop;
     std::function<void()> onNext;
     std::function<void()> onPrevious;
     std::function<void(double)> onSeek;

@@ -17,8 +17,12 @@ struct MacosSystemAudioControl::Impl {
     id nextTarget{nullptr};
     id previousTarget{nullptr};
     id seekTarget{nullptr};
+    id fastForwardTarget{nullptr};
+    id rewindTarget{nullptr};
+    // id stopTarget{nullptr};
 
     std::atomic<bool> initialized{false};
+    PlaybackState currentPlaybackState{PlaybackState::Pause};
 };
 
 // 便捷构造 MPRemoteCommandHandler 目标；handler 在媒体按键到达时被系统调用
@@ -46,9 +50,9 @@ bool MacosSystemAudioControl::initialize() {
 
         // 系统媒体键：播放
         mImpl->playTarget = makeCommandTarget(center.playCommand, ^(MPRemoteCommandEvent*) {
-          // TODO(连接): 回调来自系统线程，建议 dispatch 到主线程后再触发 onPlay
           if (onPlay) {
               onPlay();
+              mImpl->currentPlaybackState = PlaybackState::Play;
           }
         });
 
@@ -56,17 +60,22 @@ bool MacosSystemAudioControl::initialize() {
         mImpl->pauseTarget = makeCommandTarget(center.pauseCommand, ^(MPRemoteCommandEvent*) {
           if (onPause) {
               onPause();
+              mImpl->currentPlaybackState = PlaybackState::Pause;
           }
         });
 
         // 系统媒体键：播放/暂停切换（耳机上的单键常走这里）
-        mImpl->toggleTarget = makeCommandTarget(
-            center.togglePlayPauseCommand,
-            ^(MPRemoteCommandEvent*){
-                // FIXME(连接): 基类没有提供“当前是否正在播放”的状态查询，toggle 无法判断方向。
-                //             请接入当前播放状态后再决定调用 onPlay 还是 onPause。
-            }
-        );
+        mImpl->toggleTarget =
+            makeCommandTarget(center.togglePlayPauseCommand, ^(MPRemoteCommandEvent*) {
+              // 修复：不仅要改状态，还要真正调用回调
+              if (mImpl->currentPlaybackState == PlaybackState::Play) {
+                  if (onPause) onPause();
+                  mImpl->currentPlaybackState = PlaybackState::Pause;
+              } else {
+                  if (onPlay) onPlay();
+                  mImpl->currentPlaybackState = PlaybackState::Play;
+              }
+            });
 
         // 系统媒体键：下一首
         mImpl->nextTarget = makeCommandTarget(center.nextTrackCommand, ^(MPRemoteCommandEvent*) {
@@ -82,6 +91,36 @@ bool MacosSystemAudioControl::initialize() {
                   onPrevious();
               }
             });
+
+        // 系统媒体键：停止
+        // mImpl->stopTarget = makeCommandTarget(center.stopCommand, ^(MPRemoteCommandEvent*) {
+        //   if (onStop) {
+        //       onStop();
+        //   }
+        //   // 停止后通常状态变为暂停或停止
+        //   mImpl->currentPlaybackState = PlaybackState::Pause;
+        // });
+
+        // 系统媒体键：快进
+        mImpl->fastForwardTarget =
+            makeCommandTarget(center.skipForwardCommand, ^(MPRemoteCommandEvent*) {
+              if (onFastForward) {
+                  onFastForward();
+              }
+            });
+        // 告诉系统快进按键每次跳转的秒数（比如10秒），不加这行按键可能没反应
+        center.skipForwardCommand.preferredIntervals = @[ @(10.0) ];
+
+        // 系统媒体键：快退
+        mImpl->rewindTarget =
+            makeCommandTarget(center.skipBackwardCommand, ^(MPRemoteCommandEvent*) {
+              if (onRewind) {
+                  onRewind();
+              }
+            });
+        center.skipBackwardCommand.preferredIntervals = @[ @(10.0) ];
+
+        // ==================================================
 
         // 系统媒体键：拖动进度（控制中心 / 触摸板的进度条）
         mImpl->seekTarget =
@@ -101,10 +140,9 @@ bool MacosSystemAudioControl::initialize() {
         center.nextTrackCommand.enabled = YES;
         center.previousTrackCommand.enabled = YES;
         center.changePlaybackPositionCommand.enabled = YES;
-
-        // TODO(连接): 若需要封面图，这里可以启用 center.nextTrackCommand 之外的信息，
-        //             并在 updateMetadata 里通过 MPMediaItemArtwork 设置
-        //             MPMediaItemPropertyArtwork。
+        // center.stopCommand.enabled = YES;
+        center.skipForwardCommand.enabled = YES;
+        center.skipBackwardCommand.enabled = YES;
     }
 
     mImpl->initialized.store(true);
@@ -180,6 +218,15 @@ void MacosSystemAudioControl::shutdown() {
         if (mImpl->seekTarget) {
             [center.changePlaybackPositionCommand removeTarget:mImpl->seekTarget];
         }
+        // if (mImpl->stopTarget) {
+        //     [center.stopCommand removeTarget:mImpl->stopTarget];
+        // }
+        if (mImpl->fastForwardTarget) {
+            [center.skipForwardCommand removeTarget:mImpl->fastForwardTarget];
+        }
+        if (mImpl->rewindTarget) {
+            [center.skipBackwardCommand removeTarget:mImpl->rewindTarget];
+        }
 
         [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nil];
     }
@@ -190,4 +237,6 @@ void MacosSystemAudioControl::shutdown() {
     mImpl->nextTarget = nullptr;
     mImpl->previousTarget = nullptr;
     mImpl->seekTarget = nullptr;
+    mImpl->fastForwardTarget = nullptr;
+    mImpl->rewindTarget = nullptr;
 }
