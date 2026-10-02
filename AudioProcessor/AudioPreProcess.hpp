@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AudioRingBuffer.hpp"
+#include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -42,6 +43,8 @@ private:
     AudioProcessWorker* mWorker; // 进程间调度者
 
     std::atomic<int64_t> mCurrentPtsSamples; // 当前这首歌曲的进度条在多少个样本处
+
+    std::unique_ptr<SystemAudioControl> mSystemAudioControl;
 
 public:
     AudioPreProcess(AudioProcessWorker* worker);

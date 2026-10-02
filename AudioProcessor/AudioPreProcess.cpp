@@ -1,6 +1,9 @@
 #include "./AudioPreProcess.hpp"
 #include "Macro/audioMacro.hpp"
+#include "SystemAudioControl/LinuxSystemAudioControl.hpp"
+#include "SystemAudioControl/MacosSystemAudioControl.hpp"
 #include "Utils/mathUtils.hpp"
+#include "WindowsSystemAudioControl.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
@@ -35,6 +38,31 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
 
     // 停止播放，不代表现在开始完全静音
     mWorker->receiver->onPausePlay = [this]() { pausePlay(); };
+
+    // 设置系统音频管理类
+    {
+#ifdef _WIN32
+        mSystemAudioControl = std::make_unique<WindowsSystemAudioControl>();
+#elif defined(__linux__)
+        mSystemAudioControl = std::make_unique<LinuxSystemAudioControl>();
+#elif defined(__APPLE__)
+        mSystemAudioControl = std::make_unique<MacosSystemAudioControl>();
+#endif
+
+        mSystemAudioControl->initialize();
+
+        mSystemAudioControl->onLog = [](SystemAudioControl::LogRank rank, std::string str) {
+            auto ptr{spdlog::get(LogAudioID).get()};
+            if (rank == SystemAudioControl::LogRank::Debug) {
+                ptr->debug(str);
+            } else if (rank == SystemAudioControl::LogRank::Info) {
+                ptr->info(str);
+            } else if (rank == SystemAudioControl::LogRank::Error) {
+                ptr->error(str);
+            }
+        };
+        // mSystemAudioControl->onPlay
+    }
 }
 void AudioPreProcess::prepareToPlay(
     juce::AudioChannelSet outputLayout,

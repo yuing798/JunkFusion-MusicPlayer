@@ -4,6 +4,7 @@
 #include "AudioRingBuffer.hpp"
 #include "DeviceManager.hpp"
 #include "PlayCount.hpp"
+#include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -22,18 +23,13 @@
 class GodProcessor : public juce::AudioProcessor {
 private:
     std::unique_ptr<OscReceiver> mOscReceiver;
-
     std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
     juce::File mCacheDir;
-
     std::unique_ptr<AudioPreProcess> mPreProcess;  // 音频预处理
     std::unique_ptr<DeviceManager> mDeviceManager; // 设备管理要在所有音频处理子类之前就析构
-
     double mSampleRate{44100.0};
     int mNumChannels{2};
-
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterVolume;
-
     std::unique_ptr<PlayCount> mPlayCount;
 
 public:

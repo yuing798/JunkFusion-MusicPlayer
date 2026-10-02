@@ -32,13 +32,15 @@ public:
     virtual void updatePlaybackState(PlaybackState) = 0;   // 播放/暂停/停止
     virtual void shutdown() = 0;                           // 释放
 
+    enum class LogRank { Debug, Info, Error };
+
     // 回调：系统按键
     std::function<void()> onPlay;
     std::function<void()> onPause;
     std::function<void()> onNext;
     std::function<void()> onPrevious;
     std::function<void(double)> onSeek;
-    std::function<void(std::string)> onLog;
+    std::function<void(LogRank, std::string)> onLog;
     std::function<void()> onFastForward; // 快进
     std::function<void()> onRewind;      // 快退
 };

@@ -35,6 +35,8 @@ target_link_directories(JunkFusionAudioProcess
 target_link_libraries(JunkFusionAudioProcess
     PRIVATE
 
+        SystemAudioControl
+
         # --- JUCE 官方音频与 UI 模块 ---
         juce::juce_audio_utils       # 包含底层声卡设备管理
         juce::juce_audio_processors  # 包含 AudioProcessorGraph 和 VST 宿主类!

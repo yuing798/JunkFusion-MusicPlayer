@@ -78,7 +78,7 @@ bool WindowsSystemAudioControl::initialize() {
     }
 
     if (!mImpl->resolveSmtc()) {
-        if (onLog) onLog("解析STMC失败");
+        if (onLog) onLog(LogRank::Error, "解析STMC失败");
         return false;
     }
 
@@ -92,7 +92,7 @@ bool WindowsSystemAudioControl::initialize() {
         mImpl->smtc.IsRewindEnabled(true);
         // mImpl->smtc.IsStopEnabled(true);
     } catch (...) {
-        if (onLog) onLog("windows系统音频控制初始化失败");
+        if (onLog) onLog(LogRank::Error, "windows系统音频控制初始化失败");
         return false;
     }
 
@@ -163,7 +163,7 @@ void WindowsSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
         );
         mImpl->displayUpdater.Update();
     } catch (...) {
-        if (onLog) onLog("更新元数据失败");
+        if (onLog) onLog(LogRank::Error, "更新元数据失败");
     }
 }
 
@@ -178,7 +178,7 @@ void WindowsSystemAudioControl::updatePlaybackState(PlaybackState state) {
                                          : MediaPlaybackStatus::Paused
         );
     } catch (...) {
-        if (onLog) onLog("更新播放状态失败");
+        if (onLog) onLog(LogRank::Error, "更新播放状态失败");
     }
 }
 
@@ -201,7 +201,7 @@ void WindowsSystemAudioControl::shutdown() {
             mImpl->smtc.IsEnabled(false);
         }
     } catch (...) {
-        if (onLog) onLog("windows系统音频控制释放资源异常");
+        if (onLog) onLog(LogRank::Error, "windows系统音频控制释放资源异常");
     }
 
     mImpl->eventsRegistered = false;

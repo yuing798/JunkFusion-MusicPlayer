@@ -2,8 +2,11 @@
 
 #include "SystemAudioControl.hpp"
 
-#include <dbus/dbus.h>
 #include <memory>
+
+#ifdef __linux__
+    #include <dbus/dbus.h>
+#endif
 
 class LinuxSystemAudioControl : public SystemAudioControl {
 public:
@@ -15,8 +18,10 @@ public:
     void updatePlaybackState(PlaybackState state) override;
     void shutdown() override;
 
+#ifdef __linux__
     static DBusHandlerResult
     handleMessage(DBusConnection* connection, DBusMessage* msg, void* userData);
+#endif
 
 private:
     struct Impl;

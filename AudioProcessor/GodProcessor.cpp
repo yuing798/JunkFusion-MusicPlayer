@@ -4,7 +4,6 @@
 #include "DeviceManager.hpp"
 #include "Macro/audioMacro.hpp"
 #include "PlayCount.hpp"
-#include "Utils/otherUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "processSchedule/AudioProcessWorker.hpp"
@@ -46,8 +45,6 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
 
     mPreProcess = std::make_unique<AudioPreProcess>(mAudioProcessWorker.get());
 
-    // Utils::writeEmergencyLog("worker的构造函数执行完毕");
-
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
 
     mPlayCount = std::make_unique<PlayCount>(mAudioProcessWorker.get());
@@ -70,10 +67,12 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     // OtherUtils::writeEmergencyLog("GodProcessor构造函数执行完成");
 
     // 初始化设备管理者
-    juce::File configFile = mCacheDir.getChildFile("JFConfig.xml");
-    if (!configFile.existsAsFile()) configFile.create();
-    mDeviceManager = std::make_unique<DeviceManager>(std::move(configFile));
-    mDeviceManager->connectProcessor(this); // 设备链接必须放到构造函数的末尾，绝对不能移动
+    {
+        juce::File configFile = mCacheDir.getChildFile("JFConfig.xml");
+        if (!configFile.existsAsFile()) configFile.create();
+        mDeviceManager = std::make_unique<DeviceManager>(std::move(configFile));
+        mDeviceManager->connectProcessor(this); // 设备链接必须放到构造函数的末尾，绝对不能移动
+    }
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
