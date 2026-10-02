@@ -49,9 +49,10 @@ void AudioProcessorPuller::run() {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
                     auto playObj{jsonObj.read(AudioMacro::play)};
                     double targetPTS{playObj.read(AudioMacro::targetPTS).toDouble()};
-                    auto playInfoObj{jsonObj.read(AudioMacro::playInfo)};
+                    auto playInfoObj{playObj.read(AudioMacro::playInfo)};
 
                     auto info{PlayInfo::fromJson(playInfoObj)};
+                    // spdlog::get(LogAudioID)->debug("路径:{}", info.path.toStdString());
 
                     if (onPlay) onPlay(info, targetPTS);
                     continue;

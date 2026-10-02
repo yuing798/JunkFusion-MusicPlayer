@@ -10,7 +10,7 @@
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
-
+#include <algorithm>
 
 AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), mPlayCount(worker) {
     for (auto& duck : mDucks) {
@@ -46,8 +46,16 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
 
     // 播放新歌
     mWorker->receiver->onPlay = [this](PlayInfo info, double targetPts) {
-        play(info.path.toStdString(), targetPts);
-        mPlayCount.setNewSong(info.path.toStdString(), info.duration);
+        if (mPlayInfo.path != info.path) {
+            mPlayCount.setNewSong(info.path.toStdString(), info.duration);
+            isSongChange = true;
+        } else {
+            isSongChange = false;
+        }
+
+        play(info.path, targetPts);
+
+        mPlayInfo = info;
     };
 
     // 设置系统音频管理类
@@ -72,7 +80,14 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
                 ptr->error(str);
             }
         };
-        mSystemAudioControl->onPlay = [this]() { play(currentSongPath, mCurrentPtsSamples); };
+        mSystemAudioControl->onPlay = [this]() {
+            play(
+                mPlayInfo.path.toStdString(),
+                static_cast<double>(mCurrentPtsSamples) / mSampleRate
+            );
+            isSongChange = false;
+        };
+        mSystemAudioControl->onPause = [this]() { pausePlay(); };
     }
 }
 void AudioPreProcess::prepareToPlay(
@@ -190,22 +205,11 @@ void AudioPreProcess::timerCallback() {
     auto msg = juce::JSON::toString(obj).toStdString();
     mWorker->sender->sendMessage(msg);
 }
-void AudioPreProcess::pausePlay() {
-    // spdlog::get(LogAudioID)->debug("AudioPreProcess准备暂停播放");
+void AudioPreProcess::pausePlay() { smoothedPlayPause.setTargetValue(0.0f); }
 
-    smoothedPlayPause.setTargetValue(0.0f);
-}
-
-void AudioPreProcess::play(std::string songPath, double targetPTS) {
+void AudioPreProcess::play(juce::String songPath, double targetPTS) {
     mainPlayDuckIndex = !mainPlayDuckIndex;
     mCurrentPtsSamples = (int)(targetPTS * mSampleRate);
-    if (currentSongPath != songPath) {
-        isSongChange = true;
-    } else {
-        isSongChange = false;
-    } // 这里的isSongChange是为了实施不同的交叉淡化时长的，
-    // 歌曲切换的不相干性远大于进度条切换，所以应该长交叉淡化
-    currentSongPath = songPath;
 
     if (mDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
         // 另一个甲板正在工作
@@ -244,7 +248,7 @@ void AudioPreProcess::play(std::string songPath, double targetPTS) {
     // 这个值只有交叉淡化才会使用，不过设置一个int值开销小的离谱，所以放在这里是无所谓的
     currentCrossFadeIndex = 0;
     mDucks[mainPlayDuckIndex].ringBuffer->reset();
-    mDucks[mainPlayDuckIndex].decoder->play(songPath, targetPTS);
+    mDucks[mainPlayDuckIndex].decoder->play(songPath.toStdString(), targetPTS);
     // 从打开输入上下文到帧循环的时间不过几十纳秒，开新线程完全可以
     startTimerHz(30); // 30帧的进度条刷新率
 }

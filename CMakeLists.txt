@@ -30,7 +30,7 @@ endif()
 add_subdirectory(Coordinator)
 add_subdirectory(AudioProcessor)
 add_subdirectory(Utils)
-
+add_subdirectory(Model)
 
 # 创建一个自定义目标（不生成文件，只为了触发动作）
 #add_custom_target 定义了一个不生成具体文件的构建目标
@@ -59,7 +59,10 @@ set_target_properties(JunkFusionCoordinator PROPERTIES
 set_target_properties(JunkFusionAudioProcess PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
-
+target_link_libraries(JunkFusionUtils 
+    PRIVATE
+        Models
+)
 target_link_libraries(JunkFusionCoordinator 
     PRIVATE
         JunkFusionUtils

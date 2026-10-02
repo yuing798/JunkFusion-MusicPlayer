@@ -81,7 +81,7 @@ std::string ConvertUtils::escapeLucene(const std::string& input) {
 juce::Array<juce::var> ConvertUtils::stringArray2ArrayVar(juce::StringArray arr) {
     juce::Array<juce::var> varArr;
     for (auto& singleStr : arr) {
-        varArr.add(juce::var(singleStr));
+        varArr.add(singleStr);
     }
     return varArr;
 }

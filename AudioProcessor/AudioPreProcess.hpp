@@ -1,11 +1,13 @@
 #pragma once
 
 #include "AudioRingBuffer.hpp"
+#include "Model/PlayInfo.hpp"
 #include "PlayCount.hpp"
 #include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include <atomic>
@@ -41,13 +43,13 @@ private:
     std::atomic<bool> isFullMute{true};    // 当前是否处于完全静音状态，完全静音后才能关闭计时器
     std::atomic<bool> isSongChange{false}; // 不同的交叉淡化情景需要不同的交叉淡化时间
 
-    std::string currentSongPath; // 当前播放的歌曲路径
     AudioProcessWorker* mWorker; // 进程间调度者
 
     std::atomic<int64_t> mCurrentPtsSamples{0}; // 当前这首歌曲的进度条在多少个样本处(用于进度条)
 
     std::unique_ptr<SystemAudioControl> mSystemAudioControl;
     PlayCount mPlayCount;
+    PlayInfo mPlayInfo;
 
 public:
     AudioPreProcess(AudioProcessWorker* worker);
@@ -58,7 +60,7 @@ public:
         int maximumExpectedSamplesPerBlock
     );
     void processBlock(juce::AudioBuffer<float>& buffer);
-    void play(std::string songPath, double targetPTS);
+    void play(juce::String songPath, double targetPTS);
     void pausePlay();
     void timerCallback() override;
     bool getIsFullMute() { return isFullMute; }
