@@ -35,11 +35,7 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
             mWorker->sender->sendMessage(jsonStr);
         };
         duck.decoder->onNatureComplete = [this] {
-            juce::var obj{new juce::DynamicObject()};
-            auto ptr{obj.getDynamicObject()};
-            jassert(ptr);
-            ptr->setProperty(AudioMacro::onPlayNextSong, "");
-            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+            playNextOrPreviousSong(true);
             stopTimer();
         };
     }
@@ -115,8 +111,20 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
             obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 0);
             mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
         };
+
+        mSystemAudioControl->onNext = [this] { playNextOrPreviousSong(true); };
+        mSystemAudioControl->onPrevious = [this] { playNextOrPreviousSong(false); };
     }
 }
+
+void AudioPreProcess::playNextOrPreviousSong(bool nextOrPrevious) {
+    juce::var obj{new juce::DynamicObject()};
+    auto ptr{obj.getDynamicObject()};
+    jassert(ptr);
+    ptr->setProperty(AudioMacro::onPlayNextOrPreviousSong, nextOrPrevious);
+    mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+}
+
 void AudioPreProcess::prepareToPlay(
     juce::AudioChannelSet outputLayout,
     double sampleRate,

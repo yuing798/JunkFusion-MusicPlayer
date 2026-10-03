@@ -166,7 +166,9 @@ extern "C" {
             dllManager::getInstance().sendMessage2AudioProcess(obj);
         }
     }
-    void registerOnPlayNextSong(VoidFunc cb) { dllManager::getInstance().onPlayNextSong = cb; }
+    void registerOnPlayNextOrPreviousSong(IntFunc cb) {
+        dllManager::getInstance().onPlayNextOrPreviousSong = cb;
+    }
 
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;

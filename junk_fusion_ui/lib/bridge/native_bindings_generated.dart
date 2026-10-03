@@ -142,16 +142,16 @@ class JunkFusionDLLBindings {
       _registerOnLightSongDataImportOverPtr
           .asFunction<void Function(StringFunc)>();
 
-  void registerOnPlayNextSong(VoidFunc cb) {
-    return _registerOnPlayNextSong(cb);
+  void registerOnPlayNextOrPreviousSong(IntFunc cb) {
+    return _registerOnPlayNextOrPreviousSong(cb);
   }
 
-  late final _registerOnPlayNextSongPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(VoidFunc)>>(
-        'registerOnPlayNextSong',
+  late final _registerOnPlayNextOrPreviousSongPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(IntFunc)>>(
+        'registerOnPlayNextOrPreviousSong',
       );
-  late final _registerOnPlayNextSong = _registerOnPlayNextSongPtr
-      .asFunction<void Function(VoidFunc)>();
+  late final _registerOnPlayNextOrPreviousSong =
+      _registerOnPlayNextOrPreviousSongPtr.asFunction<void Function(IntFunc)>();
 
   void registerOnUpdateSongInfo(Int64Func cb) {
     return _registerOnUpdateSongInfo(cb);

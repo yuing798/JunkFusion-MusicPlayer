@@ -51,6 +51,13 @@ private:
     PlayCount mPlayCount;
     PlayInfo mPlayInfo;
 
+    /**
+     * @brief 播放上一首歌曲或者下一首歌曲的回调请求
+     *
+     * @param nextOrPrevious true为下一首，false为上一首
+     */
+    void playNextOrPreviousSong(bool nextOrPrevious);
+
 public:
     AudioPreProcess(AudioProcessWorker* worker);
     ~AudioPreProcess();

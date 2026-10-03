@@ -21,6 +21,7 @@ public:
     int toInt() const;
     float toFloat32() const;
     juce::StringArray toStringArray() const;
+    bool toBool() const;
 
     const char* toRawUTF8() { return toString().toRawUTF8(); }
     juce::String toString();

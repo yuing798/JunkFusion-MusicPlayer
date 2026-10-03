@@ -20,7 +20,7 @@ namespace AudioMacro{
     static constexpr const char* setSliderValue = "setSliderValue" ;
     static constexpr const char* sliderParam = "sliderParam" ;
     static constexpr const char* sliderValue = "sliderValue" ;
-    static constexpr const char* onPlayNextSong = "onPlayNextSong" ;
+    static constexpr const char* onPlayNextOrPreviousSong = "onPlayNextOrPreviousSong" ;
     static constexpr const char* updatePlayCount = "updatePlayCount" ;
     static constexpr const char* playStateSync = "playStateSync" ;
 }

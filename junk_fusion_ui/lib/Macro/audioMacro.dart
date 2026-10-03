@@ -20,7 +20,7 @@ abstract class AudioMacro {
   static const String setSliderValue = "setSliderValue";
   static const String sliderParam = "sliderParam";
   static const String sliderValue = "sliderValue";
-  static const String onPlayNextSong = "onPlayNextSong";
+  static const String onPlayNextOrPreviousSong = "onPlayNextOrPreviousSong";
   static const String updatePlayCount = "updatePlayCount";
   static const String playStateSync = "playStateSync";
 }

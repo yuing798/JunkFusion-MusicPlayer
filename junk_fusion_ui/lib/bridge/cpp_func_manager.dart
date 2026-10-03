@@ -33,7 +33,7 @@ class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
   ffi.NativeCallable<Int64FuncFunction>? _onUpdateSongInfo;
-  ffi.NativeCallable<VoidFuncFunction>? _onPlayNextSongCallback;
+  ffi.NativeCallable<IntFuncFunction>? _onPlayNextOrPreviousSong;
   // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
@@ -63,8 +63,14 @@ class CppCallbackManager {
       songProvider.requestUpdateSongInfo(songId: songId);
     });
 
-    _onPlayNextSongCallback = ffi.NativeCallable<VoidFuncFunction>.listener(() {
-      playback.playNextSong();
+    _onPlayNextOrPreviousSong = ffi.NativeCallable<IntFuncFunction>.listener((
+      int value,
+    ) {
+      if (value == 1) {
+        playback.playNextSong();
+      } else {
+        playback.playPreviousSong();
+      }
     });
 
     _onLightSongDataImportOver = ffi.NativeCallable<StringFuncFunction>.listener((
@@ -109,7 +115,9 @@ class CppCallbackManager {
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
     bindings.registerOnUpdateSongInfo(_onUpdateSongInfo!.nativeFunction);
-    bindings.registerOnPlayNextSong(_onPlayNextSongCallback!.nativeFunction);
+    bindings.registerOnPlayNextOrPreviousSong(
+      _onPlayNextOrPreviousSong!.nativeFunction,
+    );
     bindings.registerOnLightSongDataImportOver(
       _onLightSongDataImportOver!.nativeFunction,
     );
@@ -121,7 +129,7 @@ class CppCallbackManager {
     bindings.registerErrorSendCallback(ffi.nullptr); //给cpp的函数指针先分配一个nullPtr
     bindings.registerCurrentPTSCallback(ffi.nullptr);
     bindings.registerOnUpdateSongInfo(ffi.nullptr);
-    bindings.registerOnPlayNextSong(ffi.nullptr);
+    bindings.registerOnPlayNextOrPreviousSong(ffi.nullptr);
     // bindings.registerOnGetAllSongsOver(ffi.nullptr);
     bindings.registerOnLightSongDataImportOver(ffi.nullptr);
     bindings.requestOnPlayStateSync(ffi.nullptr);
@@ -130,7 +138,7 @@ class CppCallbackManager {
     _errorSendcallable?.close();
     _currentPTSCallback?.close();
     _onUpdateSongInfo?.close();
-    _onPlayNextSongCallback?.close();
+    _onPlayNextOrPreviousSong?.close();
     // _onGetAllSongsOver?.close();
     _onLightSongDataImportOver?.close();
     _onPlayStateSync?.close();

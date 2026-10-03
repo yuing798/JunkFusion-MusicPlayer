@@ -29,7 +29,7 @@ extern "C" {
     DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     DLL_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
-    DLL_EXPORT void registerOnPlayNextSong(VoidFunc cb);              // 请求播放下一首歌曲
+    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb);     // 请求播放下一首或上一首歌曲
     DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调
     DLL_EXPORT void registerOnUpdateSongInfo(Int64Func cb);
     DLL_EXPORT const char* getAllSongs();

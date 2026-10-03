@@ -58,3 +58,7 @@ juce::StringArray Yvar::toStringArray() const {
     }
     return arr;
 }
+bool Yvar::toBool() const {
+    if (!value.isBool()) return 0;
+    return static_cast<bool>(value);
+}
