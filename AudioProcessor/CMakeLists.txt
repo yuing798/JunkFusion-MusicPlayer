@@ -26,6 +26,7 @@ target_include_directories(JunkFusionAudioProcess
     PRIVATE
         ${FFMPEG_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}
+        ${SIGNALSMITH_STRETCH_INCLUDE_DIRS}
 )
 target_link_directories(JunkFusionAudioProcess
     PRIVATE
@@ -52,6 +53,7 @@ target_link_libraries(JunkFusionAudioProcess
         spdlog::spdlog#日志系统
         # ONNX::onnxruntime
         # PkgConfig::ICU#字符串排序功能
+        
 
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置
