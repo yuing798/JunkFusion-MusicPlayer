@@ -92,3 +92,10 @@ juce::var ConvertUtils::juceStringToVar(const juce::String& v) {
 juce::var ConvertUtils::optionalIntToVar(const std::optional<int>& v) {
     return v.has_value() ? juce::var(v.value()) : juce::var();
 }
+std::vector<std::string> ConvertUtils::stringArrayToVector(const juce::StringArray& arr) {
+    std::vector<std::string> vec;
+    for (auto& element : arr) {
+        vec.push_back(element.toStdString());
+    }
+    return vec;
+}

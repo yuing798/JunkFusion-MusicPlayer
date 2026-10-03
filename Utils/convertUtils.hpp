@@ -2,6 +2,7 @@
 #include "juce_core/juce_core.h"
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace ConvertUtils {
 
@@ -23,5 +24,6 @@ namespace ConvertUtils {
 
     juce::var optionalIntToVar(const std::optional<int>& value);
     juce::var juceStringToVar(const juce::String& value);
+    std::vector<std::string> stringArrayToVector(const juce::StringArray& arr);
 
 } // namespace ConvertUtils

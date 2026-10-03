@@ -71,9 +71,6 @@ target_link_libraries(JunkFusionAudioProcess
     PRIVATE
         JunkFusionUtils
 )
-
-
-#将复制动作绑定到这个自定义目标上
 add_custom_command(TARGET DeployRuntime POST_BUILD
     COMMAND ${CMAKE_COMMAND}
         # ★ 修复隐患一：从构建目录（CMAKE_BINARY_DIR）下找 bin

@@ -1,8 +1,10 @@
 #include "./AudioPreProcess.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Model/PlayInfo.hpp"
+#include "SystemAudioControl.hpp"
 #include "SystemAudioControl/LinuxSystemAudioControl.hpp"
 #include "SystemAudioControl/MacosSystemAudioControl.hpp"
+#include "Utils/constants.h"
 #include "Utils/mathUtils.hpp"
 #include "WindowsSystemAudioControl.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -11,6 +13,7 @@
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include <algorithm>
+#include <spdlog/spdlog.h>
 
 AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), mPlayCount(worker) {
     for (auto& duck : mDucks) {
@@ -41,6 +44,7 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
     // 停止播放，不代表现在开始完全静音
     mWorker->receiver->onPausePlay = [this]() {
         pausePlay();
+        mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
         // mPlayCount.pauseCount();
     };
 
@@ -48,12 +52,17 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
     mWorker->receiver->onPlay = [this](PlayInfo info, double targetPts) {
         if (mPlayInfo.path != info.path) {
             mPlayCount.setNewSong(info.path.toStdString(), info.duration);
+            SystemAudioControl::MediaMetadata data{};
+            data.title = info.title.toStdString();
+            data.artists = ConvertUtils::stringArrayToVector(info.artists);
+            mSystemAudioControl->updateMetadata(data);
             isSongChange = true;
         } else {
             isSongChange = false;
         }
 
         play(info.path, targetPts);
+        mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
 
         mPlayInfo = info;
     };
@@ -68,8 +77,6 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
         mSystemAudioControl = std::make_unique<MacosSystemAudioControl>();
 #endif
 
-        mSystemAudioControl->initialize();
-
         mSystemAudioControl->onLog = [](SystemAudioControl::LogRank rank, std::string str) {
             auto ptr{spdlog::get(LogAudioID).get()};
             if (rank == SystemAudioControl::LogRank::Debug) {
@@ -80,14 +87,23 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
                 ptr->error(str);
             }
         };
+
+        if (mSystemAudioControl->initialize()) {
+            spdlog::get(LogAudioID)->debug("系统音频同步初始化成功");
+        }
+
         mSystemAudioControl->onPlay = [this]() {
             play(
                 mPlayInfo.path.toStdString(),
                 static_cast<double>(mCurrentPtsSamples) / mSampleRate
             );
             isSongChange = false;
+            mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
         };
-        mSystemAudioControl->onPause = [this]() { pausePlay(); };
+        mSystemAudioControl->onPause = [this]() {
+            pausePlay();
+            mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
+        };
     }
 }
 void AudioPreProcess::prepareToPlay(

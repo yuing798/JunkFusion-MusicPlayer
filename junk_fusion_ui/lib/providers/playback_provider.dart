@@ -131,6 +131,11 @@ class PlaybackProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+
+    if (_currentSong != null) {
+      bindings.play(_currentSong!.songId, _currentTimeStamp);
+      bindings.pausePlay();
+    } //为了在后端初始化的时候存储播放信息
   }
 
   void initPlaybackProvider() {

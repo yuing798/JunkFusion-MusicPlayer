@@ -60,7 +60,7 @@ public:
         int maximumExpectedSamplesPerBlock
     );
     void processBlock(juce::AudioBuffer<float>& buffer);
-    void play(juce::String songPath, double targetPTS);
+    void play(juce::String songPath, double targetSeconds);
     void pausePlay();
     void timerCallback() override;
     bool getIsFullMute() { return isFullMute; }

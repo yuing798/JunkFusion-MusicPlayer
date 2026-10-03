@@ -5,6 +5,8 @@
 #include <vector>
 #include <windows.h>
 // #include <winnls.h>
+#include <shobjidl_core.h>
+#include <systemmediatransportcontrolsinterop.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Media.Control.h>
@@ -29,9 +31,55 @@ static std::wstring Utf8ToWide(const std::string& utf8) {
     return wide;
 }
 
+// 静态函数，注册一个只属于自己的窗口类
+static const wchar_t* kSmtcWindowClassName = L"JunkFusion_SMTC_HiddenWindow";
+
+static bool registerSmtcWindowClass() {
+    static bool registered = false;
+    if (registered) return true;
+
+    WNDCLASSEXW wc{};
+    wc.cbSize = sizeof(wc);
+    wc.lpfnWndProc = DefWindowProcW; // 用系统默认消息处理即可，我们不处理任何消息
+    wc.hInstance = GetModuleHandleW(nullptr);
+    wc.lpszClassName = kSmtcWindowClassName;
+
+    if (!RegisterClassExW(&wc)) {
+        DWORD err = GetLastError();
+        // ERROR_CLASS_ALREADY_EXISTS (1410) 表示类已注册，可视为成功
+        if (err != ERROR_CLASS_ALREADY_EXISTS) {
+            return false;
+        }
+    }
+    registered = true;
+    return true;
+}
+
+static HWND createSmtcHiddenWindow() {
+    if (!registerSmtcWindowClass()) return nullptr;
+
+    // WS_POPUP + 0 尺寸 + 不显示
+    // WS_EX_TOOLWINDOW 让它在任务栏里不出现，即使意外显示也不会留下痕迹
+    HWND hwnd = CreateWindowExW(
+        WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, // 不出现在任务栏、不抢焦点
+        kSmtcWindowClassName,
+        L"SMTC Hidden",
+        WS_POPUP, // 无边框弹出式
+        0,
+        0,
+        0,
+        0, // 位置和尺寸都是 0
+        nullptr,
+        nullptr,
+        GetModuleHandleW(nullptr),
+        nullptr
+    );
+    return hwnd; // 注意：不要 ShowWindow，保持隐藏
+}
+
 // 平台实现细节全部收敛进 Impl，避免在头文件暴露 WinRT 头
 struct WindowsSystemAudioControl::Impl {
-
+    HWND hiddenHwnd{nullptr}; // smtc要求进程必须有属于自己的窗口，这里使用隐藏窗口实现
     SystemMediaTransportControls smtc{nullptr};
     SystemMediaTransportControlsDisplayUpdater displayUpdater{nullptr};
 
@@ -52,9 +100,22 @@ struct WindowsSystemAudioControl::Impl {
         if (smtc) {
             return true;
         }
+        if (!hiddenHwnd) {
+            hiddenHwnd = createSmtcHiddenWindow();
+            if (!hiddenHwnd) return false;
+        }
 
         try {
-            smtc = SystemMediaTransportControls::GetForCurrentView();
+            auto interop = winrt::get_activation_factory<
+                SystemMediaTransportControls,
+                ISystemMediaTransportControlsInterop>();
+
+            winrt::check_hresult(interop->GetForWindow(
+                hiddenHwnd, // 用自己的窗口，同进程，合法
+                winrt::guid_of<SystemMediaTransportControls>(),
+                winrt::put_abi(smtc)
+            ));
+
             if (!smtc) {
                 return false;
             }
@@ -73,6 +134,7 @@ WindowsSystemAudioControl::WindowsSystemAudioControl() : mImpl(std::make_unique<
 WindowsSystemAudioControl::~WindowsSystemAudioControl() { shutdown(); }
 
 bool WindowsSystemAudioControl::initialize() {
+    if (onLog) onLog(LogRank::Debug, "开始初始化smtc");
     if (mImpl->initialized.load()) {
         return true;
     }
@@ -151,6 +213,12 @@ bool WindowsSystemAudioControl::initialize() {
 }
 
 void WindowsSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
+    std::string logStr{"准备更新smtc元数据:标题:"};
+    logStr += metadata.title;
+    logStr += ",艺术家数组:";
+    logStr += SystemAudioControl::joinIntoString(metadata.artists, " / ");
+    if (onLog) onLog(LogRank::Debug, logStr);
+
     if (!mImpl->initialized.load() || !mImpl->smtc) {
         return;
     }
@@ -169,6 +237,7 @@ void WindowsSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
 
 void WindowsSystemAudioControl::updatePlaybackState(PlaybackState state) {
     if (!mImpl->initialized.load() || !mImpl->smtc) {
+        if (onLog) onLog(LogRank::Debug, "smtc播放状态发生未知原因提前return");
         return;
     }
 
@@ -177,6 +246,8 @@ void WindowsSystemAudioControl::updatePlaybackState(PlaybackState state) {
             state == PlaybackState::Play ? MediaPlaybackStatus::Playing
                                          : MediaPlaybackStatus::Paused
         );
+        std::string logState{state == PlaybackState::Play ? "播放" : "暂停"};
+        if (onLog) onLog(LogRank::Debug, "smtc播放状态已更新:当前状态:" + logState);
     } catch (...) {
         if (onLog) onLog(LogRank::Error, "更新播放状态失败");
     }
@@ -200,6 +271,16 @@ void WindowsSystemAudioControl::shutdown() {
         if (mImpl->smtc) {
             mImpl->smtc.IsEnabled(false);
         }
+
+        mImpl->smtc = nullptr;
+        mImpl->displayUpdater = nullptr;
+
+        // 2. 再销毁隐藏窗口（顺序很重要：SMTC 释放之后再销毁）
+        if (mImpl->hiddenHwnd) {
+            DestroyWindow(mImpl->hiddenHwnd);
+            mImpl->hiddenHwnd = nullptr;
+        }
+
     } catch (...) {
         if (onLog) onLog(LogRank::Error, "windows系统音频控制释放资源异常");
     }
