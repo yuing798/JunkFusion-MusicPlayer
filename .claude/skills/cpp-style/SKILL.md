@@ -60,3 +60,5 @@ stmt.bind(":duration", info.duration);
 info.filePath = query.getColumn("filePath").getString();
 info.fileSize = query.getColumn("fileSize").getInt64();
 ```
+
+4. 在你写的代码文件中，请使用IMPL设计模式，也就是私有函数和私有方法收敛入cpp文件中

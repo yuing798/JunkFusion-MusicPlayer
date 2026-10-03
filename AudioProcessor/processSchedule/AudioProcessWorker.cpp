@@ -102,10 +102,6 @@ void AudioProcessorPuber::run() {
 
         std::queue<std::string> localQueue;
         {
-            // td::lock_guard<std::mutex> 是 C++ 标准库提供的一个 RAII（资源获取即初始化）
-            // 锁管理器。简单来说，它是 “自动锁”
-            // std::lock_guard<Mutex>（锁守卫）：这是一个类模板。它的构造函数会调用
-            // mutex.lock()，它的析构函数会调用 mutex.unlock()。
             std::lock_guard<std::mutex> lock(queueMutex);
             std::swap(localQueue, messageQueue); // 快速把队列交换出来，减少锁占用时间
         }
@@ -134,6 +130,6 @@ AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pub
 }
 
 AudioProcessWorker::~AudioProcessWorker() {
-    receiver->stopThread(2000);
-    sender->stopThread(2000);
+    receiver->stopThread(500);
+    sender->stopThread(500);
 }

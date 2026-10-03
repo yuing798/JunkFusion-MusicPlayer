@@ -105,20 +105,20 @@ bool MacosSystemAudioControl::initialize() {
         mImpl->fastForwardTarget =
             makeCommandTarget(center.skipForwardCommand, ^(MPRemoteCommandEvent*) {
               if (onFastForward) {
-                  onFastForward();
+                  onFastForward(fastForwardAndRewindTime);
               }
             });
         // 告诉系统快进按键每次跳转的秒数（比如10秒），不加这行按键可能没反应
-        center.skipForwardCommand.preferredIntervals = @[ @(10.0) ];
+        center.skipForwardCommand.preferredIntervals = @[ @(fastForwardAndRewindTime) ];
 
         // 系统媒体键：快退
         mImpl->rewindTarget =
             makeCommandTarget(center.skipBackwardCommand, ^(MPRemoteCommandEvent*) {
               if (onRewind) {
-                  onRewind();
+                  onRewind(fastForwardAndRewindTime);
               }
             });
-        center.skipBackwardCommand.preferredIntervals = @[ @(10.0) ];
+        center.skipBackwardCommand.preferredIntervals = @[ @(fastForwardAndRewindTime) ];
 
         // ==================================================
 

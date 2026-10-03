@@ -3,13 +3,14 @@ cmake_minimum_required(VERSION 3.22)
 
 project(SystemAudioControl VERSION 0.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+endif()
 
 # if(NOT CMAKE_BUILD_TYPE)
 #     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
 # endif()
 
-# 先声明 target
 add_library(SystemAudioControl STATIC)
 
 target_include_directories(SystemAudioControl
@@ -20,7 +21,6 @@ target_include_directories(SystemAudioControl
 
 if (WIN32)
     target_sources(SystemAudioControl PRIVATE WindowsSystemAudioControl.cpp)
-    # TODO(连接): 若链接报缺失 WinRT 符号请替换为 windowsapp.lib
     target_link_libraries(SystemAudioControl PUBLIC onecoreuap)
 elseif (APPLE)
     # 更规范做法：把 .cpp 改名为 .mm，然后删掉下面这行 set_source_files_properties

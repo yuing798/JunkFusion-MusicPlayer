@@ -27,4 +27,4 @@ void OscReceiver::oscMessageReceived(const juce::OSCMessage& message) {
     }
 }
 
-void OscReceiver::oscBundleReceived(const juce::OSCBundle& bundle) {}
+void OscReceiver::oscBundleReceived(const juce::OSCBundle& bundle) { juce::ignoreUnused(bundle); }

@@ -183,12 +183,12 @@ bool WindowsSystemAudioControl::initialize() {
     };
     auto onFastForwardEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::FastForward && onFastForward) {
-            onFastForward();
+            onFastForward(fastForwardAndRewindTime);
         }
     };
     auto onRewindEvt = [this](auto&&, auto&& e) {
         if (e.Button() == SystemMediaTransportControlsButton::Rewind && onRewind) {
-            onRewind();
+            onRewind(fastForwardAndRewindTime);
         }
     };
     // auto onStopEvt = [this](auto&&, auto&& e) {

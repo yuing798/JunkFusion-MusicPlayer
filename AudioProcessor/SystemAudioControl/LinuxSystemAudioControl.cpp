@@ -322,10 +322,10 @@ DBusHandlerResult LinuxSystemAudioControl::handleMessage(
                 // MPRIS 规范里 Seek 的偏移量单位是微秒（Microseconds）
                 if (offset > 0) {
                     // 正向偏移，代表快进
-                    if (self->onFastForward) self->onFastForward();
+                    if (self->onFastForward) self->onFastForward(fastForwardAndRewindTime);
                 } else if (offset < 0) {
                     // 负向偏移，代表快退
-                    if (self->onRewind) self->onRewind();
+                    if (self->onRewind) self->onRewind(fastForwardAndRewindTime);
                 }
             }
             replyEmpty(connection, msg);
