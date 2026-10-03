@@ -131,6 +131,11 @@ class PlaybackProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+
+    if (_currentSong != null) {
+      bindings.play(_currentSong!.songId, _currentTimeStamp);
+      bindings.pausePlay();
+    } //为了在后端初始化的时候存储播放信息
   }
 
   void initPlaybackProvider() {
@@ -218,6 +223,12 @@ class PlaybackProvider extends ChangeNotifier {
       final jsonString = jsonEncode(_timeDomainSpec);
       await AppCache.frontCacheRef.setString("timeDomainSpec", jsonString);
     }
+  }
+
+  void setPlayPauseIcon(bool state) {
+    // print("准备切换播放暂停状态");
+    _isPlaying = state;
+    notifyListeners();
   }
 
   // 切换播放/暂停状态

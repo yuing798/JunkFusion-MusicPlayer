@@ -1,13 +1,26 @@
 #include "./AudioPreProcess.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Model/PlayInfo.hpp"
+#include "SystemAudioControl.hpp"
+
+#include "Utils/constants.h"
 #include "Utils/mathUtils.hpp"
+#include "WindowsSystemAudioControl.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
+#include <algorithm>
+#include <spdlog/spdlog.h>
 
-AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
+#ifdef __linux__
+    #include "SystemAudioControl/LinuxSystemAudioControl.hpp"
+#elif defined(__APPLE__)
+    #include "SystemAudioControl/MacosSystemAudioControl.hpp"
+#endif
+
+AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), mPlayCount(worker) {
     for (auto& duck : mDucks) {
         duck.ringBuffer = std::make_unique<AudioRingBuffer>(1000); // 中转站分配1秒
         duck.decoder = std::make_unique<FFmpegDecoder>(duck.ringBuffer.get());
@@ -22,11 +35,7 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
             mWorker->sender->sendMessage(jsonStr);
         };
         duck.decoder->onNatureComplete = [this] {
-            juce::var obj{new juce::DynamicObject()};
-            auto ptr{obj.getDynamicObject()};
-            jassert(ptr);
-            ptr->setProperty(AudioMacro::onPlayNextSong, "");
-            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+            playNextOrPreviousSong(true);
             stopTimer();
         };
     }
@@ -34,8 +43,109 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker) {
     fadeOutCosTable = MathUtils::generateCosTable(0.5);
 
     // 停止播放，不代表现在开始完全静音
-    mWorker->receiver->onPausePlay = [this]() { pausePlay(); };
+    mWorker->receiver->onPausePlay = [this]() {
+        pausePlay();
+        mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
+        // mPlayCount.pauseCount();
+    };
+
+    // 播放新歌
+    mWorker->receiver->onPlay = [this](PlayInfo info, double targetPts) {
+        if (mPlayInfo.path != info.path) {
+            mPlayCount.setNewSong(info.path.toStdString(), info.duration);
+            SystemAudioControl::MediaMetadata data{};
+            data.title = info.title.toStdString();
+            data.artists = ConvertUtils::stringArrayToVector(info.artists);
+            mSystemAudioControl->updateMetadata(data);
+            isSongChange = true;
+        } else {
+            isSongChange = false;
+        }
+
+        play(info.path, targetPts);
+        mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
+
+        mPlayInfo = info;
+    };
+
+    // 设置系统音频管理类
+    {
+#ifdef _WIN32
+        mSystemAudioControl = std::make_unique<WindowsSystemAudioControl>();
+#elif defined(__linux__)
+        mSystemAudioControl = std::make_unique<LinuxSystemAudioControl>();
+#elif defined(__APPLE__)
+        mSystemAudioControl = std::make_unique<MacosSystemAudioControl>();
+#endif
+
+        mSystemAudioControl->onLog = [](SystemAudioControl::LogRank rank, std::string str) {
+            auto ptr{spdlog::get(LogAudioID).get()};
+            if (rank == SystemAudioControl::LogRank::Debug) {
+                ptr->debug(str);
+            } else if (rank == SystemAudioControl::LogRank::Info) {
+                ptr->info(str);
+            } else if (rank == SystemAudioControl::LogRank::Error) {
+                ptr->error(str);
+            }
+        };
+
+        if (mSystemAudioControl->initialize()) {
+            spdlog::get(LogAudioID)->debug("系统音频同步初始化成功");
+        }
+
+        mSystemAudioControl->onPlay = [this]() {
+            play(
+                mPlayInfo.path.toStdString(),
+                static_cast<double>(mCurrentPtsSamples) / mSampleRate
+            );
+            isSongChange = false;
+            mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
+            juce::var obj{new juce::DynamicObject()};
+            obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 1);
+            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+        };
+        mSystemAudioControl->onPause = [this]() {
+            pausePlay();
+            mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
+            juce::var obj{new juce::DynamicObject()};
+            obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 0);
+            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+        };
+
+        mSystemAudioControl->onNext = [this] { playNextOrPreviousSong(true); };
+        mSystemAudioControl->onPrevious = [this] { playNextOrPreviousSong(false); };
+
+        mSystemAudioControl->onFastForward = [this](int value) {
+            auto targetSeconds{
+                static_cast<double>(mCurrentPtsSamples) / mSampleRate + static_cast<double>(value)
+            };
+            if (targetSeconds >= mPlayInfo.duration) {
+                playNextOrPreviousSong(true);
+            } else {
+                play(mPlayInfo.path, targetSeconds);
+            }
+        };
+        mSystemAudioControl->onRewind = [this](int value) {
+            auto targetSeconds{
+                static_cast<double>(mCurrentPtsSamples) / mSampleRate - static_cast<double>(value)
+            };
+            if (targetSeconds < 0.0) {
+                playNextOrPreviousSong(false);
+            } else {
+                play(mPlayInfo.path, targetSeconds);
+            }
+        };
+    }
 }
+
+void AudioPreProcess::playNextOrPreviousSong(bool nextOrPrevious) {
+    juce::var obj{new juce::DynamicObject()};
+    auto ptr{obj.getDynamicObject()};
+    jassert(ptr);
+    ptr->setProperty(AudioMacro::onPlayNextOrPreviousSong, nextOrPrevious);
+    mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
+}
+
 void AudioPreProcess::prepareToPlay(
     juce::AudioChannelSet outputLayout,
     double sampleRate,
@@ -53,6 +163,8 @@ void AudioPreProcess::prepareToPlay(
     smoothedPTSChangeCrossFadeMs.setCurrentAndTargetValue(40.0f);
     smoothedPlayPause.reset(sampleRate, 0.5f);
     smoothedPlayPause.setCurrentAndTargetValue(0.0f);
+
+    mPlayCount.prepareToPlay(sampleRate);
 }
 
 void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
@@ -138,6 +250,8 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         if (!isFullMute) mCurrentPtsSamples++;
     }
+
+    mPlayCount.processBlock(buffer.getNumSamples(), isFullMute);
 }
 
 void AudioPreProcess::timerCallback() {
@@ -147,22 +261,11 @@ void AudioPreProcess::timerCallback() {
     auto msg = juce::JSON::toString(obj).toStdString();
     mWorker->sender->sendMessage(msg);
 }
-void AudioPreProcess::pausePlay() {
-    // spdlog::get(LogAudioID)->debug("AudioPreProcess准备暂停播放");
+void AudioPreProcess::pausePlay() { smoothedPlayPause.setTargetValue(0.0f); }
 
-    smoothedPlayPause.setTargetValue(0.0f);
-}
-
-void AudioPreProcess::play(std::string songPath, double targetPTS) {
+void AudioPreProcess::play(juce::String songPath, double targetPTS) {
     mainPlayDuckIndex = !mainPlayDuckIndex;
     mCurrentPtsSamples = (int)(targetPTS * mSampleRate);
-    if (currentSongPath != songPath) {
-        isSongChange = true;
-    } else {
-        isSongChange = false;
-    } // 这里的isSongChange是为了实施不同的交叉淡化时长的，
-    // 歌曲切换的不相干性远大于进度条切换，所以应该长交叉淡化
-    currentSongPath = songPath;
 
     if (mDucks[!mainPlayDuckIndex].decoder->isThreadRunning()) {
         // 另一个甲板正在工作
@@ -201,7 +304,7 @@ void AudioPreProcess::play(std::string songPath, double targetPTS) {
     // 这个值只有交叉淡化才会使用，不过设置一个int值开销小的离谱，所以放在这里是无所谓的
     currentCrossFadeIndex = 0;
     mDucks[mainPlayDuckIndex].ringBuffer->reset();
-    mDucks[mainPlayDuckIndex].decoder->play(songPath, targetPTS);
+    mDucks[mainPlayDuckIndex].decoder->play(songPath.toStdString(), targetPTS);
     // 从打开输入上下文到帧循环的时间不过几十纳秒，开新线程完全可以
     startTimerHz(30); // 30帧的进度条刷新率
 }

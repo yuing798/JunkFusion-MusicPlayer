@@ -112,15 +112,15 @@ extern "C" {
         dllManager::getInstance().onErrorSendCallback = cb;
     }
     void play(long long songId, double targetPTS) {
-        auto info = dllManager::getInstance().getSongsManager().getPlayInfo(songId);
-        juce::var playInfo{new juce::DynamicObject()};
-
-        playInfo.getDynamicObject()->setProperty(SongInfoMacro::path, juce::String(info.path));
-        playInfo.getDynamicObject()->setProperty(AudioMacro::targetPTS, targetPTS);
-        playInfo.getDynamicObject()->setProperty(SongInfoMacro::duration, info.duration);
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioMacro::play, playInfo);
-        dllManager::getInstance().sendMessage2AudioProcess(obj);
+        auto info = dllManager::getInstance().getSongsManager().getPlayInfo(songId).toJson();
+        juce::var playObj{new juce::DynamicObject()};
+        {
+            playObj.getDynamicObject()->setProperty(AudioMacro::playInfo, info);
+            playObj.getDynamicObject()->setProperty(AudioMacro::targetPTS, targetPTS);
+        }
+        juce::var resultObj{new juce::DynamicObject()};
+        resultObj.getDynamicObject()->setProperty(AudioMacro::play, playObj);
+        dllManager::getInstance().sendMessage2AudioProcess(resultObj);
     }
     void pausePlay() {
         juce::var obj{new juce::DynamicObject()};
@@ -130,9 +130,6 @@ extern "C" {
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
-    // void registerTimeDomainSpecInsertOver(StringFunc cb) {
-    //     dllManager::getInstance().getSongsManager().onTimeDomainSpecInsertOver = cb;
-    // }
     const char* getTimeDomainSpecBySongId(long long songId) {
         auto vec = dllManager::getInstance().getSongsManager().getTimeDomainSpec(songId);
         juce::Array<juce::var> arr;
@@ -169,7 +166,9 @@ extern "C" {
             dllManager::getInstance().sendMessage2AudioProcess(obj);
         }
     }
-    void registerOnPlayNextSong(VoidFunc cb) { dllManager::getInstance().onPlayNextSong = cb; }
+    void registerOnPlayNextOrPreviousSong(IntFunc cb) {
+        dllManager::getInstance().onPlayNextOrPreviousSong = cb;
+    }
 
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
@@ -188,4 +187,5 @@ extern "C" {
         auto info{dllManager::getInstance().getSongsManager().getSongInfo(songId)};
         return ConvertUtils::object2Uint8t(info.toJson());
     }
+    void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
 }

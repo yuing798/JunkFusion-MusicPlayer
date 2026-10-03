@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Model/PlayInfo.hpp"
-#include "../Model/SongInfo.hpp"
 #include "./WaveFormAnaly.hpp"
+#include "Model/PlayInfo.hpp"
+#include "Model/SongInfo.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
@@ -25,10 +25,6 @@ private:
     juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
-    // 可选数据库行字符查询
-    juce::String optStrCol(SQLite::Statement& sql, const char* colName);
-    // 可选数据库行整数查询
-    std::optional<int> optIntCol(SQLite::Statement& sql, const char* colName);
     SongInfo searchSongInfo(SQLite::Statement& sql);
 
 public:

@@ -1,9 +1,11 @@
 #include "./songsManage.hpp"
-#include "../Model/PlayInfo.hpp"
-#include "../Model/SongInfo.hpp"
 #include "../dllManager.hpp"
+#include "Coordinator/fileManage/dbTable.hpp"
+#include "Model/PlayInfo.hpp"
+#include "Model/SongInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
+#include "Utils/dbUtils.hpp"
 #include "Utils/otherUtils.hpp"
 #include "WaveFormAnaly.hpp"
 #include "juce_core/juce_core.h"
@@ -121,18 +123,6 @@ std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* 
     }
 }
 
-juce::String SongsManage::optStrCol(SQLite::Statement& sql, const char* colName) {
-    auto col = sql.getColumn(colName);
-    if (col.isNull()) return "";
-    auto s = juce::String(col.getString());
-    return s;
-}
-
-std::optional<int> SongsManage::optIntCol(SQLite::Statement& sql, const char* colName) {
-    if (sql.getColumn(colName).isNull()) return std::nullopt;
-    return sql.getColumn(colName).getInt();
-}
-
 SongInfo SongsManage::searchSongInfo(SQLite::Statement& query) {
     SongInfo info{};
 
@@ -143,20 +133,20 @@ SongInfo SongsManage::searchSongInfo(SQLite::Statement& query) {
 
         // ── 标签 ──
         info.title = query.getColumn("title").getString();
-        auto artistStr = optStrCol(query, "artists");
+        auto artistStr = DbUtils::optStrCol(query, "artists");
         if (artistStr.isNotEmpty()) {
             Yvar artists{juce::JSON::fromString(artistStr)};
             for (int i = 0; i < artists.size(); i++) {
                 info.artists.add(artists.read(i).toString());
             }
         }
-        info.album = optStrCol(query, "album");
-        info.albumArtist = optStrCol(query, "albumArtist");
-        info.genre = optStrCol(query, "genre");
-        info.trackNumber = optIntCol(query, "trackNumber");
-        info.discNumber = optIntCol(query, "discNumber");
-        info.year = optIntCol(query, "year");
-        info.composer = optStrCol(query, "composer");
+        info.album = DbUtils::optStrCol(query, "album");
+        info.albumArtist = DbUtils::optStrCol(query, "albumArtist");
+        info.genre = DbUtils::optStrCol(query, "genre");
+        info.trackNumber = DbUtils::optIntCol(query, "trackNumber");
+        info.discNumber = DbUtils::optIntCol(query, "discNumber");
+        info.year = DbUtils::optIntCol(query, "year");
+        info.composer = DbUtils::optStrCol(query, "composer");
 
         // ── FFmpeg 解码层 ──
         info.bitRate = query.getColumn("bitRate").getInt64();
@@ -174,18 +164,18 @@ SongInfo SongsManage::searchSongInfo(SQLite::Statement& query) {
             av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
             info.channelLayout = juce::String(layoutBuffer);
         }
-        info.codecName = optStrCol(query, "codecName");
+        info.codecName = DbUtils::optStrCol(query, "codecName");
 
         // ── AI 分析 ──
-        info.aiGenre = optStrCol(query, "aiGenre");
-        info.bpm = optIntCol(query, "bpm");
-        info.key = optStrCol(query, "key");
+        info.aiGenre = DbUtils::optStrCol(query, "aiGenre");
+        info.bpm = DbUtils::optIntCol(query, "bpm");
+        info.key = DbUtils::optStrCol(query, "key");
 
         // ── 用户信息 ──
         info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
-        info.comment = optStrCol(query, "comment");
+        info.comment = DbUtils::optStrCol(query, "comment");
         info.playNum = query.getColumn("playNum").getInt();
-        info.hash = optStrCol(query, "hash");
+        info.hash = DbUtils::optStrCol(query, "hash");
     }
     return info;
 }
@@ -267,20 +257,20 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
 
             // ── 标签 ──
             info.title = query.getColumn("title").getString();
-            auto artistStr = optStrCol(query, "artists");
+            auto artistStr = DbUtils::optStrCol(query, "artists");
             if (artistStr.isNotEmpty()) {
                 Yvar artists{juce::JSON::fromString(artistStr)};
                 for (int i = 0; i < artists.size(); i++) {
                     info.artists.add(artists.read(i).toString());
                 }
             }
-            info.album = optStrCol(query, "album");
-            info.albumArtist = optStrCol(query, "albumArtist");
-            info.genre = optStrCol(query, "genre");
-            info.trackNumber = optIntCol(query, "trackNumber");
-            info.discNumber = optIntCol(query, "discNumber");
-            info.year = optIntCol(query, "year");
-            info.composer = optStrCol(query, "composer");
+            info.album = DbUtils::optStrCol(query, "album");
+            info.albumArtist = DbUtils::optStrCol(query, "albumArtist");
+            info.genre = DbUtils::optStrCol(query, "genre");
+            info.trackNumber = DbUtils::optIntCol(query, "trackNumber");
+            info.discNumber = DbUtils::optIntCol(query, "discNumber");
+            info.year = DbUtils::optIntCol(query, "year");
+            info.composer = DbUtils::optStrCol(query, "composer");
 
             // ── FFmpeg 解码层 ──
             info.bitRate = query.getColumn("bitRate").getInt64();
@@ -298,18 +288,18 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
                 av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
                 info.channelLayout = juce::String(layoutBuffer);
             }
-            info.codecName = optStrCol(query, "codecName");
+            info.codecName = DbUtils::optStrCol(query, "codecName");
 
             // ── AI 分析 ──
-            info.aiGenre = optStrCol(query, "aiGenre");
-            info.bpm = optIntCol(query, "bpm");
-            info.key = optStrCol(query, "key");
+            info.aiGenre = DbUtils::optStrCol(query, "aiGenre");
+            info.bpm = DbUtils::optIntCol(query, "bpm");
+            info.key = DbUtils::optStrCol(query, "key");
 
             // ── 用户信息 ──
             info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
-            info.comment = optStrCol(query, "comment");
+            info.comment = DbUtils::optStrCol(query, "comment");
             info.playNum = query.getColumn("playNum").getInt();
-            info.hash = optStrCol(query, "hash");
+            info.hash = DbUtils::optStrCol(query, "hash");
             results.add(info.toJson());
         }
     } catch (const SQLite::Exception& e) {
@@ -686,18 +676,22 @@ PlayInfo SongsManage::getPlayInfo(int64_t songId) {
         SQLite::Statement sql(
             db,
             R"(
-            SELECT filePath, duration
+            SELECT filePath, duration, title, artists, hash
             FROM songs WHERE songId = :songId)"
         );
         sql.bind(":songId", songId);
         if (sql.executeStep()) {
             info.path = sql.getColumn("filePath").getString();
             info.duration = sql.getColumn("duration").getDouble();
+            info.title = sql.getColumn("title").getString();
+            Yvar originArtists{juce::JSON::fromString(sql.getColumn("artists").getString())};
+            info.artists = originArtists.toStringArray();
+            info.hash = sql.getColumn("hash").getString();
+
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        spdlog::get(LogDllID)
-            ->debug("成功获取:id:{},路径:{},持续时间:{}", songId, info.path, info.duration);
+        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, info.path.toStdString());
         return info;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};

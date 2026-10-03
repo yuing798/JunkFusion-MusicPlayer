@@ -158,6 +158,7 @@ void AudioProcessSuber::run() {
             // Utils::writeEmergencyLog("suber收到消息");
             std::string data(static_cast<char*>(msg.data()), msg.size());
             Yvar obj = juce::JSON::fromString(juce::String(data));
+            spdlog::get(LogDllID)->debug("suber收到消息:{}", obj.toString().toStdString());
             if (!obj.isObject()) {
                 OtherUtils::writeEmergencyLog(
                     "AudioProcessSuber接收到未知格式:" + obj.toString().toStdString()
@@ -189,14 +190,24 @@ void AudioProcessSuber::run() {
                     dllManager::getInstance().onCurrentPTSCallback(pts);
                 continue;
             }
-            if (obj.hasProperty(AudioMacro::onPlayNextSong)) {
-                if (dllManager::getInstance().onPlayNextSong)
-                    dllManager::getInstance().onPlayNextSong();
+            if (obj.hasProperty(AudioMacro::onPlayNextOrPreviousSong)) {
+                if (dllManager::getInstance().onPlayNextOrPreviousSong) {
+                    auto state{obj.read(AudioMacro::onPlayNextOrPreviousSong).toBool()};
+                    dllManager::getInstance().onPlayNextOrPreviousSong(state);
+                }
+
                 continue;
             }
             if (obj.hasProperty(AudioMacro::updatePlayCount)) {
                 auto path{obj.read(AudioMacro::updatePlayCount).toString()};
                 dllManager::getInstance().getSongsManager().updatePlayCount(path.toStdString());
+            }
+            if (obj.hasProperty(AudioMacro::playStateSync)) {
+                if (dllManager::getInstance().onPlayStateSync) {
+                    dllManager::getInstance().onPlayStateSync(
+                        obj.read(AudioMacro::playStateSync).toInt()
+                    );
+                }
             }
         }
     }

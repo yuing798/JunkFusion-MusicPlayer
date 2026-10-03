@@ -3,6 +3,7 @@
 #include "Macro/SongInfoMacro.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Macro/sliderParam.hpp"
+#include "Model/PlayInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
@@ -21,7 +22,7 @@ void AudioProcessorPuller::run() {
     zmq::socket_t pullSocket(context, zmq::socket_type::pull);
     pullSocket.connect(mPushPullPort); // 连接到 UI 的 PUSH 端
     pullSocket.set(zmq::sockopt::rcvtimeo, 500);
-    OtherUtils::writeEmergencyLog("puller开转");
+    // OtherUtils::writeEmergencyLog("puller开转");
 
     while (!threadShouldExit()) {
         zmq::message_t msg;
@@ -30,8 +31,8 @@ void AudioProcessorPuller::run() {
         if (res) {
 
             std::string command(static_cast<const char*>(msg.data()), msg.size());
-            OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
-            spdlog::get(LogAudioID)->debug("音频进程pusller收到pusher的命令:{}", command);
+            // OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
+            spdlog::get(LogAudioID)->debug("音频进程puller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
             Yvar jsonObj{juce::JSON::fromString(juce::String(command))};
             if (!jsonObj.isObject()) {
@@ -46,12 +47,14 @@ void AudioProcessorPuller::run() {
                 }
                 if (jsonObj.hasProperty(AudioMacro::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
-                    auto playInfo{jsonObj.read(AudioMacro::play)};
-                    auto songPath{playInfo.read(SongInfoMacro::path).toString().toStdString()};
-                    double targetPTS{playInfo.read(AudioMacro::targetPTS).toDouble()};
-                    double duration{playInfo.read(SongInfoMacro::duration).toDouble()};
+                    auto playObj{jsonObj.read(AudioMacro::play)};
+                    double targetPTS{playObj.read(AudioMacro::targetPTS).toDouble()};
+                    auto playInfoObj{playObj.read(AudioMacro::playInfo)};
 
-                    if (onPlay) onPlay(songPath, targetPTS, duration);
+                    auto info{PlayInfo::fromJson(playInfoObj)};
+                    // spdlog::get(LogAudioID)->debug("路径:{}", info.path.toStdString());
+
+                    if (onPlay) onPlay(info, targetPTS);
                     continue;
                 }
                 if (jsonObj.hasProperty(AudioMacro::pause)) {
@@ -99,10 +102,6 @@ void AudioProcessorPuber::run() {
 
         std::queue<std::string> localQueue;
         {
-            // td::lock_guard<std::mutex> 是 C++ 标准库提供的一个 RAII（资源获取即初始化）
-            // 锁管理器。简单来说，它是 “自动锁”
-            // std::lock_guard<Mutex>（锁守卫）：这是一个类模板。它的构造函数会调用
-            // mutex.lock()，它的析构函数会调用 mutex.unlock()。
             std::lock_guard<std::mutex> lock(queueMutex);
             std::swap(localQueue, messageQueue); // 快速把队列交换出来，减少锁占用时间
         }
@@ -131,6 +130,6 @@ AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pub
 }
 
 AudioProcessWorker::~AudioProcessWorker() {
-    receiver->stopThread(2000);
-    sender->stopThread(2000);
+    receiver->stopThread(500);
+    sender->stopThread(500);
 }

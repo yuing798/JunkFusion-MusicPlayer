@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -80,7 +81,21 @@ std::string ConvertUtils::escapeLucene(const std::string& input) {
 juce::Array<juce::var> ConvertUtils::stringArray2ArrayVar(juce::StringArray arr) {
     juce::Array<juce::var> varArr;
     for (auto& singleStr : arr) {
-        varArr.add(juce::var(singleStr));
+        varArr.add(singleStr);
     }
     return varArr;
+}
+
+juce::var ConvertUtils::juceStringToVar(const juce::String& v) {
+    return v.isNotEmpty() ? juce::var(v) : juce::var();
+}
+juce::var ConvertUtils::optionalIntToVar(const std::optional<int>& v) {
+    return v.has_value() ? juce::var(v.value()) : juce::var();
+}
+std::vector<std::string> ConvertUtils::stringArrayToVector(const juce::StringArray& arr) {
+    std::vector<std::string> vec;
+    for (auto& element : arr) {
+        vec.push_back(element.toStdString());
+    }
+    return vec;
 }

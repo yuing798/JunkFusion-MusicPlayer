@@ -1,4 +1,4 @@
 # .clangd
-
 CompileFlags:
+  Add: [-ferror-limit=0]   # 0 表示不限制错误数量
   CompilationDatabase: "build/debug"

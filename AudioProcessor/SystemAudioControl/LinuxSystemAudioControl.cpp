@@ -8,12 +8,8 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
-// ---------------------------------------------------------------------------
-// MPRIS 约定常量
-// FIXME(连接): 以下常量本应遵循项目规范放到 Utils/constants.h 中统一维护，
-//              请把它们迁移过去并从那里引用。
-// ---------------------------------------------------------------------------
 static constexpr const char* kMprisServiceName{"org.mpris.MediaPlayer2.junkfusion"};
 static constexpr const char* kMprisObjectPath{"/org/mpris/MediaPlayer2"};
 static constexpr const char* kMprisRootInterface{"org.mpris.MediaPlayer2"};
@@ -29,7 +25,8 @@ static constexpr const char* kIntrospectionXml{
     "  </interface>"
     "  <interface name='org.freedesktop.DBus.Properties'>"
     "    <method name='Get'><arg name='interface_name' type='s' direction='in'/>"
-    "    <arg name='property_name' type='s' direction='in'/><arg name='value' type='v' direction='out'/></method>"
+    "    <arg name='property_name' type='s' direction='in'/><arg name='value' type='v' "
+    "direction='out'/></method>"
     "    <method name='GetAll'><arg name='interface_name' type='s' direction='in'/>"
     "    <arg name='properties' type='a{sv}' direction='out'/></method>"
     "  </interface>"
@@ -52,7 +49,8 @@ static constexpr const char* kIntrospectionXml{
     "    <property name='CanPause' type='b' access='read'/>"
     "    <property name='CanSeek' type='b' access='read'/>"
     "  </interface>"
-    "</node>"};
+    "</node>"
+};
 
 // 平台实现细节全部收敛进 Impl
 struct LinuxSystemAudioControl::Impl {
@@ -65,23 +63,20 @@ struct LinuxSystemAudioControl::Impl {
 
     // 当前对外广播的状态（供 Properties.Get / GetAll 读取）
     std::string playbackStatus{"Stopped"};
-    juce::String currentTitle;
-    juce::StringArray currentArtists;
-    PlaybackState lastState{PlaybackState::Pause};
-};
+    std::string currentTitle;
+    std::vector<std::string> currentArtists;
 
-// ---------------------------------------------------------------------------
-// 工具：统一把回调切回主线程触发（D-Bus 线程不能直接碰业务状态）
-// ---------------------------------------------------------------------------
-static void postOnMainThread(std::function<void()> callback) {
-    juce::MessageManager::callAsync(std::move(callback));
-}
+    // 供 PlayPause 判断方向使用
+    std::atomic<PlaybackState> currentPlaybackState{PlaybackState::Pause};
+};
 
 // ---------------------------------------------------------------------------
 // 工具：发送 PropertiesChanged 信号（含单个 string 属性变化）
 // ---------------------------------------------------------------------------
-static void emitStringPropertyChanged(DBusConnection* connection, const char* property, const char* value) {
-    DBusMessage* signal = dbus_message_new_signal(kMprisObjectPath, kMprisPropertiesInterface, "PropertiesChanged");
+static void
+emitStringPropertyChanged(DBusConnection* connection, const char* property, const char* value) {
+    DBusMessage* signal =
+        dbus_message_new_signal(kMprisObjectPath, kMprisPropertiesInterface, "PropertiesChanged");
     if (!signal) {
         return;
     }
@@ -97,7 +92,12 @@ static void emitStringPropertyChanged(DBusConnection* connection, const char* pr
     dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &dict);
     dbus_message_iter_open_container(&dict, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
     dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &property);
-    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, DBUS_TYPE_STRING_AS_STRING, &variant);
+    dbus_message_iter_open_container(
+        &entry,
+        DBUS_TYPE_VARIANT,
+        DBUS_TYPE_STRING_AS_STRING,
+        &variant
+    );
     dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value);
     dbus_message_iter_close_container(&entry, &variant);
     dbus_message_iter_close_container(&dict, &entry);
@@ -115,7 +115,12 @@ static void appendStringEntry(DBusMessageIter* dict, const char* key, const char
     DBusMessageIter variant{};
     dbus_message_iter_open_container(dict, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
     dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &key);
-    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, DBUS_TYPE_STRING_AS_STRING, &variant);
+    dbus_message_iter_open_container(
+        &entry,
+        DBUS_TYPE_VARIANT,
+        DBUS_TYPE_STRING_AS_STRING,
+        &variant
+    );
     dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value);
     dbus_message_iter_close_container(&entry, &variant);
     dbus_message_iter_close_container(dict, &entry);
@@ -126,10 +131,54 @@ static void appendBoolEntry(DBusMessageIter* dict, const char* key, dbus_bool_t 
     DBusMessageIter variant{};
     dbus_message_iter_open_container(dict, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
     dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &key);
-    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, DBUS_TYPE_BOOLEAN_AS_STRING, &variant);
+    dbus_message_iter_open_container(
+        &entry,
+        DBUS_TYPE_VARIANT,
+        DBUS_TYPE_BOOLEAN_AS_STRING,
+        &variant
+    );
     dbus_message_iter_append_basic(&variant, DBUS_TYPE_BOOLEAN, &value);
     dbus_message_iter_close_container(&entry, &variant);
     dbus_message_iter_close_container(dict, &entry);
+}
+
+// ---------------------------------------------------------------------------
+// 工具：回复单一属性的 Variant（供 Properties.Get 使用）
+// ---------------------------------------------------------------------------
+static bool replyStringVariant(DBusConnection* connection, DBusMessage* msg, const char* value) {
+    DBusMessage* reply = dbus_message_new_method_return(msg);
+    if (!reply) return false;
+    DBusMessageIter args{}, variant{};
+    dbus_message_iter_init_append(reply, &args);
+    dbus_message_iter_open_container(
+        &args,
+        DBUS_TYPE_VARIANT,
+        DBUS_TYPE_STRING_AS_STRING,
+        &variant
+    );
+    dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value);
+    dbus_message_iter_close_container(&args, &variant);
+    dbus_connection_send(connection, reply, nullptr);
+    dbus_message_unref(reply);
+    return true;
+}
+
+static bool replyBoolVariant(DBusConnection* connection, DBusMessage* msg, dbus_bool_t value) {
+    DBusMessage* reply = dbus_message_new_method_return(msg);
+    if (!reply) return false;
+    DBusMessageIter args{}, variant{};
+    dbus_message_iter_init_append(reply, &args);
+    dbus_message_iter_open_container(
+        &args,
+        DBUS_TYPE_VARIANT,
+        DBUS_TYPE_BOOLEAN_AS_STRING,
+        &variant
+    );
+    dbus_message_iter_append_basic(&variant, DBUS_TYPE_BOOLEAN, &value);
+    dbus_message_iter_close_container(&args, &variant);
+    dbus_connection_send(connection, reply, nullptr);
+    dbus_message_unref(reply);
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,14 +197,19 @@ static bool replyEmpty(DBusConnection* connection, DBusMessage* msg) {
 // ---------------------------------------------------------------------------
 // D-Bus 消息分发（注册对象路径后，所有对本服务的调用都进这里）
 // ---------------------------------------------------------------------------
-static DBusHandlerResult handleMessage(DBusConnection* connection, DBusMessage* msg, void* userData) {
+DBusHandlerResult LinuxSystemAudioControl::handleMessage(
+    DBusConnection* connection,
+    DBusMessage* msg,
+    void* userData
+) {
     auto* self = static_cast<LinuxSystemAudioControl*>(userData);
     const char* interface = dbus_message_get_interface(msg);
     const char* member = dbus_message_get_member(msg);
     const std::string memberStr{member ? member : ""};
 
     // ---- Introspectable ----
-    if (interface && std::string(interface) == kMprisIntrospectableInterface && memberStr == "Introspect") {
+    if (interface && std::string(interface) == kMprisIntrospectableInterface &&
+        memberStr == "Introspect") {
         DBusMessage* reply = dbus_message_new_method_return(msg);
         if (reply) {
             const char* xml = kIntrospectionXml;
@@ -169,24 +223,27 @@ static DBusHandlerResult handleMessage(DBusConnection* connection, DBusMessage* 
     // ---- Properties.Get ----
     if (interface && std::string(interface) == kMprisPropertiesInterface && memberStr == "Get") {
         const char* propName = nullptr;
-        if (dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &propName, DBUS_TYPE_INVALID) && propName) {
+        if (dbus_message_get_args(msg, nullptr, DBUS_TYPE_STRING, &propName, DBUS_TYPE_INVALID) &&
+            propName) {
             std::string name{propName};
             const auto* impl = self->mImpl.get();
 
             if (name == "PlaybackStatus") {
-                DBusMessage* reply = dbus_message_new_method_return(msg);
-                DBusMessageIter args{};
-                DBusMessageIter variant{};
-                dbus_message_iter_init_append(reply, &args);
-                dbus_message_iter_open_container(&args, DBUS_TYPE_VARIANT, DBUS_TYPE_STRING_AS_STRING, &variant);
-                const char* status = impl->playbackStatus.c_str();
-                dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &status);
-                dbus_message_iter_close_container(&args, &variant);
-                dbus_connection_send(connection, reply, nullptr);
-                dbus_message_unref(reply);
-                return DBUS_HANDLER_RESULT_HANDLED;
+                return replyStringVariant(connection, msg, impl->playbackStatus.c_str())
+                           ? DBUS_HANDLER_RESULT_HANDLED
+                           : DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
             }
-            // TODO(连接): 补充其余属性（Identity、CanPlay、CanPause、CanGoNext、CanGoPrevious、CanSeek）的 Get 返回
+            if (name == "Identity") {
+                return replyStringVariant(connection, msg, "JunkFusion MusicPlayer")
+                           ? DBUS_HANDLER_RESULT_HANDLED
+                           : DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+            }
+            if (name == "CanPlay" || name == "CanPause" || name == "CanGoNext" ||
+                name == "CanGoPrevious" || name == "CanSeek") {
+                return replyBoolVariant(connection, msg, TRUE)
+                           ? DBUS_HANDLER_RESULT_HANDLED
+                           : DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+            }
         }
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     }
@@ -205,6 +262,7 @@ static DBusHandlerResult handleMessage(DBusConnection* connection, DBusMessage* 
         dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &dict);
 
         appendStringEntry(&dict, "PlaybackStatus", impl->playbackStatus.c_str());
+        appendStringEntry(&dict, "Identity", "JunkFusion MusicPlayer");
         appendBoolEntry(&dict, "CanGoNext", TRUE);
         appendBoolEntry(&dict, "CanGoPrevious", TRUE);
         appendBoolEntry(&dict, "CanPlay", TRUE);
@@ -220,44 +278,82 @@ static DBusHandlerResult handleMessage(DBusConnection* connection, DBusMessage* 
     // ---- 媒体控制方法（耳机/键盘媒体键最终会走到这里）----
     if (interface && std::string(interface) == kMprisPlayerInterface) {
         if (memberStr == "Play") {
-            if (self->onPlay) { postOnMainThread([self] { self->onPlay(); }); }
+            if (self->onPlay) {
+                self->onPlay();
+            }
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
         if (memberStr == "Pause") {
-            if (self->onPause) { postOnMainThread([self] { self->onPause(); }); }
+            if (self->onPause) {
+                self->onPause();
+            }
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
         if (memberStr == "PlayPause") {
-            // FIXME(连接): 基类没有提供“当前是否正在播放”的查询，无法判断 PlayPause 的方向。
-            //             请接入当前播放状态后决定调用 onPlay 还是 onPause。
+            // 利用内部记录的状态决定 toggle 方向
+            if (self->mImpl->currentPlaybackState.load() == PlaybackState::Play) {
+                if (self->onPause) self->onPause();
+            } else {
+                if (self->onPlay) self->onPlay();
+            }
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
         if (memberStr == "Next") {
-            if (self->onNext) { postOnMainThread([self] { self->onNext(); }); }
+            if (self->onNext) {
+                self->onNext();
+            }
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
         if (memberStr == "Previous") {
-            if (self->onPrevious) { postOnMainThread([self] { self->onPrevious(); }); }
+            if (self->onPrevious) {
+                self->onPrevious();
+            }
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
         if (memberStr == "Seek") {
             dbus_int64_t offset = 0;
+            // 解析 XML 里定义的 'Offset' 参数（类型 'x'，即 int64）
             if (dbus_message_get_args(msg, nullptr, DBUS_TYPE_INT64, &offset, DBUS_TYPE_INVALID)) {
-                if (self->onSeek) {
-                    double seconds = static_cast<double>(offset) / 1000000.0; // 微秒 -> 秒
-                    postOnMainThread([self, seconds] { self->onSeek(seconds); });
+                // MPRIS 规范里 Seek 的偏移量单位是微秒（Microseconds）
+                if (offset > 0) {
+                    // 正向偏移，代表快进
+                    if (self->onFastForward) self->onFastForward(fastForwardAndRewindTime);
+                } else if (offset < 0) {
+                    // 负向偏移，代表快退
+                    if (self->onRewind) self->onRewind(fastForwardAndRewindTime);
                 }
             }
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
+        if (memberStr == "SetPosition") {
+            const char* trackId = nullptr;
+            dbus_int64_t position = 0;
+            // 解析 XML 里定义的 'TrackId' (类型 'o') 和 'Position' (类型 'x')
+            if (dbus_message_get_args(
+                    msg,
+                    nullptr,
+                    DBUS_TYPE_OBJECT_PATH,
+                    &trackId,
+                    DBUS_TYPE_INT64,
+                    &position,
+                    DBUS_TYPE_INVALID
+                )) {
+                // MPRIS 的 Position 单位是微秒，转换为秒
+                double seconds = static_cast<double>(position) / 1000000.0;
+                if (self->onSeek) self->onSeek(seconds);
+            }
+            replyEmpty(connection, msg);
+            return DBUS_HANDLER_RESULT_HANDLED;
+        }
         if (memberStr == "Stop") {
-            // TODO(连接): 基类没有 stop 回调，接入后在此触发
+            // 现代音乐播放器无独立 Stop 状态，降级为 Pause
+            if (self->onPause) self->onPause();
             replyEmpty(connection, msg);
             return DBUS_HANDLER_RESULT_HANDLED;
         }
@@ -272,7 +368,7 @@ static void unregisterPath(DBusConnection*, void*) {
 
 static const DBusObjectPathVTable kObjectVTable{
     unregisterPath,
-    handleMessage,
+    LinuxSystemAudioControl::handleMessage,
     nullptr,
     nullptr,
     nullptr,
@@ -281,9 +377,7 @@ static const DBusObjectPathVTable kObjectVTable{
 
 LinuxSystemAudioControl::LinuxSystemAudioControl() : mImpl(std::make_unique<Impl>()) {}
 
-LinuxSystemAudioControl::~LinuxSystemAudioControl() {
-    shutdown();
-}
+LinuxSystemAudioControl::~LinuxSystemAudioControl() { shutdown(); }
 
 bool LinuxSystemAudioControl::initialize() {
     if (mImpl->initialized.load()) {
@@ -298,15 +392,24 @@ bool LinuxSystemAudioControl::initialize() {
     }
 
     // 请求独占 MPRIS 名字；冲突时（已有同名字实例）返回 false
-    int ret = dbus_bus_request_name(mImpl->connection, kMprisServiceName, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                    &mImpl->error);
+    int ret = dbus_bus_request_name(
+        mImpl->connection,
+        kMprisServiceName,
+        DBUS_NAME_FLAG_DO_NOT_QUEUE,
+        &mImpl->error
+    );
     if (DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER != ret) {
         // TODO(连接): 打印名字占用日志
         return false;
     }
 
     // 注册对象路径并绑定消息分发（userData 传 this 以便回调）
-    if (!dbus_connection_register_object_path(mImpl->connection, kMprisObjectPath, &kObjectVTable, this)) {
+    if (!dbus_connection_register_object_path(
+            mImpl->connection,
+            kMprisObjectPath,
+            &kObjectVTable,
+            this
+        )) {
         // TODO(连接): 打印对象路径注册失败日志
         return false;
     }
@@ -334,7 +437,7 @@ void LinuxSystemAudioControl::updateMetadata(const MediaMetadata& metadata) {
     // FIXME(连接): 完整的 Metadata 应包含 mpris:trackid(歌曲唯一 id)、mpris:length(时长微秒)、
     //              xesam:artist(字符串数组)、mpris:artUrl(封面地址)，
     //              请接入真实数据后通过一个 emitMetadataChanged() 统一广播。
-    emitStringPropertyChanged(mImpl->connection, "xesam:title", metadata.title.toStdString().c_str());
+    emitStringPropertyChanged(mImpl->connection, "xesam:title", metadata.title.c_str());
 }
 
 void LinuxSystemAudioControl::updatePlaybackState(PlaybackState state) {
@@ -342,7 +445,8 @@ void LinuxSystemAudioControl::updatePlaybackState(PlaybackState state) {
         return;
     }
 
-    mImpl->lastState = state;
+    // 更新内部状态，供 PlayPause 判断方向
+    mImpl->currentPlaybackState.store(state);
     mImpl->playbackStatus = (state == PlaybackState::Play) ? "Playing" : "Paused";
 
     emitStringPropertyChanged(mImpl->connection, "PlaybackStatus", mImpl->playbackStatus.c_str());
