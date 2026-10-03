@@ -27,4 +27,6 @@
   
   "onPlayNextSong":"",//播放下一首歌的回调信号
   "updatePlayCount":"",//请求更新播放次数
+
+  "playStateSync":"",//请求播放状态同步,比如smtc切换播放状态就是直接后端通知前端的
 }

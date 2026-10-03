@@ -22,7 +22,7 @@ void AudioProcessorPuller::run() {
     zmq::socket_t pullSocket(context, zmq::socket_type::pull);
     pullSocket.connect(mPushPullPort); // 连接到 UI 的 PUSH 端
     pullSocket.set(zmq::sockopt::rcvtimeo, 500);
-    OtherUtils::writeEmergencyLog("puller开转");
+    // OtherUtils::writeEmergencyLog("puller开转");
 
     while (!threadShouldExit()) {
         zmq::message_t msg;
@@ -31,8 +31,8 @@ void AudioProcessorPuller::run() {
         if (res) {
 
             std::string command(static_cast<const char*>(msg.data()), msg.size());
-            OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
-            spdlog::get(LogAudioID)->debug("音频进程pusller收到pusher的命令:{}", command);
+            // OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
+            spdlog::get(LogAudioID)->debug("音频进程puller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
             Yvar jsonObj{juce::JSON::fromString(juce::String(command))};
             if (!jsonObj.isObject()) {

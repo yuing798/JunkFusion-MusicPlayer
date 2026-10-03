@@ -36,6 +36,7 @@ class CppCallbackManager {
   ffi.NativeCallable<VoidFuncFunction>? _onPlayNextSongCallback;
   // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
+  ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
 
   /// 2. 注册回调到 C++
   void setupCallbacks(SongProvider songProvider, PlaybackProvider playback) {
@@ -98,16 +99,21 @@ class CppCallbackManager {
         DialogUtil.showInfoDialog(message);
       }
     });
+    _onPlayStateSync = ffi.NativeCallable<IntFuncFunction>.listener((
+      int value,
+    ) {
+      playback.setPlayPauseIcon(value == 1 ? true : false);
+    });
 
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
     bindings.registerOnUpdateSongInfo(_onUpdateSongInfo!.nativeFunction);
     bindings.registerOnPlayNextSong(_onPlayNextSongCallback!.nativeFunction);
-    // bindings.registerOnGetAllSongsOver(_onGetAllSongsOver!.nativeFunction);
     bindings.registerOnLightSongDataImportOver(
       _onLightSongDataImportOver!.nativeFunction,
     );
+    bindings.requestOnPlayStateSync(_onPlayStateSync!.nativeFunction);
   }
 
   /// 3. 清理资源
@@ -118,6 +124,7 @@ class CppCallbackManager {
     bindings.registerOnPlayNextSong(ffi.nullptr);
     // bindings.registerOnGetAllSongsOver(ffi.nullptr);
     bindings.registerOnLightSongDataImportOver(ffi.nullptr);
+    bindings.requestOnPlayStateSync(ffi.nullptr);
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _errorSendcallable?.close();
@@ -126,5 +133,6 @@ class CppCallbackManager {
     _onPlayNextSongCallback?.close();
     // _onGetAllSongsOver?.close();
     _onLightSongDataImportOver?.close();
+    _onPlayStateSync?.close();
   }
 }

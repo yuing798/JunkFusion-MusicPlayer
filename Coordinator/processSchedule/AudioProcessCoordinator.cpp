@@ -198,6 +198,13 @@ void AudioProcessSuber::run() {
                 auto path{obj.read(AudioMacro::updatePlayCount).toString()};
                 dllManager::getInstance().getSongsManager().updatePlayCount(path.toStdString());
             }
+            if (obj.hasProperty(AudioMacro::playStateSync)) {
+                if (dllManager::getInstance().onPlayStateSync) {
+                    dllManager::getInstance().onPlayStateSync(
+                        obj.read(AudioMacro::playStateSync).toInt()
+                    );
+                }
+            }
         }
     }
 

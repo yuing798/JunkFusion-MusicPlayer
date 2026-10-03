@@ -2,8 +2,7 @@
 #include "Macro/audioMacro.hpp"
 #include "Model/PlayInfo.hpp"
 #include "SystemAudioControl.hpp"
-#include "SystemAudioControl/LinuxSystemAudioControl.hpp"
-#include "SystemAudioControl/MacosSystemAudioControl.hpp"
+
 #include "Utils/constants.h"
 #include "Utils/mathUtils.hpp"
 #include "WindowsSystemAudioControl.hpp"
@@ -14,6 +13,12 @@
 #include "processSchedule/AudioProcessWorker.hpp"
 #include <algorithm>
 #include <spdlog/spdlog.h>
+
+#ifdef __linux__
+    #include "SystemAudioControl/LinuxSystemAudioControl.hpp"
+#elif defined(__APPLE__)
+    #include "SystemAudioControl/MacosSystemAudioControl.hpp"
+#endif
 
 AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), mPlayCount(worker) {
     for (auto& duck : mDucks) {
@@ -99,10 +104,16 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
             );
             isSongChange = false;
             mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
+            juce::var obj{new juce::DynamicObject()};
+            obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 1);
+            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
         };
         mSystemAudioControl->onPause = [this]() {
             pausePlay();
             mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
+            juce::var obj{new juce::DynamicObject()};
+            obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 0);
+            mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
         };
     }
 }

@@ -185,4 +185,5 @@ extern "C" {
         auto info{dllManager::getInstance().getSongsManager().getSongInfo(songId)};
         return ConvertUtils::object2Uint8t(info.toJson());
     }
+    void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
 }

@@ -225,6 +225,12 @@ class PlaybackProvider extends ChangeNotifier {
     }
   }
 
+  void setPlayPauseIcon(bool state) {
+    // print("准备切换播放暂停状态");
+    _isPlaying = state;
+    notifyListeners();
+  }
+
   // 切换播放/暂停状态
   void togglePlayPause() {
     // print("准备切换播放暂停状态");

@@ -78,7 +78,6 @@ class JunkFusionDLLBindings {
   late final _getSongInfoBySongId = _getSongInfoBySongIdPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  /// DLL_EXPORT void registerTimeDomainSpecInsertOver(StringFunc cb);
   ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
     return _getTimeDomainSpecBySongId(songId);
   }
@@ -165,6 +164,17 @@ class JunkFusionDLLBindings {
   late final _registerOnUpdateSongInfo = _registerOnUpdateSongInfoPtr
       .asFunction<void Function(Int64Func)>();
 
+  void requestOnPlayStateSync(IntFunc cb) {
+    return _requestOnPlayStateSync(cb);
+  }
+
+  late final _requestOnPlayStateSyncPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(IntFunc)>>(
+        'requestOnPlayStateSync',
+      );
+  late final _requestOnPlayStateSync = _requestOnPlayStateSyncPtr
+      .asFunction<void Function(IntFunc)>();
+
   void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
     return _saveComment(songId, commentText);
   }
@@ -223,6 +233,9 @@ typedef DartDoubleFuncFunction = void Function(double);
 typedef Int64Func = ffi.Pointer<ffi.NativeFunction<Int64FuncFunction>>;
 typedef Int64FuncFunction = ffi.Void Function(ffi.LongLong);
 typedef DartInt64FuncFunction = void Function(int);
+typedef IntFunc = ffi.Pointer<ffi.NativeFunction<IntFuncFunction>>;
+typedef IntFuncFunction = ffi.Void Function(ffi.Int);
+typedef DartIntFuncFunction = void Function(int);
 typedef StringFunc = ffi.Pointer<ffi.NativeFunction<StringFuncFunction>>;
 typedef StringFuncFunction = ffi.Void Function(ffi.Pointer<ffi.Char> str);
 typedef DartStringFuncFunction = void Function(ffi.Pointer<ffi.Char> str);
