@@ -114,6 +114,27 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
 
         mSystemAudioControl->onNext = [this] { playNextOrPreviousSong(true); };
         mSystemAudioControl->onPrevious = [this] { playNextOrPreviousSong(false); };
+
+        mSystemAudioControl->onFastForward = [this](int value) {
+            auto targetSeconds{
+                static_cast<double>(mCurrentPtsSamples) / mSampleRate + static_cast<double>(value)
+            };
+            if (targetSeconds >= mPlayInfo.duration) {
+                playNextOrPreviousSong(true);
+            } else {
+                play(mPlayInfo.path, targetSeconds);
+            }
+        };
+        mSystemAudioControl->onRewind = [this](int value) {
+            auto targetSeconds{
+                static_cast<double>(mCurrentPtsSamples) / mSampleRate - static_cast<double>(value)
+            };
+            if (targetSeconds < 0.0) {
+                playNextOrPreviousSong(false);
+            } else {
+                play(mPlayInfo.path, targetSeconds);
+            }
+        };
     }
 }
 
