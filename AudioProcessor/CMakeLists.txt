@@ -38,11 +38,9 @@ target_link_libraries(JunkFusionAudioProcess
 
         SystemAudioControl
 
-        # --- JUCE 官方音频与 UI 模块 ---
         juce::juce_audio_utils       # 包含底层声卡设备管理
         juce::juce_audio_processors  # 包含 AudioProcessorGraph 和 VST 宿主类!
         # juce::juce_dsp               # 包含 EQ、滤波等高阶数字信号处理算法
-        # juce::juce_gui_extra         # 包含高级 UI 组件
         juce::juce_core
         cppzmq 
         cppzmq-static
@@ -52,9 +50,7 @@ target_link_libraries(JunkFusionAudioProcess
         ${FFMPEG_LIBRARIES}#解码层和重采样层
         spdlog::spdlog#日志系统
         # ONNX::onnxruntime
-        # PkgConfig::ICU#字符串排序功能
         
-
     PUBLIC
         juce::juce_recommended_config_flags#基础编译与调试配置
         juce::juce_recommended_lto_flags#链接时代码优化

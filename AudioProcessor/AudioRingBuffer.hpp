@@ -16,12 +16,23 @@ public:
     // 获取当前缓冲中还可以写入的空间
     int getFreeSpace() const noexcept { return fifo.getFreeSpace(); }
 
-    // 生产者：FFmpeg 线程调用此函数写入解码并重采样后的 PCM 数据
-    // 注意：假设 decodedData 已经是与 JUCE 匹配的 planar float 格式
-    void pushAudioData(const juce::AudioBuffer<float>& decodedData);
+    /**
+     * @brief 生产者:推入音频数据
+     *
+     * @param originData 原始数据
+     * @param numSamples 想要推入的量
+     * @return int 实际推入的数据量
+     */
+    int pushAudioData(const juce::AudioBuffer<float>& originData, int numSamples);
 
-    // 消费者：JUCE 的 processBlock 调用此函数捞出数据播放
-    void popAudioData(juce::AudioBuffer<float>& destBuffer);
+    /**
+     * @brief 消费者:取出音频数据
+     *
+     * @param destBuffer 目标容器
+     * @param numSamples 想要取出来的样本点个数
+     * @return int 实际取出的样本点个数
+     */
+    int popAudioData(juce::AudioBuffer<float>& destBuffer, int numSamples);
 
     void reset();
 

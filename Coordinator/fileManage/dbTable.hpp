@@ -21,7 +21,7 @@ inline const char* createSongsTableSQL = R"(
         bitDepth           INTEGER,
         sampleRate         INTEGER,
         channelLayoutMask INTEGER,
-        numChannels INYEGER,
+        numChannels INTEGER,
         codecName TEXT, 
         aiGenre            TEXT,
         bpm                INTEGER,

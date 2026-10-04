@@ -12,7 +12,7 @@ ffi: ^2.2.0 #和cpp的通信接口
 file_picker: ^11.0.3 #文件选择
 smooth_scroll_multiplatform: ^ 1.0.8 #可平滑操作但不能键盘滚动的滚动条
 package_rename_plus: ^1.11.0 #包重命名
-provider: ^6.1.2
+provider: ^6.1.2 #响应式通知模块
 window_manager: ^0.5.2 #窗口管理
 logger: ^2.7.0 #日志功能
 path_provider: ^2.1.6 #提供计算机特殊文件夹路径
@@ -21,6 +21,8 @@ audio_video_progress_bar: ^2.0.3 #进度条,
 collection: ^1.19.1 #提供firstWhereOrNull
 windows_taskbar: ^1.1.2 #windows专用任务栏管理
 win32: ^5.9.0 #windows提供任务栏窗口缩略图
+flutter_root_context_menu: ^0.10.1 #右键菜单
+dropdown_button2: ^3.1.0 #comboBox
 
 ## 代码架构
 
@@ -37,3 +39,4 @@ widgets/:组件
 1. 在阅读依赖包文件的时候，只需要阅读接口如何调用即可，禁止深入阅读其他文件
 2. 调试语句直接使用print函数，因为我的flutter前端基本只用于绘图，没有多少业务逻辑，不需要写入日志
 3. 当和后端的通信代码部分发生了bug的时候，不要先去看后端的代码，而是使用print先调试，无法找到问题的话再去看后端代码兜底
+4. 因为沙盒隔离你没有办法启动VM机制，所以请不用编译，编译和热重载输出交给我做

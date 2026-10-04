@@ -15,16 +15,16 @@ import 'dart:io';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/providers/playback_provider.dart';
+import 'package:junk_fusion_ui/providers/song_provider.dart';
+import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/utils.dart';
-import 'package:junk_fusion_ui/widgets/play_list.dart';
-import 'package:junk_fusion_ui/widgets/song_progress_area.dart';
-import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
-import 'package:junk_fusion_ui/widgets/volumn_slider.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/more_play_info.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/play_list.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/song_progress_area.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/volumn_slider.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import '../providers/playback_provider.dart';
-import '../providers/song_provider.dart';
-import '../theme/app_theme.dart';
 
 // PlayBar — 底部播放栏
 class PlayBar extends StatefulWidget {
@@ -75,6 +75,13 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     _controller.dispose();
     _playList.dispose();
     super.dispose();
+  }
+
+  Widget _buildRightArea(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [const VolumeControllerButton(), const MorePlayInfoWidget()],
+    );
   }
 
   @override
@@ -254,7 +261,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
 
                     // ── 右区（预留） ──
                     // 和左区对称占位，后续放置音量/进度条等控件
-                    Expanded(flex: 5, child: VolumeControllerButton()),
+                    Expanded(flex: 5, child: _buildRightArea(context)),
                   ],
                 ),
               ),

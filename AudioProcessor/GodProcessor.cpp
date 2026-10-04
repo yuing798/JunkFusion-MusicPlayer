@@ -46,6 +46,7 @@ GodProcessor::GodProcessor(juce::StringArray initArgs) {
     mPreProcess = std::make_unique<AudioPreProcess>(mAudioProcessWorker.get());
 
     mOscReceiver = std::make_unique<OscReceiver>(oscPort);
+    mStretch = std::make_unique<Stretch>(mAudioProcessWorker.get(), mOscReceiver.get());
 
     mAudioProcessWorker->receiver->onMasterVolumeChange = [this](float value) {
         masterVolume.setTargetValue(value);
@@ -75,13 +76,18 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
 
     masterVolume.reset(sampleRate, 0.002);
     masterVolume.setCurrentAndTargetValue(1.0);
+
+    mSpeedShifterBuffer.setSize(mNumChannels, maximumExpectedSamplesPerBlock * 2);
+    mStretch->prepareToPlay(sampleRate, mNumChannels);
 }
 
 void GodProcessor::releaseResources() {}
 void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     juce::ignoreUnused(midiMessages);
 
-    mPreProcess->processBlock(buffer);
+    mPreProcess->processBlock(mSpeedShifterBuffer);
+    // buffer.clear();
+    mStretch->processBlock(mSpeedShifterBuffer, buffer);
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         auto currentMasterVolume{masterVolume.getNextValue()};

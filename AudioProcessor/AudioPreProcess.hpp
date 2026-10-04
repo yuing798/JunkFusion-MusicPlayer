@@ -58,6 +58,13 @@ private:
      */
     void playNextOrPreviousSong(bool nextOrPrevious);
 
+    /**
+     * @brief 从环形缓冲区内取出数据，并在数据不够的时候补充0
+     *
+     * @param index 需要使用的甲板索引
+     */
+    void popAudioDataAndAddZero(juce::AudioBuffer<float>& buffer, int index);
+
 public:
     AudioPreProcess(AudioProcessWorker* worker);
     ~AudioPreProcess();

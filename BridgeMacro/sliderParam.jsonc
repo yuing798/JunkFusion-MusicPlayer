@@ -1,4 +1,6 @@
 {
   //这里放置所有的滑块相关参数
   "masterVolume":"/master/volume",//全局音量
+  "pitchShifter":"/stretch/pitch",
+  "speedShifter":"/stretch/speed",
 }

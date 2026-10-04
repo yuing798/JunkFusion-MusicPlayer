@@ -41,13 +41,6 @@ dependencies:
   # flutter_improved_scrolling: ^0.0.4 #更好用的滚动条
   smooth_scroll_multiplatform: ^ 1.0.8 #他妈的这个逼玩意才是唯一能够实现平滑滚动的，,虽然说不能实现键盘操作
   package_rename_plus: ^1.11.0
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  # cupertino_icons: ^1.0.8
-
-  # Provider — 状态管理库（等价于 Vue 的 Pinia）
-  # 用于在 Widget Tree 中注入和访问 ChangeNotifier
   provider: ^6.1.2
   window_manager: ^0.5.2
   logger: ^2.7.0
@@ -55,10 +48,10 @@ dependencies:
   tray_manager: ^0.5.3
   audio_video_progress_bar: ^2.0.3 #进度条,
   collection: ^1.19.1 #提供firstWhereOrNull
-  # desktop_context_menu: ^0.1.1,
-  # super_context_menu: ^0.9.1
   windows_taskbar: ^1.1.2 #windows平台鼠标悬停在任务栏图标上的播放控制功能
   win32: ^5.9.0
+  flutter_root_context_menu: ^0.10.1 #右键菜单
+  dropdown_button2: ^3.1.0 #comboBox
 
 dev_dependencies:
   flutter_test:
@@ -69,12 +62,6 @@ dev_dependencies:
   ffigen: ^21.0.0
   rename_app: ^1.6.6 #用来改变APP名称的依赖包
   flutter_launcher_icons: ^0.14.4 #用来修改应用图标
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
@@ -89,6 +76,7 @@ flutter_launcher_icons:
     generate: true
 
 flutter:
+  uses-material-design: true
   assets:
     - assets/image/
   fonts:
