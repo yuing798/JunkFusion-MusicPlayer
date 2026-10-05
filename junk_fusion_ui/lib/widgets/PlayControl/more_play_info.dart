@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/Macro/sliderParam.dart';
+import 'package:junk_fusion_ui/utils/utils.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
 
@@ -95,8 +97,19 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
                           ),
                           onChanged: (v) {
                             speedShifter.value = v;
-                            // TODO: 调用后端接口，把变速值 v 同步给音频引擎
-                            // 例如: audioEngine.setSpeed(v);
+                            UtilFunction.sendSliderMsg(
+                              SliderParam.speedShifter,
+                              v,
+                              true,
+                            );
+                          },
+                          onChangeEnd: (v) {
+                            speedShifter.value = v;
+                            UtilFunction.sendSliderMsg(
+                              SliderParam.speedShifter,
+                              v,
+                              false,
+                            );
                           },
                         ),
 
@@ -118,7 +131,11 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
                                       speedShifterDivider,
                                     );
                                     speedShifter.value = v;
-                                    // TODO: 调用后端接口，把变速值 v 同步给音频引擎
+                                    UtilFunction.sendSliderMsg(
+                                      SliderParam.speedShifter,
+                                      v,
+                                      false,
+                                    );
                                   },
                                   child: CustomPaint(
                                     size: Size(w, 30),
@@ -190,9 +207,22 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
                             pitchShifterDivider.last,
                           ),
                           onChanged: (v) {
-                            // 关键：改的是 notifier，不是 pitchShift
                             pitchShifter.value = v.round();
-                            // TODO: 调用后端接口
+                            UtilFunction.sendSliderMsg(
+                              SliderParam.pitchShifter,
+                              pitchShifter.value.toDouble(),
+                              true,
+                            );
+                            print("发送变调量信息:${pitchShifter.value.toDouble()}");
+                          },
+                          onChangeEnd: (v) {
+                            pitchShifter.value = v.round();
+                            UtilFunction.sendSliderMsg(
+                              SliderParam.pitchShifter,
+                              pitchShifter.value.toDouble(),
+                              false,
+                            );
+                            print("发送变调量信息:${pitchShifter.value.toDouble()}");
                           },
                         ),
 
@@ -213,7 +243,12 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
                                     );
                                     // 关键：改的是 notifier
                                     pitchShifter.value = v.toInt();
-                                    // TODO
+                                    UtilFunction.sendSliderMsg(
+                                      SliderParam.pitchShifter,
+                                      v,
+                                      false,
+                                    );
+                                    print("发送变调量信息:$v");
                                   },
                                   child: CustomPaint(
                                     size: Size(w, 30),
@@ -248,9 +283,10 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
         showRootContextMenu(
           context: context,
           position: Offset(
-            details.globalPosition.dx - 160,
-            details.globalPosition.dy - 60,
+            details.globalPosition.dx - 165,
+            details.globalPosition.dy - 95,
           ),
+          useBarrier: true,
           config: const ContextMenuConfig(
             submenu: SubmenuConfig(
               icon: SizedBox.shrink(),

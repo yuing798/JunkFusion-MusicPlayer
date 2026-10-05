@@ -11,6 +11,7 @@ target_sources(JunkFusionAudioProcess
         GodProcessor.cpp
         AudioPreProcess.cpp
         PlayCount.cpp
+        Stretch.cpp
 )
 
 add_subdirectory(processSchedule)

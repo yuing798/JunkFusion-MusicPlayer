@@ -4,6 +4,7 @@
 #include "DeviceManager.hpp"
 #include "Macro/audioMacro.hpp"
 #include "PlayCount.hpp"
+#include "Utils/constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "processSchedule/AudioProcessWorker.hpp"
@@ -78,16 +79,23 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
     masterVolume.setCurrentAndTargetValue(1.0);
 
     mSpeedShifterBuffer.setSize(mNumChannels, maximumExpectedSamplesPerBlock * 2);
-    mStretch->prepareToPlay(sampleRate, mNumChannels);
+    mStretch->prepareToPlay(sampleRate, mNumChannels, maximumExpectedSamplesPerBlock);
 }
 
 void GodProcessor::releaseResources() {}
 void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     juce::ignoreUnused(midiMessages);
+    auto finalNumSamples{buffer.getNumSamples()}; // 最终需要的缓冲区大小
+    auto speedShifterNumSamples{
+        static_cast<int>(finalNumSamples * mStretch->getSpeedShifterValue())
+    }; // 解码-->变速之间都要根据这个缓冲区大小做计算
 
-    mPreProcess->processBlock(mSpeedShifterBuffer);
+    mPreProcess->processBlock(mSpeedShifterBuffer, speedShifterNumSamples);
     // buffer.clear();
-    mStretch->processBlock(mSpeedShifterBuffer, buffer);
+    mStretch->processBlock(mSpeedShifterBuffer, speedShifterNumSamples, buffer, finalNumSamples);
+    // for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
+    //     buffer.copyFrom(ch, 0, mSpeedShifterBuffer.getReadPointer(ch), finalNumSamples);
+    // } // 这个做个测试
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         auto currentMasterVolume{masterVolume.getNextValue()};
@@ -96,12 +104,34 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
             ptr[i] *= currentMasterVolume;
         }
     }
+
+    // static int mA = 0, mNeed = 0, mCnt = 0;
+    // mA = 0;
+    // mNeed = 0;
+    // for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    //     mA = juce::jmax(mA, (int)buffer.getMagnitude(ch, 0, buffer.getNumSamples()));
+    // mNeed = (int)(buffer.getNumSamples() * mStretch->getSpeedShifterValue());
+    // if (++mCnt == 200) {
+    //     std::string logStr{
+    //         "B=" + std::to_string(buffer.getNumSamples()) + " Nch=" +
+    //         std::to_string(mNumChannels) + " inCh=" +
+    //         std::to_string(mSpeedShifterBuffer.getNumChannels()) + " shifterLen=" +
+    //         std::to_string(mSpeedShifterBuffer.getNumSamples()) + " need=" +
+    //         std::to_string(mNeed) + " outMag=" + std::to_string(mA)
+    //     };
+    //     spdlog::get(LogAudioID)->debug(logStr);
+    // }
 }
 
 GodProcessor::~GodProcessor() {}
 
-void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {}
-void GodProcessor::getStateInformation(juce::MemoryBlock& destData) {}
+void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {
+    juce::ignoreUnused(data);
+    juce::ignoreUnused(sizeInBytes);
+}
+void GodProcessor::getStateInformation(juce::MemoryBlock& destData) {
+    juce::ignoreUnused(destData);
+}
 
 bool GodProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
     auto outSet = layouts.getMainOutputChannelSet();

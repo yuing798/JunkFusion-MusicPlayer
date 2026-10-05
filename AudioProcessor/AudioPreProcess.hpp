@@ -63,7 +63,7 @@ private:
      *
      * @param index 需要使用的甲板索引
      */
-    void popAudioDataAndAddZero(juce::AudioBuffer<float>& buffer, int index);
+    void popAudioDataAndAddZero(juce::AudioBuffer<float>& buffer, int index, int numSamples);
 
 public:
     AudioPreProcess(AudioProcessWorker* worker);
@@ -73,7 +73,7 @@ public:
         double sampleRate,
         int maximumExpectedSamplesPerBlock
     );
-    void processBlock(juce::AudioBuffer<float>& buffer);
+    void processBlock(juce::AudioBuffer<float>& buffer, int numSamples);
     void play(juce::String songPath, double targetSeconds);
     void pausePlay();
     void timerCallback() override;

@@ -158,7 +158,7 @@ void AudioProcessSuber::run() {
             // Utils::writeEmergencyLog("suber收到消息");
             std::string data(static_cast<char*>(msg.data()), msg.size());
             Yvar obj = juce::JSON::fromString(juce::String(data));
-            spdlog::get(LogDllID)->debug("suber收到消息:{}", obj.toString().toStdString());
+            // spdlog::get(LogDllID)->debug("suber收到消息:{}", obj.toString().toStdString());
             if (!obj.isObject()) {
                 OtherUtils::writeEmergencyLog(
                     "AudioProcessSuber接收到未知格式:" + obj.toString().toStdString()

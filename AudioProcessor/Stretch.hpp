@@ -6,7 +6,6 @@
 #include "processSchedule/AudioProcessWorker.hpp"
 #include "processSchedule/OscReceiver.hpp"
 #include "signalsmith-stretch/signalsmith-stretch.h"
-#include <memory>
 
 // 倍速，音高偏移
 class Stretch {
@@ -22,10 +21,23 @@ private:
 
 public:
     Stretch(AudioProcessWorker* w, OscReceiver* o);
-    void prepareToPlay(double samplerate, int numChannels);
+    void prepareToPlay(double samplerate, int numChannels, int maxNumSamples);
 
-    void
-    processBlock(juce::AudioBuffer<float>& inputBuffer, juce::AudioBuffer<float>& outputBuffer);
+    /**
+     * @brief 变速变调的处理块
+     *
+     * @param inputBuffer 输入缓冲区
+     * @param beforeFifoNumSamples 输入缓冲区中的有效样本点个数，用来推入fifo
+     * @param outputBuffer 输出缓冲区
+     * @param finalNumSamples #最终
+     */
+    void processBlock(
+        juce::AudioBuffer<float>& inputBuffer,
+        int beforeFifoNumSamples,
+        juce::AudioBuffer<float>& outputBuffer,
+        int finalNumSamples
+    );
+
     /**
      * @brief Get the Speed Shifter Value
      * 因为两个fifo合作的话中间所有的音频函数模块处理的样本数都要变成原样本数*倍速率

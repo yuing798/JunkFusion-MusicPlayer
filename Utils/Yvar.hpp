@@ -23,7 +23,6 @@ public:
     juce::StringArray toStringArray() const;
     bool toBool() const;
 
-    const char* toRawUTF8() { return toString().toRawUTF8(); }
     juce::String toString();
     bool isVoid() { return value.isVoid(); }
     bool isObject() { return value.isObject(); }

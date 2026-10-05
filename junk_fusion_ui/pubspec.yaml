@@ -50,7 +50,7 @@ dependencies:
   collection: ^1.19.1 #提供firstWhereOrNull
   windows_taskbar: ^1.1.2 #windows平台鼠标悬停在任务栏图标上的播放控制功能
   win32: ^5.9.0
-  flutter_root_context_menu: ^0.10.1 #右键菜单
+  flutter_root_context_menu: ^0.11.0 #右键菜单
   dropdown_button2: ^3.1.0 #comboBox
 
 dev_dependencies:
