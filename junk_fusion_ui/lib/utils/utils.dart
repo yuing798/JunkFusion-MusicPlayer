@@ -80,4 +80,16 @@ class UtilFunction {
     final ptr = str.toNativeUtf8().cast<ffi.Char>();
     return ptr;
   }
+
+  //获得组件中心点
+  static Offset? getWidgetCenter(GlobalKey key) {
+    final context = key.currentContext;
+    if (context == null) return null;
+
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+
+    // 中心点：局部坐标 (size.width/2, size.height/2) 转成全局坐标
+    return box.localToGlobal(box.size.center(Offset.zero));
+  }
 }

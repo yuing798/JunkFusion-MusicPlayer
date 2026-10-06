@@ -18,6 +18,7 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
   final pitchShifter = ValueNotifier<int>(0); //变调
   final speedShifterDivider = [0.5, 0.75, 1.0, 1.5, 2.0];
   final pitchShifterDivider = [-12.0, -8.0, -4.0, 0.0, 4.0, 8.0, 12.0];
+  final thisWidgetKey = GlobalKey();
 
   @override
   void dispose() {
@@ -279,13 +280,13 @@ class MorePlayInfoState extends State<MorePlayInfoWidget> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: thisWidgetKey,
       onTapDown: (details) {
+        final center = UtilFunction.getWidgetCenter(thisWidgetKey);
+        if (center == null) return;
         showRootContextMenu(
           context: context,
-          position: Offset(
-            details.globalPosition.dx - 165,
-            details.globalPosition.dy - 95,
-          ),
+          position: Offset(center.dx - 150, center.dy - 100),
           useBarrier: true,
           config: const ContextMenuConfig(
             submenu: SubmenuConfig(

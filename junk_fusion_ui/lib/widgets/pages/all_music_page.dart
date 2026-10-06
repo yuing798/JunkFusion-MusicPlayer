@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import '../model/song_info.dart';
-import '../providers/song_provider.dart';
-import '../providers/playback_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/each_song.dart';
-import '../widgets/combo_box.dart';
+import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/providers/song_provider.dart';
+import 'package:junk_fusion_ui/providers/playback_provider.dart';
+import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/widgets/each_song.dart';
+import 'package:junk_fusion_ui/widgets/combo_box.dart';
 
 enum SortMode {
   byAddTime('添加时间', 0),

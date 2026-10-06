@@ -55,7 +55,7 @@ class EachSong extends StatelessWidget {
                 if (isCurrentSong) {
                   context.read<PlaybackProvider>().togglePlayPause();
                 } else {
-                  context.read<PlaybackProvider>().setNewSong(song);
+                  context.read<PlaybackProvider>().setNewSong(song.songId);
 
                   onSongPlay?.call();
                 }

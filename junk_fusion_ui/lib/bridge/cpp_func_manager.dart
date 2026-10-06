@@ -53,7 +53,7 @@ class CppCallbackManager {
     _currentPTSCallback = ffi.NativeCallable<DoubleFuncFunction>.listener((
       double value,
     ) {
-      playback.setCurrentPTS(value);
+      playback.updateCurrentPTS(value);
     });
     _onUpdateSongInfo = ffi.NativeCallable<Int64FuncFunction>.listener((
       int songId,

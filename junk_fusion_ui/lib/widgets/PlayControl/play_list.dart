@@ -154,7 +154,7 @@ class PlayList {
                                               } else {
                                                 context
                                                     .read<PlaybackProvider>()
-                                                    .setNewSong(song);
+                                                    .setNewSong(song.songId);
                                               }
                                             },
                                             child: Stack(

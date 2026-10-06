@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/song_play_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
 import 'package:junk_fusion_ui/widgets/title_bar.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'widgets/left_column.dart';
 import 'widgets/PlayControl/play_bar.dart';
-import 'pages/all_music_page.dart';
+import 'widgets/pages/all_music_page.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -37,6 +38,7 @@ class _AppState extends State<App> {
     // Dart 3 switch 表达式：每个 case 用 `=>` 返回一个值
     return switch (id) {
       0 => const AllMusicPage(), // 所有音乐
+      4 => const AlbumViewPage(), // 专辑（网格视图，点卡片进单张专辑）
       // 其他页面尚未开发，返回 null → 显示占位符
       _ => null,
     };
