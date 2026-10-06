@@ -36,7 +36,7 @@ class EachSong extends StatelessWidget {
     final playback = context.watch<PlaybackProvider>();
     //context.watch<T>()：获取 + 订阅。当数据变化时，调用它的 Widget 会自动重绘
     //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
-    final isCurrentSong = playback.currentSong == song;
+    final isCurrentSong = playback.currentSong?.songId == song.songId;
     final theme = context.watch<AppTheme>();
 
     return Container(

@@ -16,4 +16,6 @@ public:
     void oscBundleReceived(const juce::OSCBundle& bundle) override; // 把多个参数打包在一起发过来
 
     std::function<void(float)> onMasterVolumeChange;
+    std::function<void(float)> onSpeedShifterChange;
+    std::function<void(float)> onPitchShifterChange;
 };

@@ -2,7 +2,7 @@ import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/widgets/spectrum_painter.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/spectrum_painter.dart';
 import 'package:provider/provider.dart';
 
 class SongProgressArea extends StatefulWidget {

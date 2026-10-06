@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/pages/song_play_page.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/song_play_page.dart';
 import 'package:junk_fusion_ui/widgets/title_bar.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'widgets/left_column.dart';
-import 'widgets/play_bar.dart';
+import 'widgets/PlayControl/play_bar.dart';
 import 'pages/all_music_page.dart';
 
 class App extends StatefulWidget {
@@ -46,8 +46,6 @@ class _AppState extends State<App> {
   void _handlePageChange(int id) {
     setState(() {
       _currentPageId = id;
-      //setState：局部刷新。只会调用当前 State 对象的 build 方法，只重绘这一个 Widget 及其子树。其他页面、其他组件完全不受影响。
-      // notifyListeners()：全局广播。所有通过 Provider.of<T>(context) 或 Consumer<T> 监听该 ChangeNotifier 的 Widget，全部会收到通知并重绘。
     });
   }
 

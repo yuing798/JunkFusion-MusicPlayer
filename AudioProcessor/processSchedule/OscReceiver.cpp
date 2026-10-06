@@ -25,6 +25,16 @@ void OscReceiver::oscMessageReceived(const juce::OSCMessage& message) {
         float masterVolume{message[0].getFloat32()};
         if (onMasterVolumeChange) onMasterVolumeChange(masterVolume);
     }
+    if (address == SliderParam::pitchShifter) {
+        if (!message[0].isFloat32()) return;
+        float value{message[0].getFloat32()};
+        if (onPitchShifterChange) onPitchShifterChange(value);
+    }
+    if (address == SliderParam::speedShifter) {
+        if (!message[0].isFloat32()) return;
+        float value{message[0].getFloat32()};
+        if (onSpeedShifterChange) onSpeedShifterChange(value);
+    }
 }
 
 void OscReceiver::oscBundleReceived(const juce::OSCBundle& bundle) { juce::ignoreUnused(bundle); }

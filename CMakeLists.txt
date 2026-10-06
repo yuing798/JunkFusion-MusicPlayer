@@ -19,6 +19,7 @@ find_package(cppzmq CONFIG REQUIRED) #tcp本地回环进程间通信
 find_package(cpr CONFIG REQUIRED) #网络通信服务
 find_package(Chromaprint CONFIG REQUIRED) #音频指纹提取
 find_package(taglib CONFIG REQUIRED) #歌曲艺术家元数据获取
+find_path(SIGNALSMITH_STRETCH_INCLUDE_DIRS "signalsmith-stretch/signalsmith-stretch.h")
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件

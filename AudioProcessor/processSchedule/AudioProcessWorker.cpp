@@ -17,7 +17,6 @@ AudioProcessorPuller::AudioProcessorPuller(zmq::context_t& ctx, std::string push
     : juce::Thread("AudioProcessorPuller"), context(ctx), mPushPullPort(pushPullPort) {
     // OtherUtils::writeEmergencyLog("AudioProcessorPuller构造函数执行完成");
 }
-
 void AudioProcessorPuller::run() {
     zmq::socket_t pullSocket(context, zmq::socket_type::pull);
     pullSocket.connect(mPushPullPort); // 连接到 UI 的 PUSH 端
@@ -65,13 +64,23 @@ void AudioProcessorPuller::run() {
                 if (jsonObj.hasProperty(AudioMacro::setSliderValue)) {
                     auto identifyParam{jsonObj.read(AudioMacro::setSliderValue)
                                            .read(AudioMacro::sliderParam)
-                                           .toRawUTF8()};
-                    if (identifyParam == SliderParam::masterVolume) {
-                        float value{jsonObj.read(AudioMacro::setSliderValue)
-                                        .read(AudioMacro::sliderValue)
-                                        .toFloat32()};
+                                           .toString()};
 
+                    auto sliderValueVar{
+                        jsonObj.read(AudioMacro::setSliderValue).read(AudioMacro::sliderValue)
+                    };
+
+                    if (identifyParam == SliderParam::masterVolume) {
+                        float value{sliderValueVar.toFloat32()};
                         if (onMasterVolumeChange) onMasterVolumeChange(value);
+                    }
+                    if (identifyParam == SliderParam::pitchShifter) {
+                        float value{sliderValueVar.toFloat32()};
+                        if (onPitchShifterChange) onPitchShifterChange(value);
+                    }
+                    if (identifyParam == SliderParam::speedShifter) {
+                        auto value{sliderValueVar.toFloat32()};
+                        if (onSpeedShifterChange) onSpeedShifterChange(value);
                     }
                 }
             }

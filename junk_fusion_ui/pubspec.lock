@@ -201,6 +201,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.14"
+  dropdown_button2:
+    dependency: "direct main"
+    description:
+      name: dropdown_button2
+      sha256: "24f5b775483a9b3c508092766798c10e3f23127e66b3f4a305b5bfb59ff1debc"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -278,6 +286,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.35"
+  flutter_root_context_menu:
+    dependency: "direct main"
+    description:
+      name: flutter_root_context_menu
+      sha256: "7e30178e4bf7130b98f97d05710f94fa38c1f35b6fdf460adb2ad5b2a70bed85"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.11.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter

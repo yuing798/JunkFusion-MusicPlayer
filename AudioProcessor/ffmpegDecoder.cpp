@@ -284,11 +284,11 @@ void FFmpegDecoder::run() {
                     break;
                 }
                 // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
-                juce::Thread::sleep(3);
+                juce::Thread::sleep(5);
             }
 
             if (!threadShouldExit()) {
-                mRingBuffer->pushAudioData(buffer);
+                mRingBuffer->pushAudioData(buffer, buffer.getNumSamples());
             } else {
                 isNatureComplete = false;
                 // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
@@ -376,11 +376,11 @@ void FFmpegDecoder::run() {
                 break;
             }
             // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
-            juce::Thread::sleep(3);
+            juce::Thread::sleep(5);
         }
 
         if (!threadShouldExit()) {
-            mRingBuffer->pushAudioData(buffer);
+            mRingBuffer->pushAudioData(buffer, buffer.getNumSamples());
         } else {
             isNatureComplete = false;
             // spdlog::get(LogAudioID)->debug("解码函数强制退出:路径:{}", path);
@@ -434,7 +434,7 @@ void FFmpegDecoder::run() {
                 break;
             }
 
-            mRingBuffer->pushAudioData(buffer);
+            mRingBuffer->pushAudioData(buffer, buffer.getNumSamples());
         }
         // 释放 Flush 临时缓冲区
         if (flushData != nullptr) {

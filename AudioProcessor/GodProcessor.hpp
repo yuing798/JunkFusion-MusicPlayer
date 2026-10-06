@@ -4,6 +4,7 @@
 #include "AudioRingBuffer.hpp"
 #include "DeviceManager.hpp"
 #include "PlayCount.hpp"
+#include "Stretch.hpp"
 #include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "ffmpegDecoder.hpp"
@@ -30,6 +31,11 @@ private:
     double mSampleRate{44100.0};
     int mNumChannels{2};
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterVolume;
+
+    // 变速时，需要两个fifo(ffmpeg-->preProcess)和(-->signalSmith)共同作用，而在两个fifo之间的缓冲区大小必须是
+    // 声卡需要的缓冲区大小乘以倍速率
+    juce::AudioBuffer<float> mSpeedShifterBuffer;
+    std::unique_ptr<Stretch> mStretch;
 
 public:
     GodProcessor(juce::StringArray initArgs);

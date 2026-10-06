@@ -146,6 +146,17 @@ void AudioPreProcess::playNextOrPreviousSong(bool nextOrPrevious) {
     mWorker->sender->sendMessage(juce::JSON::toString(obj).toStdString());
 }
 
+void AudioPreProcess::popAudioDataAndAddZero(
+    juce::AudioBuffer<float>& buffer,
+    int index,
+    int numSamples
+) {
+    auto result = mDucks[index].ringBuffer->popAudioData(buffer, numSamples);
+    if (result < numSamples) {
+        buffer.clear(result, numSamples - result);
+    }
+}
+
 void AudioPreProcess::prepareToPlay(
     juce::AudioChannelSet outputLayout,
     double sampleRate,
@@ -167,14 +178,14 @@ void AudioPreProcess::prepareToPlay(
     mPlayCount.prepareToPlay(sampleRate);
 }
 
-void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
+void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer, int numSamples) {
     buffer.clear();
 
     if (!isCrossFade) {
         // 交叉淡化的时候禁止播放暂停逻辑
         if (isFullMute) return;
-        mDucks[mainPlayDuckIndex].ringBuffer->popAudioData(buffer);
-        for (int i = 0; i < buffer.getNumSamples(); i++) {
+        popAudioDataAndAddZero(buffer, mainPlayDuckIndex, numSamples);
+        for (int i = 0; i < numSamples; i++) {
             smoothedSongChangeCrossFadeMs.getNextValue();
             smoothedPTSChangeCrossFadeMs.getNextValue();
             auto currentPlayPauseGain{smoothedPlayPause.getNextValue()};
@@ -190,10 +201,16 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
     } else {
         mDucks[0].tempBuffer.clear();
         mDucks[1].tempBuffer.clear();
-        mDucks[mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[mainPlayDuckIndex].tempBuffer);
-        mDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[!mainPlayDuckIndex].tempBuffer);
+        // mDucks[mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[mainPlayDuckIndex].tempBuffer);
+        // mDucks[!mainPlayDuckIndex].ringBuffer->popAudioData(mDucks[!mainPlayDuckIndex].tempBuffer);
+        popAudioDataAndAddZero(mDucks[mainPlayDuckIndex].tempBuffer, mainPlayDuckIndex, numSamples);
+        popAudioDataAndAddZero(
+            mDucks[!mainPlayDuckIndex].tempBuffer,
+            !mainPlayDuckIndex,
+            numSamples
+        );
 
-        for (int i = 0; i < buffer.getNumSamples(); i++) {
+        for (int i = 0; i < numSamples; i++) {
             // smoothedPlayPause.getNextValue();
 
             float currentCrossFadeMs{0.0f}; // 交叉淡化区长度(毫秒数)
@@ -247,11 +264,11 @@ void AudioPreProcess::processBlock(juce::AudioBuffer<float>& buffer) {
             }
         }
     }
-    for (int i = 0; i < buffer.getNumSamples(); i++) {
+    for (int i = 0; i < numSamples; i++) {
         if (!isFullMute) mCurrentPtsSamples++;
     }
 
-    mPlayCount.processBlock(buffer.getNumSamples(), isFullMute);
+    mPlayCount.processBlock(numSamples, isFullMute);
 }
 
 void AudioPreProcess::timerCallback() {

@@ -15,6 +15,7 @@
     "cppzmq",
     "cpr",
     "chromaprint",
-    "taglib"
+    "taglib",
+    "signalsmith-stretch"
   ]
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Model/PlayInfo.hpp"
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "zmq.hpp"
@@ -22,6 +23,8 @@ public:
     std::function<void(PlayInfo info, double targetPts)> onPlay;
     std::function<void(void)> onPausePlay;
     std::function<void(float)> onMasterVolumeChange;
+    std::function<void(float)> onSpeedShifterChange;
+    std::function<void(float)> onPitchShifterChange;
 
     void run() override;
 };
