@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../CenterDbManage/CenterDbManage.hpp"
 #include "./WaveFormAnaly.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Model/SongInfo.hpp"
@@ -18,17 +19,17 @@
 
 class SongsManage {
 private:
-    SQLite::Database& db;
+    CenterDbManage* dbManage;
     WaveFormAnaly mWaveFormAnaly;
 
     // 获取元数据数组(比如多个艺术家)
     juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
-    SongInfo searchSongInfo(SQLite::Statement& sql);
+    SongInfo selectSingleSongInfo(SQLite::Statement& sql);
 
 public:
-    explicit SongsManage(SQLite::Database& d);
+    explicit SongsManage(CenterDbManage* dbManage);
     // ~SongsManage();
     struct InsertState {
         juce::File path;
@@ -47,5 +48,5 @@ public:
     std::function<void(int64_t songId)> OnUpdateSongInfo;
     juce::Array<double> getTimeDomainSpec(int64_t songId); // 根据ID号获取时域图
 
-    bool updatePlayCount(std::string path);
+    void updatePlayCount(std::string path);
 };

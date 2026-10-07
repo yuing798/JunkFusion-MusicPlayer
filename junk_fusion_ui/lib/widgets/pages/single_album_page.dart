@@ -6,7 +6,8 @@ import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
@@ -192,9 +193,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
     playback.setPlayList(merged);
 
     DialogUtil.showInfoDialog(
-      addedCount == 0
-          ? '这张专辑的歌曲都已经在播放列表里了'
-          : '已把 $addedCount 首歌曲添加到播放列表',
+      addedCount == 0 ? '这张专辑的歌曲都已经在播放列表里了' : '已把 $addedCount 首歌曲添加到播放列表',
     );
   }
 
@@ -341,7 +340,9 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
               _AlbumActionButton(
                 icon: TablerIcons.arrowsShuffle2,
                 label: '随机播放',
-                onTap: albumSongs.isEmpty ? null : () => _shufflePlay(albumSongs),
+                onTap: albumSongs.isEmpty
+                    ? null
+                    : () => _shufflePlay(albumSongs),
               ),
 
               const SizedBox(width: 10),
@@ -418,9 +419,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
         // ── 第 3 部分：歌曲列表 ──
         Expanded(
           child: albumSongs.isEmpty
-              ? Center(
-                  child: Text('这张专辑里没有歌曲', style: theme.littleTextStyle),
-                )
+              ? Center(child: Text('这张专辑里没有歌曲', style: theme.littleTextStyle))
               : DynMouseScroll(
                   builder: (context_, controler_, physics_) {
                     return ListView.builder(

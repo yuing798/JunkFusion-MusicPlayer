@@ -28,9 +28,20 @@ inline const char* createSongsTableSQL = R"(
         key                TEXT,
         aiProcessed        INTEGER DEFAULT 0,
         isMyLike           INTEGER DEFAULT 0,
-        comment            TEXT,
         playNum       INTEGER DEFAULT 0,
         hash TEXT,
-        timeDomainSpec BLOB
+        timeDomainSpec BLOB,
+        albumId INTEGER
+        FOREIGN KEY (albumId) REFERENCES albums(albumId)
+    )
+)";
+
+// Albums表
+inline const char* createAlbumsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS albums (
+        albumId             INTEGER PRIMARY KEY AUTOINCREMENT,
+        displayTitle              TEXT,
+        albumArtists             TEXT,
+        hash TEXT
     )
 )";

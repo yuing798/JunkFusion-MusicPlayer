@@ -1,34 +1,8 @@
-import 'dart:io';
-import 'dart:ffi' as ffi;
+import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
-import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-class AppCache {
-  static late SharedPreferences frontCacheRef; //前端UI缓存
-  static late String cacheDirString; //其他缓存
-
-  static String getExeDirectory() {
-    // 1. 获取 exe 的绝对路径（解析符号链接）
-    final String exePath = Platform.resolvedExecutable;
-    // 2. 获取该文件所在的父级目录
-    final Directory exeDir = File(exePath).parent;
-    return exeDir.path;
-  }
-
-  static const double defaultWindowWidth = 1300.0;
-  static const double defaultWindowHeight = 700.0;
-  static const defaultWindowSize = Size(
-    defaultWindowWidth,
-    defaultWindowHeight,
-  );
-
-  static late String appDocDir;
-}
 
 class UtilFunction {
   // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串
@@ -70,14 +44,14 @@ class UtilFunction {
     malloc.free(identifyPtr);
   }
 
-  static String cPtr2String(ffi.Pointer<ffi.Char> ptr) {
+  static String cPtr2String(Pointer<Char> ptr) {
     final dartString = ptr.cast<Utf8>().toDartString();
     bindings.freeString(ptr);
     return dartString;
   }
 
-  static ffi.Pointer<ffi.Char> string2cPtr(String str) {
-    final ptr = str.toNativeUtf8().cast<ffi.Char>();
+  static Pointer<Char> string2cPtr(String str) {
+    final ptr = str.toNativeUtf8().cast<Char>();
     return ptr;
   }
 

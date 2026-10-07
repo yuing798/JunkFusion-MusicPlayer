@@ -1,7 +1,8 @@
 #pragma once
 
+#include "CenterDbManage/CenterDbmanage.hpp"
+#include "SongsManage/songsManage.hpp"
 #include "Utils/constants.h"
-#include "fileManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_osc/juce_osc.h"
 #include "processSchedule/AudioProcessCoordinator.h"
@@ -15,7 +16,7 @@
 
 class dllManager {
 private:
-    std::unique_ptr<SQLite::Database> db;
+    std::unique_ptr<CenterDbManage> dbManage;
     std::unique_ptr<SongsManage> songs; // 歌曲管理
     juce::File cacheDir;                // 缓存文件夹
     juce::File logInfoDir;              // 日志文件夹

@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/Macro/sliderParam.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
 

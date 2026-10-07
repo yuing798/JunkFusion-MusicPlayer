@@ -40,6 +40,6 @@ target_sources(JunkFusionCoordinator
         dllManager.cpp
 )
 
-# add_subdirectory(DartApi)
-add_subdirectory(fileManage)
+add_subdirectory(SongsManage)
 add_subdirectory(processSchedule)
+add_subdirectory(AlbumsManage)

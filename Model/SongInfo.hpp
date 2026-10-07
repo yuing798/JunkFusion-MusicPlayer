@@ -1,6 +1,7 @@
 #pragma once
 
 #include "juce_core/juce_core.h"
+#include <SQLiteCpp/Statement.h>
 #include <cstdint>
 #include <optional>
 
@@ -38,9 +39,8 @@ struct SongInfo {
     juce::String key;       // 调性（如 C major, A minor）
 
     // 5.用户信息
-    bool isMyLike{0};     // 是否添加到了我喜欢列表
-    juce::String comment; // 备注(用户写进去的)
-    int playNum{0};       // 已经播放了多少次
+    bool isMyLike{0}; // 是否添加到了我喜欢列表
+    int playNum{0};   // 已经播放了多少次
 
     juce::String hash;
 

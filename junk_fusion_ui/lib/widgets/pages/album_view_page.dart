@@ -7,7 +7,7 @@ import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/widgets/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:provider/provider.dart';
@@ -33,10 +33,8 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 /// 专辑列表的排序方式
 enum AlbumSortMode {
-  byName('专辑名称', 0),
-  byArtist('专辑艺术家', 1),
-  bySongCount('歌曲数量', 2),
-  byYear('发行年份', 3);
+  byName('专辑名称', 1),
+  byArtist('专辑艺术家', 2);
 
   final String label;
   final int value;
@@ -102,22 +100,18 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     // 这里用 switch 表达式：枚举的所有分支都必须写全，否则编译不过
     int compare(AlbumInfo a, AlbumInfo b) => switch (_selectedSort) {
       // 直接按字符串比较，中英文混排的顺序不一定和资源管理器一致
-      AlbumSortMode.byName => a.name.compareTo(b.name),
+      AlbumSortMode.byName => AppCache.collator.compare(a.name, b.name),
       // 同一个艺术家下面再按专辑名排
-      AlbumSortMode.byArtist => _compareArtistThenName(a, b),
-      AlbumSortMode.bySongCount => a.songCount.compareTo(b.songCount),
-      // 没写年份的专辑统一当 0（排最前面）
-      AlbumSortMode.byYear => (a.year ?? 0).compareTo(b.year ?? 0),
+      AlbumSortMode.byArtist => _compareArtist(a, b),
     };
 
     albums.sort((a, b) => _isAscending ? compare(a, b) : compare(b, a));
     return albums;
   }
 
-  /// 先按专辑艺术家排，同一个艺术家下面再按专辑名排
-  static int _compareArtistThenName(AlbumInfo a, AlbumInfo b) {
-    final byArtist = a.albumArtist.compareTo(b.albumArtist);
-    return byArtist != 0 ? byArtist : a.name.compareTo(b.name);
+  int _compareArtist(AlbumInfo a, AlbumInfo b) {
+    int result = AppCache.collator.compare(a.albumArtist, b.albumArtist);
+    return result == 0 ? AppCache.collator.compare(a.name, b.name) : result;
   }
 
   /// 播放整张专辑（卡片封面上的悬浮按钮）

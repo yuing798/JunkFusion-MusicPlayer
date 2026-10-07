@@ -7,7 +7,8 @@ import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 

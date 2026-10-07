@@ -1,12 +1,10 @@
 #include "./OnlineGetMatedata.hpp"
 #include "../dllManager.hpp"
-#include "Macro/SongInfoMacro.hpp"
+#include "Coordinator/CenterDbManage/CenterDbManage.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
-#include "Utils/convertUtils.hpp"
-#include "Utils/otherUtils.hpp"
+#include "Utils/stringUtils.hpp"
 #include "juce_core/juce_core.h"
-#include "juce_core/system/juce_PlatformDefs.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
@@ -25,35 +23,9 @@
 #include <utility>
 #include <vector>
 
-OnlineGetMatedata::OnlineGetMatedata(SQLite::Database& db)
-    : juce::Thread("OnlineGetMatedata"), db(db) {
+OnlineGetMatedata::OnlineGetMatedata(CenterDbManage* dbManage)
+    : juce::Thread("OnlineGetMatedata"), dbManage(dbManage) {
     systemCountry = juce::SystemStats::getUserRegion().toUpperCase();
-}
-
-bool OnlineGetMatedata::isVariousArtists(const std::string& name) {
-    std::string lower = name;
-    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) {
-        return std::tolower(c);
-    });
-    return (
-        lower.find("various") != std::string::npos || lower.find("群星") != std::string::npos ||
-        lower == "v.a." || lower == "va"
-    );
-}
-
-juce::String OnlineGetMatedata::normalizeArtistName(const juce::String& name) {
-    juce::String s = name.trim().toLowerCase();
-
-    // 将各种 Unicode 连字符（如 ‐, –, —）统一替换为标准 ASCII 短横线 '-'
-    s = s.replaceCharacters(
-        juce::CharPointer_UTF8("\xE2\x80\x90-\xE2\x80\x93\xE2\x80\x94\xE2\x88\x92"),
-        juce::CharPointer_UTF8("-----")
-    );
-
-    // 替换全角空格（0x3000）为普通半角空格
-    s = s.replace(juce::String::charToString(0x3000), " ");
-
-    return s;
 }
 
 std::optional<std::string> OnlineGetMatedata::searchCoverURL(std::string term, std::string entity) {
@@ -178,7 +150,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
 
                 if (task.title.isNotEmpty()) {
                     // 有原本的标题则进行相似度匹配
-                    auto titleScore = OtherUtils::stringSimilarity(
+                    auto titleScore = StringUtils::stringSimilarity(
                         recording.read("title").toString(),
                         task.title
                     );
@@ -199,62 +171,12 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
                     }
 
                     if (!remoteArtistNames.isEmpty()) {
-                        double totalArtistScore = 0.0;
-
-                        // 遍历本地每个艺术家，在远端寻找最优解
-                        for (const auto& localArtistStr : task.artists) {
-                            juce::String localNormalized = normalizeArtistName(localArtistStr);
-                            double bestMatchForThisArtist = 0.0;
-
-                            for (const auto& remoteName : remoteArtistNames) {
-                                juce::String remoteNormalized = normalizeArtistName(remoteName);
-
-                                // A. 基础字符串相似度（Levenshtein）
-                                double sim =
-                                    OtherUtils::stringSimilarity(localNormalized, remoteNormalized);
-
-                                // B. 跨语种/音译启发式处理（如 周杰伦 vs Jay Chou, 字符集交集为 0）
-                                if (sim < 0.2) {
-                                    bool isLocalASCII = localNormalized.containsOnly(
-                                        "abcdefghijklmnopqrstuvwxyz0123456789 -_."
-                                    );
-                                    bool isRemoteASCII = remoteNormalized.containsOnly(
-                                        "abcdefghijklmnopqrstuvwxyz0123456789 -_."
-                                    );
-
-                                    // 如果一方是纯英文/罗马音，另一方是非英文（中文/日文/韩文等），大概率是音译或跨国别名
-                                    if (isLocalASCII != isRemoteASCII) {
-                                        sim = 0.6; // 给予中立的跨语言预估分，防止判定为 0 分
-                                    }
-                                }
-
-                                if (sim > bestMatchForThisArtist) {
-                                    bestMatchForThisArtist = sim;
-                                }
-                            }
-                            // 累加本地每个艺术家的最高得分
-                            totalArtistScore += bestMatchForThisArtist;
-                        }
-
-                        // 计算平均匹配分 (0.0 ~ 1.0)
-                        double baseArtistScore = totalArtistScore / task.artists.size();
-
-                        // 计算数量比率 (0.0 ~ 1.0)
-                        double sizeRatio =
-                            (double)std::min(task.artists.size(), remoteArtistNames.size()) /
-                            (double)std::max(task.artists.size(), remoteArtistNames.size());
-
-                        // 综合原始得分
-                        double rawArtistScore = (baseArtistScore * 0.8) + (sizeRatio * 0.2);
-
-                        // C. 【关键修正】保底平滑映射 (Floor Scaling)
-                        // 将 rawArtistScore [0.0 ~ 1.0] 线性缩放映射至 [0.5 ~ 1.0]
-                        // 效果：即使名字完全不匹配(0.0)，也只扣除 50% 权重，保留 0.5
-                        // 的保底分，绝不抹杀 AcoustID 的指纹匹配成果
-                        double safeMultiplier = 0.5 + (rawArtistScore * 0.5);
+                        double calcResult{
+                            StringUtils::calcArtistsSimlarity(task.artists, remoteArtistNames)
+                        };
 
                         // 乘入总分
-                        recordingResult.score *= safeMultiplier;
+                        recordingResult.score *= calcResult;
 
                     } else {
                         // 线上完全没有返回艺术家信息时，仅扣除 20% 分数
@@ -305,7 +227,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
 
             if (task.album.isNotEmpty()) {
                 auto albumScore{
-                    OtherUtils::stringSimilarity(task.album, remoteAlbumTitle.toString())
+                    StringUtils::stringSimilarity(task.album, remoteAlbumTitle.toString())
                 };
                 if (albumScore > 0.7) {
                     releaseResult.score *= (1.0 + albumScore);
@@ -376,7 +298,7 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
             std::string primaryArtist;
             for (int i = 0; i < finalAlbumArtists.size(); i++) {
                 auto name{finalAlbumArtists.read(i).read("name").toString().toStdString()};
-                if (!isVariousArtists(name)) {
+                if (!StringUtils::isVariousArtists(name)) {
                     // 如果是群星等名字不能发给apple做搜索，否则极大降低成功率
                     primaryArtist = name;
                     break; // 搜索专辑图只需主艺术家名
@@ -483,40 +405,42 @@ void OnlineGetMatedata::searchDataByPrint(OnlineGetMatedata::Task task) {
         sqlStr += writeArray.joinIntoString(",").toStdString();
         sqlStr += " WHERE songId = :songId";
 
-        try {
-            spdlog::get(LogDllID)->debug("最终联网搜索的sql语句为:{}", sqlStr);
-            SQLite::Statement sql{db, sqlStr};
-            if (task.title.isEmpty()) {
-                if (finalTitle.isNotEmpty()) {
-                    sql.bind(":title", finalTitle.toStdString());
+        dbManage->write([&](SQLite::Database& db) {
+            try {
+                spdlog::get(LogDllID)->debug("最终联网搜索的sql语句为:{}", sqlStr);
+                SQLite::Statement sql{db, sqlStr};
+                if (task.title.isEmpty()) {
+                    if (finalTitle.isNotEmpty()) {
+                        sql.bind(":title", finalTitle.toStdString());
+                    }
                 }
-            }
-            if (task.artists.isEmpty()) {
-                if (!finalArtistsArr.isEmpty()) {
-                    sql.bind(":artists", juce::JSON::toString(finalArtistsArr).toStdString());
+                if (task.artists.isEmpty()) {
+                    if (!finalArtistsArr.isEmpty()) {
+                        sql.bind(":artists", juce::JSON::toString(finalArtistsArr).toStdString());
+                    }
                 }
-            }
-            if (task.album.isEmpty()) {
-                if (finalAlbum.isNotEmpty()) {
-                    sql.bind(":album", finalAlbum.toStdString());
+                if (task.album.isEmpty()) {
+                    if (finalAlbum.isNotEmpty()) {
+                        sql.bind(":album", finalAlbum.toStdString());
+                    }
                 }
-            }
-            if (task.needCover) {
-                if (finalCoverHash.isNotEmpty()) {
-                    sql.bind(":hash", finalCoverHash.toStdString());
+                if (task.needCover) {
+                    if (finalCoverHash.isNotEmpty()) {
+                        sql.bind(":hash", finalCoverHash.toStdString());
+                    }
                 }
+                sql.bind(":songId", task.songId);
+                sql.exec();
+            } catch (SQLite::Exception& e) {
+                spdlog::get(LogDllID)->debug("联网搜索写入数据库失败:{}", e.what());
             }
-            sql.bind(":songId", task.songId);
-            sql.exec();
-        } catch (SQLite::Exception& e) {
-            spdlog::get(LogDllID)->debug("联网搜索写入数据库失败:{}", e.what());
-        }
 
-        juce::var resultObj{new juce::DynamicObject()};
+            juce::var resultObj{new juce::DynamicObject()};
 
-        if (foundValue) {
-            if (dllManager::getInstance().getSongsManager().OnUpdateSongInfo)
-                dllManager::getInstance().getSongsManager().OnUpdateSongInfo(task.songId);
-        }
+            if (foundValue) {
+                if (dllManager::getInstance().getSongsManager().OnUpdateSongInfo)
+                    dllManager::getInstance().getSongsManager().OnUpdateSongInfo(task.songId);
+            }
+        });
     }
 }

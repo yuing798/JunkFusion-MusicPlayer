@@ -31,19 +31,13 @@ add_subdirectory(AudioProcessor)
 add_subdirectory(Utils)
 add_subdirectory(Model)
 
-# 创建一个自定义目标（不生成文件，只为了触发动作）它强制 CMake 在构建 DeployRuntime 之前，必须先构建完成这两个项目。
-add_custom_target(DeployRuntime ALL
-    DEPENDS JunkFusionCoordinator JunkFusionAudioProcess  # 依赖两个核心目标
-    COMMENT "准备部署运行时库到 Flutter 目录..."
-)
-
 target_compile_definitions(JunkFusionCoordinator PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
 target_compile_definitions(JunkFusionAudioProcess PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
-target_compile_definitions(JunkFusionUtils PRIVATE
+target_compile_definitions(Utils PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
 )
 
@@ -53,17 +47,23 @@ set_target_properties(JunkFusionCoordinator PROPERTIES
 set_target_properties(JunkFusionAudioProcess PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
-target_link_libraries(JunkFusionUtils 
+target_link_libraries(Models
     PUBLIC
-        Models
+        Utils
 )
 target_link_libraries(JunkFusionCoordinator 
     PRIVATE
-        JunkFusionUtils
+        Models
+        Utils
 )
 target_link_libraries(JunkFusionAudioProcess
     PRIVATE
-        JunkFusionUtils
+        Models
+        Utils
+)
+add_custom_target(DeployRuntime ALL
+    DEPENDS JunkFusionCoordinator JunkFusionAudioProcess  # 依赖两个核心目标
+    COMMENT "准备部署运行时库到 Flutter 目录..."
 )
 add_custom_command(TARGET DeployRuntime POST_BUILD
     COMMAND ${CMAKE_COMMAND}

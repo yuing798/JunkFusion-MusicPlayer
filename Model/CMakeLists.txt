@@ -12,8 +12,6 @@ target_link_libraries(Models
         juce::juce_core
 
     PRIVATE
-        
-        spdlog::spdlog#日志系统
 
         juce::juce_recommended_config_flags#基础编译与调试配置
         juce::juce_recommended_lto_flags#链接时代码优化

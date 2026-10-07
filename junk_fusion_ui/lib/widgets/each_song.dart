@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';

@@ -10,7 +10,8 @@ import 'package:junk_fusion_ui/Macro/sliderParam.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:windows_taskbar/windows_taskbar.dart';
 
 class PlaybackProvider extends ChangeNotifier {

@@ -17,7 +17,7 @@ import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/more_play_info.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/play_list.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/song_progress_area.dart';

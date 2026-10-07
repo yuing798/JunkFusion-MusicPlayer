@@ -1,5 +1,7 @@
 #include "./dllManager.hpp"
+#include "CenterDbManage/CenterDbmanage.hpp"
 #include "Macro/coordinatorMacro.hpp"
+#include "SongsManage/songsManage.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
 #include "Utils/otherUtils.hpp"
@@ -60,16 +62,11 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     logger->debug("已通知音频进程启动");
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
-    // if(!dbFile.existsAsFile()) dbFile.cr  不用，因为SQLite::OPEN_CREATE会初始化文件
-    db = std::make_unique<SQLite::Database>(
-        dbFile.getFullPathName().toStdString(),
-        SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE
-    );
-    db->exec("PRAGMA journal_mode=WAL;");  // 写操作并发友好
-    db->exec("PRAGMA busy_timeout=5000;"); // 遇到锁最多等 5 秒，不立即报错
+
+    dbManage = std::make_unique<CenterDbManage>(dbFile.getFullPathName().toStdString());
 
     // 把 db 指针或引用传给各表
-    songs = std::make_unique<SongsManage>(*db);
+    songs = std::make_unique<SongsManage>(dbManage.get());
 }
 
 void dllManager::sendMessage2AudioProcess(juce::var& obj) {

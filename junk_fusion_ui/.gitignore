@@ -47,3 +47,4 @@ app.*.map.json
 assets/Noto_Sans_SC,Open_Sans.zip
 
 test/
+dsh-session-export/

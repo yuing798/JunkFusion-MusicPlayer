@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
@@ -111,11 +111,10 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
       case SortMode.byName:
         // 按歌曲名排序（使用字符串的 compareTo）
-        copy.sort(
-          (a, b) => _isAscending
-              ? a.title.compareTo(b.title)
-              : b.title.compareTo(a.title),
-        );
+        copy.sort((a, b) {
+          final result = AppCache.collator.compare(a.title, b.title);
+          return _isAscending ? result : -result;
+        });
 
       case SortMode.byPlayTimes:
         // 按播放次数排序

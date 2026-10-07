@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./OnlineGetMatedata.hpp"
+#include "Coordinator/CenterDbManage/CenterDbManage.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <functional>
@@ -18,13 +19,13 @@ public:
     };
 
 private:
-    SQLite::Database& mDb;
+    CenterDbManage* dbManage;
     std::queue<Task> mTaskQueue;
     std::mutex mtx;
     OnlineGetMatedata mOnlineGetMatedata;
 
 public:
-    WaveFormAnaly(SQLite::Database& db);
+    WaveFormAnaly(CenterDbManage* dbManage);
     ~WaveFormAnaly();
     void run() override;
     void setTask(Task task);

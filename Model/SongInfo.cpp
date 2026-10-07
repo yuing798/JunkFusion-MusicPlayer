@@ -38,7 +38,6 @@ juce::var SongInfo::toJson() {
 
     // ── 5. 用户信息 ──
     ptr->setProperty(SongInfoMacro::isMyLike, isMyLike);
-    ptr->setProperty(SongInfoMacro::comment, ConvertUtils::juceStringToVar(comment));
     ptr->setProperty(SongInfoMacro::playNum, playNum);
 
     ptr->setProperty(SongInfoMacro::hash, ConvertUtils::juceStringToVar(hash));
