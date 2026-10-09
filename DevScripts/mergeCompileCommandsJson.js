@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+//将多个compile_commands.json文件合并为一个
 const fs = require('fs');
 const path = require('path');
 

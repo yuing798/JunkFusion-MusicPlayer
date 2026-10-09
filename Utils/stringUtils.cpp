@@ -57,7 +57,7 @@ bool StringUtils::isVariousArtists(const std::string& name) {
         lower == "v.a." || lower == "va"
     );
 }
-double StringUtils::calcArtistsSimlarity(juce::StringArray& arr1, juce::StringArray arr2) {
+double StringUtils::calcArtistsSimlarity(juce::StringArray& arr1, juce::StringArray& arr2) {
 
     double totalArtistScore = 0.0;
 

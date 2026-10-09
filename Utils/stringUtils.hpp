@@ -24,6 +24,6 @@ namespace StringUtils {
     bool isVariousArtists(const std::string& name);
 
     // 判断两个艺术家数组的匹配度
-    double calcArtistsSimlarity(juce::StringArray& arr1, juce::StringArray arr2);
+    double calcArtistsSimlarity(juce::StringArray& arr1, juce::StringArray& arr2);
 
 } // namespace StringUtils

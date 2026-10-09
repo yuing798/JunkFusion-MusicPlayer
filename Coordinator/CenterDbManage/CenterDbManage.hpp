@@ -16,6 +16,7 @@ public:
     template <typename Func> auto write(Func&& f) -> std::invoke_result_t<Func, SQLite::Database&> {
         using ReturnType = std::invoke_result_t<Func, SQLite::Database&>;
 
+        // 这里使用mutable是因为捕获列表内的变量是加上const限定符的
         auto fut = pool.submitAsync([this, fn = std::forward<Func>(f)]() mutable -> ReturnType {
             return fn(db);
         });

@@ -1,4 +1,5 @@
 #include "./WaveFormAnaly.hpp"
+#include "Coordinator/CenterDbManage/CenterDbManage.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -25,8 +26,8 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-WaveFormAnaly::WaveFormAnaly(SQLite::Database& db)
-    : juce::Thread("WaveFormAnaly"), mDb(db), mOnlineGetMatedata(db) {}
+WaveFormAnaly::WaveFormAnaly(CenterDbManage* dbManage)
+    : juce::Thread("WaveFormAnaly"), dbManage(dbManage), mOnlineGetMatedata(dbManage) {}
 
 void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
     std::lock_guard<std::mutex> lock(mtx);
@@ -327,35 +328,33 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     }
 
     try {
-        SQLite::Statement sql(
-            mDb,
-            "UPDATE songs SET timeDomainSpec = :timeDomainSpec WHERE filePath = :filePath"
-        );
-        sql.bind(
-            ":timeDomainSpec",
-            blobBuffer.data(),
-            static_cast<int>(blobBuffer.size() * sizeof(double))
-        ); // 时域图
-        sql.bind(":filePath", task.path);
+        dbManage->write([&](SQLite::Database& db) {
+            SQLite::Statement sql(
+                db,
+                "UPDATE songs SET timeDomainSpec = :timeDomainSpec WHERE filePath = :filePath"
+            );
+            sql.bind(
+                ":timeDomainSpec",
+                blobBuffer.data(),
+                static_cast<int>(blobBuffer.size() * sizeof(double))
+            ); // 时域图
+            sql.bind(":filePath", task.path);
 
-        // std::string spdlogStr{""};
-        // spdlog::get(LogDllID)->debug(
-        //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
-        //     task.path,
-        //     blobBuffer.size(),
-        //     static_cast<int>(blobBuffer.size() * sizeof(double))
-        // );
-        // for (size_t i = 0; i < blobBuffer.size(); i++) {
+            // std::string spdlogStr{""};
+            // spdlog::get(LogDllID)->debug(
+            //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
+            //     task.path,
+            //     blobBuffer.size(),
+            //     static_cast<int>(blobBuffer.size() * sizeof(double))
+            // );
+            // for (size_t i = 0; i < blobBuffer.size(); i++) {
 
-        //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
-        // }
-        // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
+            //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
+            // }
+            // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
 
-        sql.exec();
-        // auto fileName{juce::File(task.path).getFileName()};
-        // auto cString{ConvertUtils::copyStringOnHeap(fileName)};
-
-        // if (onTimeDomainSpecInsertOver) onTimeDomainSpecInsertOver(cString);
+            sql.exec();
+        });
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->error("WaveFormAnaly线程发生数据库错误:{}", e.what());
     }

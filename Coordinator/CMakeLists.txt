@@ -42,4 +42,5 @@ target_sources(JunkFusionCoordinator
 
 add_subdirectory(SongsManage)
 add_subdirectory(processSchedule)
-add_subdirectory(AlbumsManage)
+add_subdirectory(CatagoryViewManage)
+add_subdirectory(CenterDbManage)

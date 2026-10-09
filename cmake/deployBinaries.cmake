@@ -1,7 +1,7 @@
 # cmake/DeployBinaries.cmake
 # 用法：cmake -D SRC_DIR=... -D DST_DIR=... -P DeployBinaries.cmake
 
-message(STATUS "正在部署运行时库: ${SRC_DIR} -> ${DST_DIR}")
+message(STATUS "It is coping file in one dir to another dir: ${SRC_DIR} -> ${DST_DIR}")
 
 # 1. 确保目标文件夹存在
 file(MAKE_DIRECTORY "${DST_DIR}")
@@ -10,15 +10,15 @@ file(MAKE_DIRECTORY "${DST_DIR}")
 file(GLOB FILES_TO_COPY # GLOB CMake 的文件操作命令之一，用于通配符匹配
      "${SRC_DIR}/*.dll" #FILES_TO_COPY：变量名，匹配到的文件路径列表将存储于此
      "${SRC_DIR}/*.exe"
-     "${SRC_DIR}/*.pdb"
+     "${SRC_DIR}/*.pdb" #这个复制过去是为了调试
 )
 
 foreach(FILE ${FILES_TO_COPY})
     get_filename_component(FILENAME "${FILE}" NAME)
-    message(STATUS "  复制: ${FILENAME}")
+    message(STATUS "  In Copying: ${FILENAME}")
     
     # 使用 copy 命令覆盖目标文件（如果你希望仅在更新时复制，可用 copy_if_different）
     file(COPY "${FILE}" DESTINATION "${DST_DIR}")
 endforeach()
 
-message(STATUS "部署完成！")
+message(STATUS "Deploy Over！")

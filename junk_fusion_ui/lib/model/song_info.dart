@@ -23,12 +23,7 @@ abstract class SongInfo with _$SongInfo {
 
     required List<String>? artists,
     String? album,
-    String? albumArtist,
-    String? genre,
     int? trackNumber,
-    int? discNumber,
-    int? year,
-    String? composer,
 
     required int bitRate,
     required int sampleRate,
@@ -36,7 +31,6 @@ abstract class SongInfo with _$SongInfo {
     required int bitDepth,
 
     String? codecName,
-    String? aiGenre,
     int? bpm,
     String? key,
 

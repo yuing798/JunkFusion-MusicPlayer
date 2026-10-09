@@ -1,6 +1,8 @@
 #pragma once
 #include "juce_core/juce_core.h"
+#include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -20,10 +22,22 @@ namespace ConvertUtils {
     std::string escapeLucene(const std::string& input);
 
     // juce::StringArray转换为juce::Array<juce::var>
-    juce::Array<juce::var> stringArray2ArrayVar(juce::StringArray arr);
+    juce::Array<juce::var> stringArray2ArrayVar(const juce::StringArray& arr);
 
     juce::var optionalIntToVar(const std::optional<int>& value);
     juce::var juceStringToVar(const juce::String& value);
     std::vector<std::string> stringArrayToVector(const juce::StringArray& arr);
+    template <typename T> juce::Array<juce::var> vectorToArrayVar(const std::vector<T>& vecs) {
+        static_assert(
+            std::is_same_v<T, int> || std::is_same_v<T, double> || std::is_same_v<T, float>,
+            "convertUtils::vectorToArrayVar传入类型错误"
+        );
+        juce::Array<juce::var> arr;
+
+        for (auto& each : vecs) {
+            arr.add(each);
+        }
+        return arr;
+    }
 
 } // namespace ConvertUtils

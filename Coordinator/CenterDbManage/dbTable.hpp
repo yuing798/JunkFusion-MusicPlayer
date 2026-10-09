@@ -11,22 +11,14 @@ inline const char* createSongsTableSQL = R"(
         title              TEXT,
         artists             TEXT,
         album              TEXT,
-        albumArtist        TEXT,
-        genre              TEXT,
         trackNumber        INTEGER,
-        discNumber         INTEGER,
-        year               INTEGER,
-        composer           TEXT,
         bitRate            INTEGER,
         bitDepth           INTEGER,
         sampleRate         INTEGER,
         channelLayoutMask INTEGER,
-        numChannels INTEGER,
         codecName TEXT, 
-        aiGenre            TEXT,
         bpm                INTEGER,
         key                TEXT,
-        aiProcessed        INTEGER DEFAULT 0,
         isMyLike           INTEGER DEFAULT 0,
         playNum       INTEGER DEFAULT 0,
         hash TEXT,
@@ -35,12 +27,16 @@ inline const char* createSongsTableSQL = R"(
         FOREIGN KEY (albumId) REFERENCES albums(albumId)
     )
 )";
-
-// Albums表
+/**
+ * @brief 专辑表
+ * @param albumArtists 获取到的专辑艺术家名字
+ * @param artists 如果没有专辑艺术家，获取到的歌曲艺术家名字
+ * @param displayArtists 有专辑艺术家即展示专辑艺术家，没有就展示艺术家
+ */
 inline const char* createAlbumsTableSQL = R"(
     CREATE TABLE IF NOT EXISTS albums (
         albumId             INTEGER PRIMARY KEY AUTOINCREMENT,
-        displayTitle              TEXT,
+        title              TEXT,
         albumArtists             TEXT,
         hash TEXT
     )

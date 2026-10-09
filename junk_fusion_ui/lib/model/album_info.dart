@@ -55,17 +55,6 @@ class AlbumInfo {
   double get totalDuration =>
       songs.fold<double>(0.0, (sum, song) => sum + song.duration);
 
-  /// 年份：取专辑里最小的那个非空年份（同一张专辑的年份一般是一致的）
-  int? get year {
-    int? result;
-    for (final song in songs) {
-      final songYear = song.year;
-      if (songYear == null || songYear <= 0) continue;
-      if (result == null || songYear < result) result = songYear;
-    }
-    return result;
-  }
-
   /// 某首歌是否属于这张专辑
   ///
   /// SingleAlbumPage 用它从 SongProvider 里实时筛歌：直接用构造时的 songs

@@ -30,16 +30,23 @@ public:
     // 2. 提交任务并要求异步返回结果
     // =======================================================
     template <typename Func> std::future<std::invoke_result_t<Func>> submitAsync(Func&& f) {
+        // std::invoke_result_t:编译器推断调用某个可调用对象返回什么类型
         using ReturnType = std::invoke_result_t<Func>;
 
+        /**
+         * @explication
+         * task 被 lambda 捕获；
+         * lambda 被放进线程池队列；
+         * 只要 lambda 还活着，shared_ptr 的引用计数就 > 0；
+         * packaged_task 就还活着；
+         * 任务执行完后 lambda 被销毁，引用计数归零，packaged_task 自动释放。
+         *
+         */
         auto task = std::make_shared<std::packaged_task<ReturnType()>>(std::forward<Func>(f));
 
         std::future<ReturnType> res = task->get_future();
 
-        pool.addJob([task]() -> juce::ThreadPoolJob::JobStatus {
-            (*task)();
-            return juce::ThreadPoolJob::jobHasFinished;
-        });
+        pool.addJob([task]() { (*task)(); });
 
         return res;
     }

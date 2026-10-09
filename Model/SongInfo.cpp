@@ -17,12 +17,7 @@ juce::var SongInfo::toJson() {
     ptr->setProperty(SongInfoMacro::title, title);
     ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
     ptr->setProperty(SongInfoMacro::album, ConvertUtils::juceStringToVar(album));
-    ptr->setProperty(SongInfoMacro::albumArtist, ConvertUtils::juceStringToVar(albumArtist));
-    ptr->setProperty(SongInfoMacro::genre, ConvertUtils::juceStringToVar(genre));
     ptr->setProperty(SongInfoMacro::trackNumber, ConvertUtils::optionalIntToVar(trackNumber));
-    ptr->setProperty(SongInfoMacro::discNumber, ConvertUtils::optionalIntToVar(discNumber));
-    ptr->setProperty(SongInfoMacro::year, ConvertUtils::optionalIntToVar(year));
-    ptr->setProperty(SongInfoMacro::composer, ConvertUtils::juceStringToVar(composer));
 
     // ── 3. FFmpeg 解码层 ──
     ptr->setProperty(SongInfoMacro::bitRate, bitRate);
@@ -32,7 +27,6 @@ juce::var SongInfo::toJson() {
     ptr->setProperty(SongInfoMacro::codecName, ConvertUtils::juceStringToVar(codecName));
 
     // ── 4. AI 分析 ──
-    ptr->setProperty(SongInfoMacro::aiGenre, ConvertUtils::juceStringToVar(aiGenre));
     ptr->setProperty(SongInfoMacro::bpm, ConvertUtils::optionalIntToVar(bpm));
     ptr->setProperty(SongInfoMacro::key, ConvertUtils::juceStringToVar(key));
 

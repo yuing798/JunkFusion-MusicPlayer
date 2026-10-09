@@ -1,5 +1,6 @@
 #include "./songsManage.hpp"
 #include "../dllManager.hpp"
+#include "Coordinator/CatagoryViewManage/AlbumsManage.hpp"
 #include "Coordinator/CenterDbManage/dbTable.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Model/SongInfo.hpp"
@@ -21,6 +22,7 @@
 #include <optional>
 #include <sha1.h>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
 #include <string>
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
@@ -37,21 +39,7 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-SongsManage::SongsManage(CenterDbManage* dbManage) : dbManage(dbManage), mWaveFormAnaly(dbManage) {
-    try {
-
-        dbManage->write([](SQLite::Database& db) { db.exec(createSongsTableSQL); });
-
-    } catch (const std::exception& e) {
-        // 数据库初始化失败 → db 保持 nullptr，后续所有操作安全返回空
-        auto logger = spdlog::get(LogDllID);
-        if (logger)
-            logger->critical(
-                "无法初始化数据库文件，请检查磁盘空间或权限！\n错误信息: {}",
-                e.what()
-            );
-    }
-}
+SongsManage::SongsManage(CenterDbManage* dbManage) : dbManage(dbManage), mWaveFormAnaly(dbManage) {}
 juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
     if (!map.contains(key) || map[key].isEmpty()) {
         return juce::StringArray{};
@@ -141,12 +129,7 @@ SongInfo SongsManage::selectSingleSongInfo(SQLite::Statement& query) {
         }
     }
     info.album = DbUtils::optStrCol(query, "album");
-    info.albumArtist = DbUtils::optStrCol(query, "albumArtist");
-    info.genre = DbUtils::optStrCol(query, "genre");
     info.trackNumber = DbUtils::optIntCol(query, "trackNumber");
-    info.discNumber = DbUtils::optIntCol(query, "discNumber");
-    info.year = DbUtils::optIntCol(query, "year");
-    info.composer = DbUtils::optStrCol(query, "composer");
 
     // ── FFmpeg 解码层 ──
     info.bitRate = query.getColumn("bitRate").getInt64();
@@ -167,7 +150,6 @@ SongInfo SongsManage::selectSingleSongInfo(SQLite::Statement& query) {
     info.codecName = DbUtils::optStrCol(query, "codecName");
 
     // ── AI 分析 ──
-    info.aiGenre = DbUtils::optStrCol(query, "aiGenre");
     info.bpm = DbUtils::optIntCol(query, "bpm");
     info.key = DbUtils::optStrCol(query, "key");
 
@@ -184,10 +166,10 @@ SongInfo SongsManage::getSongInfo(juce::String path) {
             dbManage->readDb(),
             R"(
                 SELECT songId, 
-                duration, title, artists, album, albumArtist, 
-                genre, trackNumber, discNumber, year, composer, 
+                duration, title, artists, album,  
+                trackNumber,
                 bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
-                aiGenre, bpm, key, aiProcessed, 
+                bpm, key, 
                 isMyLike, playNum
                 FROM songs WHERE filePath = :filePath
             )"
@@ -214,10 +196,10 @@ SongInfo SongsManage::getSongInfo(int64_t songId) {
             dbManage->readDb(),
             R"(
                 SELECT songId, 
-                duration, title, artists, album, albumArtist, 
-                genre, trackNumber, discNumber, year, composer, 
+                duration, title, artists, album, 
+                trackNumber, 
                 bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
-                aiGenre, bpm, key, aiProcessed, 
+                bpm, key,  
                 isMyLike,  playNum
                 FROM songs WHERE songId = :songId
             )"
@@ -247,10 +229,10 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
 
         SQLite::Statement query(dbManage->readDb(), R"(
             SELECT songId, 
-            duration, title, artists, album, albumArtist, 
-            genre, trackNumber, discNumber, year, composer, 
+            duration, title, artists, album, 
+            trackNumber,
             bitRate, bitDepth, sampleRate, channelLayoutMask, numChannels, codecName, 
-            aiGenre, bpm, key, aiProcessed, 
+            bpm, key, 
             isMyLike, playNum
             FROM songs 
         )");
@@ -281,13 +263,16 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
 
         auto logger{spdlog::get(LogDllID)};
 
-        // ffmpeg解码层信息
-        int result{0}; // 解码层结果，一般成功返回零
+        // if this song dont have title and albumTitle,this value is false
+        bool needCheckAlbumExistOrInsert{false};
+        juce::StringArray albumArtists;
+
+        // ffmpeg decoder info
+        int result{0}; // return 0 on success
         AVFormatContext* inputContext{nullptr};
         result = avformat_open_input(&inputContext, filePath.c_str(), nullptr, nullptr);
         if (result != 0) {
             // 非多媒体文件也会返回AVERROR
-            // SPDLOG:记录多媒体文件无法打开文件或者打开的是非多媒体文件
             if (logger)
                 logger->warn(
                     "多媒体文件无法打开或者打开的是非多媒体文件:{}",
@@ -295,23 +280,22 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
                 );
             avformat_close_input(&inputContext);
 
-            state.msg = "多媒体文件无法打开";
+            state.msg = "cant open multimedia file";
             insertStates.push_back(state);
             continue;
         }
         result = avformat_find_stream_info(inputContext, nullptr);
         if (result < 0) {
-            // SPDLOG:无法找到流信息
             if (logger)
                 logger->error("无法找到该文件的流信息:{}", OtherUtils::ffmpegErrorOutput(result));
             avformat_close_input(&inputContext);
 
-            state.msg = "无法找到该文件的流信息";
+            state.msg = "cant find stream info in this file";
             insertStates.push_back(state);
             continue;
         }
 
-        // 时长（秒）
+        // length(seconds)
         if (inputContext->duration != AV_NOPTS_VALUE) {
             info.duration = static_cast<double>(inputContext->duration) / AV_TIME_BASE;
         }
@@ -326,7 +310,7 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
         if (currentIndex < 0) {
             avformat_close_input(&inputContext);
 
-            state.msg = "无法找到该文件的音频流";
+            state.msg = "cant find audio stream in this file";
             insertStates.push_back(state);
             continue;
         }
@@ -348,10 +332,7 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
         if (decoderPar->ch_layout.order == AV_CHANNEL_ORDER_NATIVE) {
             channelLayoutMask = decoderPar->ch_layout.u.mask;
         }
-        if (channelLayoutMask == 0) { // 掩码为0说明是不正常文件
-            numChannels = decoderPar->ch_layout.nb_channels;
-            info.channelLayout = juce::String(numChannels) + "声道";
-        } else {
+        if (channelLayoutMask != 0) {
             AVChannelLayout layout;
             av_channel_layout_from_mask(&layout, channelLayoutMask);
             char layoutBuffer[64] = {0};
@@ -391,8 +372,10 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
                 if (!titles.isEmpty()) {
                     info.title = titles[0];
                     onlineTask.title = info.title;
+                    needCheckAlbumExistOrInsert = true;
                 } else {
                     info.title = defaultTitle;
+                    needCheckAlbumExistOrInsert = false;
                 }
 
                 // Artist
@@ -409,22 +392,15 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
                 if (!albums.isEmpty()) {
                     info.album = albums[0];
                     onlineTask.album = info.album;
+                    needCheckAlbumExistOrInsert = true;
+                } else {
+                    needCheckAlbumExistOrInsert = false;
                 }
 
-                // 其他附加信息
-                auto albumArtists = getTags(map, "ALBUMARTIST");
-                if (!albumArtists.isEmpty()) info.albumArtist = albumArtists.joinIntoString(" / ");
-
-                auto genres = getTags(map, "GENRE");
-                if (!genres.isEmpty()) info.genre = genres.joinIntoString(" / ");
-
-                auto composers = getTags(map, "COMPOSER");
-                if (!composers.isEmpty()) info.composer = composers.joinIntoString(" / ");
+                albumArtists = getTags(map, "ALBUMARTIST");
 
                 // 数值型信息
                 info.trackNumber = getTagInt(map, "TRACKNUMBER");
-                info.discNumber = getTagInt(map, "DISCNUMBER");
-                info.year = getTagInt(map, "DATE");
 
             } else {
                 info.title = defaultTitle;
@@ -481,23 +457,34 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
 
         avformat_close_input(&inputContext);
 
+        std::optional<int64_t> albumId;
+
+        if (needCheckAlbumExistOrInsert) {
+            juce::StringArray inputAlbumCheckArtists; // 给专辑检查的最终艺术家名称
+            if (albumArtists.isEmpty()) {
+                inputAlbumCheckArtists = info.artists;
+            } else {
+                inputAlbumCheckArtists = albumArtists;
+            }
+
+            albumId = AlbumsManage::checkAlbumExist(
+                dbManage,
+                info.title,
+                inputAlbumCheckArtists,
+                info.hash
+            );
+            if (albumId == std::nullopt) {
+                albumId = AlbumsManage::insertAlbum(
+                    dbManage,
+                    info.title,
+                    inputAlbumCheckArtists,
+                    info.hash
+                );
+            }
+        }
+
         // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
         auto bindSongFields = [&](SQLite::Statement& stmt) {
-            // ── 可选 string 字段：有值则绑定，无值则绑定 NULL ──
-            auto bindOptStr = [&](const char* name, const juce::String& v) {
-                if (v.isNotEmpty())
-                    stmt.bind(name, v.toStdString());
-                else
-                    stmt.bind(name); // 无第二个参数 → SQL NULL
-            };
-            // ── 可选 int 字段 ──
-            auto bindOptInt = [&](const char* name, const std::optional<int>& v) {
-                if (v.has_value())
-                    stmt.bind(name, v.value());
-                else
-                    stmt.bind(name);
-            };
-
             // ── 必选字段 ──
             stmt.bind(":filePath", filePath);
             stmt.bind(":fileSize", fileSize);
@@ -510,21 +497,15 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
             stmt.bind(":sampleRate", info.sampleRate);
             if (channelLayoutMask != 0) {
                 stmt.bind(":channelLayoutMask", static_cast<int64_t>(channelLayoutMask));
-            } else {
-                stmt.bind(":numChannels", numChannels);
             }
             auto artistsStr{juce::JSON::toString(info.artists).toStdString()};
 
-            bindOptStr(":artists", artistsStr);
-            bindOptStr(":album", info.album);
-            bindOptStr(":albumArtist", info.albumArtist);
-            bindOptStr(":genre", info.genre);
-            bindOptInt(":trackNumber", info.trackNumber);
-            bindOptInt(":discNumber", info.discNumber);
-            bindOptInt(":year", info.year);
-            bindOptStr(":composer", info.composer);
-            bindOptStr(":codecName", info.codecName);
-            bindOptStr(":hash", info.hash);
+            DbUtils::bindOptStr(stmt, ":artists", artistsStr);
+            DbUtils::bindOptStr(stmt, ":album", info.album);
+            DbUtils::bindOptInt(stmt, ":trackNumber", info.trackNumber);
+            DbUtils::bindOptStr(stmt, ":codecName", info.codecName);
+            DbUtils::bindOptStr(stmt, ":hash", info.hash);
+            DbUtils::bindOptInt64(stmt, ":albumId", albumId);
         };
 
         try {
@@ -555,7 +536,6 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
             }
 
             dbManage->write([&](SQLite::Database& db) {
-                // ── 事务开始（RAII(资源获取即初始化)：析构时若未 commit 则自动回滚，阻止插入） ──
                 SQLite::Transaction transaction(db);
 
                 if (existingId >= 0) {
@@ -565,14 +545,11 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
                         "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
                         "lastModifiedTime = :lastModifiedTime, "
                         "duration = :duration, title = :title, artists = :artists, album = :album, "
-                        "albumArtist = :albumArtist, "
-                        "genre = :genre, trackNumber = :trackNumber, discNumber = :discNumber, "
-                        "year = "
-                        ":year, composer = :composer, "
+                        "trackNumber = :trackNumber,  "
                         "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
                         "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, "
                         "codecName = "
-                        ":codecName, numChannels = :numChannels "
+                        ":codecName,albumId = :albumId"
                         "WHERE songId = :songId"
                     );
 
@@ -589,15 +566,15 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
                         db,
                         "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                         "duration, title, artists, album, albumArtist, "
-                        "genre, trackNumber, discNumber, year, composer, bitRate, bitDepth, "
-                        "sampleRate, channelLayoutMask, numChannels, codecName, hash, "
-                        "timeDomainSpec) "
+                        "trackNumber, bitRate, bitDepth, "
+                        "sampleRate, channelLayoutMask, codecName, hash, "
+                        "timeDomainSpec,albumId) "
                         "VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, "
                         ":artists, "
                         ":album, :albumArtist, "
-                        ":genre, :trackNumber, :discNumber, :year, :composer, :bitRate, :bitDepth, "
-                        ":sampleRate, :channelLayoutMask, :numChannels, :codecName, :hash, "
-                        ":timeDomainSpec)"
+                        ":trackNumber, :bitRate, :bitDepth, "
+                        ":sampleRate, :channelLayoutMask, :codecName, :hash, "
+                        ":timeDomainSpec,:albumId)"
                     );
 
                     bindSongFields(insert);
@@ -614,7 +591,7 @@ std::vector<SongsManage::InsertState> SongsManage::insertSongs(std::vector<juce:
         } catch (const SQLite::Exception& e) {
             if (logger) logger->error("insert song error:{}", e.what());
 
-            state.msg = "数据库错误";
+            state.msg = "database error";
             insertStates.push_back(state);
             continue;
         }

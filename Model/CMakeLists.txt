@@ -4,6 +4,7 @@ target_sources(Models
     PRIVATE 
         SongInfo.cpp
         PlayInfo.cpp
+        AlbumInfo.cpp
 )
 
 target_link_libraries(Models

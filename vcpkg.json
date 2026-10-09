@@ -16,6 +16,7 @@
     "cpr",
     "chromaprint",
     "taglib",
-    "signalsmith-stretch"
+    "signalsmith-stretch",
+    "fmt"
   ]
 }

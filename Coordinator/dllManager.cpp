@@ -3,8 +3,6 @@
 #include "Macro/coordinatorMacro.hpp"
 #include "SongsManage/songsManage.hpp"
 #include "Utils/constants.h"
-#include "Utils/convertUtils.hpp"
-#include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "processSchedule/OscSender.hpp"
 #include <SQLiteCpp/Database.h>
