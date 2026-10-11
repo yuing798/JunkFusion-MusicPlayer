@@ -109,3 +109,38 @@ double StringUtils::calcArtistsSimlarity(juce::StringArray& arr1, juce::StringAr
     double safeMultiplier = 0.5 + (rawArtistScore * 0.5);
     return safeMultiplier;
 }
+std::string StringUtils::escapeLucene(const std::string& input) {
+    // 构建一个用于快速查找的哈希表（仅初始化一次）
+    static const std::unordered_set<char> specials = {
+        '+',
+        '-',
+        '&',
+        '|',
+        '!',
+        '(',
+        ')',
+        '{',
+        '}',
+        '[',
+        ']',
+        '^',
+        '"',
+        '~',
+        '*',
+        '?',
+        ':',
+        '\\',
+        '/'
+    };
+
+    std::string output;
+    output.reserve(input.size() * 2); // 预分配内存，防止频繁扩容
+
+    for (char c : input) {
+        if (specials.find(c) != specials.end()) {
+            output.push_back('\\'); // 在前面加反斜杠
+        }
+        output.push_back(c);
+    }
+    return output;
+}

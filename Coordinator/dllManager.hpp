@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CenterDbManage/CenterDbmanage.hpp"
+#include "CenterDbManage/dbContext.hpp"
+#include "Coordinator/SongsManage/OnlineGetMatedata.hpp"
+#include "Model/SongInfo.hpp"
 #include "SongsManage/songsManage.hpp"
 #include "Utils/constants.h"
 #include "juce_core/juce_core.h"
@@ -8,24 +11,28 @@
 #include "processSchedule/AudioProcessCoordinator.h"
 #include "processSchedule/OscSender.hpp"
 #include <SQLiteCpp/Database.h>
-#include <fstream>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <spdlog/sinks/rotating_file_sink.h>
-#include <utility>
+#include <string>
+#include <variant>
 
 class dllManager {
 private:
-    std::unique_ptr<CenterDbManage> dbManage;
-    std::unique_ptr<SongsManage> songs; // 歌曲管理
-    juce::File cacheDir;                // 缓存文件夹
-    juce::File logInfoDir;              // 日志文件夹
-    juce::File songImageDir;            // 歌曲图片
+    juce::String systemCountry;
+
+    juce::File cacheDir;     // 缓存文件夹
+    juce::File logInfoDir;   // 日志文件夹
+    juce::File songImageDir; // 歌曲图片
 
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
 
     static std::unique_ptr<dllManager> instance;
+
+    std::unique_ptr<DbContext> mDbContext;
+    juce::ThreadPool waveFormAnalyPool{5}; // 用来做波形分析和联网搜索的线程池
 
 public:
     explicit dllManager();
@@ -48,8 +55,6 @@ public:
 
     DONT_COPY_AND_MOVE(dllManager)
 
-    SongsManage& getSongsManager() { return *songs; }
-
     ~dllManager();
 
     std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
@@ -60,4 +65,8 @@ public:
 
     void sendMessage2AudioProcess(juce::var& obj);
     void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
+
+    std::variant<std::string, SongInfo> insertSong(const juce::File& path);
+
+    DbContext* getDbContext() noexcept { return mDbContext.get(); }
 };

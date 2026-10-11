@@ -26,4 +26,7 @@ namespace StringUtils {
     // 判断两个艺术家数组的匹配度
     double calcArtistsSimlarity(juce::StringArray& arr1, juce::StringArray& arr2);
 
+    // 对字符串进行Lucene特殊字符筛选并在前面加上反斜杠
+    std::string escapeLucene(const std::string& input);
+
 } // namespace StringUtils

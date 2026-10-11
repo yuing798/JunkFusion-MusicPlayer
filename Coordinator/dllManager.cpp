@@ -1,15 +1,25 @@
 #include "./dllManager.hpp"
 #include "CenterDbManage/CenterDbmanage.hpp"
-#include "Macro/coordinatorMacro.hpp"
-#include "SongsManage/songsManage.hpp"
+#include "CenterDbManage/dbContext.hpp"
+#include "Coordinator/SongsManage/OnlineGetMatedata.hpp"
+#include "Coordinator/SongsManage/songsManage.hpp"
+#include "SongsManage/WaveFormAnaly.hpp"
 #include "Utils/constants.h"
+#include "Utils/dbUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "processSchedule/OscSender.hpp"
 #include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Exception.h>
+#include <SQLiteCpp/Statement.h>
+#include <SQLiteCpp/Transaction.h>
 #include <memory>
+#include <optional>
 #include <spdlog/common.h>
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
+#include <string>
+#include <utility>
+#include <variant>
 
 std::unique_ptr<dllManager> dllManager::instance = nullptr;
 
@@ -61,10 +71,9 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
 
-    dbManage = std::make_unique<CenterDbManage>(dbFile.getFullPathName().toStdString());
+    mDbContext = std::make_unique<DbContext>(dbFile.getFullPathName().toStdString());
 
-    // 把 db 指针或引用传给各表
-    songs = std::make_unique<SongsManage>(dbManage.get());
+    systemCountry = juce::SystemStats::getUserRegion().toUpperCase();
 }
 
 void dllManager::sendMessage2AudioProcess(juce::var& obj) {
@@ -75,4 +84,118 @@ void dllManager::sendMessage2AudioProcess(juce::var& obj) {
 dllManager::~dllManager() {
     spdlog::get(LogDllID)->debug("---------------------------------------");
     spdlog::shutdown();
+}
+std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& path) {
+    auto result = mDbContext->songsManage.insertSong(path);
+    if (std::holds_alternative<std::string>(result)) {
+        return std::get<std::string>(result);
+    } else if (std::holds_alternative<SongsManage::InsertSongResult>(result)) {
+        auto successRst{std::get<SongsManage::InsertSongResult>(result)};
+        auto& songInfo{successRst.info};
+        // 检查并插入专辑
+        if (!successRst.titleIsFileName && songInfo.album.has_value() &&
+            songInfo.artists.has_value()) {
+            juce::StringArray albumArtists;
+            if (successRst.albumArtists.has_value()) {
+                albumArtists = successRst.albumArtists.value();
+            } else {
+                albumArtists = songInfo.artists.value();
+            }
+
+            auto albumId = mDbContext->albumsManage.checkAlbumExist(
+                songInfo.album.value(),
+                albumArtists,
+                songInfo.hash
+            );
+            if (!albumId.has_value()) {
+                albumId = mDbContext->albumsManage
+                              .insertAlbum(songInfo.album.value(), albumArtists, songInfo.hash);
+            }
+        }
+
+        // 波形获取
+        waveFormAnalyPool.addJob([successRst, this, path] {
+            auto& songInfo{successRst.info};
+            bool needGetPrint{false};
+            if (successRst.titleIsFileName || !songInfo.artists.has_value() ||
+                !songInfo.album.has_value() || !songInfo.hash.has_value()) {
+                needGetPrint = true;
+            }
+            auto waveFormAnalyResult =
+                WaveFormAnaly::process({path.getFullPathName().toStdString(), needGetPrint});
+            OnlineGetMatedata::Result onlineGetMetadataResult;
+            if (needGetPrint && waveFormAnalyResult.print.has_value()) {
+                auto print{waveFormAnalyResult.print.value()};
+
+                onlineGetMetadataResult =  OnlineGetMatedata::process(
+                    systemCountry,
+                    {
+                        songInfo.songId,
+                        songInfo.duration,
+                        std::move(print),
+                        successRst.titleIsFileName ? std::nullopt
+                                                   : std::optional<juce::String>{songInfo.title},
+                                                   songInfo.artists,
+                                                   songInfo.album,
+                                                   songInfo.hash.has_value() ? false:true
+
+                    }
+                );
+            }
+            try {
+
+                mDbContext->dbManage.write([&](SQLite::Database& db) {
+                    SQLite::Transaction t{db};
+                    SQLite::Statement sql1{
+                        db,
+                        "UPDATE songs SET title = "
+                        ":title,artists=:artists,album=:album,hash=:hash,timeDomainSpec=:"
+                        "timeDomainSpec WHERE songId=:songId"
+                    };
+                    DbUtils::bindOptValue(sql1, ":title", onlineGetMetadataResult.finalTitle);
+                    DbUtils::bindOptValue(sql1, ":artists", onlineGetMetadataResult.finalArtists);
+                    DbUtils::bindOptValue(sql1, ":album", onlineGetMetadataResult.finalAlbum);
+                    DbUtils::bindOptValue(sql1, ":hash", onlineGetMetadataResult.finalHash);
+                    sql1.bind(
+                        ":timeDomainSpec",
+                        waveFormAnalyResult.blobBuffer.data(),
+                        static_cast<int>(waveFormAnalyResult.blobBuffer.size() * sizeof(double))
+                    );
+                    sql1.bind(":songId", songInfo.songId);
+                    sql1.exec();
+
+                    auto albumId = mDbContext->albumsManage.getAlbumId(songInfo.songId);
+                    if (albumId.has_value()) {
+                        SQLite::Statement sql2{
+                            db,
+                            "UPDATE albums SET "
+                            "title=:albumTitle,albumArtists=:albumArtists,hash=:hash WHERE "
+                            "albumId=:albumId"
+                        };
+                        DbUtils::bindOptValue(
+                            sql2,
+                            ":albumTitle",
+                            onlineGetMetadataResult.finalAlbum
+                        );
+                        DbUtils::bindOptValue(
+                            sql2,
+                            ":albumArtists",
+                            onlineGetMetadataResult.finalAlbumArtists.has_value()
+                                ? onlineGetMetadataResult.finalAlbumArtists
+                                : onlineGetMetadataResult.finalArtists
+                        );
+                        DbUtils::bindOptValue(sql2, ":hash", onlineGetMetadataResult.finalHash);
+                        DbUtils::bindOptValue(sql2, ":albumId", albumId);
+                        sql2.exec();
+                    }
+                    t.commit();
+                });
+            } catch (SQLite::Exception& e) {
+                spdlog::get(LogDllID)->error("dllManager::insertSong发生数据库错误:{}", e.what());
+            }
+        });
+
+        return songInfo;
+    }
+    return std::string{};
 }

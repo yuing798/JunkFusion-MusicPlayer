@@ -6,20 +6,25 @@
 #include <SQLiteCpp/Database.h>
 #include <cstdint>
 #include <optional>
-namespace AlbumsManage {
-    juce::Array<juce::var> getAllAlbumsView(CenterDbManage* dbManage);
+class AlbumsManage {
+private:
+    CenterDbManage& dbManage;
+
+public:
+    AlbumsManage(CenterDbManage& dbManage) : dbManage(dbManage) {}
+
+    juce::Array<juce::var> getAllAlbumsView();
 
     std::optional<int64_t> checkAlbumExist(
-        CenterDbManage* dbManage,
-        juce::String title,
+        juce::String albumTitle,
         juce::StringArray artists,
-        juce::String hash
+        std::optional<juce::String> hash
     );
 
     std::optional<int64_t> insertAlbum(
-        CenterDbManage* dbManage,
-        juce::String title,
+        juce::String albumTitle,
         juce::StringArray artists,
-        juce::String hash
+        std::optional<juce::String> hash
     );
+    std::optional<int64_t> getAlbumId(int64_t songId);
 }; // namespace AlbumsManage

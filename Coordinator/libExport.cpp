@@ -16,18 +16,20 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
-        // Utils::writeEmergencyLog("准备初始化dll单例1.0");
+        // Utils::writeEmergencyLog("准备初始化dll单例");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
     int toggleMyLike(long long songId) {
-        return dllManager::getInstance().getSongsManager().reverseMyLike(songId);
+        return dllManager::getInstance().getDbContext()->songsManage.reverseMyLike(songId);
     }
     void saveComment(long long songId, const char* commentText) {
-        dllManager::getInstance().getSongsManager().saveComment(commentText, songId);
+        dllManager::getInstance().getDbContext()->songsManage.saveComment(commentText, songId);
         return;
     }
     void freeString(char* str) {
@@ -36,38 +38,39 @@ extern "C" {
         }
     }
     void someImport(const char* jsonStr) {
-        juce::Thread::launch([jsonStr]() {
+        auto jsonString = std::string(jsonStr);
+        juce::Thread::launch([jsonStr = std::move(jsonString)]() {
             auto logger{spdlog::get(LogDllID)};
             logger->info("开始导入歌曲");
             logger->debug("jsonStr == {}", jsonStr);
-            Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
+            Yvar obj{juce::JSON::fromString(jsonStr)};
             auto filePaths{obj.read(CoordinatorMacro::filePaths)};
             std::vector<juce::File> paths;
             for (int i = 0; i < filePaths.size(); i++) {
                 paths.push_back(juce::File{filePaths.read(i).toString()});
             }
-            auto insertStates{dllManager::getInstance().getSongsManager().insertSongs(paths)};
-
             juce::Array<juce::var> errorFiles;
-            std::vector<juce::File> successPaths;
-
-            for (auto& insertState : insertStates) {
-                if (!insertState.msg.empty()) {
+            juce::Array<juce::var> songInfos;
+            for (auto& path : paths) {
+                auto result = dllManager::getInstance().insertSong(path);
+                if (std::holds_alternative<std::string>(result)) {
+                    auto errorMsg = std::get<std::string>(result);
                     juce::var obj{new juce::DynamicObject()};
                     obj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileName,
-                        insertState.path.getFileName()
+                        path.getFileName()
                     );
                     obj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileReason,
-                        juce::String(insertState.msg)
+                        juce::String{errorMsg}
                     );
                     errorFiles.add(obj);
-
-                } else {
-                    successPaths.push_back(insertState.path);
+                } else if (std::holds_alternative<SongInfo>(result)) {
+                    auto songInfo = std::get<SongInfo>(result);
+                    songInfos.add(songInfo.toJson());
                 }
             }
+
             juce::var resultObj{new juce::DynamicObject()};
             {
 
@@ -80,20 +83,7 @@ extern "C" {
                 };
                 logger->info(resultStr);
             }
-
-            // 查询歌曲信息
-            {
-                juce::Array<juce::var> songInfos;
-                for (auto& successPath : successPaths) {
-                    songInfos.add(
-                        dllManager::getInstance()
-                            .getSongsManager()
-                            .getSongInfo(successPath.getFullPathName())
-                            .toJson()
-                    );
-                }
-                resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songInfos);
-            }
+            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songInfos);
 
             // 发送最终数据
             if (dllManager::getInstance().onLightSongDataImportOver)
@@ -112,7 +102,8 @@ extern "C" {
         dllManager::getInstance().onErrorSendCallback = cb;
     }
     void play(long long songId, double targetPTS) {
-        auto info = dllManager::getInstance().getSongsManager().getPlayInfo(songId).toJson();
+        auto info =
+            dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();
         juce::var playObj{new juce::DynamicObject()};
         {
             playObj.getDynamicObject()->setProperty(AudioMacro::playInfo, info);
@@ -131,7 +122,7 @@ extern "C" {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
     const char* getTimeDomainSpecBySongId(long long songId) {
-        auto vec = dllManager::getInstance().getSongsManager().getTimeDomainSpec(songId);
+        auto vec = dllManager::getInstance().getDbContext()->songsManage.getTimeDomainSpec(songId);
         juce::Array<juce::var> arr;
         for (auto& i : vec) {
             arr.add(i);
@@ -174,17 +165,17 @@ extern "C" {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
     void registerOnUpdateSongInfo(Int64Func cb) {
-        dllManager::getInstance().getSongsManager().OnUpdateSongInfo = cb;
+        dllManager::getInstance().getDbContext()->songsManage.OnUpdateSongInfo = cb;
     }
     const char* getAllSongs() {
-        auto songsList = dllManager::getInstance().getSongsManager().getAllSongs();
+        auto songsList = dllManager::getInstance().getDbContext()->songsManage.getAllSongs();
         auto obj{new juce::DynamicObject()};
         obj->setProperty(CoordinatorMacro::songsList, songsList);
 
         return ConvertUtils::object2Uint8t(obj);
     }
     const char* getSongInfoBySongId(long long songId) {
-        auto info{dllManager::getInstance().getSongsManager().getSongInfo(songId)};
+        auto info{dllManager::getInstance().getDbContext()->songsManage.getSongInfo(songId)};
         return ConvertUtils::object2Uint8t(info.toJson());
     }
     void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }

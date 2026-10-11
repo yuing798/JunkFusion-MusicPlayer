@@ -15,12 +15,13 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <tpropertymap.h>
+#include <utility>
+#include <variant>
 #include <vector>
 
 class SongsManage {
 private:
-    CenterDbManage* dbManage;
-    WaveFormAnaly mWaveFormAnaly;
+    CenterDbManage& dbManage;
 
     // 获取元数据数组(比如多个艺术家)
     juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
@@ -29,14 +30,23 @@ private:
     SongInfo selectSingleSongInfo(SQLite::Statement& sql);
 
 public:
-    explicit SongsManage(CenterDbManage* dbManage);
-    // ~SongsManage();
-    struct InsertState {
-        juce::File path;
-        std::string msg; // 如果成功没有信息
+    explicit SongsManage(CenterDbManage& dbManage);
+
+    // SongsManage::insertSong的返回结果
+    struct InsertSongResult {
+
+        SongInfo info;
+        std::optional<juce::StringArray> albumArtists;
+        bool titleIsFileName{false}; // title是否为文件名
     };
 
-    std::vector<InsertState> insertSongs(std::vector<juce::File>& paths);
+    /**
+     * @brief
+     *
+     * @param path
+     * @return std::pair<std::string, InsertSongResult> first:如果错误返回的信息,second:正确结果
+     */
+    std::variant<std::string, InsertSongResult> insertSong(const juce::File& path);
 
     SongInfo getSongInfo(juce::String path);
     SongInfo getSongInfo(int64_t songId);

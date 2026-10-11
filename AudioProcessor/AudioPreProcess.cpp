@@ -55,7 +55,8 @@ AudioPreProcess::AudioPreProcess(AudioProcessWorker* worker) : mWorker(worker), 
             mPlayCount.setNewSong(info.path.toStdString(), info.duration);
             SystemAudioControl::MediaMetadata data{};
             data.title = info.title.toStdString();
-            data.artists = ConvertUtils::stringArrayToVector(info.artists);
+            if (info.artists.has_value())
+                data.artists = ConvertUtils::stringArrayToVector(info.artists.value());
             mSystemAudioControl->updateMetadata(data);
             isSongChange = true;
         } else {

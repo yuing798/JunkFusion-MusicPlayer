@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstring>
 #include <mutex>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <utility>
@@ -26,39 +27,39 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-WaveFormAnaly::WaveFormAnaly(CenterDbManage* dbManage)
-    : juce::Thread("WaveFormAnaly"), dbManage(dbManage), mOnlineGetMatedata(dbManage) {}
+// WaveFormAnaly::WaveFormAnaly(CenterDbManage* dbManage)
+//     : juce::Thread("WaveFormAnaly"), dbManage(dbManage), mOnlineGetMatedata(dbManage) {}
 
-void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
-    std::lock_guard<std::mutex> lock(mtx);
-    mTaskQueue.push(std::move(task));
-    notify();
-    if (!isThreadRunning()) startThread();
-}
+// void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
+//     std::lock_guard<std::mutex> lock(mtx);
+//     mTaskQueue.push(std::move(task));
+//     notify();
+//     if (!isThreadRunning()) startThread();
+// }
 
-void WaveFormAnaly::run() {
-    while (!threadShouldExit()) {
-        Task task;
-        bool hasTask = false;
+// void WaveFormAnaly::run() {
+//     while (!threadShouldExit()) {
+//         Task task;
+//         bool hasTask = false;
 
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            if (!mTaskQueue.empty()) {
-                task = std::move(mTaskQueue.front());
-                mTaskQueue.pop();
-                hasTask = true;
-            }
-        }
+//         {
+//             std::lock_guard<std::mutex> lock(mtx);
+//             if (!mTaskQueue.empty()) {
+//                 task = std::move(mTaskQueue.front());
+//                 mTaskQueue.pop();
+//                 hasTask = true;
+//             }
+//         }
 
-        if (hasTask) {
-            processSingleFile(task);
-        } else {
-            wait(-1);
-        }
-    }
-}
+//         if (hasTask) {
+//             processSingleFile(task);
+//         } else {
+//             wait(-1);
+//         }
+//     }
+// }
 
-void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
+WaveFormAnaly::Result WaveFormAnaly::process(WaveFormAnaly::Task task) {
 
     int result{0}; // 解码层结果，一般成功返回零
     av_log_set_level(AV_LOG_ERROR);
@@ -148,15 +149,15 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     auto* packet = av_packet_alloc();
     auto* frame = av_frame_alloc();
 
-    bool needOnlineSearch{
-        task.onlineTask.album.isEmpty() || task.onlineTask.needCover ||
-        task.onlineTask.artists.isEmpty() || task.onlineTask.title.isEmpty()
-    }; // 是否需要联网搜索,四个里面有一个不存在就需要
+    // bool needOnlineSearch{
+    //     task.onlineTask.album.isEmpty() || task.onlineTask.needCover ||
+    //     task.onlineTask.artists.isEmpty() || task.onlineTask.title.isEmpty()
+    // }; // 是否需要联网搜索,四个里面有一个不存在就需要
 
     // bool needOnlineSearch{true}; // 这个测试用
 
     ChromaprintContext* printContext{nullptr};
-    if (needOnlineSearch) {
+    if (task.needGetPrint) {
         // 音频指纹提取初始化
         printContext = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
         chromaprint_start(printContext, targetSampleRate, 1); // 指纹提取强制这个格式
@@ -221,7 +222,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             av_frame_unref(frame);
 
             // 喂入指纹上下文
-            if (needOnlineSearch && currentSeconds < 90.0)
+            if (task.needGetPrint && currentSeconds < 90.0)
                 chromaprint_feed(printContext, (int16_t*)outputArray, num4SwrSamples);
 
             av_freep(&outputArray);
@@ -273,7 +274,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
         pushDataIntoAudioGraph(outputArray, result);
         currentSeconds += (double)frame->nb_samples / (double)decoderPar->sample_rate;
         av_frame_unref(frame);
-        if (needOnlineSearch && currentSeconds < 90.0)
+        if (task.needGetPrint && currentSeconds < 90.0)
             chromaprint_feed(printContext, (int16_t*)outputArray, result);
 
         av_freep(&outputArray);
@@ -293,7 +294,7 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
             pushDataIntoAudioGraph(outputArray, ret);
 
             currentSeconds += (double)ret / (double)decoderPar->sample_rate;
-            if (needOnlineSearch && currentSeconds < 90.0)
+            if (task.needGetPrint && currentSeconds < 90.0)
                 chromaprint_feed(printContext, (int16_t*)outputArray, ret);
         }
         // 释放 Flush 临时缓冲区
@@ -313,52 +314,64 @@ void WaveFormAnaly::processSingleFile(WaveFormAnaly::Task task) {
     swr_free(&swrContext);
     avcodec_free_context(&decoderContext);
 
-    if (needOnlineSearch) {
+    std::string printStr;
+    if (task.needGetPrint) {
         chromaprint_finish(printContext);
 
         char* printPtr{nullptr};
         if (chromaprint_get_fingerprint(printContext, &printPtr) == 1) {
-            std::string printStr{printPtr};
+            printStr = std::string{printPtr};
             chromaprint_dealloc(printPtr);
-            task.onlineTask.duration = duration;
-            task.onlineTask.print = std::move(printStr);
-            mOnlineGetMatedata.setTask(std::move(task.onlineTask));
+            // task.onlineTask.duration = duration;
+            // task.onlineTask.print = std::move(printStr);
+            // mOnlineGetMatedata.setTask(std::move(task.onlineTask));
         }
         chromaprint_free(printContext);
     }
 
-    try {
-        dbManage->write([&](SQLite::Database& db) {
-            SQLite::Statement sql(
-                db,
-                "UPDATE songs SET timeDomainSpec = :timeDomainSpec WHERE filePath = :filePath"
-            );
-            sql.bind(
-                ":timeDomainSpec",
-                blobBuffer.data(),
-                static_cast<int>(blobBuffer.size() * sizeof(double))
-            ); // 时域图
-            sql.bind(":filePath", task.path);
+    // try {
+    //     dbManage.write([&](SQLite::Database& db) {
+    //         SQLite::Statement sql(
+    //             db,
+    //             "UPDATE songs SET timeDomainSpec = :timeDomainSpec WHERE filePath = :filePath"
+    //         );
+    //         sql.bind(
+    //             ":timeDomainSpec",
+    //             blobBuffer.data(),
+    //             static_cast<int>(blobBuffer.size() * sizeof(double))
+    //         ); // 时域图
+    //         sql.bind(":filePath", task.path);
 
-            // std::string spdlogStr{""};
-            // spdlog::get(LogDllID)->debug(
-            //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
-            //     task.path,
-            //     blobBuffer.size(),
-            //     static_cast<int>(blobBuffer.size() * sizeof(double))
-            // );
-            // for (size_t i = 0; i < blobBuffer.size(); i++) {
+    //         // std::string spdlogStr{""};
+    //         // spdlog::get(LogDllID)->debug(
+    //         //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
+    //         //     task.path,
+    //         //     blobBuffer.size(),
+    //         //     static_cast<int>(blobBuffer.size() * sizeof(double))
+    //         // );
+    //         // for (size_t i = 0; i < blobBuffer.size(); i++) {
 
-            //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
-            // }
-            // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
+    //         //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
+    //         // }
+    //         // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
 
-            sql.exec();
-        });
-    } catch (SQLite::Exception& e) {
-        spdlog::get(LogDllID)->error("WaveFormAnaly线程发生数据库错误:{}", e.what());
+    //         sql.exec();
+    //     });
+    // } catch (SQLite::Exception& e) {
+    //     spdlog::get(LogDllID)->error("WaveFormAnaly线程发生数据库错误:{}", e.what());
+    // }
+    // if (task.needGetPrint) {
+    //     return std::move(printStr);
+    // } else {
+    //     return std::nullopt;
+    // }
+    Result r;
+    if (task.needGetPrint) {
+        r.print = std::move(printStr);
     }
+    r.blobBuffer = std::move(blobBuffer);
+    return r;
 }
-WaveFormAnaly::~WaveFormAnaly() {
-    stopThread(500); // stopThread里面实现了notify,所以不需要我再写一遍
-}
+// WaveFormAnaly::~WaveFormAnaly() {
+//     stopThread(500); // stopThread里面实现了notify,所以不需要我再写一遍
+// }

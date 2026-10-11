@@ -4,11 +4,13 @@
 #include "Model/AlbumInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
+#include "Utils/dbUtils.hpp"
 #include "Utils/stringUtils.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <SQLiteCpp/Transaction.h>
 #include <algorithm>
 #include <cstdint>
 #include <fmt/format.h>
@@ -17,9 +19,9 @@
 #include <string>
 #include <vector>
 
-juce::Array<juce::var> AlbumsManage::getAllAlbumsView(CenterDbManage* dbManage) {
+juce::Array<juce::var> AlbumsManage::getAllAlbumsView() {
     SQLite::Statement selectSql{
-        dbManage->readDb(),
+        dbManage.readDb(),
         "SELECT albumId,title,albumArtists,hash FROM albums"
     };
     juce::Array<juce::var> albums;
@@ -39,11 +41,11 @@ juce::Array<juce::var> AlbumsManage::getAllAlbumsView(CenterDbManage* dbManage) 
 
 // 检查这张专辑是否存在并返回相应的albumId
 std::optional<int64_t> AlbumsManage::checkAlbumExist(
-    CenterDbManage* dbManage,
     juce::String title,
     juce::StringArray artists,
-    juce::String hash
+    std::optional<juce::String> hash
 ) {
+    if (title.isEmpty() || artists.isEmpty()) return std::nullopt;
 
     try {
         struct AlbumIdAndTitle {
@@ -51,7 +53,7 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
             std::string title;
         };
         SQLite::Statement searchTitle{
-            dbManage->readDb(),
+            dbManage.readDb(),
             "SELECT albumId , title FROM albums WHERE title = :title"
         };
         std::vector<AlbumIdAndTitle> titles;
@@ -66,17 +68,21 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
             int64_t albumId;
             std::string hash;
         };
-        SQLite::Statement searchHash{
-            dbManage->readDb(),
-            "SELECT albumId , hash FROM albums WHERE hash = :hash"
-        };
-        searchHash.bind(":hash", hash.toStdString());
         std::vector<AlbumIdAndHash> hashs;
-        while (searchHash.executeStep()) {
-            hashs.push_back(
-                {searchHash.getColumn("albumId").getInt64(),
-                 searchHash.getColumn("hash").getString()}
-            );
+        if (hash.has_value()) {
+
+            SQLite::Statement searchHash{
+                dbManage.readDb(),
+                "SELECT albumId , hash FROM albums WHERE hash = :hash"
+            };
+            DbUtils::bindOptValue(searchHash, ":hash", hash);
+
+            while (searchHash.executeStep()) {
+                hashs.push_back(
+                    {searchHash.getColumn("albumId").getInt64(),
+                     searchHash.getColumn("hash").getString()}
+                );
+            }
         }
         struct IdAndScore {
             int64_t albumId;
@@ -112,7 +118,7 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
         selectArtistsStr += selectArtistsIds.joinIntoString(",").toStdString();
         selectArtistsStr += ")";
 
-        SQLite::Statement selectArtistsSql{dbManage->readDb(), selectArtistsStr};
+        SQLite::Statement selectArtistsSql{dbManage.readDb(), selectArtistsStr};
 
         // 遍历查询结果，计算艺术家相似度，并更新最终得分
         double bestScore = -1.0;
@@ -148,6 +154,7 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
         }
 
         // 6. 返回最佳匹配的 albumId
+        if (bestScore < 0.5) return std::nullopt;
         if (bestAlbumId >= 0) return bestAlbumId;
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->debug("AlbumsManage::checkAlbumExist output db error:{}", e.what());
@@ -156,22 +163,26 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
     return std::nullopt;
 }
 std::optional<int64_t> AlbumsManage::insertAlbum(
-    CenterDbManage* dbManage,
     juce::String title,
     juce::StringArray artists,
-    juce::String hash
+    std::optional<juce::String> hash
 ) {
-    auto result = dbManage->write([&](SQLite::Database& db) -> std::optional<int64_t> {
+    if (title.isEmpty() || artists.isEmpty()) return std::nullopt;
+    auto result = dbManage.write([&](SQLite::Database& db) -> std::optional<int64_t> {
         try {
             SQLite::Statement insert{
                 db,
-                "INSERT INTO albums (title,albumArtists,hash) VALUES "
-                "(:title,:albumArtists,:hash)"
+                fmt::format(
+                    "INSERT INTO albums (title,albumArtists{}) VALUES "
+                    "(:title,:albumArtists{})",
+                    hash.has_value() ? ",hash" : "",
+                    hash.has_value() ? ",:hash" : ""
+                )
 
             };
             insert.bind(":title", title.toStdString());
             insert.bind(":albumArtists", juce::JSON::toString(artists).toStdString());
-            insert.bind(":hash", hash.toStdString());
+            DbUtils::bindOptValue(insert, ":hash", hash);
             insert.exec();
             return db.getLastInsertRowid();
 
@@ -181,4 +192,22 @@ std::optional<int64_t> AlbumsManage::insertAlbum(
         }
     });
     return result;
+}
+std::optional<int64_t> AlbumsManage::getAlbumId(int64_t songId) {
+    try {
+        SQLite::Statement lookup{
+            dbManage.readDb(),
+            "SELECT albumId FROM songs WHERE songId = :songId"
+        };
+
+        lookup.bind(":songId", songId);
+        if (lookup.executeStep()) {
+            return lookup.getColumn("albumId").getInt64();
+        } else {
+            return std::nullopt;
+        }
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->error("AlbumManage::getAlbumId发生db error:{}", e.what());
+        return std::nullopt;
+    }
 }
