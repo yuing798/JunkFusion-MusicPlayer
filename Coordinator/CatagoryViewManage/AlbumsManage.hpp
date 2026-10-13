@@ -6,6 +6,7 @@
 #include <SQLiteCpp/Database.h>
 #include <cstdint>
 #include <optional>
+#include <vector>
 class AlbumsManage {
 private:
     CenterDbManage& dbManage;
@@ -27,4 +28,5 @@ public:
         std::optional<juce::String> hash
     );
     std::optional<int64_t> getAlbumId(int64_t songId);
+    std::vector<int64_t> getSongsList(int64_t albumId);
 }; // namespace AlbumsManage

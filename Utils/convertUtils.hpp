@@ -25,7 +25,8 @@ namespace ConvertUtils {
     std::vector<std::string> stringArrayToVector(const juce::StringArray& arr);
     template <typename T> juce::Array<juce::var> vectorToArrayVar(const std::vector<T>& vecs) {
         static_assert(
-            std::is_same_v<T, int> || std::is_same_v<T, double> || std::is_same_v<T, float>,
+            std::is_same_v<T, int> || std::is_same_v<T, double> || std::is_same_v<T, float> ||
+                std::is_same_v<T, int64_t>,
             "convertUtils::vectorToArrayVar传入类型错误"
         );
         juce::Array<juce::var> arr;

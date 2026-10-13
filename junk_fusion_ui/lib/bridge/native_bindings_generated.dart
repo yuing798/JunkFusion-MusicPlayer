@@ -60,6 +60,20 @@ class JunkFusionDLLBindings {
   late final _freeString = _freeStringPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief Get the All Album View object
+  ///
+  /// @return DLL_EXPORT const* 所有专辑视图的json字符串
+  ffi.Pointer<ffi.Char> getAllAlbumView() {
+    return _getAllAlbumView();
+  }
+
+  late final _getAllAlbumViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllAlbumView',
+      );
+  late final _getAllAlbumView = _getAllAlbumViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }
@@ -80,6 +94,21 @@ class JunkFusionDLLBindings {
         'getSongInfoBySongId',
       );
   late final _getSongInfoBySongId = _getSongInfoBySongIdPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  /// @brief Get the Songs List By Album Id object
+  ///
+  /// @param albumId
+  /// @return  const* json格式的songId数组
+  ffi.Pointer<ffi.Char> getSongsListByAlbumId(int albumId) {
+    return _getSongsListByAlbumId(albumId);
+  }
+
+  late final _getSongsListByAlbumIdPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getSongsListByAlbumId',
+      );
+  late final _getSongsListByAlbumId = _getSongsListByAlbumIdPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {

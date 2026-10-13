@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/album_info.dart';
+import 'package:junk_fusion_ui/model/album_view_info.dart';
 import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/providers/album_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
@@ -18,19 +19,19 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // ════════════════════════════════════════════════════════════════
 // single_album_page.dart — 单张专辑的内容页
 //
-// 由 AlbumViewPage 点卡片进来（也可以单独用，只要丢一张 AlbumInfo 进来）。
+// 由 AlbumViewPage 点卡片进来（也可以单独用，只要丢一张 AlbumViewInfo 进来）。
 //
 // 布局（自上而下）：
-//   第 1 行（60px）：返回按钮 + 专辑封面 + 专辑名 +「艺术家 · 年份 · 共 N 首 · 总时长」
+//   第 1 行（60px）：返回按钮 + 专辑封面 + 专辑名 +「艺术家 · 共 N 首 · 总时长」
 //   第 2 行（80px）：常用操作按钮（播放全部 / 随机播放 / 添加到播放列表 /
 //                    喜欢全部 / 专辑信息）+ 右侧排序下拉框和升降序按钮
 //   第 3 部分：歌曲列表（复用「所有音乐」页面的 EachSong，左侧补一列音轨号）
 //
-// 列表底部在有歌正在播时留 90px，免得被 PlayBar 糊住。
+// 数据来源：AlbumProvider（后端 getSongsListByAlbumId 给出这张专辑有哪些歌），
+// 但列表里的 SongInfo 是用 songId 回 SongProvider 取的实时数据，不是快照 ——
+// 这样「我喜欢」「播放次数」这些状态一变，页面才会跟着刷新。
 //
-// 注意：列表里的歌是从 SongProvider 里实时筛出来的，不是直接用
-// AlbumInfo.songs 那份快照 —— 这样「我喜欢」「播放次数」这些状态一变，
-// 页面才会跟着刷新。
+// 列表底部在有歌正在播时留 90px，免得被 PlayBar 糊住。
 // ════════════════════════════════════════════════════════════════
 
 /// 单张专辑内部的排序方式
@@ -48,7 +49,7 @@ enum AlbumSongSortMode {
 
 class SingleAlbumPage extends StatefulWidget {
   /// 要展示的专辑
-  final AlbumInfo album;
+  final AlbumViewInfo album;
 
   /// 返回专辑列表的回调；为 null 时右上角不显示返回按钮
   final VoidCallback? onBack;
@@ -94,19 +95,18 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
   // 取数据 / 排序
   // ────────────────────────────────────────────────────────────
 
-  /// 从 SongProvider 里实时筛出这张专辑的歌，并按当前排序方式排好
+  /// 这张专辑里的歌，按当前排序方式排好
   List<SongInfo> _getAlbumSongs(BuildContext context) {
-    final songs = context.read<SongProvider>().songs;
-    final result = <SongInfo>[
-      for (final song in songs)
-        if (widget.album.contains(song)) song,
-    ];
+    // watch：专辑的歌单（到底有哪些 songId）变了要重画
+    final result = List<SongInfo>.of(
+      context.watch<AlbumProvider>().songsOfAlbum(widget.album.albumId),
+    );
 
     // 用 switch 表达式：枚举的每个分支都要写全，漏了编译不过
     int compare(SongInfo a, SongInfo b) => switch (_selectedSort) {
-      // 碟号 → 音轨号 → 歌名，和元数据自带的顺序一致
-      AlbumSongSortMode.byTrack => AlbumInfo.compareSongs(a, b),
-      AlbumSongSortMode.byTitle => a.title.compareTo(b.title),
+      // 音轨号 → 歌名，和元数据自带的顺序一致
+      AlbumSongSortMode.byTrack => AlbumProvider.compareByTrack(a, b),
+      AlbumSongSortMode.byTitle => AppCache.collator.compare(a.title, b.title),
       AlbumSongSortMode.byDuration => a.duration.compareTo(b.duration),
       AlbumSongSortMode.byPlayTimes => a.playNum.compareTo(b.playNum),
     };
@@ -115,13 +115,13 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
     return result;
   }
 
-  /// 标题下面那行小字：「艺术家 · 2020年 · 共 12 首 · 总时长 48:12」
+  /// 标题下面那行小字：「艺术家 · 共 12 首 · 总时长 48:12」
   String _buildMetaLine(List<SongInfo> songs) {
-    final parts = <String>[widget.album.albumArtist];
+    final parts = <String>[widget.album.albumArtistText];
 
-    final year = widget.album.year;
-    if (year != null) parts.add('$year年');
-
+    // TODO: 后端的专辑接口（Model/AlbumInfo.cpp 的 albumViewtoJson()）只吐
+    //       alBumId / title / albumArtists / hash，没有发行年份。
+    //       等 AlbumInfoMacro 加上 year 之后，这里补回「2020年」那一段。
     parts.add('共 ${songs.length} 首');
 
     if (songs.isNotEmpty) {
@@ -220,13 +220,9 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
     final album = widget.album;
 
     final buffer = StringBuffer()
-      ..writeln('专辑名：${album.name}')
-      ..writeln('专辑艺术家：${album.albumArtist}');
-
-    final year = album.year;
-    if (year != null) buffer.writeln('年份：$year年');
-
-    buffer.writeln('歌曲数量：${songs.length} 首');
+      ..writeln('专辑名：${album.title}')
+      ..writeln('专辑艺术家：${album.albumArtistText}')
+      ..writeln('歌曲数量：${songs.length} 首');
 
     if (songs.isNotEmpty) {
       final totalDuration = songs.fold<double>(
@@ -236,8 +232,10 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
       buffer.writeln('总时长：${UtilFunction.formatDuration(totalDuration)}');
     }
 
-    // FIXME: 后端还没有专辑维度的接口，上面这些信息全是前端从歌曲元数据里拼的，
-    //        所以像专辑简介、唱片公司、专辑封面路径这些字段暂时没得显示。
+    // TODO: 后端专辑接口目前只有 alBumId / title / albumArtists / hash 四个字段，
+    //       所以专辑简介、发行年份、唱片公司、封面路径这些没得显示。
+    //       想放进这个弹窗的话，需要在 Model/AlbumInfo.cpp 的 albumViewtoJson()
+    //       和 Macro/AlbumInfoMacro 里补上对应字段。
     DialogUtil.showInfoDialog(buffer.toString());
   }
 
@@ -258,7 +256,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
   Widget build(BuildContext context) {
     final theme = context.watch<AppTheme>();
 
-    // watch：歌曲元数据变了（比如切换「我喜欢」）列表要跟着重画
+    // watch：切换「我喜欢」之类的歌曲状态变了，列表要跟着重画
     context.watch<SongProvider>();
     final albumSongs = _getAlbumSongs(context);
 
@@ -287,7 +285,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
               SizedBox(
                 width: 50,
                 height: 50,
-                child: AlbumCoverImage(hash: widget.album.coverHash),
+                child: AlbumCoverImage(hash: widget.album.hash),
               ),
 
               const SizedBox(width: 10),
@@ -299,9 +297,9 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Tooltip(
-                      message: widget.album.name,
+                      message: widget.album.title,
                       child: Text(
-                        widget.album.name,
+                        widget.album.title,
                         style: theme.bigTextStyle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -436,8 +434,11 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                           key: ValueKey(song.songId),
                           children: [
                             // ── 音轨号 ──
-                            // FIXME: 多碟专辑现在是「按碟号→音轨号」排完一条龙显示，
-                            //        音轨号会在碟与碟之间重复，还没有插「碟 x」分隔行。
+                            // FIXME: songs 表和 SongInfo 里都没有碟号字段，
+                            //        多碟专辑只能按音轨号排，音轨号会在碟与碟之间
+                            //        重复，也插不了「碟 x」分隔行。等后端把
+                            //        discNumber 补进 SongInfoMacro / SongInfo，
+                            //        排序和这列显示再一起改。
                             SizedBox(
                               width: 36,
                               child: Center(
@@ -532,16 +533,14 @@ class _AlbumActionButton extends StatelessWidget {
 // ════════════════════════════════════════════════════════════════
 // AlbumCoverImage — 专辑封面
 //
-// 专辑封面目前没有独立缓存，先借用专辑里第一首歌的封面，路径和
-// EachSong / PlayBar 里的歌曲封面保持一致：
+// 后端 albums 表里的 hash 就是这张专辑的封面哈希（Model/AlbumInfo.cpp 的
+// albumViewtoJson() 吐出来的那个 hash），封面文件跟歌曲封面共用一份缓存：
 //   ${AppCache.cacheDirString}/songImage/<hash>/original.jpg
-//
-// TODO: 等后端把专辑封面单独缓存成
-//       ${AppCache.cacheDirString}/albumImage/<albumId>/original.jpg
-//       之后，这里改成读专辑封面（并且删掉 hash 参数）。
+// 所以不需要单独的专辑封面目录；hash 为空（后端存的是 ""，比如专辑里的歌
+// 都没有封面）时退回默认图。
 // ════════════════════════════════════════════════════════════════
 class AlbumCoverImage extends StatelessWidget {
-  /// 封面哈希（来自 SongInfo.hash）
+  /// 封面哈希（来自 AlbumViewInfo.hash）
   final String? hash;
 
   const AlbumCoverImage({super.key, required this.hash});

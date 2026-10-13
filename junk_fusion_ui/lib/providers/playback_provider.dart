@@ -55,6 +55,15 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setPlayListBySongIdList(List<int> songIdList) {
+    //Set 是无序、不重复的元素集合,会去重
+    final songIdSet = songIdList.toSet();
+    List<SongInfo> list = songProvider.songs
+        .where((each) => songIdSet.contains(each.songId))
+        .toList();
+    setPlayList(list);
+  }
+
   Future<void> setNewSong(int songId) async {
     if (songId == _currentSong?.songId) return;
     _currentSong = songProvider.getSongInfo(songId);

@@ -21,6 +21,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart'; // 根组件
+import 'providers/album_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
 
@@ -72,11 +73,13 @@ void main() async {
   AppCache.appDocDir = (await getApplicationDocumentsDirectory()).path;
 
   final songProvider = SongProvider();
+  final albumProvider = AlbumProvider(songProvider: songProvider);
   final playbackProvider = PlaybackProvider(songProvider: songProvider);
 
   runApp(
     JunkFusionApp(
       songProvider: songProvider,
+      albumProvider: albumProvider,
       playbackProvider: playbackProvider,
     ),
   ); //runApp不是阻塞式的，所以下面不能放析构逻辑
@@ -84,10 +87,12 @@ void main() async {
 
 class JunkFusionApp extends StatefulWidget {
   final SongProvider songProvider;
+  final AlbumProvider albumProvider;
   final PlaybackProvider playbackProvider;
   const JunkFusionApp({
     super.key,
     required this.songProvider,
+    required this.albumProvider,
     required this.playbackProvider,
   });
 
@@ -123,6 +128,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
   @override
   void dispose() {
     //dispose的执行时机不可靠，必须使用onWindowClose()来监听整个应用的关闭
+    FlutterAlone.instance.dispose();
     trayManager.removeListener(this);
     windowManager.removeListener(this);
     _saveWindowState();
@@ -261,6 +267,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
       //数据层，没画布
       providers: [
         ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
+        ChangeNotifierProvider<AlbumProvider>.value(value: widget.albumProvider),
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),

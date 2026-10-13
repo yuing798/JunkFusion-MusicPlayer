@@ -23,7 +23,7 @@ inline const char* createSongsTableSQL = R"(
         playNum       INTEGER DEFAULT 0,
         hash TEXT,
         timeDomainSpec BLOB,
-        albumId INTEGER
+        albumId INTEGER,
         FOREIGN KEY (albumId) REFERENCES albums(albumId)
     )
 )";

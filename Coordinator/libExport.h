@@ -48,7 +48,20 @@ extern "C" {
     DLL_EXPORT const char* getSongInfoBySongId(long long songId);
     DLL_EXPORT void requestOnPlayStateSync(IntFunc cb);
 
+    /**
+     * @brief Get the All Album View object
+     *
+     * @return DLL_EXPORT const* 所有专辑视图的json字符串
+     */
     DLL_EXPORT const char* getAllAlbumView();
+
+    /**
+     * @brief Get the Songs List By Album Id object
+     *
+     * @param albumId
+     * @return  const* json格式的songId数组
+     */
+    DLL_EXPORT const char* getSongsListByAlbumId(long long albumId);
 
 #ifdef __cplusplus
 }

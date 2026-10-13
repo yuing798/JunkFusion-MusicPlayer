@@ -22,7 +22,7 @@
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
-        // Utils::writeEmergencyLog("准备初始化dll单例");
+        OtherUtils::writeEmergencyLog("准备初始化dll单例");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
     int toggleMyLike(long long songId) {
@@ -55,16 +55,16 @@ extern "C" {
                 auto result = dllManager::getInstance().insertSong(path);
                 if (std::holds_alternative<std::string>(result)) {
                     auto errorMsg = std::get<std::string>(result);
-                    juce::var obj{new juce::DynamicObject()};
-                    obj.getDynamicObject()->setProperty(
+                    juce::var errorObj{new juce::DynamicObject()};
+                    errorObj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileName,
                         path.getFileName()
                     );
-                    obj.getDynamicObject()->setProperty(
+                    errorObj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileReason,
                         juce::String{errorMsg}
                     );
-                    errorFiles.add(obj);
+                    errorFiles.add(errorObj);
                 } else if (std::holds_alternative<SongInfo>(result)) {
                     auto songInfo = std::get<SongInfo>(result);
                     songInfos.add(songInfo.toJson());
@@ -179,4 +179,19 @@ extern "C" {
         return ConvertUtils::object2Uint8t(info.toJson());
     }
     void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
+    const char* getAllAlbumView() {
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(
+            CoordinatorMacro::albumsList,
+            dllManager::getInstance().getDbContext()->albumsManage.getAllAlbumsView()
+        );
+        return ConvertUtils::object2Uint8t(obj);
+    }
+    const char* getSongsListByAlbumId(long long albumId) {
+        auto albums = dllManager::getInstance().getDbContext()->albumsManage.getSongsList(albumId);
+        auto albumsNew = ConvertUtils::vectorToArrayVar(albums);
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(CoordinatorMacro::songIdList, albumsNew);
+        return ConvertUtils::object2Uint8t(obj);
+    }
 }

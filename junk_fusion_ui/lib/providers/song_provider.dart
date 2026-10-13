@@ -21,6 +21,12 @@ class SongProvider extends ChangeNotifier {
   List<SongInfo> get songs => _songs;
   int get songCount => _songs.length;
 
+  // 歌曲数据的版本号：只有「歌曲集合 / 元数据真的变了」才 +1
+  // （导入新歌、后端回传了新的元数据）。专辑这种按歌曲聚合出来的视图靠它
+  // 判断需不需要重新向后端要数据；切换「我喜欢」不算，它不改分组结果。
+  int _revision = 0;
+  int get revision => _revision;
+
   // 按 ID 查找歌曲
   // 找不到时返回 null，避免调用方因 .first 抛 "Bad state: No element"
   SongInfo? getSongInfo(int songId) {
@@ -43,11 +49,13 @@ class SongProvider extends ChangeNotifier {
       // print(song);
       _songs.add(SongInfo.fromJson(song as Map<String, dynamic>));
     }
+    _revision++;
     notifyListeners();
   }
 
   void addNewSong(List<SongInfo> songsList) {
     _songs.addAll(songsList);
+    _revision++;
     notifyListeners();
   }
 
@@ -122,6 +130,7 @@ class SongProvider extends ChangeNotifier {
     if (updated == old) return;
 
     _songs[index] = updated;
+    _revision++; // 专辑名/艺术家这些标签可能被改过，聚合视图要重新拉
     notifyListeners();
   }
 }

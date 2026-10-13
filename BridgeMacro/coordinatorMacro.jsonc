@@ -7,5 +7,6 @@
   "songId":"",
   "songsList":"songsList",//歌曲列表
   "timeDomainSpecs":"",//时域图数组
-  "albumsList":""
+  "albumsList":"",
+  "songIdList":""
 }

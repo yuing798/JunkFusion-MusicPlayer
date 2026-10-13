@@ -211,3 +211,12 @@ std::optional<int64_t> AlbumsManage::getAlbumId(int64_t songId) {
         return std::nullopt;
     }
 }
+std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
+    SQLite::Statement sql{dbManage.readDb(), "SELECT songId FROM songs WHERE albumId = :albumId"};
+    sql.bind(":albumId", albumId);
+    std::vector<int64_t> songsList;
+    while (sql.executeStep()) {
+        songsList.push_back(sql.getColumn("songId").getInt64());
+    }
+    return songsList;
+}
