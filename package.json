@@ -20,7 +20,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "generate-macro-file":"node DevScripts/batchGenerateMacroFile.js",
-    "build-ffigen-dart":"cd junk_fusion_ui && dart run ffigen --config ffigen.yaml",
+    "ffigen":"cd junk_fusion_ui && dart run ffigen --config ffigen.yaml",
     "build-flutter-win":"cd junk_fusion_ui && flutter run -d windows"
   },
   "dependencies": {

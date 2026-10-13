@@ -27,6 +27,10 @@ class JunkFusionDLLBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
   late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
 
+  /// @brief dll初始化
+  ///
+  /// @param cacheDirId 缓存目录
+  /// @param exeDirPtr exe文件的目录
   void dllInit(
     ffi.Pointer<ffi.Char> cacheDirId,
     ffi.Pointer<ffi.Char> exeDirPtr,
@@ -216,6 +220,10 @@ class JunkFusionDLLBindings {
   late final _someImport = _someImportPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief 翻转我喜欢按钮
+  ///
+  /// @param songId
+  /// @return int 成功或失败
   int toggleMyLike(int songId) {
     return _toggleMyLike(songId);
   }

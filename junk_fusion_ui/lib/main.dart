@@ -1,19 +1,20 @@
 import 'dart:async';
 import 'dart:ffi' as dart_ffi;
+import 'dart:io';
 
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
+import 'package:flutter_alone/flutter_alone.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/utils/alone_lock.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 
-// provider 包：状态管理
-// 需要在 pubspec.yaml 中添加: provider: ^6.1.2
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -25,6 +26,13 @@ import 'providers/playback_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); //确保flutter绑定初始化
+
+  if (flutterAloneConfig != null) {
+    if (!await FlutterAlone.instance.checkAndRun(config: flutterAloneConfig!)) {
+      exit(0);
+    } // Another instance is already running
+  }
+
   await windowManager.ensureInitialized();
 
   // 【必加】告诉底层：点关闭按钮时，不要杀进程，交给我(onWindowClose)来处理！

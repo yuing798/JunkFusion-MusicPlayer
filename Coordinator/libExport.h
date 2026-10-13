@@ -16,8 +16,20 @@ typedef void (*IntFunc)(int);
 extern "C" {
 #endif
 
-    DLL_EXPORT void dllInit(const char* cacheDirId,
-                            const char* exeDirPtr); // dll初始化
+    /**
+     * @brief dll初始化
+     *
+     * @param cacheDirId 缓存目录
+     * @param exeDirPtr exe文件的目录
+     */
+    DLL_EXPORT void dllInit(const char* cacheDirId, const char* exeDirPtr);
+
+    /**
+     * @brief 翻转我喜欢按钮
+     *
+     * @param songId
+     * @return int 成功或失败
+     */
     DLL_EXPORT int toggleMyLike(long long songId);
     DLL_EXPORT void saveComment(long long songId, const char* commentText);
     DLL_EXPORT void freeString(char* str);
