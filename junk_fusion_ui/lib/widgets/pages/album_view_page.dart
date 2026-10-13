@@ -149,7 +149,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
           const SizedBox(height: 15),
           Text('还没有任何专辑', style: theme.midTextStyle),
           const SizedBox(height: 5),
-          Text('在「所有音乐」里导入歌曲之后，这里会自动按专辑归类', style: theme.littleTextStyle),
+          Text('请现在所有歌曲页中进行导入，这里会自动按专辑归类', style: theme.littleTextStyle),
         ],
       ),
     );

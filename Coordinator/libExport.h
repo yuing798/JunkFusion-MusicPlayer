@@ -48,6 +48,8 @@ extern "C" {
     DLL_EXPORT const char* getSongInfoBySongId(long long songId);
     DLL_EXPORT void requestOnPlayStateSync(IntFunc cb);
 
+    DLL_EXPORT const char* getAllAlbumView();
+
 #ifdef __cplusplus
 }
 #endif

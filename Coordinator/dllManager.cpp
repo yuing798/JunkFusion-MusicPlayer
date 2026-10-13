@@ -145,7 +145,6 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
             try {
 
                 mDbContext->dbManage.write([&](SQLite::Database& db) {
-                    SQLite::Transaction t{db};
                     SQLite::Statement sql1{
                         db,
                         "UPDATE songs SET title = "
@@ -188,7 +187,6 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
                         DbUtils::bindOptValue(sql2, ":albumId", albumId);
                         sql2.exec();
                     }
-                    t.commit();
                 });
             } catch (SQLite::Exception& e) {
                 spdlog::get(LogDllID)->error("dllManager::insertSong发生数据库错误:{}", e.what());
