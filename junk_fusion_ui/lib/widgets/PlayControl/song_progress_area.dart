@@ -171,7 +171,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                             Positioned.fill(
                               child: CustomPaint(
                                 painter: SpectrumPainter(
-                                  data: playback.timeDomainSpec,
+                                  data: playback.currentSong!.timeDomainSpec,
                                   waveColor: theme.colorShadow,
                                 ),
                               ),

@@ -24,13 +24,7 @@ extern "C" {
      */
     DLL_EXPORT void dllInit(const char* cacheDirId, const char* exeDirPtr);
 
-    /**
-     * @brief 翻转我喜欢按钮
-     *
-     * @param songId
-     * @return int 成功或失败
-     */
-    DLL_EXPORT int toggleMyLike(long long songId);
+    DLL_EXPORT void toggleMyLike(long long songId);
     DLL_EXPORT void saveComment(long long songId, const char* commentText);
     DLL_EXPORT void freeString(char* str);
     DLL_EXPORT void someImport(const char*);
@@ -39,7 +33,6 @@ extern "C" {
     DLL_EXPORT void play(long long songId, double targetPTS);
     DLL_EXPORT void pausePlay(); // 暂停播放
     DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
-    DLL_EXPORT const char* getTimeDomainSpecBySongId(long long songId);
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
     DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb);     // 请求播放下一首或上一首歌曲
     DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调

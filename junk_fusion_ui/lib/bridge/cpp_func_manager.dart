@@ -5,7 +5,7 @@ import 'package:ffi/ffi.dart';
 import 'package:junk_fusion_ui/Macro/SongInfoMacro.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
@@ -80,9 +80,11 @@ class CppCallbackManager {
       final dartString = UtilFunction.cPtr2String(ptr);
       Map<String, dynamic> obj = jsonDecode(dartString);
       final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
-      List<SongInfo> songsList = [];
+      List<SongBasicInfo> songsList = [];
       for (int i = 0; i < songsRaw.length; i++) {
-        songsList.add(SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>));
+        songsList.add(
+          SongBasicInfo.fromJson(songsRaw[i] as Map<String, dynamic>),
+        );
       }
       songProvider.addNewSong(songsList);
 

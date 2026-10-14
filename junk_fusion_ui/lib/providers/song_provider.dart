@@ -7,7 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
@@ -15,10 +15,11 @@ import 'package:junk_fusion_ui/widgets/popup_window.dart';
 // ════════════════════════════════════════════════════════════════
 // song_provider.dart — 歌曲列表状态管理
 // ════════════════════════════════════════════════════════════════
+//这里只存储歌曲的基本信息，全部信息开新歌的时候再去后端拿
 class SongProvider extends ChangeNotifier {
-  List<SongInfo> _songs = [];
+  List<SongBasicInfo> _songs = [];
 
-  List<SongInfo> get songs => _songs;
+  List<SongBasicInfo> get songs => _songs;
   int get songCount => _songs.length;
 
   // 歌曲数据的版本号：只有「歌曲集合 / 元数据真的变了」才 +1
@@ -26,16 +27,6 @@ class SongProvider extends ChangeNotifier {
   // 判断需不需要重新向后端要数据；切换「我喜欢」不算，它不改分组结果。
   int _revision = 0;
   int get revision => _revision;
-
-  // 按 ID 查找歌曲
-  // 找不到时返回 null，避免调用方因 .first 抛 "Bad state: No element"
-  SongInfo? getSongInfo(int songId) {
-    return _songs.where((s) => s.songId == songId).firstOrNull;
-    // print(
-    //   '[SongProvider.getSongInfo] 未找到 songId=$songId，当前 _songs 数量=${_songs.length}',
-    // );
-    // return null;
-  }
 
   void getAllSongs() {
     print("准备后端getAllSongs");
@@ -47,45 +38,27 @@ class SongProvider extends ChangeNotifier {
     for (final song in songsRaw) {
       // print("歌曲信息为");
       // print(song);
-      _songs.add(SongInfo.fromJson(song as Map<String, dynamic>));
+      _songs.add(SongBasicInfo.fromJson(song as Map<String, dynamic>));
     }
     _revision++;
     notifyListeners();
   }
 
-  void addNewSong(List<SongInfo> songsList) {
+  void addNewSong(List<SongBasicInfo> songsList) {
     _songs.addAll(songsList);
     _revision++;
     notifyListeners();
   }
 
   Future<void> toggleMyLike(int songId) async {
-    // 找到目标歌曲在列表中的索引
-    final index = _songs.indexWhere((s) => s.songId == songId);
-    if (index == -1) return; // 没找到，直接返回
-
-    // 保存原始状态，用于失败时回滚
-    final originSong = _songs[index];
-
-    // --- 乐观更新：立即翻转 UI 状态 ---
-    _songs[index] = originSong.copyWith(isMyLike: !originSong.isMyLike);
-    notifyListeners(); // 通知 UI 刷新（UI 立刻看到变化）
-
-    bool result = bindings.toggleMyLike(songId) == 1;
-
-    if (!result) {
-      DialogUtil.showInfoDialog("切换我喜欢状态发生错误，请重试");
-      // --- 失败回滚：恢复原始状态 ---
-      _songs[index] = originSong;
-      notifyListeners(); // 通知 UI 刷新回原始状态
-    }
+    bindings.toggleMyLike(songId);
   }
 
   // 导入歌曲
   Future<void> songsImport() async {
     // 调用 pickFiles，传入配置参数
     FilePickerResult? result = await FilePicker.pickFiles(
-      dialogTitle: '请选择音视频文件',
+      dialogTitle: '请选择音频文件',
       initialDirectory: AppCache.appDocDir,
       allowMultiple: true,
       lockParentWindow: true,
@@ -109,19 +82,13 @@ class SongProvider extends ChangeNotifier {
     }
   }
 
-  void saveComment(int songId, String text) {
-    final cPtr = UtilFunction.string2cPtr(text);
-    bindings.saveComment(songId, cPtr);
-    ffi.malloc.free(cPtr);
-  }
-
   //更新某条歌曲
   void requestUpdateSongInfo({required int songId}) {
     final index = _songs.indexWhere((s) => s.songId == songId);
     if (index == -1) return;
 
     final old = _songs[index];
-    final updated = SongInfo.fromJson(
+    final updated = SongBasicInfo.fromJson(
       jsonDecode(
         UtilFunction.cPtr2String(bindings.getSongInfoBySongId(songId)),
       ),

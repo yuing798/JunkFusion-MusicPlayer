@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -25,7 +25,7 @@ import '../theme/app_theme.dart';
 // //StatefulWidget 拥有可以“随时间变化”的内部状态（State），而 StatelessWidget 的所有数据都是外部传入且永远不变的。
 class EachSong extends StatelessWidget {
   // 歌曲数据
-  final SongInfo song;
+  final SongBasicInfo song;
   final void Function()? onSongPlay;
 
   const EachSong({super.key, required this.song, this.onSongPlay});

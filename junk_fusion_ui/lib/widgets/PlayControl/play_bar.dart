@@ -13,7 +13,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
+import 'package:junk_fusion_ui/model/song_detail_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
@@ -40,7 +41,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final Animation<Offset> _slideAnimation;
   late final PlayList _playList;
 
-  SongInfo? _previousSong; //缓存上一次的歌曲，防止重复触发动画
+  SongDetailInfo? _previousSong; //缓存上一次的歌曲，防止重复触发动画
 
   double _height = 100;
 
@@ -112,8 +113,6 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
-                  // cacheHeight: 50,
-                  // cacheWidth: 50,
                 )
               : Image.asset(
                   "assets/image/JunkFusion.png",

@@ -25,8 +25,8 @@ extern "C" {
         OtherUtils::writeEmergencyLog("准备初始化dll单例");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
-    int toggleMyLike(long long songId) {
-        return dllManager::getInstance().getDbContext()->songsManage.reverseMyLike(songId);
+    void toggleMyLike(long long songId) {
+        dllManager::getInstance().getDbContext()->songsManage.reverseMyLike(songId);
     }
     void saveComment(long long songId, const char* commentText) {
         dllManager::getInstance().getDbContext()->songsManage.saveComment(commentText, songId);
@@ -67,7 +67,7 @@ extern "C" {
                     errorFiles.add(errorObj);
                 } else if (std::holds_alternative<SongInfo>(result)) {
                     auto songInfo = std::get<SongInfo>(result);
-                    songInfos.add(songInfo.toJson());
+                    songInfos.add(songInfo.toBasicJson());
                 }
             }
 
@@ -121,18 +121,6 @@ extern "C" {
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
-    const char* getTimeDomainSpecBySongId(long long songId) {
-        auto vec = dllManager::getInstance().getDbContext()->songsManage.getTimeDomainSpec(songId);
-        juce::Array<juce::var> arr;
-        for (auto& i : vec) {
-            arr.add(i);
-        }
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(CoordinatorMacro::timeDomainSpecs, juce::var(arr));
-        auto ptr = ConvertUtils::object2Uint8t(obj);
-
-        return ptr;
-    }
     void sendSliderValue(const char* identify, double value, int isOSC) {
         auto identifyParam = juce::String(identify);
         if (isOSC) {
@@ -164,9 +152,7 @@ extern "C" {
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
-    void registerOnUpdateSongInfo(Int64Func cb) {
-        dllManager::getInstance().getDbContext()->songsManage.OnUpdateSongInfo = cb;
-    }
+    void registerOnUpdateSongInfo(Int64Func cb) { dllManager::getInstance().onUpdateSongInfo = cb; }
     const char* getAllSongs() {
         auto songsList = dllManager::getInstance().getDbContext()->songsManage.getAllSongs();
         auto obj{new juce::DynamicObject()};
@@ -176,7 +162,7 @@ extern "C" {
     }
     const char* getSongInfoBySongId(long long songId) {
         auto info{dllManager::getInstance().getDbContext()->songsManage.getSongInfo(songId)};
-        return ConvertUtils::object2Uint8t(info.toJson());
+        return ConvertUtils::object2Uint8t(info.toDetailJson());
     }
     void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
     const char* getAllAlbumView() {

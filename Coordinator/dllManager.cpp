@@ -187,6 +187,7 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
                         DbUtils::bindOptValue(sql2, ":albumId", albumId);
                         sql2.exec();
                     }
+                    if (onUpdateSongInfo) onUpdateSongInfo(songInfo.songId);
                 });
             } catch (SQLite::Exception& e) {
                 spdlog::get(LogDllID)->error("dllManager::insertSong发生数据库错误:{}", e.what());

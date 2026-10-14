@@ -8,6 +8,7 @@ namespace SongInfoMacro{
     static constexpr const char* artists = "artists" ;
     static constexpr const char* album = "album" ;
     static constexpr const char* trackNumber = "trackNumber" ;
+    static constexpr const char* discNumber = "discNumber" ;
     static constexpr const char* bitRate = "bitRate" ;
     static constexpr const char* sampleRate = "sampleRate" ;
     static constexpr const char* channelLayout = "channelLayout" ;
@@ -18,4 +19,5 @@ namespace SongInfoMacro{
     static constexpr const char* isMyLike = "isMyLike" ;
     static constexpr const char* playNum = "playNum" ;
     static constexpr const char* hash = "hash" ;
+    static constexpr const char* timeDomainSpec = "timeDomainSpec" ;
 }

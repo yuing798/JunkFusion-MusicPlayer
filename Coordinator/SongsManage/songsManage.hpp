@@ -27,7 +27,6 @@ private:
     juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
-    SongInfo selectSingleSongInfo(SQLite::Statement& sql);
 
 public:
     explicit SongsManage(CenterDbManage& dbManage);
@@ -52,11 +51,9 @@ public:
     SongInfo getSongInfo(int64_t songId);
     juce::Array<juce::var> getAllSongs();
 
-    bool reverseMyLike(int64_t id);
+    void reverseMyLike(int64_t id);
     PlayInfo getPlayInfo(int64_t songId); // 根据ID获得路径和歌曲时长
     void saveComment(juce::String text, int64_t songId);
-    std::function<void(int64_t songId)> OnUpdateSongInfo;
-    juce::Array<double> getTimeDomainSpec(int64_t songId); // 根据ID号获取时域图
 
     void updatePlayCount(std::string path);
 };

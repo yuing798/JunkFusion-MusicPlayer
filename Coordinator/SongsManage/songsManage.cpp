@@ -111,45 +111,6 @@ std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* 
     }
 }
 
-SongInfo SongsManage::selectSingleSongInfo(SQLite::Statement& query) {
-    SongInfo info{};
-
-    info.songId = query.getColumn("songId").getInt64();
-    info.duration = query.getColumn("duration").getDouble();
-
-    // ── 标签 ──
-    info.title = query.getColumn("title").getString();
-    info.artists = DbUtils::getOptCol<juce::StringArray>(query, "artists");
-    info.album = DbUtils::getOptCol<juce::String>(query, "album");
-    info.trackNumber = DbUtils::getOptCol<int>(query, "trackNumber");
-
-    // ── FFmpeg 解码层 ──
-    info.bitRate = query.getColumn("bitRate").getInt64();
-    info.bitDepth = query.getColumn("bitDepth").getInt();
-    info.sampleRate = query.getColumn("sampleRate").getInt();
-
-    auto channelLayoutMask = query.getColumn("channelLayoutMask").getInt64();
-    if (channelLayoutMask != 0) {
-
-        AVChannelLayout layout;
-        av_channel_layout_from_mask(&layout, channelLayoutMask);
-        char layoutBuffer[64] = {0};
-        av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
-        info.channelLayout = juce::String(layoutBuffer);
-    }
-    info.codecName = DbUtils::getOptCol<juce::String>(query, "codecName");
-
-    // ── AI 分析 ──
-    info.bpm = DbUtils::getOptCol<int>(query, "bpm");
-    info.key = DbUtils::getOptCol<juce::String>(query, "key");
-
-    // ── 用户信息 ──
-    info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
-    info.playNum = query.getColumn("playNum").getInt();
-    info.hash = DbUtils::getOptCol<juce::String>(query, "hash");
-    return info;
-}
-
 SongInfo SongsManage::getSongInfo(juce::String path) {
     try {
         SQLite::Statement query{
@@ -157,10 +118,10 @@ SongInfo SongsManage::getSongInfo(juce::String path) {
             R"(
                 SELECT songId, 
                 duration, title, artists, album,  
-                trackNumber,
+                trackNumber,discNumber,
                 bitRate, bitDepth, sampleRate, channelLayoutMask,  codecName, 
                 bpm, key, 
-                isMyLike, playNum
+                isMyLike, playNum, timeDomainSpec
                 FROM songs WHERE filePath = :filePath
             )"
         };
@@ -168,7 +129,7 @@ SongInfo SongsManage::getSongInfo(juce::String path) {
 
         SongInfo info;
         if (query.executeStep()) {
-            info = selectSingleSongInfo(query);
+            info = SongInfo::getDetailInfoFromSql(query);
         } else {
             throw SQLite::Exception{"无法根据路径找到歌曲信息:路径:" + path.toStdString()};
         }
@@ -187,10 +148,10 @@ SongInfo SongsManage::getSongInfo(int64_t songId) {
             R"(
                 SELECT songId, 
                 duration, title, artists, album, 
-                trackNumber, 
+                trackNumber, discNumber,
                 bitRate, bitDepth, sampleRate, channelLayoutMask, codecName, 
                 bpm, key,  
-                isMyLike,  playNum
+                isMyLike,  playNum, timeDomainSpec
                 FROM songs WHERE songId = :songId
             )"
         };
@@ -198,7 +159,7 @@ SongInfo SongsManage::getSongInfo(int64_t songId) {
 
         SongInfo info;
         if (query.executeStep()) {
-            info = selectSingleSongInfo(query);
+            info = SongInfo::getDetailInfoFromSql(query);
         } else {
             throw SQLite::Exception{"无法根据id找到歌曲信息:路径:" + std::to_string(songId)};
         }
@@ -220,7 +181,7 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
         SQLite::Statement query(dbManage.readDb(), R"(
             SELECT songId, 
             duration, title, artists, album, 
-            trackNumber,
+            trackNumber, discNumber
             bitRate, bitDepth, sampleRate, channelLayoutMask, codecName, 
             bpm, key, 
             isMyLike, playNum
@@ -229,7 +190,7 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
 
         while (query.executeStep()) {
 
-            results.add(selectSingleSongInfo(query).toJson());
+            results.add(SongInfo::getBasicInfoFromSql(query).toBasicJson());
         }
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
@@ -373,6 +334,7 @@ SongsManage::insertSong(const juce::File& path) {
 
             // 数值型信息
             info.trackNumber = getTagInt(map, "TRACKNUMBER");
+            info.discNumber = getTagInt(map, "DISCNUMBER");
 
         } else {
             info.title = defaultTitle;
@@ -448,6 +410,7 @@ SongsManage::insertSong(const juce::File& path) {
 
         DbUtils::bindOptValue(stmt, ":album", info.album);
         DbUtils::bindOptValue(stmt, ":trackNumber", info.trackNumber);
+        DbUtils::bindOptValue(stmt, ":discNumber", info.discNumber);
         DbUtils::bindOptValue(stmt, ":codecName", info.codecName);
         DbUtils::bindOptValue(stmt, ":hash", info.hash);
     };
@@ -485,7 +448,7 @@ SongsManage::insertSong(const juce::File& path) {
                     "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
                     "lastModifiedTime = :lastModifiedTime, "
                     "duration = :duration, title = :title, artists = :artists, album = :album, "
-                    "trackNumber = :trackNumber,  "
+                    "trackNumber = :trackNumber,  discNumber = :discNumber"
                     "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
                     "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, "
                     "codecName = :codecName "
@@ -504,13 +467,13 @@ SongsManage::insertSong(const juce::File& path) {
                     db,
                     "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                     "duration, title, artists, album, "
-                    "trackNumber, bitRate, bitDepth, "
+                    "trackNumber, bitRate, bitDepth, discNumber"
                     "sampleRate, channelLayoutMask, codecName, hash) "
 
                     " VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, "
                     ":artists, "
                     ":album, "
-                    ":trackNumber, :bitRate, :bitDepth, "
+                    ":trackNumber, :discNumber,:bitRate, :bitDepth, "
                     ":sampleRate, :channelLayoutMask, :codecName, :hash) "
                 );
 
@@ -562,9 +525,9 @@ PlayInfo SongsManage::getPlayInfo(int64_t songId) {
     }
 }
 
-bool SongsManage::reverseMyLike(int64_t id) {
+void SongsManage::reverseMyLike(int64_t id) {
 
-    auto fut = dbManage.writeAsync([id](SQLite::Database& db) {
+    dbManage.write([id](SQLite::Database& db) {
         try {
             SQLite::Statement sql(
                 db,
@@ -572,18 +535,13 @@ bool SongsManage::reverseMyLike(int64_t id) {
             );
             sql.bind(":songId", id);
 
-            if (sql.exec() > 0) {
-                return true;
-            } else {
-                return false;
-            }
+            sql.exec();
         } catch (const SQLite::Exception& e) {
             auto logger{spdlog::get(LogDllID)};
             logger->error("[我喜欢]状态更新失败，请重试:{}", e.what());
-            return false;
         }
     });
-    return fut.get();
+    if (dllManager::getInstance().onUpdateSongInfo) dllManager::getInstance().onUpdateSongInfo(id);
 }
 
 void SongsManage::saveComment(juce::String text, int64_t songId) {
@@ -600,33 +558,6 @@ void SongsManage::saveComment(juce::String text, int64_t songId) {
     });
 }
 
-juce::Array<double> SongsManage::getTimeDomainSpec(int64_t songId) {
-    try {
-        SQLite::Statement sql(
-            dbManage.readDb(),
-            "SELECT timeDomainSpec FROM songs WHERE songId = :songId"
-        );
-        sql.bind(":songId", songId);
-        if (sql.executeStep()) {
-            const void* blob{sql.getColumn("timeDomainSpec").getBlob()};
-            int size{sql.getColumn("timeDomainSpec").getBytes()}; // 字节数
-            juce::Array<double> buffer;
-            if (128 != (size / sizeof(double))) {
-                throw SQLite::Exception("波形图发生损坏");
-            }
-            buffer.resize(size / sizeof(double));
-            std::memcpy(buffer.data(), blob, size);
-            return buffer;
-        } else {
-            return juce::Array<double>{}; // 查不到返回空数组即可，不用通知前端
-        }
-    } catch (SQLite::Exception& e) {
-        spdlog::get(LogDllID)
-            ->error("getTimeDomainSpecBySongId错误:id:{},原因:{}", songId, e.what());
-        return juce::Array<double>{};
-    }
-}
-
 void SongsManage::updatePlayCount(std::string path) {
     dbManage.write([&](SQLite::Database& db) {
         try {
@@ -639,7 +570,8 @@ void SongsManage::updatePlayCount(std::string path) {
             sql.bind(":filePath", path);
             if (sql.executeStep()) {
                 int64_t songId{sql.getColumn("songId").getInt64()};
-                if (OnUpdateSongInfo) OnUpdateSongInfo(songId);
+                if (dllManager::getInstance().onUpdateSongInfo)
+                    dllManager::getInstance().onUpdateSongInfo(songId);
             }
             return true;
         } catch (SQLite::Exception& e) {

@@ -111,17 +111,6 @@ class JunkFusionDLLBindings {
   late final _getSongsListByAlbumId = _getSongsListByAlbumIdPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
-    return _getTimeDomainSpecBySongId(songId);
-  }
-
-  late final _getTimeDomainSpecBySongIdPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getTimeDomainSpecBySongId',
-      );
-  late final _getTimeDomainSpecBySongId = _getTimeDomainSpecBySongIdPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
-
   void pausePlay() {
     return _pausePlay();
   }
@@ -249,19 +238,15 @@ class JunkFusionDLLBindings {
   late final _someImport = _someImportPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
-  /// @brief 翻转我喜欢按钮
-  ///
-  /// @param songId
-  /// @return int 成功或失败
-  int toggleMyLike(int songId) {
+  void toggleMyLike(int songId) {
     return _toggleMyLike(songId);
   }
 
   late final _toggleMyLikePtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.LongLong)>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
         'toggleMyLike',
       );
-  late final _toggleMyLike = _toggleMyLikePtr.asFunction<int Function(int)>();
+  late final _toggleMyLike = _toggleMyLikePtr.asFunction<void Function(int)>();
 }
 
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
@@ -93,11 +93,11 @@ class _AllMusicPageState extends State<AllMusicPage> {
   }
 
   // 获取排序后的歌曲列表
-  List<SongInfo> _getSortedSongs(BuildContext context) {
+  List<SongBasicInfo> _getSortedSongs(BuildContext context) {
     // `List.of(songs)` 创建副本（不修改原列表）
     //List<T>.of 是 Dart 中 List 类的一个工厂构造函数，
     //它的核心作用是：从一个现有的可迭代对象（Iterable）中，创建一个指定类型 T 的、新的独立列表（副本）。
-    final copy = List<SongInfo>.of(context.read<SongProvider>().songs);
+    final copy = List<SongBasicInfo>.of(context.read<SongProvider>().songs);
 
     switch (_selectedSort) {
       case SortMode.byAddTime:

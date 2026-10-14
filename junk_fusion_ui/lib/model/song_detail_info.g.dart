@@ -25,9 +25,11 @@ _SongDetailInfo _$SongDetailInfoFromJson(Map<String, dynamic> json) =>
       bpm: (json['bpm'] as num?)?.toInt(),
       key: json['key'] as String?,
       isMyLike: json['isMyLike'] as bool,
-      comment: json['comment'] as String?,
       playNum: (json['playNum'] as num).toInt(),
       hash: json['hash'] as String?,
+      timeDomainSpec: (json['timeDomainSpec'] as List<dynamic>)
+          .map((e) => (e as num).toDouble())
+          .toList(),
     );
 
 Map<String, dynamic> _$SongDetailInfoToJson(_SongDetailInfo instance) =>
@@ -47,7 +49,7 @@ Map<String, dynamic> _$SongDetailInfoToJson(_SongDetailInfo instance) =>
       'bpm': instance.bpm,
       'key': instance.key,
       'isMyLike': instance.isMyLike,
-      'comment': instance.comment,
       'playNum': instance.playNum,
       'hash': instance.hash,
+      'timeDomainSpec': instance.timeDomainSpec,
     };

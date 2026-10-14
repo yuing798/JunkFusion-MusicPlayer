@@ -7,7 +7,6 @@ abstract class CoordinatorMacro {
   static const String errorFileReason = "errorFileReason";
   static const String songId = "songId";
   static const String songsList = "songsList";
-  static const String timeDomainSpecs = "timeDomainSpecs";
   static const String albumsList = "albumsList";
   static const String songIdList = "songIdList";
 }

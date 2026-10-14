@@ -5,9 +5,11 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
+#include <cstring>
 #include <optional>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 namespace DbUtils {
 
@@ -24,8 +26,9 @@ namespace DbUtils {
             return result.getDouble();
         } else if constexpr (std::is_same_v<T, juce::StringArray>) {
             return Yvar{juce::JSON::fromString(result.getString())}.toStringArray();
+        } else {
+            return std::nullopt;
         }
-        return std::nullopt;
     }
 
     template <typename T>
@@ -50,5 +53,13 @@ namespace DbUtils {
                 stmt.bind(name);
             }
         }
+    }
+    template <typename T> std::vector<T> getBlob(SQLite::Statement& sql, const char* name) {
+        const void* blob = sql.getColumn(name).getBlob();
+        int size = sql.getColumn(name).getBytes();
+        std::vector<T> buffer;
+        buffer.resize(size / sizeof(T));
+        std::memcpy(buffer.data(), blob, size);
+        return buffer;
     }
 } // namespace DbUtils

@@ -11,6 +11,7 @@
 #include "processSchedule/AudioProcessCoordinator.h"
 #include "processSchedule/OscSender.hpp"
 #include <SQLiteCpp/Database.h>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -61,7 +62,8 @@ public:
     std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
     std::function<void(int)> onPlayNextOrPreviousSong;
     std::function<void(const char*)> onLightSongDataImportOver;
-    std::function<void(int)> onPlayStateSync; // 请求同步播放状态
+    std::function<void(int)> onPlayStateSync;      // 请求同步播放状态
+    std::function<void(int64_t)> onUpdateSongInfo; // 更新播放信息
 
     void sendMessage2AudioProcess(juce::var& obj);
     void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }

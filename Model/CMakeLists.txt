@@ -11,6 +11,8 @@ target_link_libraries(Models
     PUBLIC
 
         juce::juce_core
+        SQLiteCpp
+        ${FFMPEG_LIBRARIES}
 
     PRIVATE
 
@@ -21,4 +23,9 @@ target_link_libraries(Models
 target_include_directories(Models
     PRIVATE
         ${CMAKE_SOURCE_DIR}
+        ${FFMPEG_INCLUDE_DIRS}
+)
+target_link_directories(Models
+    PRIVATE
+        ${FFMPEG_LIBRARY_DIRS}
 )

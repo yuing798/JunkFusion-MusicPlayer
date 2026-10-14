@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/Macro/sliderParam.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
+import 'package:junk_fusion_ui/model/song_detail_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
@@ -18,8 +19,8 @@ class PlaybackProvider extends ChangeNotifier {
   final SongProvider songProvider;
   PlaybackProvider({required this.songProvider});
 
-  SongInfo? _currentSong;
-  SongInfo? get currentSong => _currentSong;
+  SongDetailInfo? _currentSong;
+  SongDetailInfo? get currentSong => _currentSong;
 
   // 是否正在播放（true = 播放中，false = 暂停）
   bool _isPlaying = false;
@@ -29,11 +30,8 @@ class PlaybackProvider extends ChangeNotifier {
   double _currentTimeStamp = 0;
   double get currentTimeStamp => _currentTimeStamp;
 
-  List<double> _timeDomainSpec = [];
-  List<double> get timeDomainSpec => _timeDomainSpec;
-
-  List<SongInfo> _playList = [];
-  List<SongInfo> get playList => _playList;
+  List<SongBasicInfo> _playList = [];
+  List<SongBasicInfo> get playList => _playList;
   int get playListCount => _playList.length;
 
   // 播放模式枚举
@@ -49,7 +47,7 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPlayList(List<SongInfo> playList) {
+  void setPlayList(List<SongBasicInfo> playList) {
     //设置播放列表
     _playList = playList;
     notifyListeners();
@@ -58,27 +56,26 @@ class PlaybackProvider extends ChangeNotifier {
   void setPlayListBySongIdList(List<int> songIdList) {
     //Set 是无序、不重复的元素集合,会去重
     final songIdSet = songIdList.toSet();
-    List<SongInfo> list = songProvider.songs
+    List<SongBasicInfo> list = songProvider.songs
         .where((each) => songIdSet.contains(each.songId))
         .toList();
     setPlayList(list);
   }
 
+  SongDetailInfo getSongInfo(int songId) {
+    final result = SongDetailInfo.fromJson(
+      jsonDecode(
+        UtilFunction.cPtr2String(bindings.getSongInfoBySongId(songId)),
+      ),
+    );
+    return result;
+  }
+
   Future<void> setNewSong(int songId) async {
     if (songId == _currentSong?.songId) return;
-    _currentSong = songProvider.getSongInfo(songId);
+    _currentSong = getSongInfo(songId);
     if (_currentSong == null) return;
     _isPlaying = true;
-    final ptr = bindings.getTimeDomainSpecBySongId(_currentSong!.songId);
-    final dartStr = UtilFunction.cPtr2String(ptr);
-    final obj = jsonDecode(dartStr) as Map<String, dynamic>;
-    final timeDomainSpec =
-        obj[CoordinatorMacro.timeDomainSpecs] as List<dynamic>;
-    _timeDomainSpec = timeDomainSpec
-        .map((e) => (e as num).toDouble())
-        .toList(); //歌曲时域图数据
-
-    // print(_timeDomainSpec);
 
     notifyListeners();
 
@@ -92,7 +89,7 @@ class PlaybackProvider extends ChangeNotifier {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
 
     if (songId != null) {
-      _currentSong = songProvider.getSongInfo(songId);
+      _currentSong = getSongInfo(songId);
     }
 
     _volume = AppCache.frontCacheRef.getDouble("masterVolume") ?? 0.5;
@@ -111,16 +108,6 @@ class PlaybackProvider extends ChangeNotifier {
           if (info != null) {
             _playList.add(info);
           }
-        }
-      }
-    }
-    {
-      String jsonString =
-          AppCache.frontCacheRef.getString("timeDomainSpec") ?? "";
-      if (jsonString != "") {
-        final tempList = jsonDecode(jsonString) as List<dynamic>;
-        for (final one in tempList) {
-          _timeDomainSpec.add((one as num).toDouble());
         }
       }
     }
@@ -206,10 +193,6 @@ class PlaybackProvider extends ChangeNotifier {
       }
       final jsonString = jsonEncode(playListSongIdList);
       await AppCache.frontCacheRef.setString("playListSongIdList", jsonString);
-    }
-    {
-      final jsonString = jsonEncode(_timeDomainSpec);
-      await AppCache.frontCacheRef.setString("timeDomainSpec", jsonString);
     }
     {
       await AppCache.frontCacheRef.setInt("cycleMode", _playMode);

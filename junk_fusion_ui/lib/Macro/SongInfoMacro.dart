@@ -8,6 +8,7 @@ abstract class SongInfoMacro {
   static const String artists = "artists";
   static const String album = "album";
   static const String trackNumber = "trackNumber";
+  static const String discNumber = "discNumber";
   static const String bitRate = "bitRate";
   static const String sampleRate = "sampleRate";
   static const String channelLayout = "channelLayout";
@@ -18,4 +19,5 @@ abstract class SongInfoMacro {
   static const String isMyLike = "isMyLike";
   static const String playNum = "playNum";
   static const String hash = "hash";
+  static const String timeDomainSpec = "timeDomainSpec";
 }

@@ -4,6 +4,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 struct SongInfo {
     int64_t songId{0};
@@ -17,6 +18,7 @@ struct SongInfo {
     std::optional<juce::StringArray> artists; // 艺术家名称
     std::optional<juce::String> album;        // 专辑
     std::optional<int> trackNumber;           // 轨道号（std::nullopt 表示不存在）
+    std::optional<int> discNumber;
     // 这些基础数据都是文件容器层面的
 
     // ── 2. FFmpeg 解码层信息 ──
@@ -37,7 +39,11 @@ struct SongInfo {
     int playNum{0};   // 已经播放了多少次
 
     std::optional<juce::String> hash;
+    std::vector<double> timeDomainSpec;
 
     // 将songInfo转化为var，才能推送给前端
-    juce::var toJson();
+    juce::var toDetailJson();
+    juce::var toBasicJson();
+    static SongInfo getBasicInfoFromSql(SQLite::Statement& sql);
+    static SongInfo getDetailInfoFromSql(SQLite::Statement& sql);
 };
