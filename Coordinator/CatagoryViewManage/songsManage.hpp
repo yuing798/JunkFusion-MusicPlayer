@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../CenterDbManage/CenterDbManage.hpp"
-#include "./WaveFormAnaly.hpp"
+#include "../SongsInsertHelper/WaveFormAnaly.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Model/SongInfo.hpp"
 #include "juce_core/juce_core.h"
@@ -28,8 +28,11 @@ private:
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
 
+    SongInfo getBasicInfoCol(SQLite::Statement& query);
+    SongInfo getCompleteInfoCol(SQLite::Statement& query);
+
 public:
-    explicit SongsManage(CenterDbManage& dbManage);
+    explicit SongsManage(CenterDbManage& dbManage) : dbManage(dbManage) {};
 
     // SongsManage::insertSong的返回结果
     struct InsertSongResult {
@@ -47,13 +50,14 @@ public:
      */
     std::variant<std::string, InsertSongResult> insertSong(const juce::File& path);
 
-    SongInfo getSongInfo(juce::String path);
-    SongInfo getSongInfo(int64_t songId);
-    juce::Array<juce::var> getAllSongs();
+    // 得到某一首歌的全部SongInfo信息
+    SongInfo getCompleteSongInfo(int64_t songId);
+
+    // 得到所有歌曲的基本信息用于UI视图
+    juce::Array<juce::var> getAllSongsBasicInfo();
 
     void reverseMyLike(int64_t id);
     PlayInfo getPlayInfo(int64_t songId); // 根据ID获得路径和歌曲时长
-    void saveComment(juce::String text, int64_t songId);
 
     void updatePlayCount(std::string path);
 };

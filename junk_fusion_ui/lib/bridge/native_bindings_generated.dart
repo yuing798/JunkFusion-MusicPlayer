@@ -85,30 +85,26 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
-  ffi.Pointer<ffi.Char> getSongInfoBySongId(int songId) {
-    return _getSongInfoBySongId(songId);
+  ffi.Pointer<ffi.Char> getCompleteAlbumInfo(int albumId) {
+    return _getCompleteAlbumInfo(albumId);
   }
 
-  late final _getSongInfoBySongIdPtr =
+  late final _getCompleteAlbumInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getSongInfoBySongId',
+        'getCompleteAlbumInfo',
       );
-  late final _getSongInfoBySongId = _getSongInfoBySongIdPtr
+  late final _getCompleteAlbumInfo = _getCompleteAlbumInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  /// @brief Get the Songs List By Album Id object
-  ///
-  /// @param albumId
-  /// @return  const* json格式的songId数组
-  ffi.Pointer<ffi.Char> getSongsListByAlbumId(int albumId) {
-    return _getSongsListByAlbumId(albumId);
+  ffi.Pointer<ffi.Char> getCompleteSongInfo(int songId) {
+    return _getCompleteSongInfo(songId);
   }
 
-  late final _getSongsListByAlbumIdPtr =
+  late final _getCompleteSongInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getSongsListByAlbumId',
+        'getCompleteSongInfo',
       );
-  late final _getSongsListByAlbumId = _getSongsListByAlbumIdPtr
+  late final _getCompleteSongInfo = _getCompleteSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   void pausePlay() {
@@ -196,19 +192,6 @@ class JunkFusionDLLBindings {
       );
   late final _requestOnPlayStateSync = _requestOnPlayStateSyncPtr
       .asFunction<void Function(IntFunc)>();
-
-  void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
-    return _saveComment(songId, commentText);
-  }
-
-  late final _saveCommentPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
-        >
-      >('saveComment');
-  late final _saveComment = _saveCommentPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
   void sendSliderValue(
     ffi.Pointer<ffi.Char> identify,

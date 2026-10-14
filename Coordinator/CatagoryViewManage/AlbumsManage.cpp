@@ -33,10 +33,19 @@ juce::Array<juce::var> AlbumsManage::getAllAlbumsView() {
             Yvar{juce::JSON::fromString(selectSql.getColumn("albumArtists").getString())}
                 .toStringArray();
         info.hash = selectSql.getColumn("hash").getString();
-        juce::var finalObj{info.albumViewtoJson()};
+        juce::var finalObj{info.toBasicJson()};
         albums.add(finalObj);
     }
     return albums;
+}
+
+AlbumInfo AlbumsManage::getBasicInfoCol(SQLite::Statement& sql) {
+    AlbumInfo info{};
+    info.albumId = sql.getColumn("albumId").getInt64();
+    info.hash = DbUtils::getOptCol<juce::String>(sql, "hash");
+    info.albumArtists = DbUtils::getOptCol<juce::StringArray>(sql, "albumArtists");
+    info.title = sql.getColumn("title").getString();
+    return info;
 }
 
 // 检查这张专辑是否存在并返回相应的albumId
@@ -212,11 +221,21 @@ std::optional<int64_t> AlbumsManage::getAlbumId(int64_t songId) {
     }
 }
 std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
-    SQLite::Statement sql{dbManage.readDb(), "SELECT songId FROM songs WHERE albumId = :albumId"};
+    SQLite::Statement sql{
+        dbManage.readDb(),
+        "SELECT songId FROM songs WHERE albumId = :albumId ORDER BY discNumber IS NULL, "
+        "discNumber,trackNumber IS NULL, trackNumber,songId "
+
+    };
     sql.bind(":albumId", albumId);
     std::vector<int64_t> songsList;
     while (sql.executeStep()) {
         songsList.push_back(sql.getColumn("songId").getInt64());
     }
     return songsList;
+}
+juce::var AlbumsManage::getCompleteInfo(int64_t albumId) {
+    AlbumInfo info{};
+    info.songsList = getSongsList(albumId);
+    return info.toCompleteJson();
 }

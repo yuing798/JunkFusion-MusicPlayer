@@ -4,8 +4,8 @@
 #include "../CatagoryViewManage/FileDirManage.hpp"
 #include "../CatagoryViewManage/PlayListManage.hpp"
 #include "Coordinator/CatagoryViewManage/AlbumsManage.hpp"
+#include "Coordinator/CatagoryViewManage/songsManage.hpp"
 #include "Coordinator/CenterDbManage/CenterDbManage.hpp"
-#include "Coordinator/SongsManage/songsManage.hpp"
 #include <string>
 
 struct DbContext {

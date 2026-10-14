@@ -66,4 +66,8 @@ class UtilFunction {
     // 中心点：局部坐标 (size.width/2, size.height/2) 转成全局坐标
     return box.localToGlobal(box.size.center(Offset.zero));
   }
+
+  static String buildArtistsText(List<String>? l) {
+    return l != null ? l.join(" / ") : "未知艺术家";
+  }
 }

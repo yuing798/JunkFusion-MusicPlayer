@@ -41,7 +41,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final Animation<Offset> _slideAnimation;
   late final PlayList _playList;
 
-  SongDetailInfo? _previousSong; //缓存上一次的歌曲，防止重复触发动画
+  SongBasicInfo? _previousSong; //缓存上一次的歌曲，防止重复触发动画
 
   double _height = 100;
 
@@ -88,16 +88,16 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
 
-    final shouldShow = playback.currentSong != null;
-    if (playback.currentSong != _previousSong) {
-      _previousSong = playback.currentSong;
+    final shouldShow = playback.curBasicInfo != null;
+    if (playback.curBasicInfo != _previousSong) {
+      _previousSong = playback.curBasicInfo;
       if (shouldShow) {
         _controller.forward(); //滑入
       } else {
         _controller.reverse(); //滑出
       }
     }
-    if (playback.currentSong == null) return const SizedBox.shrink();
+    if (playback.curBasicInfo == null) return const SizedBox.shrink();
 
     final theme = context.watch<AppTheme>();
 
@@ -105,10 +105,10 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     Widget buildLeftArea() {
       return Row(
         children: [
-          (playback.currentSong!.hash != null)
+          (playback.curBasicInfo!.hash != null)
               ? Image.file(
                   File(
-                    '${AppCache.cacheDirString}/songImage/${playback.currentSong!.hash}/original.jpg',
+                    '${AppCache.cacheDirString}/songImage/${playback.curBasicInfo!.hash}/original.jpg',
                   ),
                   width: 50,
                   height: 50,
@@ -131,15 +131,15 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                playback.currentSong!.title,
+                playback.curBasicInfo!.title,
                 style: theme.midTextStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                playback.currentSong!.artists == null
+                playback.curBasicInfo!.artists == null
                     ? "未知"
-                    : playback.currentSong!.artists!.join(" / "),
+                    : playback.curBasicInfo!.artists!.join(" / "),
                 style: theme.littleTextStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -151,11 +151,11 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
 
           // ── 喜欢按钮
           IconButton(
-            icon: (playback.currentSong!.isMyLike)
+            icon: (playback.curBasicInfo!.isMyLike)
                 ? Icon(TablerIcons.heartFilled, color: Colors.red)
                 : Icon(TablerIcons.heart),
             onPressed: () => context.read<SongProvider>().toggleMyLike(
-              playback.currentSong!.songId,
+              playback.curBasicInfo!.songId,
             ),
           ),
         ],

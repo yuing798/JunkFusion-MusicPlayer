@@ -42,8 +42,6 @@ struct SongInfo {
     std::vector<double> timeDomainSpec;
 
     // 将songInfo转化为var，才能推送给前端
-    juce::var toDetailJson();
+    juce::var toCompleteJson();
     juce::var toBasicJson();
-    static SongInfo getBasicInfoFromSql(SQLite::Statement& sql);
-    static SongInfo getDetailInfoFromSql(SQLite::Statement& sql);
 };

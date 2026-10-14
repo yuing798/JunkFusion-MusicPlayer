@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Coordinator/CenterDbManage/CenterDbManage.hpp"
+#include "Model/AlbumInfo.hpp"
 #include "Utils/constants.h"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
@@ -29,4 +30,6 @@ public:
     );
     std::optional<int64_t> getAlbumId(int64_t songId);
     std::vector<int64_t> getSongsList(int64_t albumId);
+    juce::var getCompleteInfo(int64_t albumId);
+    AlbumInfo getBasicInfoCol(SQLite::Statement& sql);
 }; // namespace AlbumsManage

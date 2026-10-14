@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-// SystemMouseCursors（悬浮手型光标）只在 services.dart 里导出，
-// material.dart 不带它
 import 'package:flutter/services.dart';
-import 'package:junk_fusion_ui/model/album_view_info.dart';
+import 'package:junk_fusion_ui/model/album_basic_info.dart';
 import 'package:junk_fusion_ui/providers/album_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
@@ -57,7 +55,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
   bool _isAscending = true;
 
   /// 当前打开的专辑；null = 显示专辑网格
-  AlbumViewInfo? _openedAlbum;
+  AlbumBasicInfo? _openedAlbum;
 
   @override
   void initState() {
@@ -71,15 +69,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
       orElse: () => AlbumSortMode.byTitle,
     );
     _isAscending = isAscending;
-
-    // 第一次进来时把专辑列表从后端拉一遍。
-    // 之后歌曲有变化（导入新歌 / 后端改完元数据），SongProvider 会通知
-    // AlbumProvider 自己重新拉，这里不用再管。
-    // notify: false —— initState 还在 build 阶段里，这时候广播会让 Provider
-    // 自己去 markNeedsBuild，debug 下直接报「called during build」；
-    // 本页的 build 紧接着就会跑，不需要那一次广播。
-    // read：只取实例不订阅（订阅留给下面的 build）
-    context.read<AlbumProvider>().ensureSynced(notify: false);
+    context.read<AlbumProvider>().getAllAlbums();
   }
 
   // 切换升降序
@@ -92,70 +82,57 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
   }
 
   /// 按当前排序方式排好（不动 AlbumProvider 里那份原列表）
-  List<AlbumViewInfo> _getSortedAlbums(List<AlbumViewInfo> source) {
+  List<AlbumBasicInfo> _getSortedAlbums(List<AlbumBasicInfo> source) {
     // 只比较「升序」的方向，降序的时候整体反过来
     // 这里用 switch 表达式：枚举的所有分支都必须写全，否则编译不过
-    int compare(AlbumViewInfo a, AlbumViewInfo b) => switch (_selectedSort) {
+    int compare(AlbumBasicInfo a, AlbumBasicInfo b) => switch (_selectedSort) {
       // 直接按字符串比较，中英文混排的顺序不一定和资源管理器一致
       AlbumSortMode.byTitle => AppCache.collator.compare(a.title, b.title),
       // 同一个艺术家下面再按专辑名排
       AlbumSortMode.byAlbumArtists => _compareArtist(a, b),
     };
 
-    final sorted = List<AlbumViewInfo>.of(source);
+    final sorted = List<AlbumBasicInfo>.of(source);
     sorted.sort((a, b) => _isAscending ? compare(a, b) : compare(b, a));
     return sorted;
   }
 
-  int _compareArtist(AlbumViewInfo a, AlbumViewInfo b) {
-    final result = AppCache.collator.compare(
-      a.albumArtistText,
-      b.albumArtistText,
-    );
+  int _compareArtist(AlbumBasicInfo a, AlbumBasicInfo b) {
+    int result = 0;
+    if (a.albumArtists != null && b.albumArtists != null) {
+      result = AppCache.collator.compare(
+        a.albumArtists!.join("/"),
+        b.albumArtists!.join("/"),
+      );
+    }
     return result == 0 ? AppCache.collator.compare(a.title, b.title) : result;
   }
 
   /// 播放整张专辑（卡片封面上的悬浮按钮）
-  void _playAlbum(AlbumViewInfo album) {
+  void _playAlbum(AlbumBasicInfo album) {
     final playback = context.read<PlaybackProvider>();
 
-    // 后端给的 songId 是数据库顺序，先排成专辑的自然顺序（音轨号 → 歌名）
-    final songs = context.read<AlbumProvider>().songsOfAlbum(album.albumId)
-      ..sort(AlbumProvider.compareByTrack);
+    final songs = context.read<AlbumProvider>().songsInAlbums;
 
     if (songs.isEmpty) {
       DialogUtil.showInfoDialog('「${album.title}」里还没有歌曲');
       return;
     }
 
-    // 先设置播放列表再切歌：setNewSong 内部会把当前播放列表缓存下来
-    playback.setPlayList(songs);
-
     final firstSongId = songs.first.songId;
-    if (playback.currentSong?.songId == firstSongId) {
-      // 已经停在这首歌上了：setNewSong 会直接 return，这里手动补一下播放状态
-      if (!playback.isPlaying) playback.togglePlayPause();
-    } else {
+    if (playback.playList != songs) {
+      // 先设置播放列表再切歌：setNewSong 内部会把当前播放列表缓存下来
+      playback.setPlayList(songs);
       playback.setNewSong(firstSongId);
     }
   }
 
   /// 打开某张专辑
-  void _openAlbum(AlbumViewInfo album) {
+  void _openAlbum(AlbumBasicInfo album) {
+    context.read<AlbumProvider>().setNewAlbum(album.albumId);
     setState(() {
       _openedAlbum = album;
     });
-  }
-
-  /// 在最新的专辑列表里按 albumId 找同一张专辑
-  ///
-  /// （专辑名/艺术家/封面可能在别的地方被改过，打开的那份快照会变旧；
-  /// 专辑没了的时候返回 null，调用方退回快照）
-  AlbumViewInfo? _findAlbumById(List<AlbumViewInfo> albums, int albumId) {
-    for (final album in albums) {
-      if (album.albumId == albumId) return album;
-    }
-    return null;
   }
 
   /// 没有专辑时的提示
@@ -168,10 +145,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
           const SizedBox(height: 15),
           Text('还没有任何专辑', style: theme.midTextStyle),
           const SizedBox(height: 5),
-          Text(
-            '请先在「所有音乐」页导入歌曲，导入后后端会自动按专辑归类',
-            style: theme.littleTextStyle,
-          ),
+          Text('请先在「所有音乐」页导入歌曲，导入后后端会自动按专辑归类', style: theme.littleTextStyle),
         ],
       ),
     );
@@ -183,10 +157,8 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     // 导入/删除歌曲、改标签之后，AlbumProvider 会重新拉专辑列表，
     // 这里的专辑网格和单张专辑页的头部都要跟着刷新
     final theme = context.watch<AppTheme>();
-    final allAlbums = context.watch<AlbumProvider>().albums;
-    final songCount = context.select<SongProvider, int>(
-      (provider) => provider.songCount,
-    );
+    final albumProvider = context.watch<AlbumProvider>();
+    final allAlbums = albumProvider.albums;
 
     final albums = _getSortedAlbums(allAlbums);
 
@@ -194,10 +166,6 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     final openedAlbum = _openedAlbum;
     if (openedAlbum != null) {
       return SingleAlbumPage(
-        // 用最新一次拉取的结果，让专辑名/艺术家/封面也跟着实时刷新
-        // （歌单本来就是实时的，两边不一致会很怪）；
-        // 专辑整个没了（歌全被删了）就退回打开时那份快照
-        album: _findAlbumById(albums, openedAlbum.albumId) ?? openedAlbum,
         onBack: () {
           setState(() {
             _openedAlbum = null;
@@ -207,7 +175,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     }
 
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.currentSong != null,
+      (provider) => provider.curBasicInfo != null,
     );
 
     return Column(
@@ -222,10 +190,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
               const SizedBox(width: 15),
               // 歌曲数直接用曲库总数：每首有专辑名 + 艺术家的歌都会落进某张专辑，
               // 没有专辑标签的歌不在这套分类里（后端也不会给它建专辑）
-              Text(
-                '共 ${albums.length} 张 · 共 $songCount 首',
-                style: theme.littleTextStyle,
-              ),
+              Text('共 ${albums.length} 张 ', style: theme.littleTextStyle),
             ],
           ),
         ),
@@ -331,7 +296,7 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
 //       widgets/PlayControl/more_play_info.dart 里的 showRootContextMenu。
 // ════════════════════════════════════════════════════════════════
 class _AlbumCard extends StatefulWidget {
-  final AlbumViewInfo album;
+  final AlbumBasicInfo album;
 
   /// 点卡片本体：打开这张专辑
   final VoidCallback onTap;
@@ -430,9 +395,13 @@ class _AlbumCardState extends State<_AlbumCard> {
 
               // ── 专辑艺术家（单行省略） ──
               Tooltip(
-                message: album.albumArtistText,
+                message: album.albumArtists != null
+                    ? album.albumArtists!.join(" / ")
+                    : "未知艺术家",
                 child: Text(
-                  album.albumArtistText,
+                  album.albumArtists != null
+                      ? album.albumArtists!.join(" / ")
+                      : "未知艺术家",
                   style: theme.littleTextStyle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

@@ -1,4 +1,5 @@
 #include "./songsManage.hpp"
+#include "../SongsInsertHelper/OnlineGetMatedata.hpp"
 #include "../dllManager.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Model/SongInfo.hpp"
@@ -6,7 +7,6 @@
 #include "Utils/constants.h"
 #include "Utils/dbUtils.hpp"
 #include "Utils/otherUtils.hpp"
-#include "WaveFormAnaly.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <SQLiteCpp/Database.h>
@@ -37,7 +37,6 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-SongsManage::SongsManage(CenterDbManage& dbManage) : dbManage(dbManage) {}
 juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
     if (!map.contains(key) || map[key].isEmpty()) {
         return juce::StringArray{};
@@ -111,47 +110,63 @@ std::optional<int> SongsManage::getTagInt(TagLib::PropertyMap& map, const char* 
     }
 }
 
-SongInfo SongsManage::getSongInfo(juce::String path) {
-    try {
-        SQLite::Statement query{
-            dbManage.readDb(),
-            R"(
-                SELECT songId, 
-                duration, title, artists, album,  
-                trackNumber,discNumber,
-                bitRate, bitDepth, sampleRate, channelLayoutMask,  codecName, 
-                bpm, key, 
-                isMyLike, playNum, timeDomainSpec
-                FROM songs WHERE filePath = :filePath
-            )"
-        };
-        query.bind(":filePath", path.toStdString());
+SongInfo SongsManage::getBasicInfoCol(SQLite::Statement& query) {
+    SongInfo info{};
 
-        SongInfo info;
-        if (query.executeStep()) {
-            info = SongInfo::getDetailInfoFromSql(query);
-        } else {
-            throw SQLite::Exception{"无法根据路径找到歌曲信息:路径:" + path.toStdString()};
-        }
-        return info;
+    info.songId = query.getColumn("songId").getInt64();
+    info.duration = query.getColumn("duration").getDouble();
 
-    } catch (SQLite::Exception& e) {
-        spdlog::get(LogDllID)->info("SongsManage::getSongInfo(juce::String path)错误:{}", e.what());
-        return {};
+    // ── 标签 ──
+    info.title = query.getColumn("title").getString();
+    info.artists = DbUtils::getOptCol<juce::StringArray>(query, "artists");
+    info.album = DbUtils::getOptCol<juce::String>(query, "album");
+    info.trackNumber = DbUtils::getOptCol<int>(query, "trackNumber");
+    info.discNumber = DbUtils::getOptCol<int>(query, "discNumber");
+
+    // ── 用户信息 ──
+    info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
+    info.playNum = query.getColumn("playNum").getInt();
+    info.hash = DbUtils::getOptCol<juce::String>(query, "hash");
+    return info;
+}
+SongInfo SongsManage::getCompleteInfoCol(SQLite::Statement& query) {
+    SongInfo info{getBasicInfoCol(query)};
+
+    // ── FFmpeg 解码层 ──
+    info.bitRate = query.getColumn("bitRate").getInt64();
+    info.bitDepth = query.getColumn("bitDepth").getInt();
+    info.sampleRate = query.getColumn("sampleRate").getInt();
+
+    auto channelLayoutMask = query.getColumn("channelLayoutMask").getInt64();
+    if (channelLayoutMask != 0) {
+
+        AVChannelLayout layout;
+        av_channel_layout_from_mask(&layout, channelLayoutMask);
+        char layoutBuffer[64] = {0};
+        av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
+        info.channelLayout = juce::String(layoutBuffer);
     }
+    info.codecName = DbUtils::getOptCol<juce::String>(query, "codecName");
+
+    // ── AI 分析 ──
+    info.bpm = DbUtils::getOptCol<int>(query, "bpm");
+    info.key = DbUtils::getOptCol<juce::String>(query, "key");
+
+    info.timeDomainSpec = DbUtils::getBlob<double>(query, "timeDomainSpec");
+    return info;
 }
 
-SongInfo SongsManage::getSongInfo(int64_t songId) {
+SongInfo SongsManage::getCompleteSongInfo(int64_t songId) {
     try {
         SQLite::Statement query{
             dbManage.readDb(),
             R"(
-                SELECT songId, 
-                duration, title, artists, album, 
-                trackNumber, discNumber,
-                bitRate, bitDepth, sampleRate, channelLayoutMask, codecName, 
-                bpm, key,  
-                isMyLike,  playNum, timeDomainSpec
+                SELECT songId,
+                duration, title, artists, album,
+                trackNumber,discNumber,
+                bitRate, bitDepth, sampleRate, channelLayoutMask,  codecName,
+                bpm, key, hash ,
+                isMyLike, playNum, timeDomainSpec 
                 FROM songs WHERE songId = :songId
             )"
         };
@@ -159,7 +174,7 @@ SongInfo SongsManage::getSongInfo(int64_t songId) {
 
         SongInfo info;
         if (query.executeStep()) {
-            info = SongInfo::getDetailInfoFromSql(query);
+            info = getCompleteInfoCol(query);
         } else {
             throw SQLite::Exception{"无法根据id找到歌曲信息:路径:" + std::to_string(songId)};
         }
@@ -167,13 +182,13 @@ SongInfo SongsManage::getSongInfo(int64_t songId) {
 
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->info(
-            "SongsManage::getSongInfo(int64_t songId)发生数据库错误:{}",
+            "SongsManage::getCompleteSongInfo(int64_t songId)发生数据库错误:{}",
             e.what()
         );
         return {};
     }
 }
-juce::Array<juce::var> SongsManage::getAllSongs() {
+juce::Array<juce::var> SongsManage::getAllSongsBasicInfo() {
     juce::Array<juce::var> results;
 
     try {
@@ -182,15 +197,13 @@ juce::Array<juce::var> SongsManage::getAllSongs() {
             SELECT songId, 
             duration, title, artists, album, 
             trackNumber, discNumber
-            bitRate, bitDepth, sampleRate, channelLayoutMask, codecName, 
-            bpm, key, 
-            isMyLike, playNum
+            isMyLike, playNum, hash
             FROM songs 
         )");
 
         while (query.executeStep()) {
 
-            results.add(SongInfo::getBasicInfoFromSql(query).toBasicJson());
+            results.add(getBasicInfoCol(query).toBasicJson());
         }
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
@@ -448,7 +461,7 @@ SongsManage::insertSong(const juce::File& path) {
                     "UPDATE songs SET filePath = :filePath, fileSize = :fileSize, "
                     "lastModifiedTime = :lastModifiedTime, "
                     "duration = :duration, title = :title, artists = :artists, album = :album, "
-                    "trackNumber = :trackNumber,  discNumber = :discNumber"
+                    "trackNumber = :trackNumber,  discNumber = :discNumber,"
                     "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
                     "sampleRate = :sampleRate, channelLayoutMask = :channelLayoutMask, "
                     "codecName = :codecName "
@@ -467,7 +480,7 @@ SongsManage::insertSong(const juce::File& path) {
                     db,
                     "INSERT INTO songs (filePath, fileSize, lastModifiedTime, "
                     "duration, title, artists, album, "
-                    "trackNumber, bitRate, bitDepth, discNumber"
+                    "trackNumber, discNumber,bitRate, bitDepth, "
                     "sampleRate, channelLayoutMask, codecName, hash) "
 
                     " VALUES (:filePath, :fileSize, :lastModifiedTime, :duration, :title, "
@@ -502,7 +515,7 @@ PlayInfo SongsManage::getPlayInfo(int64_t songId) {
         SQLite::Statement sql(
             dbManage.readDb(),
             R"(
-            SELECT filePath, duration, title, artists, hash
+            SELECT filePath, duration, title, artists 
             FROM songs WHERE songId = :songId)"
         );
         sql.bind(":songId", songId);
@@ -543,21 +556,6 @@ void SongsManage::reverseMyLike(int64_t id) {
     });
     if (dllManager::getInstance().onUpdateSongInfo) dllManager::getInstance().onUpdateSongInfo(id);
 }
-
-void SongsManage::saveComment(juce::String text, int64_t songId) {
-    dbManage.write([&](SQLite::Database& db) {
-        try {
-            SQLite::Statement sql(db, "UPDATE songs SET comment = :comment WHERE songId = :songId");
-            sql.bind(":comment", text.toStdString());
-            sql.bind(":songId", songId);
-            sql.exec();
-        } catch (const SQLite::Exception& e) {
-            auto logger{spdlog::get(LogDllID)};
-            logger->error("id号{}:评论更新失败:{}", songId, e.what());
-        }
-    });
-}
-
 void SongsManage::updatePlayCount(std::string path) {
     dbManage.write([&](SQLite::Database& db) {
         try {

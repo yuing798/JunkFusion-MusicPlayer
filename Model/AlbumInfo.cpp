@@ -1,11 +1,15 @@
 #include "./AlbumInfo.hpp"
 #include "Macro/AlbumInfoMacro.hpp"
 #include "Utils/convertUtils.hpp"
+#include "Utils/dbUtils.hpp"
 #include "juce_core/juce_core.h"
+#include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Exception.h>
+#include <SQLiteCpp/Statement.h>
 
-juce::var AlbumInfo::albumViewtoJson() {
+juce::var AlbumInfo::toBasicJson() {
     juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::alBumId, albumId);
+    obj.getDynamicObject()->setProperty(AlbumInfoMacro::albumId, albumId);
     obj.getDynamicObject()->setProperty(
         AlbumInfoMacro::albumArtists,
         ConvertUtils::stringArray2ArrayVar(albumArtists)
@@ -14,9 +18,9 @@ juce::var AlbumInfo::albumViewtoJson() {
     obj.getDynamicObject()->setProperty(AlbumInfoMacro::hash, ConvertUtils::optValueToVar(hash));
     return obj;
 }
-juce::var AlbumInfo::toJson() {
+juce::var AlbumInfo::toCompleteJson() {
     juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::alBumId, albumId);
+    obj.getDynamicObject()->setProperty(AlbumInfoMacro::albumId, albumId);
     obj.getDynamicObject()->setProperty(
         AlbumInfoMacro::albumArtists,
         ConvertUtils::stringArray2ArrayVar(albumArtists)

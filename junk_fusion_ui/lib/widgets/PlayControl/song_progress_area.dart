@@ -70,6 +70,9 @@ class SongProgressAreaState extends State<SongProgressArea>
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
     final theme = context.watch<AppTheme>();
+    if (playback.curBasicInfo == null || playback.curDetailInfo == null) {
+      return SizedBox.shrink();
+    }
 
     return MouseRegion(
       // 【新增】：监听鼠标在整个区域内的滑动，实时更新 X 坐标
@@ -100,7 +103,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                   : (playback.currentTimeStamp * 1000).toInt(),
             ),
             total: Duration(
-              milliseconds: (playback.currentSong!.duration * 1000).toInt(),
+              milliseconds: (playback.curBasicInfo!.duration * 1000).toInt(),
             ),
             onSeek: (value) {
               context.read<PlaybackProvider>().seekPreferPTS(
@@ -123,7 +126,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                         double targetTime = _calculateTime(
                           details.localPosition.dx,
                           constraints.maxWidth,
-                          playback.currentSong!.duration,
+                          playback.curBasicInfo!.duration,
                         );
                         playback.seekPreferPTS(targetTime);
                       },
@@ -135,7 +138,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                           _waveformDragTime = _calculateTime(
                             details.localPosition.dx,
                             constraints.maxWidth,
-                            playback.currentSong!.duration,
+                            playback.curBasicInfo!.duration,
                           );
                         });
                       },
@@ -146,7 +149,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                           _waveformDragTime = _calculateTime(
                             details.localPosition.dx,
                             constraints.maxWidth,
-                            playback.currentSong!.duration,
+                            playback.curBasicInfo!.duration,
                           );
                         });
                       },
@@ -171,7 +174,7 @@ class SongProgressAreaState extends State<SongProgressArea>
                             Positioned.fill(
                               child: CustomPaint(
                                 painter: SpectrumPainter(
-                                  data: playback.currentSong!.timeDomainSpec,
+                                  data: playback.curDetailInfo!.timeDomainSpec,
                                   waveColor: theme.colorShadow,
                                 ),
                               ),

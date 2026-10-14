@@ -19,8 +19,11 @@ class PlaybackProvider extends ChangeNotifier {
   final SongProvider songProvider;
   PlaybackProvider({required this.songProvider});
 
-  SongDetailInfo? _currentSong;
-  SongDetailInfo? get currentSong => _currentSong;
+  SongDetailInfo? _curDetailInfo;
+  SongDetailInfo? get curDetailInfo => _curDetailInfo;
+
+  SongBasicInfo? _curBasicInfo;
+  SongBasicInfo? get curBasicInfo => _curBasicInfo;
 
   // 是否正在播放（true = 播放中，false = 暂停）
   bool _isPlaying = false;
@@ -47,49 +50,50 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPlayList(List<SongBasicInfo> playList) {
-    //设置播放列表
-    _playList = playList;
+  void setPlayList(List<SongBasicInfo> list) {
+    _playList = list;
     notifyListeners();
   }
 
-  void setPlayListBySongIdList(List<int> songIdList) {
-    //Set 是无序、不重复的元素集合,会去重
-    final songIdSet = songIdList.toSet();
-    List<SongBasicInfo> list = songProvider.songs
-        .where((each) => songIdSet.contains(each.songId))
-        .toList();
-    setPlayList(list);
-  }
-
-  SongDetailInfo getSongInfo(int songId) {
-    final result = SongDetailInfo.fromJson(
+  void _setSongDetailInfo(int songId) {
+    _curDetailInfo = SongDetailInfo.fromJson(
       jsonDecode(
-        UtilFunction.cPtr2String(bindings.getSongInfoBySongId(songId)),
+        UtilFunction.cPtr2String(bindings.getCompleteSongInfo(songId)),
       ),
     );
-    return result;
+  }
+
+  void _setSongBasicInfo(int songId) {
+    _curBasicInfo = songProvider.songs
+        .where((each) => each.songId == songId)
+        .firstOrNull;
+  }
+
+  void setNewInfo(int songId) {
+    _setSongBasicInfo(songId);
+    _setSongDetailInfo(songId);
   }
 
   Future<void> setNewSong(int songId) async {
-    if (songId == _currentSong?.songId) return;
-    _currentSong = getSongInfo(songId);
-    if (_currentSong == null) return;
+    if (songId == _curBasicInfo?.songId) return;
+    setNewInfo(songId);
+    if (_curBasicInfo == null || _curDetailInfo == null) return;
     _isPlaying = true;
 
     notifyListeners();
 
-    bindings.play(_currentSong!.songId, 0.0);
+    bindings.play(_curBasicInfo!.songId, 0.0);
 
     saveState(); //切换歌曲的时候顺便缓存数据
     _setWindowBarTitleAndArtists();
   }
 
+  /// 恢复状态，初始化的时候调用
   void restoreState() {
     final songId = AppCache.frontCacheRef.getInt('currentSongId');
 
     if (songId != null) {
-      _currentSong = getSongInfo(songId);
+      setNewInfo(songId);
     }
 
     _volume = AppCache.frontCacheRef.getDouble("masterVolume") ?? 0.5;
@@ -115,34 +119,29 @@ class PlaybackProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    if (_currentSong != null) {
-      bindings.play(_currentSong!.songId, _currentTimeStamp);
+    if (_curBasicInfo != null) {
+      bindings.play(_curBasicInfo!.songId, _currentTimeStamp);
       bindings.pausePlay();
     } //为了在后端初始化的时候存储播放信息
   }
 
   void initPlaybackProvider() {
     restoreState();
-    if (currentSong != null) {
+    if (_curBasicInfo != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _setWindowTaskbarBtn();
-        WindowsTaskbar.setThumbnailTooltip(
-          "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
-        );
-        WindowsTaskbar.setWindowTitle(
-          "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
-        );
+        _setWindowBarTitleAndArtists();
       });
     }
   }
 
   void _setWindowBarTitleAndArtists() {
-    if (currentSong != null) {
+    if (_curBasicInfo != null) {
       WindowsTaskbar.setThumbnailTooltip(
-        "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
+        "${_curBasicInfo!.title}${_curBasicInfo!.artists == null ? "" : " - ${_curBasicInfo!.artists!.join(" / ")}"}",
       );
       WindowsTaskbar.setWindowTitle(
-        "${currentSong!.title}${currentSong!.artists == null ? "" : " - ${currentSong!.artists!.join(" / ")}"}",
+        "${_curBasicInfo!.title}${_curBasicInfo!.artists == null ? "" : " - ${_curBasicInfo!.artists!.join(" / ")}"}",
       );
     }
   }
@@ -178,10 +177,10 @@ class PlaybackProvider extends ChangeNotifier {
   }
 
   Future<void> saveState() async {
-    if (_currentSong != null) {
+    if (_curBasicInfo != null) {
       await AppCache.frontCacheRef.setInt(
         "currentSongId",
-        _currentSong!.songId,
+        _curBasicInfo!.songId,
       );
     }
     await AppCache.frontCacheRef.setDouble("masterVolume", _volume);
@@ -214,8 +213,8 @@ class PlaybackProvider extends ChangeNotifier {
       //注意这里是切换完成后的状态
       bindings.pausePlay();
     } else {
-      if (_currentSong == null) return;
-      bindings.play(_currentSong!.songId, _currentTimeStamp);
+      if (_curBasicInfo == null) return;
+      bindings.play(_curBasicInfo!.songId, _currentTimeStamp);
     }
     _setWindowTaskbarBtn();
   }
@@ -231,7 +230,7 @@ class PlaybackProvider extends ChangeNotifier {
     _currentTimeStamp = targetSeconds;
     // print("seekCurrentPTS收到跳转到PTS通知:$targetSeconds");
     if (_isPlaying) {
-      bindings.play(_currentSong!.songId, targetSeconds);
+      bindings.play(_curBasicInfo!.songId, targetSeconds);
     }
     notifyListeners();
   }
@@ -242,9 +241,9 @@ class PlaybackProvider extends ChangeNotifier {
   }
 
   void playNextSong() {
-    if (_currentSong == null) return;
+    if (_curBasicInfo == null) return;
     final currentSongIndex = _playList.indexWhere(
-      (i) => i.songId == _currentSong!.songId,
+      (i) => i.songId == _curBasicInfo!.songId,
     );
     if (currentSongIndex < _playList.length - 1) {
       final targetSongId = _playList[currentSongIndex + 1].songId;
@@ -260,7 +259,7 @@ class PlaybackProvider extends ChangeNotifier {
   //播放播放列表的上一首歌曲
   void playPreviousSong() {
     final currentSongIndex = _playList.indexWhere(
-      (i) => i.songId == _currentSong!.songId,
+      (i) => i.songId == _curBasicInfo!.songId,
     );
     if (currentSongIndex > 0) {
       final targetSongId = _playList[currentSongIndex - 1].songId;

@@ -7,15 +7,6 @@ part 'song_detail_info.g.dart'; // 用于 JSON
 @freezed
 abstract class SongDetailInfo with _$SongDetailInfo {
   const factory SongDetailInfo({
-    required int songId,
-    required double duration,
-    required String title,
-
-    required List<String>? artists,
-    String? album,
-    int? trackNumber,
-    int? discNumber,
-
     required int bitRate,
     required int sampleRate,
     required String channelLayout,
@@ -25,9 +16,6 @@ abstract class SongDetailInfo with _$SongDetailInfo {
     int? bpm,
     String? key,
 
-    required bool isMyLike,
-
-    required int playNum,
     String? hash,
     required List<double> timeDomainSpec,
   }) = _SongDetailInfo;

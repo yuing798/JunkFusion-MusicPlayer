@@ -5,4 +5,5 @@ target_sources(JunkFusionCoordinator
         ArtistsManage.cpp
         FileDirManage.cpp
         PlayListManage.cpp
+        SongsManage.cpp
 )

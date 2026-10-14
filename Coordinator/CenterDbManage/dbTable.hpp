@@ -12,7 +12,7 @@ inline const char* createSongsTableSQL = R"(
         artists             TEXT,
         album              TEXT,
         trackNumber        INTEGER,
-        discNumber INTEGER
+        discNumber INTEGER,
         bitRate            INTEGER,
         bitDepth           INTEGER,
         sampleRate         INTEGER,

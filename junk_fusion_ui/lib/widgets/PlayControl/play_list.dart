@@ -147,7 +147,7 @@ class PlayList {
                                           child: GestureDetector(
                                             onTap: () {
                                               //箭头函数后面只能接上一句表达式
-                                              if (playback.currentSong ==
+                                              if (playback.curBasicInfo ==
                                                   song) {
                                                 context
                                                     .read<PlaybackProvider>()
@@ -162,7 +162,7 @@ class PlayList {
                                               alignment: Alignment.center,
                                               children: [
                                                 // 封面图（非当前歌曲时显示）
-                                                (playback.currentSong != song)
+                                                (playback.curBasicInfo != song)
                                                     ? HoverPlayButton(
                                                         hash: song.hash,
                                                       )

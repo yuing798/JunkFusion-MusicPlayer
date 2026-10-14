@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/album_view_info.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/album_detail_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/album_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
@@ -34,153 +34,39 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // 列表底部在有歌正在播时留 90px，免得被 PlayBar 糊住。
 // ════════════════════════════════════════════════════════════════
 
-/// 单张专辑内部的排序方式
-enum AlbumSongSortMode {
-  byTrack('音轨顺序', 0),
-  byTitle('歌曲名称', 1),
-  byDuration('歌曲时长', 2),
-  byPlayTimes('播放次数', 3);
-
-  final String label;
-  final int value;
-
-  const AlbumSongSortMode(this.label, this.value);
-}
-
 class SingleAlbumPage extends StatefulWidget {
-  /// 要展示的专辑
-  final AlbumViewInfo album;
-
   /// 返回专辑列表的回调；为 null 时右上角不显示返回按钮
   final VoidCallback? onBack;
 
-  const SingleAlbumPage({super.key, required this.album, this.onBack});
+  const SingleAlbumPage({super.key, this.onBack});
 
   @override
   State<SingleAlbumPage> createState() => _SingleAlbumPageState();
 }
 
 class _SingleAlbumPageState extends State<SingleAlbumPage> {
-  /// 当前选中的排序方式
-  AlbumSongSortMode _selectedSort = AlbumSongSortMode.byTrack;
-
-  /// 是否升序（true = 升序，false = 降序）
-  bool _isAscending = true;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _delayInit();
-  }
-
-  Future<void> _delayInit() async {
-    final frontCache = AppCache.frontCacheRef;
-    final sortValue = frontCache.getInt('albumSongSortWays') ?? 0;
-    final isAscending = frontCache.getBool('albumSongIsAscending') ?? true;
-    final sortMode = AlbumSongSortMode.values.firstWhere(
-      (v) => v.value == sortValue,
-      orElse: () => AlbumSongSortMode.byTrack,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _selectedSort = sortMode;
-      _isAscending = isAscending;
-    });
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // 取数据 / 排序
-  // ────────────────────────────────────────────────────────────
-
-  /// 这张专辑里的歌，按当前排序方式排好
-  List<SongInfo> _getAlbumSongs(BuildContext context) {
-    // watch：专辑的歌单（到底有哪些 songId）变了要重画
-    final result = List<SongInfo>.of(
-      context.watch<AlbumProvider>().songsOfAlbum(widget.album.albumId),
-    );
-
-    // 用 switch 表达式：枚举的每个分支都要写全，漏了编译不过
-    int compare(SongInfo a, SongInfo b) => switch (_selectedSort) {
-      // 音轨号 → 歌名，和元数据自带的顺序一致
-      AlbumSongSortMode.byTrack => AlbumProvider.compareByTrack(a, b),
-      AlbumSongSortMode.byTitle => AppCache.collator.compare(a.title, b.title),
-      AlbumSongSortMode.byDuration => a.duration.compareTo(b.duration),
-      AlbumSongSortMode.byPlayTimes => a.playNum.compareTo(b.playNum),
-    };
-
-    result.sort((a, b) => _isAscending ? compare(a, b) : compare(b, a));
-    return result;
-  }
-
-  /// 标题下面那行小字：「艺术家 · 共 12 首 · 总时长 48:12」
-  String _buildMetaLine(List<SongInfo> songs) {
-    final parts = <String>[widget.album.albumArtistText];
-
-    // TODO: 后端的专辑接口（Model/AlbumInfo.cpp 的 albumViewtoJson()）只吐
-    //       alBumId / title / albumArtists / hash，没有发行年份。
-    //       等 AlbumInfoMacro 加上 year 之后，这里补回「2020年」那一段。
-    parts.add('共 ${songs.length} 首');
-
-    if (songs.isNotEmpty) {
-      final totalDuration = songs.fold<double>(
-        0.0,
-        (sum, song) => sum + song.duration,
-      );
-      parts.add('总时长 ${UtilFunction.formatDuration(totalDuration)}');
-    }
-
-    return parts.join(' · ');
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // 常用操作
-  // ────────────────────────────────────────────────────────────
-
   /// 播放全部：按当前列表顺序整张专辑塞进播放列表，从第一首开始放
-  void _playAll(List<SongInfo> songs) {
-    if (songs.isEmpty) return;
-
+  void _playAll() {
     final playback = context.read<PlaybackProvider>();
+    final albumP = context.read<AlbumProvider>();
 
-    // 先设置播放列表再切歌：setNewSong 内部会把「当前播放列表」缓存到本地，
-    // 反过来的话存下去的就是旧列表了
-    playback.setPlayList(songs);
-
-    final firstSongId = songs.first.songId;
-    if (playback.currentSong?.songId == firstSongId) {
-      // 已经停在这首歌上了：setNewSong 会直接 return，这里手动补一下播放状态
-      if (!playback.isPlaying) playback.togglePlayPause();
-    } else {
-      playback.setNewSong(firstSongId);
+    if (playback.playList == albumP.songsInAlbums) {
+      // 先设置播放列表再切歌：setNewSong 内部会把「当前播放列表」缓存到本地，
+      // 反过来的话存下去的就是旧列表了
+      playback.setPlayList(albumP.songsInAlbums);
+      playback.setNewSong(playback.playList.first.songId);
     }
-  }
-
-  /// 随机播放：把专辑打乱之后当成播放列表
-  void _shufflePlay(List<SongInfo> songs) {
-    if (songs.isEmpty) return;
-
-    final playback = context.read<PlaybackProvider>();
-    final shuffled = List<SongInfo>.of(songs)..shuffle();
-
-    // TODO: PlaybackProvider 只有 cyclePlayMode()（0→1→2→3 循环切），
-    //       没有「直接设置成随机播放」的接口，所以这里只是打乱了播放列表的顺序，
-    //       后端的播放模式并没有真的变成随机。等 Provider 加了 setPlayMode() 再补。
-    playback.setPlayList(shuffled);
-    playback.setNewSong(shuffled.first.songId);
   }
 
   /// 添加到播放列表：把专辑里的歌追加到现有播放列表后面（按 songId 去重）
-  void _appendToPlayList(List<SongInfo> songs) {
+  void _appendToPlayList(List<SongBasicInfo> songs) {
     if (songs.isEmpty) return;
 
     final playback = context.read<PlaybackProvider>();
     final currentList = playback.playList;
 
     final existingIds = currentList.map((song) => song.songId).toSet();
-    final merged = List<SongInfo>.of(currentList);
+    final merged = List<SongBasicInfo>.of(currentList);
     for (final song in songs) {
       // Set.add 返回 false 说明这首歌已经在列表里了
       if (existingIds.add(song.songId)) merged.add(song);
@@ -188,8 +74,6 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
 
     final addedCount = merged.length - currentList.length;
 
-    // TODO: 后端没有「往播放队列里追加歌曲」的接口，
-    //       这里是前端整表替换；等后端接管播放队列之后改成调用后端接口。
     playback.setPlayList(merged);
 
     DialogUtil.showInfoDialog(
@@ -197,59 +81,16 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
     );
   }
 
-  /// 喜欢 / 取消喜欢整张专辑
-  void _toggleLikeAll(List<SongInfo> songs) {
-    if (songs.isEmpty) return;
+  /// 标题下面那行小字：「艺术家 · 共 12 首 · 总时长 48:12」
+  String _buildMetaLine() {
+    final albumP = context.read<AlbumProvider>();
+    if (albumP.curBasicInfo == null) return "";
+    final parts = <String>[];
+    parts.add(UtilFunction.buildArtistsText(albumP.curBasicInfo!.albumArtists));
 
-    final songProvider = context.read<SongProvider>();
-    // 已经全喜欢了 → 这一下把所有歌取消喜欢；否则把没喜欢的补齐
-    final allLiked = songs.every((song) => song.isMyLike);
+    parts.add('共 ${albumP.songCount} 首');
 
-    // TODO: 后端只有单曲的 toggleMyLike(songId)，没有批量接口，
-    //       这里是一首一首调的（Provider 内部已经做了乐观更新 + 失败回滚）。
-    //       等后端加了批量接口再换成一次调用。
-    for (final song in songs) {
-      if (song.isMyLike == allLiked) {
-        songProvider.toggleMyLike(song.songId);
-      }
-    }
-  }
-
-  /// 专辑信息弹窗
-  void _showAlbumInfo(List<SongInfo> songs) {
-    final album = widget.album;
-
-    final buffer = StringBuffer()
-      ..writeln('专辑名：${album.title}')
-      ..writeln('专辑艺术家：${album.albumArtistText}')
-      ..writeln('歌曲数量：${songs.length} 首');
-
-    if (songs.isNotEmpty) {
-      final totalDuration = songs.fold<double>(
-        0.0,
-        (sum, song) => sum + song.duration,
-      );
-      buffer.writeln('总时长：${UtilFunction.formatDuration(totalDuration)}');
-    }
-
-    // TODO: 后端专辑接口目前只有 alBumId / title / albumArtists / hash 四个字段，
-    //       所以专辑简介、发行年份、唱片公司、封面路径这些没得显示。
-    //       想放进这个弹窗的话，需要在 Model/AlbumInfo.cpp 的 albumViewtoJson()
-    //       和 Macro/AlbumInfoMacro 里补上对应字段。
-    DialogUtil.showInfoDialog(buffer.toString());
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // 工具栏辅助
-  // ────────────────────────────────────────────────────────────
-
-  // 切换升降序
-  void _toggleAscending() {
-    setState(() {
-      _isAscending = !_isAscending;
-    });
-
-    AppCache.frontCacheRef.setBool('albumSongIsAscending', _isAscending);
+    return parts.join(' · ');
   }
 
   @override
@@ -258,12 +99,17 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
 
     // watch：切换「我喜欢」之类的歌曲状态变了，列表要跟着重画
     context.watch<SongProvider>();
-    final albumSongs = _getAlbumSongs(context);
+    final albumProvider = context.watch<AlbumProvider>();
+    final albumSongs = albumProvider.songsInAlbums;
 
-    final isAllLiked =
-        albumSongs.isNotEmpty && albumSongs.every((song) => song.isMyLike);
+    final basicInfo = albumProvider.curBasicInfo;
+
+    if (basicInfo == null) {
+      return const SizedBox.shrink();
+    }
+
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.currentSong != null,
+      (provider) => provider.curBasicInfo != null,
     );
 
     return Column(
@@ -285,7 +131,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
               SizedBox(
                 width: 50,
                 height: 50,
-                child: AlbumCoverImage(hash: widget.album.hash),
+                child: AlbumCoverImage(hash: albumProvider.curBasicInfo?.hash),
               ),
 
               const SizedBox(width: 10),
@@ -297,9 +143,9 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Tooltip(
-                      message: widget.album.title,
+                      message: albumProvider.curBasicInfo!.title,
                       child: Text(
-                        widget.album.title,
+                        albumProvider.curBasicInfo!.title,
                         style: theme.bigTextStyle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -307,7 +153,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _buildMetaLine(albumSongs),
+                      _buildMetaLine(),
                       style: theme.littleTextStyle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -329,18 +175,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                 icon: TablerIcons.playerPlayFilled,
                 label: '播放全部',
                 isPrimary: true,
-                onTap: albumSongs.isEmpty ? null : () => _playAll(albumSongs),
-              ),
-
-              const SizedBox(width: 10),
-
-              // ── 随机播放 ──
-              _AlbumActionButton(
-                icon: TablerIcons.arrowsShuffle2,
-                label: '随机播放',
-                onTap: albumSongs.isEmpty
-                    ? null
-                    : () => _shufflePlay(albumSongs),
+                onTap: albumSongs.isEmpty ? null : () => _playAll(),
               ),
 
               const SizedBox(width: 10),
@@ -356,60 +191,10 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
 
               const SizedBox(width: 10),
 
-              // ── 喜欢 / 取消喜欢整张专辑 ──
-              _AlbumActionButton(
-                icon: isAllLiked ? TablerIcons.heartFilled : TablerIcons.heart,
-                label: isAllLiked ? '取消喜欢' : '喜欢全部',
-                onTap: albumSongs.isEmpty
-                    ? null
-                    : () => _toggleLikeAll(albumSongs),
-              ),
-
               // 弹性空间（把右侧的排序控件推到最右边）
               const Spacer(),
 
-              // ── 专辑信息 ──
-              IconButton(
-                icon: const Icon(TablerIcons.infoCircle, size: 28),
-                tooltip: '专辑信息',
-                color: theme.colorTextMain,
-                onPressed: () => _showAlbumInfo(albumSongs),
-              ),
-
               const SizedBox(width: 10),
-
-              // ── 排序方式下拉框 ──
-              SizedBox(
-                width: 180,
-                child: ComboBox<AlbumSongSortMode>(
-                  value: _selectedSort,
-                  items: AlbumSongSortMode.values,
-                  itemBuilder: (mode) =>
-                      Text(mode.label, style: theme.comboTextStyle),
-                  onChanged: (mode) async {
-                    setState(() {
-                      _selectedSort = mode;
-                    });
-                    final frontCache = AppCache.frontCacheRef;
-                    frontCache.setInt('albumSongSortWays', mode.value);
-                  },
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // ── 升降序切换按钮 ──
-              IconButton(
-                icon: Icon(
-                  _isAscending
-                      ? TablerIcons.arrowBigDownLineFilled
-                      : TablerIcons.arrowBigUpLineFilled,
-                  size: 32,
-                ),
-                onPressed: _toggleAscending,
-                tooltip: _isAscending ? '升序' : '降序',
-                color: theme.colorTextMain,
-              ),
             ],
           ),
         ),
@@ -433,12 +218,6 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                         return Row(
                           key: ValueKey(song.songId),
                           children: [
-                            // ── 音轨号 ──
-                            // FIXME: songs 表和 SongInfo 里都没有碟号字段，
-                            //        多碟专辑只能按音轨号排，音轨号会在碟与碟之间
-                            //        重复，也插不了「碟 x」分隔行。等后端把
-                            //        discNumber 补进 SongInfoMacro / SongInfo，
-                            //        排序和这列显示再一起改。
                             SizedBox(
                               width: 36,
                               child: Center(
@@ -558,8 +337,6 @@ class AlbumCoverImage extends StatelessWidget {
     return Image.file(
       File('${AppCache.cacheDirString}/songImage/$coverHash/original.jpg'),
       fit: BoxFit.cover,
-      // 缩略图用中等插值就够了，比默认的 low 好看不少
-      filterQuality: FilterQuality.medium,
       // 缓存文件被删了/解码失败时别让界面炸成红框，退回默认图
       errorBuilder: (_, _, _) => placeholder,
     );

@@ -248,7 +248,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
                       padding: EdgeInsets.only(
                         bottom:
                             context_.select<PlaybackProvider, bool>(
-                              (provider) => provider.currentSong != null,
+                              (provider) => provider.curBasicInfo != null,
                             )
                             ? 90
                             : 0, //有歌曲的话应该padding，否则会被PlayBar给遮住

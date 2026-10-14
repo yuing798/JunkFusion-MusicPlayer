@@ -88,16 +88,14 @@ class SongProvider extends ChangeNotifier {
     if (index == -1) return;
 
     final old = _songs[index];
-    final updated = SongBasicInfo.fromJson(
-      jsonDecode(
-        UtilFunction.cPtr2String(bindings.getSongInfoBySongId(songId)),
-      ),
+    final resultMap = jsonDecode(
+      UtilFunction.cPtr2String(bindings.getCompleteSongInfo(songId)),
     );
+    final updated = SongBasicInfo.fromJson(resultMap);
 
     if (updated == old) return;
 
     _songs[index] = updated;
-    _revision++; // 专辑名/艺术家这些标签可能被改过，聚合视图要重新拉
     notifyListeners();
   }
 }

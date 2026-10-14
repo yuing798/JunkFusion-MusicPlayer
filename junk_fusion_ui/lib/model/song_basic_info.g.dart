@@ -18,6 +18,8 @@ _SongBasicInfo _$SongBasicInfoFromJson(Map<String, dynamic> json) =>
       isMyLike: json['isMyLike'] as bool,
       playNum: (json['playNum'] as num).toInt(),
       hash: json['hash'] as String?,
+      trackNumber: (json['trackNumber'] as num?)?.toInt(),
+      discNumber: (json['discNumber'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$SongBasicInfoToJson(_SongBasicInfo instance) =>
@@ -30,4 +32,6 @@ Map<String, dynamic> _$SongBasicInfoToJson(_SongBasicInfo instance) =>
       'isMyLike': instance.isMyLike,
       'playNum': instance.playNum,
       'hash': instance.hash,
+      'trackNumber': instance.trackNumber,
+      'discNumber': instance.discNumber,
     };

@@ -25,7 +25,6 @@ extern "C" {
     DLL_EXPORT void dllInit(const char* cacheDirId, const char* exeDirPtr);
 
     DLL_EXPORT void toggleMyLike(long long songId);
-    DLL_EXPORT void saveComment(long long songId, const char* commentText);
     DLL_EXPORT void freeString(char* str);
     DLL_EXPORT void someImport(const char*);
     DLL_EXPORT void closeBackend(); // dll注销
@@ -38,7 +37,8 @@ extern "C" {
     DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调
     DLL_EXPORT void registerOnUpdateSongInfo(Int64Func cb);
     DLL_EXPORT const char* getAllSongs();
-    DLL_EXPORT const char* getSongInfoBySongId(long long songId);
+    DLL_EXPORT const char* getCompleteSongInfo(long long songId);
+    DLL_EXPORT const char* getCompleteAlbumInfo(long long albumId);
     DLL_EXPORT void requestOnPlayStateSync(IntFunc cb);
 
     /**
@@ -47,14 +47,6 @@ extern "C" {
      * @return DLL_EXPORT const* 所有专辑视图的json字符串
      */
     DLL_EXPORT const char* getAllAlbumView();
-
-    /**
-     * @brief Get the Songs List By Album Id object
-     *
-     * @param albumId
-     * @return  const* json格式的songId数组
-     */
-    DLL_EXPORT const char* getSongsListByAlbumId(long long albumId);
 
 #ifdef __cplusplus
 }
