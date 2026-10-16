@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/album_basic_info.dart';
-import 'package:junk_fusion_ui/model/album_detail_info.dart';
+import 'package:junk_fusion_ui/model/folder_basic_info.dart';
+import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/all_music_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/folder_view_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/single_folder_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/single_playlist_page.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
@@ -50,9 +55,9 @@ class PagesRouteEntry {
 //
 // navId 和 widgets/left_column.dart 里 _NavButton 的 id 一一对应：
 //   0 所有音乐   1 我喜欢     2 最近播放
-//   3 作者       4 专辑       5 歌单      6 风格
+//   3 专辑       4 歌单       5 文件夹    6 风格
 //   7 AI助手     8 效果器     9 均衡器    10 音箱阵列   11 设置
-// 目前只有 0 / 4 做完了页面，其它的先走占位页。
+// 目前 0 / 3 / 4 / 5 有页面了，其它的先走占位页。
 // ════════════════════════════════════════════════════════════════
 abstract class PagesRouteTable {
   /// 左侧导航栏「所有音乐」的 id
@@ -60,6 +65,12 @@ abstract class PagesRouteTable {
 
   /// 左侧导航栏「专辑」的 id
   static const int albumViewId = 3;
+
+  /// 左侧导航栏「歌单」的 id
+  static const int playlistViewId = 4;
+
+  /// 左侧导航栏「文件夹」的 id
+  static const int folderViewId = 5;
 
   /// 所有音乐
   static const PagesRouteEntry allMusic = PagesRouteEntry(
@@ -73,6 +84,24 @@ abstract class PagesRouteTable {
     navId: albumViewId,
     title: '专辑',
     builder: _buildAlbumView,
+  );
+
+  /// 歌单（网格视图）
+  ///
+  /// TODO(后端): 歌单接口还没有，进去现在是空列表（见 PlaylistProvider）
+  static const PagesRouteEntry playlistView = PagesRouteEntry(
+    navId: playlistViewId,
+    title: '歌单',
+    builder: _buildPlaylistView,
+  );
+
+  /// 文件夹（网格视图）
+  ///
+  /// TODO(后端): 文件夹接口还没有，进去现在是空列表（见 FolderProvider）
+  static const PagesRouteEntry folderView = PagesRouteEntry(
+    navId: folderViewId,
+    title: '文件夹',
+    builder: _buildFolderView,
   );
 
   /// 单张专辑：要在路由表里现造一个（标题用专辑名）
@@ -89,6 +118,34 @@ abstract class PagesRouteTable {
       navId: albumViewId,
       title: album.title,
       builder: (context) => const SingleAlbumPage(),
+    );
+  }
+
+  /// 单个歌单：进这一页之前同样要先把歌单装进 PlaylistProvider：
+  ///   context.read<PlaylistProvider>().setNewPlaylist(playlist.playlistId);
+  ///   context.read<PagesRouteController>().push(
+  ///     PagesRouteTable.singlePlaylist(playlist),
+  ///   );
+  static PagesRouteEntry singlePlaylist(PlaylistBasicInfo playlist) {
+    return PagesRouteEntry(
+      // 单个歌单属于「歌单」这一栏
+      navId: playlistViewId,
+      title: playlist.title,
+      builder: (context) => const SinglePlaylistPage(),
+    );
+  }
+
+  /// 单个文件夹：进这一页之前要先把文件夹装进 FolderProvider：
+  ///   context.read<FolderProvider>().setNewFolder(folder.path);
+  ///   context.read<PagesRouteController>().push(
+  ///     PagesRouteTable.singleFolder(folder),
+  ///   );
+  static PagesRouteEntry singleFolder(FolderBasicInfo folder) {
+    return PagesRouteEntry(
+      // 单个文件夹属于「文件夹」这一栏
+      navId: folderViewId,
+      title: folder.name,
+      builder: (context) => const SingleFolderPage(),
     );
   }
 
@@ -110,6 +167,8 @@ abstract class PagesRouteTable {
   static PagesRouteEntry? byNavId(int navId) {
     if (navId == allMusicId) return allMusic;
     if (navId == albumViewId) return albumView;
+    if (navId == playlistViewId) return playlistView;
+    if (navId == folderViewId) return folderView;
     return null;
   }
 }
@@ -117,6 +176,10 @@ abstract class PagesRouteTable {
 Widget _buildAllMusic(BuildContext context) => const AllMusicPage();
 
 Widget _buildAlbumView(BuildContext context) => const AlbumViewPage();
+
+Widget _buildPlaylistView(BuildContext context) => const PlaylistViewPage();
+
+Widget _buildFolderView(BuildContext context) => const FolderViewPage();
 
 // ════════════════════════════════════════════════════════════════
 // 页面栈

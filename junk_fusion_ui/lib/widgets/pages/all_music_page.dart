@@ -1,3 +1,4 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
@@ -37,9 +38,6 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
   // 是否升序（true = 升序，false = 降序）
   bool _isAscending = true;
-
-  // 是否正在导入歌曲（控制按钮禁用状态）
-  bool _isImporting = false;
 
   // 滚动控制器（用于 ListView）
   final ScrollController _scrollController = ScrollController();
@@ -87,9 +85,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
 
   //导入歌曲
   void _songImport(BuildContext context) async {
-    _isImporting = true;
     await context.read<SongProvider>().songsImport();
-    _isImporting = false;
   }
 
   // 获取排序后的歌曲列表
@@ -164,11 +160,9 @@ class _AllMusicPageState extends State<AllMusicPage> {
               SizedBox(
                 height: 40,
                 child: TextButton(
-                  onPressed: _isImporting
-                      ? null
-                      : () {
-                          _songImport(context);
-                        },
+                  onPressed: () {
+                    _songImport(context);
+                  },
                   style: TextButton.styleFrom(
                     backgroundColor: theme.colorHover,
                     foregroundColor: theme.colorTextMain,
@@ -176,10 +170,7 @@ class _AllMusicPageState extends State<AllMusicPage> {
                       borderRadius: BorderRadius.zero, //  直角矩形
                     ),
                   ),
-                  child: Text(
-                    _isImporting ? '导入中...' : '导入文件',
-                    style: theme.midTextStyle,
-                  ),
+                  child: Text('导入文件', style: theme.midTextStyle),
                 ),
               ),
 
@@ -194,12 +185,15 @@ class _AllMusicPageState extends State<AllMusicPage> {
                   // ── 排序方式下拉框 ──
                   SizedBox(
                     width: 200,
-                    child: ComboBox<SortMode>(
+                    child: CustomComboBox<SortMode>(
                       value: _selectedSort,
                       items: SortMode.values,
-                      itemBuilder: (mode) =>
-                          Text(mode.label, style: theme.comboTextStyle),
+                      itemLabel: (each) => each.label,
+                      // itemBuilder: (mode) =>
+                      //     Text(mode.label, style: theme.comboTextStyle),
+                      hint: "排列方式",
                       onChanged: (mode) async {
+                        if (mode == null) return;
                         setState(() {
                           _selectedSort = mode;
                         });
@@ -207,6 +201,45 @@ class _AllMusicPageState extends State<AllMusicPage> {
                         frontCache.setInt("sortWays", mode.value);
                       },
                     ),
+                    // child: DropdownButtonHideUnderline(
+                    //   child: DropdownButton2<SortMode>(
+                    //     // isExpanded: true,
+                    //     // isDense: true,
+                    //     hint: Text(
+                    //       '排序方式',
+                    //       style: TextStyle(
+                    //         fontSize: 14,
+                    //         color: Theme.of(context).hintColor,
+                    //       ),
+                    //     ),
+                    //     items: SortMode.values
+                    //         .map(
+                    //           (SortMode mode) => DropdownItem<SortMode>(
+                    //             value: mode,
+                    //             height: 40,
+                    //             child: Text(
+                    //               mode.label,
+                    //               style: theme.comboTextStyle,
+                    //             ),
+                    //           ),
+                    //         )
+                    //         .toList(),
+                    //     // value: _selectedSort,
+                    //     onChanged: (SortMode? mode) async {
+                    //       if (mode == null) return;
+                    //       setState(() {
+                    //         _selectedSort = mode;
+                    //       });
+                    //       final frontCache = AppCache.frontCacheRef;
+                    //       frontCache.setInt("sortWays", mode.value);
+                    //     },
+                    //     buttonStyleData: const ButtonStyleData(
+                    //       padding: EdgeInsets.symmetric(horizontal: 16),
+                    //       height: 40,
+                    //       width: 140,
+                    //     ),
+                    //   ),
+                    // ),
                   ),
 
                   const SizedBox(width: 8),

@@ -22,6 +22,8 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app.dart'; // 根组件
 import 'providers/album_provider.dart';
+import 'providers/folder_provider.dart';
+import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
 
@@ -74,12 +76,16 @@ void main() async {
 
   final songProvider = SongProvider();
   final albumProvider = AlbumProvider(songProvider: songProvider);
+  final playlistProvider = PlaylistProvider(songProvider: songProvider);
+  final folderProvider = FolderProvider(songProvider: songProvider);
   final playbackProvider = PlaybackProvider(songProvider: songProvider);
 
   runApp(
     JunkFusionApp(
       songProvider: songProvider,
       albumProvider: albumProvider,
+      playlistProvider: playlistProvider,
+      folderProvider: folderProvider,
       playbackProvider: playbackProvider,
     ),
   ); //runApp不是阻塞式的，所以下面不能放析构逻辑
@@ -88,11 +94,15 @@ void main() async {
 class JunkFusionApp extends StatefulWidget {
   final SongProvider songProvider;
   final AlbumProvider albumProvider;
+  final PlaylistProvider playlistProvider;
+  final FolderProvider folderProvider;
   final PlaybackProvider playbackProvider;
   const JunkFusionApp({
     super.key,
     required this.songProvider,
     required this.albumProvider,
+    required this.playlistProvider,
+    required this.folderProvider,
     required this.playbackProvider,
   });
 
@@ -268,6 +278,12 @@ class JunkFusionAppState extends State<JunkFusionApp>
       providers: [
         ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
         ChangeNotifierProvider<AlbumProvider>.value(value: widget.albumProvider),
+        ChangeNotifierProvider<PlaylistProvider>.value(
+          value: widget.playlistProvider,
+        ),
+        ChangeNotifierProvider<FolderProvider>.value(
+          value: widget.folderProvider,
+        ),
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),

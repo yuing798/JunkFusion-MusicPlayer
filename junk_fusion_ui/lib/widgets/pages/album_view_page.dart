@@ -111,20 +111,21 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
 
   /// 播放整张专辑（卡片封面上的悬浮按钮）
   void _playAlbum(AlbumBasicInfo album) {
+    context.read<AlbumProvider>().setNewAlbum(album.albumId);
     final playback = context.read<PlaybackProvider>();
+    final albumP = context.read<AlbumProvider>();
 
-    final songs = context.read<AlbumProvider>().songsInAlbums;
+    // print(123);
+    // print(playback.playList);
+    // print("\n");
+    // print(albumP.songsInAlbums);
+    if (playback.playList != albumP.songsInAlbums) {
+      // 先设置播放列表再切歌：setNewSong 内部会把「当前播放列表」缓存到本地，
 
-    if (songs.isEmpty) {
-      DialogUtil.showInfoDialog('「${album.title}」里还没有歌曲');
-      return;
-    }
-
-    final firstSongId = songs.first.songId;
-    if (playback.playList != songs) {
-      // 先设置播放列表再切歌：setNewSong 内部会把当前播放列表缓存下来
-      playback.setPlayList(songs);
-      playback.setNewSong(firstSongId);
+      // 反过来的话存下去的就是旧列表了
+      // print("准备设置播放全部歌曲");
+      playback.setPlayList(albumP.songsInAlbums);
+      playback.setNewSong(playback.playList.first.songId);
     }
   }
 
@@ -202,12 +203,12 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
               // ── 排序方式下拉框 ──
               SizedBox(
                 width: 200,
-                child: ComboBox<AlbumSortMode>(
+                child: CustomComboBox<AlbumSortMode>(
                   value: _selectedSort,
                   items: AlbumSortMode.values,
-                  itemBuilder: (mode) =>
-                      Text(mode.label, style: theme.comboTextStyle),
+                  itemLabel: (e) => e.label,
                   onChanged: (mode) async {
+                    if (mode == null) return;
                     setState(() {
                       _selectedSort = mode;
                     });
