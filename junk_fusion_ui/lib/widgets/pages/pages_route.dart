@@ -59,7 +59,7 @@ abstract class PagesRouteTable {
   static const int allMusicId = 0;
 
   /// 左侧导航栏「专辑」的 id
-  static const int albumViewId = 4;
+  static const int albumViewId = 3;
 
   /// 所有音乐
   static const PagesRouteEntry allMusic = PagesRouteEntry(
@@ -75,21 +75,20 @@ abstract class PagesRouteTable {
     builder: _buildAlbumView,
   );
 
-  /// 单张专辑：要把专辑本身带进去，所以用函数现造一个路由项
+  /// 单张专辑：要在路由表里现造一个（标题用专辑名）
   ///
-  /// 用法（比如专辑页点卡片进单张专辑）：
+  /// 进这一页之前必须先把专辑装进 AlbumProvider —— SingleAlbumPage
+  /// 自己不接专辑参数，是从 AlbumProvider 里读的：
+  ///   context.read<AlbumProvider>().setNewAlbum(album.albumId);
   ///   context.read<PagesRouteController>().push(
   ///     PagesRouteTable.singleAlbum(album),
   ///   );
-  ///
-  /// TODO: album_view_page.dart 现在还是自己在页面内部切到 SingleAlbumPage
-  ///       （本页状态 _openedAlbum），等那边改完再改成走这条路由。
   static PagesRouteEntry singleAlbum(AlbumBasicInfo album) {
     return PagesRouteEntry(
       // 单张专辑属于「专辑」这一栏，左侧按钮继续高亮专辑
       navId: albumViewId,
       title: album.title,
-      builder: (context) => SingleAlbumPage(),
+      builder: (context) => const SingleAlbumPage(),
     );
   }
 
@@ -142,6 +141,12 @@ class PagesRouteController extends ChangeNotifier {
 
   /// 页面栈的层数
   int get stackDepth => _stack.length;
+
+  /// 整个页面栈（栈底 → 栈顶）
+  ///
+  /// PagesRouteView 用它把所有进过的页都留在 widget 树里，这样返回上一页时
+  /// 那一页还是原来的状态（滚动位置、排序选择都还在）
+  List<PagesRouteEntry> get entries => List.unmodifiable(_stack);
 
   /// 左侧导航栏点了某个按钮
   ///
@@ -213,7 +218,18 @@ class PagesRouteView extends StatelessWidget {
         ),
 
         // ── 当前这一页 ──
-        Expanded(child: Builder(builder: pagesRoute.current.builder)),
+        // 用 IndexedStack：进过的页全都留在树里，只画栈顶那一页。
+        // 这样点返回时，上一页还是原来的样子（滚动位置、排序都还在，
+        // 也不会把 initState 里的后端查询再跑一遍）
+        Expanded(
+          child: IndexedStack(
+            index: pagesRoute.stackDepth - 1,
+            sizing: StackFit.expand,
+            children: [
+              for (final entry in pagesRoute.entries) entry.builder(context),
+            ],
+          ),
+        ),
       ],
     );
   }

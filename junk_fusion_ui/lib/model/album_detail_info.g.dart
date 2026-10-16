@@ -8,14 +8,10 @@ part of 'album_detail_info.dart';
 
 _AlbumDetailInfo _$AlbumDetailInfoFromJson(Map<String, dynamic> json) =>
     _AlbumDetailInfo(
-      songsList: (json['songsList'] as List<dynamic>)
+      songsLists: (json['songsLists'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
-      comment: json['comment'] as String?,
     );
 
 Map<String, dynamic> _$AlbumDetailInfoToJson(_AlbumDetailInfo instance) =>
-    <String, dynamic>{
-      'songsList': instance.songsList,
-      'comment': instance.comment,
-    };
+    <String, dynamic>{'songsLists': instance.songsLists};

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AlbumDetailInfo {
 
- List<int> get songsList; String? get comment;
+ List<int> get songsLists;
 /// Create a copy of AlbumDetailInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $AlbumDetailInfoCopyWith<AlbumDetailInfo> get copyWith => _$AlbumDetailInfoCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AlbumDetailInfo&&const DeepCollectionEquality().equals(other.songsList, songsList)&&(identical(other.comment, comment) || other.comment == comment));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AlbumDetailInfo&&const DeepCollectionEquality().equals(other.songsLists, songsLists));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(songsList),comment);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(songsLists));
 
 @override
 String toString() {
-  return 'AlbumDetailInfo(songsList: $songsList, comment: $comment)';
+  return 'AlbumDetailInfo(songsLists: $songsLists)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $AlbumDetailInfoCopyWith<$Res>  {
   factory $AlbumDetailInfoCopyWith(AlbumDetailInfo value, $Res Function(AlbumDetailInfo) _then) = _$AlbumDetailInfoCopyWithImpl;
 @useResult
 $Res call({
- List<int> songsList, String? comment
+ List<int> songsLists
 });
 
 
@@ -65,11 +65,10 @@ class _$AlbumDetailInfoCopyWithImpl<$Res>
 
 /// Create a copy of AlbumDetailInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? songsList = null,Object? comment = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? songsLists = null,}) {
   return _then(_self.copyWith(
-songsList: null == songsList ? _self.songsList : songsList // ignore: cast_nullable_to_non_nullable
-as List<int>,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
-as String?,
+songsLists: null == songsLists ? _self.songsLists : songsLists // ignore: cast_nullable_to_non_nullable
+as List<int>,
   ));
 }
 
@@ -154,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<int> songsList,  String? comment)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<int> songsLists)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AlbumDetailInfo() when $default != null:
-return $default(_that.songsList,_that.comment);case _:
+return $default(_that.songsLists);case _:
   return orElse();
 
 }
@@ -175,10 +174,10 @@ return $default(_that.songsList,_that.comment);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<int> songsList,  String? comment)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<int> songsLists)  $default,) {final _that = this;
 switch (_that) {
 case _AlbumDetailInfo():
-return $default(_that.songsList,_that.comment);case _:
+return $default(_that.songsLists);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +194,10 @@ return $default(_that.songsList,_that.comment);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<int> songsList,  String? comment)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<int> songsLists)?  $default,) {final _that = this;
 switch (_that) {
 case _AlbumDetailInfo() when $default != null:
-return $default(_that.songsList,_that.comment);case _:
+return $default(_that.songsLists);case _:
   return null;
 
 }
@@ -210,17 +209,16 @@ return $default(_that.songsList,_that.comment);case _:
 @JsonSerializable()
 
 class _AlbumDetailInfo implements AlbumDetailInfo {
-  const _AlbumDetailInfo({required final  List<int> songsList, this.comment}): _songsList = songsList;
+  const _AlbumDetailInfo({required final  List<int> songsLists}): _songsLists = songsLists;
   factory _AlbumDetailInfo.fromJson(Map<String, dynamic> json) => _$AlbumDetailInfoFromJson(json);
 
- final  List<int> _songsList;
-@override List<int> get songsList {
-  if (_songsList is EqualUnmodifiableListView) return _songsList;
+ final  List<int> _songsLists;
+@override List<int> get songsLists {
+  if (_songsLists is EqualUnmodifiableListView) return _songsLists;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_songsList);
+  return EqualUnmodifiableListView(_songsLists);
 }
 
-@override final  String? comment;
 
 /// Create a copy of AlbumDetailInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +233,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AlbumDetailInfo&&const DeepCollectionEquality().equals(other._songsList, _songsList)&&(identical(other.comment, comment) || other.comment == comment));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AlbumDetailInfo&&const DeepCollectionEquality().equals(other._songsLists, _songsLists));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_songsList),comment);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_songsLists));
 
 @override
 String toString() {
-  return 'AlbumDetailInfo(songsList: $songsList, comment: $comment)';
+  return 'AlbumDetailInfo(songsLists: $songsLists)';
 }
 
 
@@ -255,7 +253,7 @@ abstract mixin class _$AlbumDetailInfoCopyWith<$Res> implements $AlbumDetailInfo
   factory _$AlbumDetailInfoCopyWith(_AlbumDetailInfo value, $Res Function(_AlbumDetailInfo) _then) = __$AlbumDetailInfoCopyWithImpl;
 @override @useResult
 $Res call({
- List<int> songsList, String? comment
+ List<int> songsLists
 });
 
 
@@ -272,11 +270,10 @@ class __$AlbumDetailInfoCopyWithImpl<$Res>
 
 /// Create a copy of AlbumDetailInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? songsList = null,Object? comment = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? songsLists = null,}) {
   return _then(_AlbumDetailInfo(
-songsList: null == songsList ? _self._songsList : songsList // ignore: cast_nullable_to_non_nullable
-as List<int>,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
-as String?,
+songsLists: null == songsLists ? _self._songsLists : songsLists // ignore: cast_nullable_to_non_nullable
+as List<int>,
   ));
 }
 

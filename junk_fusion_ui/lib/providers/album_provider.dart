@@ -52,6 +52,12 @@ class AlbumProvider extends ChangeNotifier {
         .where((each) => each.albumId == albumId)
         .firstOrNull;
 
+    // print(
+    //   jsonDecode(
+    //     UtilFunction.cPtr2String(bindings.getCompleteAlbumInfo(albumId)),
+    //   ),
+    // );
+
     _curDetailInfo = AlbumDetailInfo.fromJson(
       jsonDecode(
         UtilFunction.cPtr2String(bindings.getCompleteAlbumInfo(albumId)),
@@ -60,12 +66,15 @@ class AlbumProvider extends ChangeNotifier {
 
     if (_curDetailInfo == null || _curBasicInfo == null) return;
 
+    // print(1);
     //用map而非set是为了保证顺序正确
     final songIdMap = {for (final e in songProvider.songs) e.songId: e};
-    _songsInAlbums = _curDetailInfo!.songsList
+    _songsInAlbums = _curDetailInfo!.songsLists
         .map((each) => songIdMap[each])
         .whereType<SongBasicInfo>()
         .toList();
+
+    // print(7);
 
     notifyListeners();
   }

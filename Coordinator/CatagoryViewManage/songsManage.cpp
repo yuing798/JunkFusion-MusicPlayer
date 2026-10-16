@@ -1,5 +1,4 @@
 #include "./songsManage.hpp"
-#include "../SongsInsertHelper/OnlineGetMatedata.hpp"
 #include "../dllManager.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Model/SongInfo.hpp"
@@ -8,11 +7,9 @@
 #include "Utils/dbUtils.hpp"
 #include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
-#include "juce_core/system/juce_PlatformDefs.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
-#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -20,7 +17,6 @@
 #include <optional>
 #include <sha1.h>
 #include <spdlog/spdlog.h>
-#include <stdexcept>
 #include <string>
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
@@ -196,7 +192,7 @@ juce::Array<juce::var> SongsManage::getAllSongsBasicInfo() {
         SQLite::Statement query(dbManage.readDb(), R"(
             SELECT songId, 
             duration, title, artists, album, 
-            trackNumber, discNumber
+            trackNumber, discNumber,
             isMyLike, playNum, hash
             FROM songs 
         )");
@@ -207,7 +203,7 @@ juce::Array<juce::var> SongsManage::getAllSongsBasicInfo() {
         }
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
-        logger->error("getAllSongs发生失败:{}", e.what());
+        logger->error("getAllSongsBasicInfo发生失败:{}", e.what());
     }
 
     return results;

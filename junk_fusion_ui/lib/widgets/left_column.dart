@@ -18,10 +18,6 @@ class LeftColumn extends StatefulWidget {
   State<LeftColumn> createState() {
     return _LeftColumnState();
   }
-
-  // 在 Flutter 里，State 对象专门负责两件 Vue 里由组件实例统一干的事：存动态数据和响应式刷新。
-  // 如果用 Vue 3 的视角来看，State 对象就相当于 <script setup> 里的所有 ref、reactive 数据，
-  //再加上 onMounted 和 onUnmounted 这些生命周期钩子。
 }
 
 //一个以 _（下划线）开头的类，意味着它是“库私有（Library Private）
@@ -36,11 +32,11 @@ class _LeftColumnState extends State<LeftColumn> {
       ],
     ),
     _NavSection(
-      label: '分类浏览',
+      label: '曲库分类',
       buttons: [
-        _NavButton(id: 3, text: '作者'),
-        _NavButton(id: 4, text: '专辑'),
-        _NavButton(id: 5, text: '歌单'),
+        _NavButton(id: 3, text: "专辑"),
+        _NavButton(id: 4, text: "歌单"),
+        _NavButton(id: 5, text: '文件夹'),
         _NavButton(id: 6, text: '风格'),
       ],
     ),
@@ -52,17 +48,6 @@ class _LeftColumnState extends State<LeftColumn> {
         _NavButton(id: 9, text: '均衡器'),
         _NavButton(id: 10, text: '音箱阵列'),
         _NavButton(id: 11, text: '设置'),
-        _NavButton(id: 12, text: "f22wf"),
-        _NavButton(id: 13, text: "fqqwf"),
-        _NavButton(id: 14, text: "f3gwf"),
-        _NavButton(id: 15, text: "fgrewf"),
-        _NavButton(id: 16, text: "fqrefwf"),
-        _NavButton(id: 17, text: "fqvrewf"),
-        _NavButton(id: 18, text: "fqqwf"),
-        _NavButton(id: 19, text: "fqqwf"),
-        _NavButton(id: 10, text: "fwdqqwwf"),
-        _NavButton(id: 21, text: "fqwdwf"),
-        _NavButton(id: 22, text: "fqdqwdf"),
       ],
     ),
   ];

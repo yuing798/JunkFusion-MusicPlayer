@@ -2,6 +2,7 @@
 #include "Coordinator/CenterDbManage/CenterDbManage.hpp"
 #include "Coordinator/CenterDbManage/dbTable.hpp"
 #include "Model/AlbumInfo.hpp"
+#include "Model/SongInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/dbUtils.hpp"
@@ -235,7 +236,16 @@ std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
     return songsList;
 }
 juce::var AlbumsManage::getCompleteInfo(int64_t albumId) {
+    SQLite::Statement selectAlbumQuery{
+        dbManage.readDb(),
+        "SELECT albumId, title,albumArtists,hash FROM albums WHERE albumId=:albumId"
+    };
+    selectAlbumQuery.bind(":albumId", albumId);
     AlbumInfo info{};
+    if (selectAlbumQuery.executeStep()) {
+        info = getBasicInfoCol(selectAlbumQuery);
+    }
+
     info.songsList = getSongsList(albumId);
     return info.toCompleteJson();
 }

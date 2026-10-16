@@ -7,6 +7,7 @@ import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/widgets/combo_box.dart';
+import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,8 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 //   第 3 部分：专辑网格（GridView，鼠标滚轮平滑滚动）
 //
 // 单张专辑卡片自上而下：专辑封面 → 专辑名 → 专辑艺术家。
-// 点卡片进入 SingleAlbumPage（本页内部切换，不涉及路由）；
+// 点卡片 → 先把这张专辑的详情装进 AlbumProvider，再往路由栈里压一条
+// 单张专辑页（见 pages_route.dart）；退回网格靠左上角那个返回按钮；
 // 鼠标悬浮到封面上会浮出一个播放按钮，点它直接整张专辑开播。
 //
 // 数据来源：AlbumProvider（→ 后端 getAllAlbumView() / getSongsListByAlbumId()）。
@@ -54,9 +56,6 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
   /// 是否升序（true = 升序，false = 降序）
   bool _isAscending = true;
 
-  /// 当前打开的专辑；null = 显示专辑网格
-  AlbumBasicInfo? _openedAlbum;
-
   @override
   void initState() {
     super.initState();
@@ -69,7 +68,9 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
       orElse: () => AlbumSortMode.byTitle,
     );
     _isAscending = isAscending;
-    context.read<AlbumProvider>().getAllAlbums();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AlbumProvider>().getAllAlbums();
+    });
   }
 
   // 切换升降序
@@ -127,12 +128,16 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     }
   }
 
-  /// 打开某张专辑
+  /// 打开某张专辑：进单张专辑页
+  ///
+  /// 先把详情装进 AlbumProvider（SingleAlbumPage 自己不接专辑参数，
+  /// 是从 AlbumProvider 里读的），再往路由栈里压一条记录 ——
+  /// 左上角的返回按钮就能顺着这条记录退回网格
   void _openAlbum(AlbumBasicInfo album) {
     context.read<AlbumProvider>().setNewAlbum(album.albumId);
-    setState(() {
-      _openedAlbum = album;
-    });
+    context.read<PagesRouteController>().push(
+      PagesRouteTable.singleAlbum(album),
+    );
   }
 
   /// 没有专辑时的提示
@@ -161,18 +166,6 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     final allAlbums = albumProvider.albums;
 
     final albums = _getSortedAlbums(allAlbums);
-
-    // 已经点开某张专辑 → 内容区整个让给单张专辑页
-    final openedAlbum = _openedAlbum;
-    if (openedAlbum != null) {
-      return SingleAlbumPage(
-        onBack: () {
-          setState(() {
-            _openedAlbum = null;
-          });
-        },
-      );
-    }
 
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
       (provider) => provider.curBasicInfo != null,

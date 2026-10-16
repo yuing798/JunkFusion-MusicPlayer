@@ -19,10 +19,13 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // ════════════════════════════════════════════════════════════════
 // single_album_page.dart — 单张专辑的内容页
 //
-// 由 AlbumViewPage 点卡片进来（也可以单独用，只要丢一张 AlbumViewInfo 进来）。
+// 由 AlbumViewPage 点卡片进来：专辑页会先 AlbumProvider.setNewAlbum()，
+// 再往路由栈里压一条单张专辑页记录，所以这一页自己不接专辑参数，
+// 直接读 AlbumProvider 里的 curBasicInfo / songsInAlbums。
+// 返回交给路由左上角那个按钮（本页不再自带返回箭头）。
 //
 // 布局（自上而下）：
-//   第 1 行（60px）：返回按钮 + 专辑封面 + 专辑名 +「艺术家 · 共 N 首 · 总时长」
+//   第 1 行（60px）：专辑封面 + 专辑名 +「艺术家 · 共 N 首」
 //   第 2 行（80px）：常用操作按钮（播放全部 / 随机播放 / 添加到播放列表 /
 //                    喜欢全部 / 专辑信息）+ 右侧排序下拉框和升降序按钮
 //   第 3 部分：歌曲列表（复用「所有音乐」页面的 EachSong，左侧补一列音轨号）
@@ -35,10 +38,7 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // ════════════════════════════════════════════════════════════════
 
 class SingleAlbumPage extends StatefulWidget {
-  /// 返回专辑列表的回调；为 null 时右上角不显示返回按钮
-  final VoidCallback? onBack;
-
-  const SingleAlbumPage({super.key, this.onBack});
+  const SingleAlbumPage({super.key});
 
   @override
   State<SingleAlbumPage> createState() => _SingleAlbumPageState();
@@ -50,9 +50,15 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
     final playback = context.read<PlaybackProvider>();
     final albumP = context.read<AlbumProvider>();
 
-    if (playback.playList == albumP.songsInAlbums) {
+    // print(123);
+    // print(playback.playList);
+    // print("\n");
+    // print(albumP.songsInAlbums);
+    if (playback.playList != albumP.songsInAlbums) {
       // 先设置播放列表再切歌：setNewSong 内部会把「当前播放列表」缓存到本地，
+
       // 反过来的话存下去的就是旧列表了
+      // print("准备设置播放全部歌曲");
       playback.setPlayList(albumP.songsInAlbums);
       playback.setNewSong(playback.playList.first.songId);
     }
@@ -115,18 +121,11 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── 第 1 行：返回 + 封面 + 专辑名 ──
+        // ── 第 1 行：封面 + 专辑名 ──
         SizedBox(
           height: 60,
           child: Row(
             children: [
-              if (widget.onBack != null)
-                IconButton(
-                  icon: const Icon(TablerIcons.arrowLeft, size: 32),
-                  tooltip: '返回专辑列表',
-                  onPressed: widget.onBack,
-                ),
-
               // 封面（小图，和大图共用 AlbumCoverImage）
               SizedBox(
                 width: 50,
@@ -175,7 +174,13 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                 icon: TablerIcons.playerPlayFilled,
                 label: '播放全部',
                 isPrimary: true,
-                onTap: albumSongs.isEmpty ? null : () => _playAll(),
+                onTap: () {
+                  // if (albumSongs.isNotEmpty) {
+                  //   _playAll();
+                  // }
+                  // print(albumSongs);
+                  _playAll();
+                },
               ),
 
               const SizedBox(width: 10),
@@ -218,17 +223,6 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                         return Row(
                           key: ValueKey(song.songId),
                           children: [
-                            SizedBox(
-                              width: 36,
-                              child: Center(
-                                child: Text(
-                                  song.trackNumber?.toString() ??
-                                      '${index + 1}',
-                                  style: theme.littleTextStyle,
-                                ),
-                              ),
-                            ),
-
                             // ── 歌曲行（直接复用「所有音乐」页面的 EachSong） ──
                             Expanded(
                               child: EachSong(
