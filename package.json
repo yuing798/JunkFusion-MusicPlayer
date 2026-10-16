@@ -19,9 +19,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generate-macro-file":"node DevScripts/generateMacroFile.cjs BridgeMacro/songInfo.jsonc SongInfoMacro Macro/SongInfoMacro.hpp junk_fusion_ui/lib/Macro/SongInfoMacro.dart && node DevScripts/generateMacroFile.cjs BridgeMacro/coordinatorMacro.jsonc CoordinatorMacro Macro/coordinatorMacro.hpp junk_fusion_ui/lib/Macro/coordinatorMacro.dart && node DevScripts/generateMacroFile.cjs BridgeMacro/sliderParam.jsonc SliderParam Macro/sliderParam.hpp junk_fusion_ui/lib/Macro/sliderParam.dart",
-    "build-ffigen-dart":"cd junk_fusion_ui && dart run ffigen --config ffigen.yaml",
-    "build-flutter-win":"cd junk_fusion_ui && flutter run -d windows"
+    "generate-macro-file":"node DevScripts/batchGenerateMacroFile.js",
+    "ffigen":"cd junk_fusion_ui && dart run ffigen --config ffigen.yaml",
+    "build-flutter-win":"cd junk_fusion_ui && flutter run -d windows",
+    "watch-jsonc":"node DevScripts/watchMacroFile.js",
+    "freezed":"cd junk_fusion_ui && dart run build_runner build --delete-conflicting-outputs"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"

@@ -6,12 +6,15 @@
 
 #include "generated_plugin_registrant.h"
 
+#include <flutter_alone/flutter_alone_plugin_c_api.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
 #include <tray_manager/tray_manager_plugin.h>
 #include <window_manager/window_manager_plugin.h>
 #include <windows_taskbar/windows_taskbar_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
+  FlutterAlonePluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterAlonePluginCApi"));
   ScreenRetrieverWindowsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ScreenRetrieverWindowsPluginCApi"));
   TrayManagerPluginRegisterWithRegistrar(

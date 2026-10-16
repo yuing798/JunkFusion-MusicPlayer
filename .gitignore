@@ -3,8 +3,6 @@ build/
 .vscode/
 .opencode/
 vcpkg_installed/
-UI/
-QtUI/
 bin/
 node_modules/
 text.txt
@@ -13,3 +11,4 @@ Debug_bin/
 Release_bin/
 TestAudio/
 *.mp3
+acl-reports/

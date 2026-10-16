@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
@@ -25,7 +25,7 @@ import '../theme/app_theme.dart';
 // //StatefulWidget 拥有可以“随时间变化”的内部状态（State），而 StatelessWidget 的所有数据都是外部传入且永远不变的。
 class EachSong extends StatelessWidget {
   // 歌曲数据
-  final SongInfo song;
+  final SongBasicInfo song;
   final void Function()? onSongPlay;
 
   const EachSong({super.key, required this.song, this.onSongPlay});
@@ -36,7 +36,7 @@ class EachSong extends StatelessWidget {
     final playback = context.watch<PlaybackProvider>();
     //context.watch<T>()：获取 + 订阅。当数据变化时，调用它的 Widget 会自动重绘
     //context.read<T>()：仅获取，不订阅。调用后拿到实例，但数据变时 Widget 不会重绘。
-    final isCurrentSong = playback.currentSong?.songId == song.songId;
+    final isCurrentSong = playback.curBasicInfo?.songId == song.songId;
     final theme = context.watch<AppTheme>();
 
     return Container(
@@ -55,7 +55,7 @@ class EachSong extends StatelessWidget {
                 if (isCurrentSong) {
                   context.read<PlaybackProvider>().togglePlayPause();
                 } else {
-                  context.read<PlaybackProvider>().setNewSong(song);
+                  context.read<PlaybackProvider>().setNewSong(song.songId);
 
                   onSongPlay?.call();
                 }

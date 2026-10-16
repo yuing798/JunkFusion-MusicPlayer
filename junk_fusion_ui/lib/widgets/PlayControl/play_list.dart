@@ -6,7 +6,8 @@ import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
@@ -146,7 +147,7 @@ class PlayList {
                                           child: GestureDetector(
                                             onTap: () {
                                               //箭头函数后面只能接上一句表达式
-                                              if (playback.currentSong ==
+                                              if (playback.curBasicInfo ==
                                                   song) {
                                                 context
                                                     .read<PlaybackProvider>()
@@ -154,14 +155,14 @@ class PlayList {
                                               } else {
                                                 context
                                                     .read<PlaybackProvider>()
-                                                    .setNewSong(song);
+                                                    .setNewSong(song.songId);
                                               }
                                             },
                                             child: Stack(
                                               alignment: Alignment.center,
                                               children: [
                                                 // 封面图（非当前歌曲时显示）
-                                                (playback.currentSong != song)
+                                                (playback.curBasicInfo != song)
                                                     ? HoverPlayButton(
                                                         hash: song.hash,
                                                       )

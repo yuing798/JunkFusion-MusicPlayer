@@ -1,29 +1,41 @@
 import 'dart:async';
 import 'dart:ffi' as dart_ffi;
+import 'dart:io';
 
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:flutter/material.dart';
+import 'package:flutter_alone/flutter_alone.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/utils/alone_lock.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 
-// provider 包：状态管理
-// 需要在 pubspec.yaml 中添加: provider: ^6.1.2
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart'; // 根组件
+import 'providers/album_provider.dart';
+import 'providers/folder_provider.dart';
+import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); //确保flutter绑定初始化
+
+  if (flutterAloneConfig != null) {
+    if (!await FlutterAlone.instance.checkAndRun(config: flutterAloneConfig!)) {
+      exit(0);
+    } // Another instance is already running
+  }
+
   await windowManager.ensureInitialized();
 
   // 【必加】告诉底层：点关闭按钮时，不要杀进程，交给我(onWindowClose)来处理！
@@ -63,11 +75,17 @@ void main() async {
   AppCache.appDocDir = (await getApplicationDocumentsDirectory()).path;
 
   final songProvider = SongProvider();
+  final albumProvider = AlbumProvider(songProvider: songProvider);
+  final playlistProvider = PlaylistProvider(songProvider: songProvider);
+  final folderProvider = FolderProvider(songProvider: songProvider);
   final playbackProvider = PlaybackProvider(songProvider: songProvider);
 
   runApp(
     JunkFusionApp(
       songProvider: songProvider,
+      albumProvider: albumProvider,
+      playlistProvider: playlistProvider,
+      folderProvider: folderProvider,
       playbackProvider: playbackProvider,
     ),
   ); //runApp不是阻塞式的，所以下面不能放析构逻辑
@@ -75,10 +93,16 @@ void main() async {
 
 class JunkFusionApp extends StatefulWidget {
   final SongProvider songProvider;
+  final AlbumProvider albumProvider;
+  final PlaylistProvider playlistProvider;
+  final FolderProvider folderProvider;
   final PlaybackProvider playbackProvider;
   const JunkFusionApp({
     super.key,
     required this.songProvider,
+    required this.albumProvider,
+    required this.playlistProvider,
+    required this.folderProvider,
     required this.playbackProvider,
   });
 
@@ -114,6 +138,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
   @override
   void dispose() {
     //dispose的执行时机不可靠，必须使用onWindowClose()来监听整个应用的关闭
+    FlutterAlone.instance.dispose();
     trayManager.removeListener(this);
     windowManager.removeListener(this);
     _saveWindowState();
@@ -252,6 +277,13 @@ class JunkFusionAppState extends State<JunkFusionApp>
       //数据层，没画布
       providers: [
         ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
+        ChangeNotifierProvider<AlbumProvider>.value(value: widget.albumProvider),
+        ChangeNotifierProvider<PlaylistProvider>.value(
+          value: widget.playlistProvider,
+        ),
+        ChangeNotifierProvider<FolderProvider>.value(
+          value: widget.folderProvider,
+        ),
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),

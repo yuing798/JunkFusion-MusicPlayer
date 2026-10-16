@@ -4,13 +4,13 @@
 #include "Utils/Yvar.hpp"
 #include "Utils/convertUtils.hpp"
 #include "juce_core/juce_core.h"
+#include <optional>
 #include <string>
 struct PlayInfo {
     juce::String path;
     double duration{0.0};
     juce::String title;
-    juce::StringArray artists;
-    juce::String hash;
+    std::optional<juce::StringArray> artists;
 
     juce::var toJson();
     static PlayInfo fromJson(Yvar json);

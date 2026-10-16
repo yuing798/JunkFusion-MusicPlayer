@@ -1,0 +1,9 @@
+#这一个文件夹做歌曲的分类视图管理，包括专辑分类，歌单分类，文件夹分类
+target_sources(JunkFusionCoordinator
+    PRIVATE
+        AlbumsManage.cpp
+        ArtistsManage.cpp
+        FileDirManage.cpp
+        PlayListManage.cpp
+        SongsManage.cpp
+)

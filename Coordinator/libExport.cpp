@@ -16,19 +16,17 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
-        // Utils::writeEmergencyLog("准备初始化dll单例1.0");
+        OtherUtils::writeEmergencyLog("准备初始化dll单例");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
-    int toggleMyLike(long long songId) {
-        return dllManager::getInstance().getSongsManager().reverseMyLike(songId);
-    }
-    void saveComment(long long songId, const char* commentText) {
-        dllManager::getInstance().getSongsManager().saveComment(commentText, songId);
-        return;
+    void toggleMyLike(long long songId) {
+        dllManager::getInstance().getDbContext()->songsManage.reverseMyLike(songId);
     }
     void freeString(char* str) {
         if (str) {
@@ -36,38 +34,39 @@ extern "C" {
         }
     }
     void someImport(const char* jsonStr) {
-        juce::Thread::launch([jsonStr]() {
+        auto jsonString = std::string(jsonStr);
+        juce::Thread::launch([jsonStr = std::move(jsonString)]() {
             auto logger{spdlog::get(LogDllID)};
             logger->info("开始导入歌曲");
             logger->debug("jsonStr == {}", jsonStr);
-            Yvar obj{juce::JSON::fromString(juce::String::fromUTF8(jsonStr))};
+            Yvar obj{juce::JSON::fromString(jsonStr)};
             auto filePaths{obj.read(CoordinatorMacro::filePaths)};
             std::vector<juce::File> paths;
             for (int i = 0; i < filePaths.size(); i++) {
                 paths.push_back(juce::File{filePaths.read(i).toString()});
             }
-            auto insertStates{dllManager::getInstance().getSongsManager().insertSongs(paths)};
-
             juce::Array<juce::var> errorFiles;
-            std::vector<juce::File> successPaths;
-
-            for (auto& insertState : insertStates) {
-                if (!insertState.msg.empty()) {
-                    juce::var obj{new juce::DynamicObject()};
-                    obj.getDynamicObject()->setProperty(
+            juce::Array<juce::var> songInfos;
+            for (auto& path : paths) {
+                auto result = dllManager::getInstance().insertSong(path);
+                if (std::holds_alternative<std::string>(result)) {
+                    auto errorMsg = std::get<std::string>(result);
+                    juce::var errorObj{new juce::DynamicObject()};
+                    errorObj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileName,
-                        insertState.path.getFileName()
+                        path.getFileName()
                     );
-                    obj.getDynamicObject()->setProperty(
+                    errorObj.getDynamicObject()->setProperty(
                         CoordinatorMacro::errorFileReason,
-                        juce::String(insertState.msg)
+                        juce::String{errorMsg}
                     );
-                    errorFiles.add(obj);
-
-                } else {
-                    successPaths.push_back(insertState.path);
+                    errorFiles.add(errorObj);
+                } else if (std::holds_alternative<SongInfo>(result)) {
+                    auto songInfo = std::get<SongInfo>(result);
+                    songInfos.add(songInfo.toBasicJson());
                 }
             }
+
             juce::var resultObj{new juce::DynamicObject()};
             {
 
@@ -80,20 +79,7 @@ extern "C" {
                 };
                 logger->info(resultStr);
             }
-
-            // 查询歌曲信息
-            {
-                juce::Array<juce::var> songInfos;
-                for (auto& successPath : successPaths) {
-                    songInfos.add(
-                        dllManager::getInstance()
-                            .getSongsManager()
-                            .getSongInfo(successPath.getFullPathName())
-                            .toJson()
-                    );
-                }
-                resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songInfos);
-            }
+            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songInfos);
 
             // 发送最终数据
             if (dllManager::getInstance().onLightSongDataImportOver)
@@ -112,7 +98,8 @@ extern "C" {
         dllManager::getInstance().onErrorSendCallback = cb;
     }
     void play(long long songId, double targetPTS) {
-        auto info = dllManager::getInstance().getSongsManager().getPlayInfo(songId).toJson();
+        auto info =
+            dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();
         juce::var playObj{new juce::DynamicObject()};
         {
             playObj.getDynamicObject()->setProperty(AudioMacro::playInfo, info);
@@ -129,18 +116,6 @@ extern "C" {
     }
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
-    }
-    const char* getTimeDomainSpecBySongId(long long songId) {
-        auto vec = dllManager::getInstance().getSongsManager().getTimeDomainSpec(songId);
-        juce::Array<juce::var> arr;
-        for (auto& i : vec) {
-            arr.add(i);
-        }
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(CoordinatorMacro::timeDomainSpecs, juce::var(arr));
-        auto ptr = ConvertUtils::object2Uint8t(obj);
-
-        return ptr;
     }
     void sendSliderValue(const char* identify, double value, int isOSC) {
         auto identifyParam = juce::String(identify);
@@ -173,19 +148,35 @@ extern "C" {
     void registerOnLightSongDataImportOver(StringFunc cb) {
         dllManager::getInstance().onLightSongDataImportOver = cb;
     }
-    void registerOnUpdateSongInfo(Int64Func cb) {
-        dllManager::getInstance().getSongsManager().OnUpdateSongInfo = cb;
-    }
+    void registerOnUpdateSongInfo(Int64Func cb) { dllManager::getInstance().onUpdateSongInfo = cb; }
     const char* getAllSongs() {
-        auto songsList = dllManager::getInstance().getSongsManager().getAllSongs();
+        auto songsList =
+            dllManager::getInstance().getDbContext()->songsManage.getAllSongsBasicInfo();
         auto obj{new juce::DynamicObject()};
         obj->setProperty(CoordinatorMacro::songsList, songsList);
 
         return ConvertUtils::object2Uint8t(obj);
     }
-    const char* getSongInfoBySongId(long long songId) {
-        auto info{dllManager::getInstance().getSongsManager().getSongInfo(songId)};
-        return ConvertUtils::object2Uint8t(info.toJson());
+    const char* getCompleteSongInfo(long long songId) {
+        auto info{
+            dllManager::getInstance().getDbContext()->songsManage.getCompleteSongInfo(songId)
+        };
+        return ConvertUtils::object2Uint8t(info.toCompleteJson());
     }
     void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
+
+    const char* getAllAlbumView() {
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(
+            CoordinatorMacro::albumsList,
+            dllManager::getInstance().getDbContext()->albumsManage.getAllAlbumsView()
+        );
+        return ConvertUtils::object2Uint8t(obj);
+    }
+
+    const char* getCompleteAlbumInfo(long long albumId) {
+        return ConvertUtils::object2Uint8t(
+            dllManager::getInstance().getDbContext()->albumsManage.getCompleteInfo(albumId)
+        );
+    }
 }

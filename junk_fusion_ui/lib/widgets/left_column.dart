@@ -1,32 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
+import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import '../theme/app_theme.dart';
 
 class LeftColumn extends StatefulWidget {
-  final void Function(int) onSelectionChanged;
-  static const int initialSelectedId = 0;
   //final：值可以在运行时确定。比如 final time = DateTime.now(); —— 程序跑起来的那一刻才知道具体时间，赋值一次后就锁死了。
   // const：值必须在编译时就确定死。比如 const pi = 3.14159; —— 在代码写出来的时候，编译器就已经算好这个数字了
 
-  const LeftColumn({super.key, required this.onSelectionChanged});
+  // 选中项不存在这里：现在归 PagesRouteController（页面栈，见
+  // widgets/pages/pages_route.dart）管，这样点左上角的返回按钮时，
+  // 左侧的高亮也能跟着同步
+  const LeftColumn({super.key});
 
   @override
   State<LeftColumn> createState() {
     return _LeftColumnState();
   }
-
-  // 在 Flutter 里，State 对象专门负责两件 Vue 里由组件实例统一干的事：存动态数据和响应式刷新。
-  // 如果用 Vue 3 的视角来看，State 对象就相当于 <script setup> 里的所有 ref、reactive 数据，
-  //再加上 onMounted 和 onUnmounted 这些生命周期钩子。
 }
 
 //一个以 _（下划线）开头的类，意味着它是“库私有（Library Private）
 class _LeftColumnState extends State<LeftColumn> {
-  /// 当前选中的按钮 ID
-  int _selectedId = 0;
-
   static const List<_NavSection> _sections = [
     _NavSection(
       label: '曲库浏览',
@@ -37,11 +32,11 @@ class _LeftColumnState extends State<LeftColumn> {
       ],
     ),
     _NavSection(
-      label: '分类浏览',
+      label: '曲库分类',
       buttons: [
-        _NavButton(id: 3, text: '作者'),
-        _NavButton(id: 4, text: '专辑'),
-        _NavButton(id: 5, text: '歌单'),
+        _NavButton(id: 3, text: "专辑"),
+        _NavButton(id: 4, text: "歌单"),
+        _NavButton(id: 5, text: '文件夹'),
         _NavButton(id: 6, text: '风格'),
       ],
     ),
@@ -53,17 +48,6 @@ class _LeftColumnState extends State<LeftColumn> {
         _NavButton(id: 9, text: '均衡器'),
         _NavButton(id: 10, text: '音箱阵列'),
         _NavButton(id: 11, text: '设置'),
-        _NavButton(id: 12, text: "f22wf"),
-        _NavButton(id: 13, text: "fqqwf"),
-        _NavButton(id: 14, text: "f3gwf"),
-        _NavButton(id: 15, text: "fgrewf"),
-        _NavButton(id: 16, text: "fqrefwf"),
-        _NavButton(id: 17, text: "fqvrewf"),
-        _NavButton(id: 18, text: "fqqwf"),
-        _NavButton(id: 19, text: "fqqwf"),
-        _NavButton(id: 10, text: "fwdqqwwf"),
-        _NavButton(id: 21, text: "fqwdwf"),
-        _NavButton(id: 22, text: "fqdqwdf"),
       ],
     ),
   ];
@@ -71,17 +55,19 @@ class _LeftColumnState extends State<LeftColumn> {
   /// 处理按钮点击（收音机行为：不允许取消选中）
   ///
   /// 对应原 Vue handleSelect(id)
-  void _handleSelect(int id) {
-    if (_selectedId != id) {
-      setState(() => _selectedId = id);
-      // 通知父组件
-      widget.onSelectionChanged(id);
-    }
+  ///
+  /// 选中这件事交给路由去做（路由会 notifyListeners，
+  /// 下一次 build 就从 currentNavId 读到新的高亮了）
+  void _handleSelect(int id, String title) {
+    context.read<PagesRouteController>().openNav(id, title: title);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<AppTheme>();
+    // watch：当前页变了（点左侧按钮、点左上角返回按钮）高亮就跟着变；
+    // 单张专辑这种子页面会让「专辑」那一栏继续亮着
+    final selectedId = context.watch<PagesRouteController>().currentNavId;
 
     return Container(
       width: 220,
@@ -100,7 +86,7 @@ class _LeftColumnState extends State<LeftColumn> {
             _buildLogoArea(),
 
             // ── 三个分组 ──
-            for (final section in _sections) _buildSection(section),
+            for (final section in _sections) _buildSection(section, selectedId),
           ],
         ),
       ),
@@ -124,7 +110,7 @@ class _LeftColumnState extends State<LeftColumn> {
     );
   }
 
-  Widget _buildSection(_NavSection section) {
+  Widget _buildSection(_NavSection section, int? selectedId) {
     return Column(
       // `crossAxisAlignment: CrossAxisAlignment.stretch` 让子元素水平撑满
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,7 +119,8 @@ class _LeftColumnState extends State<LeftColumn> {
         _buildGroupLabel(section.label),
 
         // --- 分组按钮 ---
-        for (final button in section.buttons) _buildNavButton(button),
+        for (final button in section.buttons)
+          _buildNavButton(button, selectedId),
       ],
     );
   }
@@ -165,13 +152,13 @@ class _LeftColumnState extends State<LeftColumn> {
   }
 
   /// 构建单个导航按钮
-  Widget _buildNavButton(_NavButton button) {
-    final isActive = _selectedId == button.id;
+  Widget _buildNavButton(_NavButton button, int? selectedId) {
+    final isActive = selectedId == button.id;
 
     // `GestureDetector` — 检测手势（点击、滑动等）的 widget
     // 对应 Vue 的 @click 事件绑定
     return GestureDetector(
-      onTap: () => _handleSelect(button.id),
+      onTap: () => _handleSelect(button.id, button.text),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 15.0),
         width: double.infinity, // 撑满父容器宽度

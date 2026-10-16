@@ -5,11 +5,12 @@ import 'package:ffi/ffi.dart';
 import 'package:junk_fusion_ui/Macro/SongInfoMacro.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
-import 'package:junk_fusion_ui/model/song_info.dart';
+import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
-import 'package:junk_fusion_ui/utils/utils.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
 import './native_bindings_generated.dart';
@@ -53,7 +54,7 @@ class CppCallbackManager {
     _currentPTSCallback = ffi.NativeCallable<DoubleFuncFunction>.listener((
       double value,
     ) {
-      playback.setCurrentPTS(value);
+      playback.updateCurrentPTS(value);
     });
     _onUpdateSongInfo = ffi.NativeCallable<Int64FuncFunction>.listener((
       int songId,
@@ -79,9 +80,11 @@ class CppCallbackManager {
       final dartString = UtilFunction.cPtr2String(ptr);
       Map<String, dynamic> obj = jsonDecode(dartString);
       final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
-      List<SongInfo> songsList = [];
+      List<SongBasicInfo> songsList = [];
       for (int i = 0; i < songsRaw.length; i++) {
-        songsList.add(SongInfo.fromJson(songsRaw[i] as Map<String, dynamic>));
+        songsList.add(
+          SongBasicInfo.fromJson(songsRaw[i] as Map<String, dynamic>),
+        );
       }
       songProvider.addNewSong(songsList);
 

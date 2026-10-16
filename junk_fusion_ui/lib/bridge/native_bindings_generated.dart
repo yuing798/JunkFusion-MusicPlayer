@@ -27,6 +27,10 @@ class JunkFusionDLLBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
   late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
 
+  /// @brief dll初始化
+  ///
+  /// @param cacheDirId 缓存目录
+  /// @param exeDirPtr exe文件的目录
   void dllInit(
     ffi.Pointer<ffi.Char> cacheDirId,
     ffi.Pointer<ffi.Char> exeDirPtr,
@@ -56,6 +60,20 @@ class JunkFusionDLLBindings {
   late final _freeString = _freeStringPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief Get the All Album View object
+  ///
+  /// @return DLL_EXPORT const* 所有专辑视图的json字符串
+  ffi.Pointer<ffi.Char> getAllAlbumView() {
+    return _getAllAlbumView();
+  }
+
+  late final _getAllAlbumViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllAlbumView',
+      );
+  late final _getAllAlbumView = _getAllAlbumViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }
@@ -67,26 +85,26 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
-  ffi.Pointer<ffi.Char> getSongInfoBySongId(int songId) {
-    return _getSongInfoBySongId(songId);
+  ffi.Pointer<ffi.Char> getCompleteAlbumInfo(int albumId) {
+    return _getCompleteAlbumInfo(albumId);
   }
 
-  late final _getSongInfoBySongIdPtr =
+  late final _getCompleteAlbumInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getSongInfoBySongId',
+        'getCompleteAlbumInfo',
       );
-  late final _getSongInfoBySongId = _getSongInfoBySongIdPtr
+  late final _getCompleteAlbumInfo = _getCompleteAlbumInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  ffi.Pointer<ffi.Char> getTimeDomainSpecBySongId(int songId) {
-    return _getTimeDomainSpecBySongId(songId);
+  ffi.Pointer<ffi.Char> getCompleteSongInfo(int songId) {
+    return _getCompleteSongInfo(songId);
   }
 
-  late final _getTimeDomainSpecBySongIdPtr =
+  late final _getCompleteSongInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getTimeDomainSpecBySongId',
+        'getCompleteSongInfo',
       );
-  late final _getTimeDomainSpecBySongId = _getTimeDomainSpecBySongIdPtr
+  late final _getCompleteSongInfo = _getCompleteSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   void pausePlay() {
@@ -175,19 +193,6 @@ class JunkFusionDLLBindings {
   late final _requestOnPlayStateSync = _requestOnPlayStateSyncPtr
       .asFunction<void Function(IntFunc)>();
 
-  void saveComment(int songId, ffi.Pointer<ffi.Char> commentText) {
-    return _saveComment(songId, commentText);
-  }
-
-  late final _saveCommentPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
-        >
-      >('saveComment');
-  late final _saveComment = _saveCommentPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
-
   void sendSliderValue(
     ffi.Pointer<ffi.Char> identify,
     double value,
@@ -216,15 +221,15 @@ class JunkFusionDLLBindings {
   late final _someImport = _someImportPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
-  int toggleMyLike(int songId) {
+  void toggleMyLike(int songId) {
     return _toggleMyLike(songId);
   }
 
   late final _toggleMyLikePtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.LongLong)>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
         'toggleMyLike',
       );
-  late final _toggleMyLike = _toggleMyLikePtr.asFunction<int Function(int)>();
+  late final _toggleMyLike = _toggleMyLikePtr.asFunction<void Function(int)>();
 }
 
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;

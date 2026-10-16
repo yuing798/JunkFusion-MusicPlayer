@@ -41,44 +41,16 @@ const char* ConvertUtils::copyStringOnHeap(std::string& str) {
     if (copyPtr) memcpy(copyPtr, ptr, length + 1);
     return copyPtr;
 }
-
-std::string ConvertUtils::escapeLucene(const std::string& input) {
-    // 构建一个用于快速查找的哈希表（仅初始化一次）
-    static const std::unordered_set<char> specials = {
-        '+',
-        '-',
-        '&',
-        '|',
-        '!',
-        '(',
-        ')',
-        '{',
-        '}',
-        '[',
-        ']',
-        '^',
-        '"',
-        '~',
-        '*',
-        '?',
-        ':',
-        '\\',
-        '/'
-    };
-
-    std::string output;
-    output.reserve(input.size() * 2); // 预分配内存，防止频繁扩容
-
-    for (char c : input) {
-        if (specials.find(c) != specials.end()) {
-            output.push_back('\\'); // 在前面加反斜杠
-        }
-        output.push_back(c);
+juce::Array<juce::var>
+ConvertUtils::stringArray2ArrayVar(const std::optional<juce::StringArray>& arr) {
+    if (arr.has_value()) {
+        return stringArray2ArrayVar(arr.value());
+    } else {
+        return juce::Array<juce::var>{};
     }
-    return output;
 }
 
-juce::Array<juce::var> ConvertUtils::stringArray2ArrayVar(juce::StringArray arr) {
+juce::Array<juce::var> ConvertUtils::stringArray2ArrayVar(const juce::StringArray& arr) {
     juce::Array<juce::var> varArr;
     for (auto& singleStr : arr) {
         varArr.add(singleStr);
@@ -86,12 +58,6 @@ juce::Array<juce::var> ConvertUtils::stringArray2ArrayVar(juce::StringArray arr)
     return varArr;
 }
 
-juce::var ConvertUtils::juceStringToVar(const juce::String& v) {
-    return v.isNotEmpty() ? juce::var(v) : juce::var();
-}
-juce::var ConvertUtils::optionalIntToVar(const std::optional<int>& v) {
-    return v.has_value() ? juce::var(v.value()) : juce::var();
-}
 std::vector<std::string> ConvertUtils::stringArrayToVector(const juce::StringArray& arr) {
     std::vector<std::string> vec;
     for (auto& element : arr) {
