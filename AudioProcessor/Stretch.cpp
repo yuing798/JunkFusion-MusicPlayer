@@ -7,28 +7,28 @@
 #include "processSchedule/OscReceiver.hpp"
 #include <spdlog/spdlog.h>
 
-Stretch::Stretch(AudioProcessWorker* w, OscReceiver* o) : mWorker(w), mOscReceiver(o) {
-    auto onPitchShifterChange = [this](float value) {
-        spdlog::get(LogAudioID)->debug("[Stretch::Stretch]准备调节变调量至目标值:{}", value);
-        mPitchShifter.setTargetValue(value);
-    };
-    auto onSpeedShifterChange = [this](float value) {
-        spdlog::get(LogAudioID)->debug("[Stretch::Stretch]准备调节变速量至目标值:{}", value);
-        mSpeedShifter.setTargetValue(value);
-    };
-    mWorker->receiver->onPitchShifterChange = onPitchShifterChange;
-    mOscReceiver->onPitchShifterChange = onPitchShifterChange;
-    mWorker->receiver->onSpeedShifterChange = onSpeedShifterChange;
-    mOscReceiver->onSpeedShifterChange = onSpeedShifterChange;
+Stretch::Stretch(SmoothSliderControl& smooth) : mSmooth(smooth) {
+    // auto onPitchShifterChange = [this](float value) {
+    //     spdlog::get(LogAudioID)->debug("[Stretch::Stretch]准备调节变调量至目标值:{}", value);
+    //     mPitchShifter.setTargetValue(value);
+    // };
+    // auto onSpeedShifterChange = [this](float value) {
+    //     spdlog::get(LogAudioID)->debug("[Stretch::Stretch]准备调节变速量至目标值:{}", value);
+    //     mSpeedShifter.setTargetValue(value);
+    // };
+    // mWorker->receiver->onPitchShifterChange = onPitchShifterChange;
+    // mOscReceiver->onPitchShifterChange = onPitchShifterChange;
+    // mWorker->receiver->onSpeedShifterChange = onSpeedShifterChange;
+    // mOscReceiver->onSpeedShifterChange = onSpeedShifterChange;
 }
 
 void Stretch::prepareToPlay(double samplerate, int numChannels, int maxNumSamples) {
-    mPitchShifter.reset(samplerate, 0.002);
-    mSpeedShifter.reset(samplerate, 0.002);
-    mPitchShifter.setCurrentAndTargetValue(0.0f);
-    mSpeedShifter.setCurrentAndTargetValue(1.0f);
+    // mPitchShifter.reset(samplerate, 0.002);
+    // mSpeedShifter.reset(samplerate, 0.002);
+    // mPitchShifter.setCurrentAndTargetValue(0.0f);
+    // mSpeedShifter.setCurrentAndTargetValue(1.0f);
     mStretch.presetDefault(numChannels, (float)samplerate);
-    mStretch.setTransposeSemitones(mPitchShifter.getCurrentValue());
+    mStretch.setTransposeSemitones(mSmooth.pitchShifter.getCurrentValue());
     tempBuffer.setSize(numChannels, maxNumSamples * 2);
     tempBuffer.clear();
     mRingBuffer.prepareToPlay(numChannels, samplerate);
@@ -40,10 +40,10 @@ void Stretch::processBlock(
     juce::AudioBuffer<float>& outputBuffer,
     int finalNumSamples
 ) {
-    mSpeedShifter.skip(finalNumSamples);
-    mPitchShifter.skip(finalNumSamples);
-    auto pitchShiftValue{mPitchShifter.getCurrentValue()};
-    auto speedShiftValue{mSpeedShifter.getCurrentValue()};
+    mSmooth.speedShifter.skip(finalNumSamples);
+    mSmooth.pitchShifter.skip(finalNumSamples);
+    auto pitchShiftValue{mSmooth.pitchShifter.getCurrentValue()};
+    auto speedShiftValue{mSmooth.speedShifter.getCurrentValue()};
     mStretch.setTransposeSemitones(pitchShiftValue);
 
     auto numForPush{juce::jmin(beforeFifoNumSamples, mRingBuffer.getFreeSpace())};
@@ -75,4 +75,3 @@ void Stretch::processBlock(
         finalNumSamples
     );
 }
-float Stretch::getSpeedShifterValue() const noexcept { return mSpeedShifter.getCurrentValue(); }

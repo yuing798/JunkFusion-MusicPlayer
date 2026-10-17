@@ -1,4 +1,6 @@
 #include "./PlayInfo.hpp"
+#include "Macro/SongInfoMacro.hpp"
+#include "Utils/convertUtils.hpp"
 
 juce::var PlayInfo::toJson() {
     juce::var obj{new juce::DynamicObject()};

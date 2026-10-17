@@ -1,5 +1,6 @@
 #include "./mathUtils.hpp"
 #include "juce_core/juce_core.h"
+#include <vector>
 
 std::vector<float> MathUtils::generateSinTable(double num4pi) {
     std::vector<float> tableBuffer;
@@ -65,3 +66,7 @@ float MathUtils::getLagrangeInterpolator(const float* data, int size, float proc
                     distanceIndex2IntIndexMinus1 * 0.16667f * positive2;
     return outputSample;
 }
+
+int MathUtils::msToSample(float ms, float sr) { return (int)(ms * 0.001 * sr); }
+
+float MathUtils::sampleToMs(int sample, float sr) { return (float)sample / sr * 1000.0f; }

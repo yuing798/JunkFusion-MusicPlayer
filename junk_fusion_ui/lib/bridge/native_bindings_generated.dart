@@ -116,15 +116,25 @@ class JunkFusionDLLBindings {
   );
   late final _pausePlay = _pausePlayPtr.asFunction<void Function()>();
 
-  void play(int songId, double targetPTS) {
-    return _play(songId, targetPTS);
+  /// @brief 播放
+  ///
+  /// @param songId 歌曲id
+  /// @param targetSeconds 目标秒数
+  /// @param isSeek 是否执行了跳转
+  /// @param isNewSong 是否为新歌
+  /// @return DLL_EXPORT
+  void play(int songId, double targetPTS, int isSeek, int isNewSong) {
+    return _play(songId, targetPTS, isSeek, isNewSong);
   }
 
   late final _playPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong, ffi.Double)>>(
-        'play',
-      );
-  late final _play = _playPtr.asFunction<void Function(int, double)>();
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Double, ffi.Int, ffi.Int)
+        >
+      >('play');
+  late final _play = _playPtr
+      .asFunction<void Function(int, double, int, int)>();
 
   void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
     return _registerCurrentPTSCallback(doubleFunc);

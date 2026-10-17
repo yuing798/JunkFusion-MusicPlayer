@@ -82,7 +82,7 @@ class PlaybackProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    bindings.play(_curBasicInfo!.songId, 0.0);
+    bindings.play(_curBasicInfo!.songId, 0.0, 0, 1);
 
     saveState(); //切换歌曲的时候顺便缓存数据
     _setWindowBarTitleAndArtists();
@@ -120,7 +120,7 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
 
     if (_curBasicInfo != null) {
-      bindings.play(_curBasicInfo!.songId, _currentTimeStamp);
+      bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 1);
       bindings.pausePlay();
     } //为了在后端初始化的时候存储播放信息
   }
@@ -214,7 +214,7 @@ class PlaybackProvider extends ChangeNotifier {
       bindings.pausePlay();
     } else {
       if (_curBasicInfo == null) return;
-      bindings.play(_curBasicInfo!.songId, _currentTimeStamp);
+      bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 0);
     }
     _setWindowTaskbarBtn();
   }
@@ -230,7 +230,7 @@ class PlaybackProvider extends ChangeNotifier {
     _currentTimeStamp = targetSeconds;
     // print("seekCurrentPTS收到跳转到PTS通知:$targetSeconds");
     if (_isPlaying) {
-      bindings.play(_curBasicInfo!.songId, targetSeconds);
+      bindings.play(_curBasicInfo!.songId, targetSeconds, 1, 0);
     }
     notifyListeners();
   }

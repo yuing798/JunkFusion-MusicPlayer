@@ -21,6 +21,24 @@ namespace MathUtils {
     // 拉格朗日插值
     float getLagrangeInterpolator(const float* data, int size, float process);
 
+    /**
+     * @brief 将毫秒数转换为样本数
+     *
+     * @param ms 毫秒数
+     * @param sr 采样率
+     * @return int 样本数
+     */
+    int msToSample(float ms, float sr);
+
+    /**
+     * @brief 将样本数转换为毫秒数
+     *
+     * @param sample 样本数
+     * @param sr 采样率
+     * @return float 毫秒数
+     */
+    float sampleToMs(int sample, float sr);
+
     // 环形缓冲区避免索引越界函数
     template <typename T1> T1 getCircularBufferIndex(T1 currentIndex, int size) {
         if (currentIndex >= size) {
@@ -37,4 +55,8 @@ namespace MathUtils {
         }
         return currentIndex;
     }
+
+    inline std::vector<float> fadeInSinTable = generateSinTable(0.5);
+
+    inline std::vector<float> fadeOutCosTable = generateCosTable(0.5);
 } // namespace MathUtils

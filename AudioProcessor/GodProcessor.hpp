@@ -1,44 +1,80 @@
 #pragma once
 
-#include "AudioPreProcess.hpp"
-#include "AudioRingBuffer.hpp"
+#include "./BeforeCrossFadeDSPModule.hpp"
+#include "CrossFadeArea.hpp"
 #include "DeviceManager.hpp"
+#include "Model/PlayInfo.hpp"
 #include "PlayCount.hpp"
-#include "Stretch.hpp"
+#include "PlayPauseControl.hpp"
+#include "ProgressBarWatch.hpp"
+#include "SmoothSliderControl.hpp"
 #include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
-#include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
 #include "processSchedule/OscReceiver.hpp"
-#include "zmq.hpp"
 #include <array>
 #include <atomic>
-#include <cstdint>
+#include <functional>
 #include <memory>
 #include <spdlog/logger.h>
+#include <string>
 
 class GodProcessor : public juce::AudioProcessor {
 private:
-    std::unique_ptr<OscReceiver> mOscReceiver;
-    std::unique_ptr<AudioProcessWorker> mAudioProcessWorker;
-    juce::File mCacheDir;
-    std::unique_ptr<AudioPreProcess> mPreProcess;  // 音频预处理
-    std::unique_ptr<DeviceManager> mDeviceManager; // 设备管理要在所有音频处理子类之前就析构
-    double mSampleRate{44100.0};
-    int mNumChannels{2};
-    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterVolume;
+    AudioProcessWorker mWorker;
+    OscReceiver mOscReceiver;
 
-    // 变速时，需要两个fifo(ffmpeg-->preProcess)和(-->signalSmith)共同作用，而在两个fifo之间的缓冲区大小必须是
-    // 声卡需要的缓冲区大小乘以倍速率
-    juce::AudioBuffer<float> mSpeedShifterBuffer;
-    std::unique_ptr<Stretch> mStretch;
+    float mSampleRate{44100.0f};
+    int mNumChannels{2};
+
+    PlayInfo mPlayInfo;
+
+    std::unique_ptr<SystemAudioControl> mSystemAudioControl; // 系统级音频控制
+
+    ProgressBarWatch mProgressBar;
+    PlayCount mPlayCount;
+    PlayPauseControl mPlayPauseControl;
+    CrossFadeArea mCrossFade;
+    SmoothSliderControl mSmooth;
+
+    struct BeforeCrossFadeDSPModuleAndBuffer {
+        juce::AudioBuffer<float> buffer;
+        BeforeCrossFadeDSPModule module;
+
+        BeforeCrossFadeDSPModuleAndBuffer(AudioProcessWorker& worker, SmoothSliderControl smooth)
+            : module(worker, smooth) {}
+    };
+    std::array<BeforeCrossFadeDSPModuleAndBuffer, 2> mDoubleDucks;
+
+    DeviceManager mDeviceManager; // 设备管理要在所有音频处理子类之前就析构
+
+    /**
+     * @brief 播放上一首歌曲或者下一首歌曲的回调请求
+     *
+     * @param nextOrPrevious true为下一首，false为上一首
+     */
+    void playNextOrPreviousSong(bool nextOrPrevious);
+
+    /**
+     * @brief Set the Ordinary Play
+     * object,设置普通的播放状态，也就是不走交叉淡化那一条路径，只是普通的淡入处理
+     *
+     */
+    void setOrdinaryPlay(double targetSeconds);
+    void pausePlay();
+    void play(PlayInfo info, double targetSeconds, bool isSeek, bool isNewSong);
 
 public:
-    GodProcessor(juce::StringArray initArgs);
+    GodProcessor(
+        std::string pushPullPort,
+        std::string pubSubPort,
+        juce::File cacheDir,
+        int oscPort
+    );
     ~GodProcessor();
     const juce::String getName() const override { return "JunkFusion"; }
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override;
