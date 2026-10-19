@@ -1,6 +1,8 @@
 #include "./CrossFadeArea.hpp"
 #include "Utils/mathUtils.hpp"
 
+CrossFadeArea::CrossFadeArea() {}
+
 void CrossFadeArea::prepareToPlay(float sr) { mSampleRate = sr; }
 
 void CrossFadeArea::processBlock(
@@ -31,8 +33,8 @@ void CrossFadeArea::processBlock(
                 fadeProcess
             );
             for (int ch = 0; ch < output.getNumChannels(); ch++) {
-                auto mainPtr = inputs[mainDuckIndex]->getReadPointer(ch);
-                auto deputyPtr = inputs[!mainDuckIndex]->getReadPointer(ch);
+                auto mainPtr = inputs[mainDeckIndex]->getReadPointer(ch);
+                auto deputyPtr = inputs[!mainDeckIndex]->getReadPointer(ch);
                 auto outPtr = output.getWritePointer(ch);
                 outPtr[i] = mainPtr[i] * sinGain + deputyPtr[i] * cosGain;
             }
@@ -44,7 +46,7 @@ void CrossFadeArea::processBlock(
             currentCrossFadeIndex++;
         } else {
             for (int ch = 0; ch < output.getNumChannels(); ch++) {
-                auto inPtr = inputs[mainDuckIndex]->getReadPointer(ch);
+                auto inPtr = inputs[mainDeckIndex]->getReadPointer(ch);
                 auto outPtr = output.getWritePointer(ch);
                 outPtr[i] = inPtr[i];
             }
@@ -53,7 +55,7 @@ void CrossFadeArea::processBlock(
 }
 
 void CrossFadeArea::setCrossFadeBegin(bool isSongChange) {
-    mainDuckIndex = !mainDuckIndex;
+    mainDeckIndex = !mainDeckIndex;
     currentCrossFadeIndex = 0;
     isCrossFade = true;
     mIsSongChange = isSongChange;

@@ -377,6 +377,7 @@ void FFmpegDecoder::run() {
             }
             // 空间不足，让出 CPU 切片，睡眠 3 毫秒等待声卡消耗数据
             juce::Thread::sleep(5);
+            // OtherUtils::writeEmergencyLog("解码线程卡住了");
         }
 
         if (!threadShouldExit()) {

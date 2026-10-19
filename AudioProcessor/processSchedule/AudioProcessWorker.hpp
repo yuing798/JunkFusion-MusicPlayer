@@ -20,7 +20,7 @@ private:
 
 public:
     AudioProcessorPuller(zmq::context_t& ctx, std::string pushPullPort);
-    std::function<void(PlayInfo info, double targetPts)> onPlay;
+    std::function<void(PlayInfo info, float targetSeconds, bool isSeek, bool isNewSong)> onPlay;
     std::function<void(void)> onPausePlay;
     std::function<void(float)> onMasterVolumeChange;
     std::function<void(float)> onSpeedShifterChange;

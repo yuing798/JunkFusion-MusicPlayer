@@ -1,4 +1,5 @@
 
+#include "DeviceManager.hpp"
 #include "GodProcessor.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Utils/constants.h"
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
         GodProcessor processor{
             std::move(pushPullPort),
             std::move(pubSubPort),
-            std::move(cacheDir),
+            cacheDir,
             std::move(oscPort)
         }; // 音频线程是唯一的核心，其他所有的类都服务于音频线程
 

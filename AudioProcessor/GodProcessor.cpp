@@ -7,8 +7,10 @@
 #include "ProgressBarWatch.hpp"
 #include "SmoothSliderControl.hpp"
 #include "SystemAudioControl.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
+#include "Utils/otherUtils.hpp"
 #include "WindowsSystemAudioControl.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
@@ -32,11 +34,10 @@ GodProcessor::GodProcessor(
 )
     : mWorker(pushPullPort, pubSubPort), mOscReceiver(oscPort), mProgressBar(mWorker),
       mPlayCount(mWorker), mSmooth(mOscReceiver, mWorker),
-      mDoubleDucks{
+      mDoubleDecks{
           {BeforeCrossFadeDSPModuleAndBuffer{mWorker, mSmooth},
            BeforeCrossFadeDSPModuleAndBuffer{mWorker, mSmooth}}
-      },
-      mDeviceManager(cacheDir.getChildFile("JFConfig.xml")) {
+      } {
 
     // 设置系统音频管理类
     {
@@ -106,30 +107,38 @@ GodProcessor::GodProcessor(
     mPlayPauseControl.onPauseOver = [this]() {
         mPlayCount.pauseCount();
         mProgressBar.pauseProgressBar();
-
-        // 这里等下要把出水口堵住并且重置前面的DSP模块
+        mDoubleDecks[mCrossFade.getMainDeckIndex()].module.pauseThread();
     };
 
-    mCrossFade.onCrossFadeEnd = [this] {};
+    mCrossFade.onCrossFadeEnd = [this] {
+        // 这里等下要把出水口堵住并且重置前面的DSP模块
+        mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.pauseThread();
+        mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.reset();
+    };
 
     // 播放
     mWorker.receiver->onPlay =
         [this](PlayInfo info, double targetSeconds, bool isSeek, bool isNewSong) {
+            // OtherUtils::writeEmergencyLog("收到播放指令");
             play(std::move(info), targetSeconds, isSeek, isNewSong);
+            // OtherUtils::writeEmergencyLog("播放指令结束");
         };
 
     for (int i = 0; i < 2; i++) {
-        mDoubleDucks[i].module.onRequestPlayNextSong = [this]() {
+        mDoubleDecks[i].module.onRequestPlayNextSong = [this]() {
             playNextOrPreviousSong(true);
             mPlayCount.pauseCount();
             mProgressBar.pauseProgressBar();
         };
     }
 
-    // 初始化设备管理者
     {
-        mDeviceManager.connectProcessor(this); // 设备链接必须放到构造函数的末尾，绝对不能移动
+        auto configFile{cacheDir.getChildFile("JFConfig.xml")};
+        mDeviceManager = std::make_unique<DeviceManager>(configFile);
+        mDeviceManager->connectProcessor(this);
     }
+
+    OtherUtils::writeEmergencyLog("godProcessor构造函数完成");
 }
 
 void GodProcessor::playNextOrPreviousSong(bool nextOrPrevious) {
@@ -152,27 +161,22 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
     mCrossFade.prepareToPlay(mSampleRate);
     for (int i = 0; i < 2; i++) {
         // 这里只需要分配最大缓冲区数目是因为这个缓冲区只需要存储交叉淡化前最后一环的数据
-        mDoubleDucks[i].buffer.setSize(mNumChannels, maximumExpectedSamplesPerBlock);
+        mDoubleDecks[i].buffer.setSize(mNumChannels, maximumExpectedSamplesPerBlock);
+        mDoubleDecks[i]
+            .module.prepareToPlay(mSampleRate, outputLayout, maximumExpectedSamplesPerBlock);
     }
 }
 
 void GodProcessor::releaseResources() {}
 void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     juce::ignoreUnused(midiMessages);
-    auto finalNumSamples{buffer.getNumSamples()}; // 最终需要的缓冲区大小
-    auto speedShifterNumSamples{
-        static_cast<int>(finalNumSamples * mStretch.getSpeedShifterValue())
-    }; // 解码-.变速之间都要根据这个缓冲区大小做计算
-
-    mPreProcess.processBlock(mSpeedShifterBuffer, speedShifterNumSamples);
-    // buffer.clear();
-    mStretch.processBlock(mSpeedShifterBuffer, speedShifterNumSamples, buffer, finalNumSamples);
-    // for (int ch = 0; ch < buffer.getNumChannels(); ch++) {
-    //     buffer.copyFrom(ch, 0, mSpeedShifterBuffer.getReadPointer(ch), finalNumSamples);
-    // } // 这个做个测试
+    for (int i = 0; i < 2; i++) {
+        mDoubleDecks[i].buffer.clear();
+        mDoubleDecks[i].module.processBlock(mDoubleDecks[i].buffer, buffer.getNumSamples());
+    }
 
     mCrossFade.processBlock(
-        {&mDoubleDucks[0].buffer, &mDoubleDucks[1].buffer},
+        {&mDoubleDecks[0].buffer, &mDoubleDecks[1].buffer},
         buffer,
         buffer.getNumSamples()
     ); // 交叉淡化
@@ -189,7 +193,7 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     mProgressBar.processBlock(buffer.getNumSamples());              // 进度条
 }
 
-void GodProcessor::setOrdinaryPlay(double targetSeconds) {
+void GodProcessor::continuePlay(double targetSeconds) {
     if (targetSeconds == 0.0) {
         mPlayPauseControl.setPlaybackState(
             PlayPauseControl::PlayPauseState::Play,
@@ -216,6 +220,8 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
     //     waitCrossFadeOver.wait(1000);
     // }
     if (isNewSong) {
+        // spdlog::get(LogAudioID)
+        //     ->debug("准备播放新歌:{}", Yvar{info.toJson()}.toString().toStdString());
         mPlayInfo = info;
         SystemAudioControl::MediaMetadata data{};
         data.title = info.title.toStdString();
@@ -224,26 +230,69 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
         mSystemAudioControl->updateMetadata(data);
 
         mPlayCount.setNewSong(info.path, info.duration);
-        mProgressBar.beginProgressBar((float)targetSeconds);
 
-        if (mDoubleDucks[mCrossFade.getMainDuckIndex()].module.getDecoderRunning()) {
+        if (mDoubleDecks[mCrossFade.getMainDeckIndex()].module.isDecoderRunning() &&
+            !mPlayPauseControl.getIsFullMute()) {
             // 如果是新歌且原歌正在播放，切换甲板索引,采取600ms的交叉淡化长度
-            mCrossFade.setCrossFadeBegin(true);
+
+            mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
+                info.path.toStdString(),
+                targetSeconds
+            );
+            mCrossFade.setCrossFadeBegin(true); // 先开新歌再切甲板
+
+        } else if (mDoubleDecks[mCrossFade.getMainDeckIndex()].module.isDecoderRunning() &&
+                   mPlayPauseControl.getIsFullMute()) {
+
+            mCrossFade.flipDeck();
+            mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
+                info.path.toStdString(),
+                targetSeconds
+            );
+            mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.reset();
+            continuePlay(targetSeconds);
+
         } else {
             // 正常的播放
-            setOrdinaryPlay(targetSeconds);
+            continuePlay(targetSeconds);
+            mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
+                info.path.toStdString(),
+                targetSeconds
+            );
         }
     } else {
         mPlayCount.continueCount();
         if (isSeek) {
-            if (mDoubleDucks[mCrossFade.getMainDuckIndex()].module.getDecoderRunning()) {
+            if (mDoubleDecks[mCrossFade.getMainDeckIndex()].module.isDecoderRunning() &&
+                !mPlayPauseControl.getIsFullMute()) {
                 // 不是新歌但是跳转位置，且原歌曲正在播放，采取50ms交叉长度
+                mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
+                    mPlayInfo.path.toStdString(),
+                    targetSeconds
+                );
                 mCrossFade.setCrossFadeBegin(false);
+
+            } else if (mDoubleDecks[mCrossFade.getMainDeckIndex()].module.isDecoderRunning() &&
+                       mPlayPauseControl.getIsFullMute()) {
+
+                mCrossFade.flipDeck();
+                mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
+                    info.path.toStdString(),
+                    targetSeconds
+                );
+                mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.reset();
+                continuePlay(targetSeconds);
+
             } else {
-                setOrdinaryPlay(targetSeconds);
+                mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
+                    info.path.toStdString(),
+                    targetSeconds
+                );
+                continuePlay(targetSeconds);
             }
         } else {
-            setOrdinaryPlay(targetSeconds);
+            continuePlay(targetSeconds);
+            mDoubleDecks[mCrossFade.getMainDeckIndex()].module.continueThread();
         }
     }
     mProgressBar.beginProgressBar(targetSeconds);

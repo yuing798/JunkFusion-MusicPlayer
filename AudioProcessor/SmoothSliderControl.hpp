@@ -14,13 +14,14 @@ struct SmoothSliderControl {
     OscReceiver& oscReceiver;
     AudioProcessWorker& worker;
 
-    float sampleRate;
-
     SmoothSliderControl(OscReceiver& oscReceiver, AudioProcessWorker& worker);
 
     void prepareToPlay(float sampleRate);
 
-    // void processBlock(int numSamples);
+private:
+    float sampleRate;
+
+    // void processBlock(int numSamples);//内部细节在调用的processBlock中执行
 
     // float getMasterVolume() noexcept { return masterVolume.getCurrentValue(); }
     // float getPitchShifter() noexcept { return pitchShifter.getCurrentValue(); }
@@ -31,4 +32,5 @@ struct SmoothSliderControl {
     // int getProgressChangeCrossFade() noexcept {
     //     return MathUtils::msToSample(progressChangeCrossFadeMs.getCurrentValue(), sampleRate);
     // }
+    DONT_COPY_AND_MOVE(SmoothSliderControl)
 };

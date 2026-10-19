@@ -37,4 +37,8 @@ public:
         juce::AudioBuffer<float>& outputBuffer,
         int finalNumSamples
     );
+
+    void reset();
+
+    DONT_COPY_AND_MOVE(Stretch)
 };

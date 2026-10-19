@@ -1,4 +1,5 @@
 #pragma once
+#include "Utils/constants.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include "processSchedule/AudioProcessWorker.hpp"
@@ -27,4 +28,6 @@ public:
     void pauseProgressBar();
     ~ProgressBarWatch();
     float getCurSeconds();
+
+    DONT_COPY_AND_MOVE(ProgressBarWatch)
 };

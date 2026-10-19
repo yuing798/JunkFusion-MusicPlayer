@@ -29,7 +29,17 @@ extern "C" {
     DLL_EXPORT void someImport(const char*);
     DLL_EXPORT void closeBackend(); // dll注销
     DLL_EXPORT void registerErrorSendCallback(StringFunc cb);
-    DLL_EXPORT void play(long long songId, double targetPTS);
+
+    /**
+     * @brief 播放
+     *
+     * @param songId 歌曲id
+     * @param targetSeconds 目标秒数
+     * @param isSeek 是否执行了跳转
+     * @param isNewSong 是否为新歌
+     * @return DLL_EXPORT
+     */
+    DLL_EXPORT void play(long long songId, double targetPTS, int isSeek, int isNewSong);
     DLL_EXPORT void pausePlay(); // 暂停播放
     DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);

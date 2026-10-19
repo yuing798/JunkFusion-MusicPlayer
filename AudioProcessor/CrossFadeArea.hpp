@@ -10,7 +10,7 @@ private:
     std::atomic<int> currentCrossFadeIndex{0}; // 交叉淡化区的查表索引
     std::atomic<bool> isCrossFade;             // 是否在交叉淡化区
     std::atomic_bool mIsSongChange;
-    int mainDuckIndex{0}; // 主甲板号
+    int mainDeckIndex{0}; // 主甲板号
     float mSampleRate;
 
     const int songChangeMs{600};
@@ -32,5 +32,10 @@ public:
     void setCrossFadeBegin(bool isSongChange);
     std::function<void(void)> onCrossFadeEnd; // 交叉淡化区域结束
 
-    int getMainDuckIndex() noexcept { return mainDuckIndex; }
+    int getMainDeckIndex() noexcept { return mainDeckIndex; }
+
+    // 直接翻转甲板(如果原甲板在工作但是处于静音状态需要这个函数)
+    void flipDeck() { mainDeckIndex = !mainDeckIndex; }
+
+    DONT_COPY_AND_MOVE(CrossFadeArea)
 };

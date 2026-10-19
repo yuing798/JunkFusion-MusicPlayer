@@ -6,12 +6,7 @@ void PlayPauseControl::prepareToPlay(float sampleRate) {
     smoothPlayPause.reset(sampleRate, 0.5f);
     smoothPlayPause.setCurrentAndTargetValue(0.0f);
 }
-void PlayPauseControl::setPlaybackState(
-    PlayPauseState playOrPause,
-    bool isCrossFade,
-    BeginEndState beginOrEnd
-) {
-    if (isCrossFade) return;
+void PlayPauseControl::setPlaybackState(PlayPauseState playOrPause, BeginEndState beginOrEnd) {
     if (playOrPause == PlayPauseState::Play) {
         if (beginOrEnd == BeginEndState::Begin) {
             smoothPlayPause.setCurrentAndTargetValue(1.0f);

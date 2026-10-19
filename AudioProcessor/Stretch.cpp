@@ -75,3 +75,5 @@ void Stretch::processBlock(
         finalNumSamples
     );
 }
+
+void Stretch::reset() { mStretch.reset(); }

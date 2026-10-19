@@ -16,6 +16,7 @@ target_sources(JunkFusionAudioProcess
         ProgressBarWatch.cpp
         CrossFadeArea.cpp
         SmoothSliderControl.cpp
+        PlayPauseControl.cpp
 )
 
 add_subdirectory(processSchedule)

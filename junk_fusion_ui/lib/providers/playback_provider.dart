@@ -45,6 +45,9 @@ class PlaybackProvider extends ChangeNotifier {
   double _volume = 0.0;
   double get volume => _volume;
 
+  //是否在静止播放状态下面拖动了进度条，这个变量的存在是为了修复静音-->拖动进度条-->播放产生的播放位置不准确的bug
+  bool _isStaticDragProgressBar = false;
+
   void setVolume(double value) {
     _volume = value;
     notifyListeners();
@@ -120,8 +123,8 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
 
     if (_curBasicInfo != null) {
-      bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 1);
-      bindings.pausePlay();
+      // bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 1);
+      // bindings.pausePlay();
     } //为了在后端初始化的时候存储播放信息
   }
 
@@ -214,7 +217,12 @@ class PlaybackProvider extends ChangeNotifier {
       bindings.pausePlay();
     } else {
       if (_curBasicInfo == null) return;
-      bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 0);
+      if (_isStaticDragProgressBar == true) {
+        bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 1, 0);
+        _isStaticDragProgressBar = false;
+      } else {
+        bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 0);
+      }
     }
     _setWindowTaskbarBtn();
   }
@@ -231,6 +239,8 @@ class PlaybackProvider extends ChangeNotifier {
     // print("seekCurrentPTS收到跳转到PTS通知:$targetSeconds");
     if (_isPlaying) {
       bindings.play(_curBasicInfo!.songId, targetSeconds, 1, 0);
+    } else {
+      _isStaticDragProgressBar = true;
     }
     notifyListeners();
   }

@@ -45,12 +45,14 @@ private:
         juce::AudioBuffer<float> buffer;
         BeforeCrossFadeDSPModule module;
 
-        BeforeCrossFadeDSPModuleAndBuffer(AudioProcessWorker& worker, SmoothSliderControl smooth)
+        BeforeCrossFadeDSPModuleAndBuffer(AudioProcessWorker& worker, SmoothSliderControl& smooth)
             : module(worker, smooth) {}
     };
-    std::array<BeforeCrossFadeDSPModuleAndBuffer, 2> mDoubleDucks;
+    std::array<BeforeCrossFadeDSPModuleAndBuffer, 2> mDoubleDecks;
 
-    DeviceManager mDeviceManager; // 设备管理要在所有音频处理子类之前就析构
+    // DeviceManager mDeviceManager; // 设备管理要在所有音频处理子类之前就析构
+
+    std::unique_ptr<DeviceManager> mDeviceManager;
 
     /**
      * @brief 播放上一首歌曲或者下一首歌曲的回调请求
@@ -64,7 +66,7 @@ private:
      * object,设置普通的播放状态，也就是不走交叉淡化那一条路径，只是普通的淡入处理
      *
      */
-    void setOrdinaryPlay(double targetSeconds);
+    void continuePlay(double targetSeconds);
     void pausePlay();
     void play(PlayInfo info, double targetSeconds, bool isSeek, bool isNewSong);
 
