@@ -12,10 +12,23 @@ target_sources(JunkFusionAudioProcess
         AudioPreProcess.cpp
         PlayCount.cpp
         Stretch.cpp
+        BeforeCrossFadeDSPModule.cpp
+        ProgressBarWatch.cpp
+        CrossFadeArea.cpp
+        SmoothSliderControl.cpp
+        PlayPauseControl.cpp
 )
 
 add_subdirectory(processSchedule)
 add_subdirectory(SystemAudioControl)
+
+if(MSVC)
+target_compile_options(JunkFusionAudioProcess
+    PRIVATE
+        /wd4244
+        /wd4267
+)
+endif()
 
 target_compile_definitions(JunkFusionAudioProcess
     PRIVATE

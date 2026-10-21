@@ -97,13 +97,18 @@ extern "C" {
     void registerErrorSendCallback(StringFunc cb) {
         dllManager::getInstance().onErrorSendCallback = cb;
     }
-    void play(long long songId, double targetPTS) {
+    void play(long long songId, double targetSeconds, int isSeek, int isNewSong) {
         auto info =
             dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();
         juce::var playObj{new juce::DynamicObject()};
         {
             playObj.getDynamicObject()->setProperty(AudioMacro::playInfo, info);
-            playObj.getDynamicObject()->setProperty(AudioMacro::targetPTS, targetPTS);
+            playObj.getDynamicObject()->setProperty(AudioMacro::targetPTS, targetSeconds);
+            playObj.getDynamicObject()->setProperty(AudioMacro::isSeek, isSeek == 0 ? false : true);
+            playObj.getDynamicObject()->setProperty(
+                AudioMacro::isNewSong,
+                isNewSong == 0 ? false : true
+            );
         }
         juce::var resultObj{new juce::DynamicObject()};
         resultObj.getDynamicObject()->setProperty(AudioMacro::play, playObj);

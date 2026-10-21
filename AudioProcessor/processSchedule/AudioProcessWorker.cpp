@@ -47,13 +47,15 @@ void AudioProcessorPuller::run() {
                 if (jsonObj.hasProperty(AudioMacro::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
                     auto playObj{jsonObj.read(AudioMacro::play)};
-                    double targetPTS{playObj.read(AudioMacro::targetPTS).toDouble()};
+                    float targetSeconds{playObj.read(AudioMacro::targetPTS).toFloat32()};
                     auto playInfoObj{playObj.read(AudioMacro::playInfo)};
+                    auto isSeek = playObj.read(AudioMacro::isSeek).toBool();
+                    auto isNewSong = playObj.read(AudioMacro::isNewSong).toBool();
 
                     auto info{PlayInfo::fromJson(playInfoObj)};
                     // spdlog::get(LogAudioID)->debug("路径:{}", info.path.toStdString());
 
-                    if (onPlay) onPlay(info, targetPTS);
+                    if (onPlay) onPlay(info, targetSeconds, isSeek, isNewSong);
                     continue;
                 }
                 if (jsonObj.hasProperty(AudioMacro::pause)) {

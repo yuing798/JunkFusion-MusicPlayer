@@ -26,4 +26,6 @@ namespace AudioMacro {
     static constexpr const char* updatePlayCount = "updatePlayCount"; // 请求更新播放次数
     // 请求播放状态同步,比如smtc切换播放状态就是直接后端通知前端的
     static constexpr const char* playStateSync = "playStateSync";
+    static constexpr const char* isSeek = "isSeek";       // 是否进度条跳转
+    static constexpr const char* isNewSong = "isNewSong"; // 是否为新歌
 } // namespace AudioMacro
