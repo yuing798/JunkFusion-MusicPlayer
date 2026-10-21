@@ -53,16 +53,9 @@ void BeforeCrossFadeDSPModule::processBlock(juce::AudioBuffer<float>& buffer, in
     if (isFullMute) {
         return;
     }
-    popAudioDataAndAddZero(
-        mSpeedShifterBuffer,
-        numSamples * mSmoothSlider.speedShifter.getCurrentValue()
-    );
-    mStretch.processBlock(
-        mSpeedShifterBuffer,
-        numSamples * mSmoothSlider.speedShifter.getCurrentValue(),
-        buffer,
-        numSamples
-    );
+    int numSamplesBeforeStretch = numSamples * mSmoothSlider.speedShifter.getCurrentValue();
+    popAudioDataAndAddZero(mSpeedShifterBuffer, numSamplesBeforeStretch);
+    mStretch.processBlock(mSpeedShifterBuffer, numSamplesBeforeStretch, buffer, numSamples);
 }
 void BeforeCrossFadeDSPModule::beginNewDecoderThread(std::string songPath, double targetSeconds) {
     reset();

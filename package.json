@@ -23,7 +23,8 @@
     "ffigen":"cd junk_fusion_ui && dart run ffigen --config ffigen.yaml",
     "build-flutter-win":"cd junk_fusion_ui && flutter run -d windows",
     "watch-jsonc":"node DevScripts/watchMacroFile.js",
-    "freezed":"cd junk_fusion_ui && dart run build_runner build --delete-conflicting-outputs"
+    "freezed":"cd junk_fusion_ui && dart run build_runner build --delete-conflicting-outputs",
+    "run-exe":".\\junk_fusion_ui\\build\\windows\\x64\\runner\\Debug\\JunkFusion.exe"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"

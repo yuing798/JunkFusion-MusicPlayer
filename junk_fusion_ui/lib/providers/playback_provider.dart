@@ -123,8 +123,8 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
 
     if (_curBasicInfo != null) {
-      // bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 1);
-      // bindings.pausePlay();
+      bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 1);
+      bindings.pausePlay();
     } //为了在后端初始化的时候存储播放信息
   }
 

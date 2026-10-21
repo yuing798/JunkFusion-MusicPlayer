@@ -219,10 +219,12 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
     // if (isCrossFade) {
     //     waitCrossFadeOver.wait(1000);
     // }
+
     if (isNewSong) {
+        mPlayInfo = info;
         // spdlog::get(LogAudioID)
         //     ->debug("准备播放新歌:{}", Yvar{info.toJson()}.toString().toStdString());
-        mPlayInfo = info;
+
         SystemAudioControl::MediaMetadata data{};
         data.title = info.title.toStdString();
         if (info.artists.has_value())
