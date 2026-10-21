@@ -57,6 +57,9 @@ extern "C" {
      * @return DLL_EXPORT const* 所有专辑视图的json字符串
      */
     DLL_EXPORT const char* getAllAlbumView();
+    DLL_EXPORT const char* getAllPlaylistView();
+    DLL_EXPORT const char* getCompletePlaylistInfo(long long id);
+    DLL_EXPORT int createNewPlaylist(const char* request);
 
 #ifdef __cplusplus
 }

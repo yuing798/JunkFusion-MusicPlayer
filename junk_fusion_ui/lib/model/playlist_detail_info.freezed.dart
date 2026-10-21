@@ -15,9 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PlaylistDetailInfo {
 
- int get playlistId; String get title;/// 封面哈希：歌单里第一首有封面的歌，没有就是空串
- String? get hash;/// 歌单里的歌曲 id（按歌单内的顺序）
- List<int>? get songsLists;
+/// 歌单里的歌曲 id（按歌单内的顺序）
+ List<int> get songsLists;
 /// Create a copy of PlaylistDetailInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,16 +29,16 @@ $PlaylistDetailInfoCopyWith<PlaylistDetailInfo> get copyWith => _$PlaylistDetail
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaylistDetailInfo&&(identical(other.playlistId, playlistId) || other.playlistId == playlistId)&&(identical(other.title, title) || other.title == title)&&(identical(other.hash, hash) || other.hash == hash)&&const DeepCollectionEquality().equals(other.songsLists, songsLists));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaylistDetailInfo&&const DeepCollectionEquality().equals(other.songsLists, songsLists));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,playlistId,title,hash,const DeepCollectionEquality().hash(songsLists));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(songsLists));
 
 @override
 String toString() {
-  return 'PlaylistDetailInfo(playlistId: $playlistId, title: $title, hash: $hash, songsLists: $songsLists)';
+  return 'PlaylistDetailInfo(songsLists: $songsLists)';
 }
 
 
@@ -50,7 +49,7 @@ abstract mixin class $PlaylistDetailInfoCopyWith<$Res>  {
   factory $PlaylistDetailInfoCopyWith(PlaylistDetailInfo value, $Res Function(PlaylistDetailInfo) _then) = _$PlaylistDetailInfoCopyWithImpl;
 @useResult
 $Res call({
- int playlistId, String title, String? hash, List<int>? songsLists
+ List<int> songsLists
 });
 
 
@@ -67,13 +66,10 @@ class _$PlaylistDetailInfoCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistDetailInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? playlistId = null,Object? title = null,Object? hash = freezed,Object? songsLists = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? songsLists = null,}) {
   return _then(_self.copyWith(
-playlistId: null == playlistId ? _self.playlistId : playlistId // ignore: cast_nullable_to_non_nullable
-as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
-as String?,songsLists: freezed == songsLists ? _self.songsLists : songsLists // ignore: cast_nullable_to_non_nullable
-as List<int>?,
+songsLists: null == songsLists ? _self.songsLists : songsLists // ignore: cast_nullable_to_non_nullable
+as List<int>,
   ));
 }
 
@@ -158,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int playlistId,  String title,  String? hash,  List<int>? songsLists)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<int> songsLists)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlaylistDetailInfo() when $default != null:
-return $default(_that.playlistId,_that.title,_that.hash,_that.songsLists);case _:
+return $default(_that.songsLists);case _:
   return orElse();
 
 }
@@ -179,10 +175,10 @@ return $default(_that.playlistId,_that.title,_that.hash,_that.songsLists);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int playlistId,  String title,  String? hash,  List<int>? songsLists)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<int> songsLists)  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistDetailInfo():
-return $default(_that.playlistId,_that.title,_that.hash,_that.songsLists);case _:
+return $default(_that.songsLists);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +195,10 @@ return $default(_that.playlistId,_that.title,_that.hash,_that.songsLists);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int playlistId,  String title,  String? hash,  List<int>? songsLists)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<int> songsLists)?  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistDetailInfo() when $default != null:
-return $default(_that.playlistId,_that.title,_that.hash,_that.songsLists);case _:
+return $default(_that.songsLists);case _:
   return null;
 
 }
@@ -214,22 +210,16 @@ return $default(_that.playlistId,_that.title,_that.hash,_that.songsLists);case _
 @JsonSerializable()
 
 class _PlaylistDetailInfo implements PlaylistDetailInfo {
-  const _PlaylistDetailInfo({required this.playlistId, required this.title, this.hash, final  List<int>? songsLists}): _songsLists = songsLists;
+  const _PlaylistDetailInfo({required final  List<int> songsLists}): _songsLists = songsLists;
   factory _PlaylistDetailInfo.fromJson(Map<String, dynamic> json) => _$PlaylistDetailInfoFromJson(json);
 
-@override final  int playlistId;
-@override final  String title;
-/// 封面哈希：歌单里第一首有封面的歌，没有就是空串
-@override final  String? hash;
 /// 歌单里的歌曲 id（按歌单内的顺序）
- final  List<int>? _songsLists;
+ final  List<int> _songsLists;
 /// 歌单里的歌曲 id（按歌单内的顺序）
-@override List<int>? get songsLists {
-  final value = _songsLists;
-  if (value == null) return null;
+@override List<int> get songsLists {
   if (_songsLists is EqualUnmodifiableListView) return _songsLists;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
+  return EqualUnmodifiableListView(_songsLists);
 }
 
 
@@ -246,16 +236,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaylistDetailInfo&&(identical(other.playlistId, playlistId) || other.playlistId == playlistId)&&(identical(other.title, title) || other.title == title)&&(identical(other.hash, hash) || other.hash == hash)&&const DeepCollectionEquality().equals(other._songsLists, _songsLists));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaylistDetailInfo&&const DeepCollectionEquality().equals(other._songsLists, _songsLists));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,playlistId,title,hash,const DeepCollectionEquality().hash(_songsLists));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_songsLists));
 
 @override
 String toString() {
-  return 'PlaylistDetailInfo(playlistId: $playlistId, title: $title, hash: $hash, songsLists: $songsLists)';
+  return 'PlaylistDetailInfo(songsLists: $songsLists)';
 }
 
 
@@ -266,7 +256,7 @@ abstract mixin class _$PlaylistDetailInfoCopyWith<$Res> implements $PlaylistDeta
   factory _$PlaylistDetailInfoCopyWith(_PlaylistDetailInfo value, $Res Function(_PlaylistDetailInfo) _then) = __$PlaylistDetailInfoCopyWithImpl;
 @override @useResult
 $Res call({
- int playlistId, String title, String? hash, List<int>? songsLists
+ List<int> songsLists
 });
 
 
@@ -283,13 +273,10 @@ class __$PlaylistDetailInfoCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistDetailInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? playlistId = null,Object? title = null,Object? hash = freezed,Object? songsLists = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? songsLists = null,}) {
   return _then(_PlaylistDetailInfo(
-playlistId: null == playlistId ? _self.playlistId : playlistId // ignore: cast_nullable_to_non_nullable
-as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
-as String?,songsLists: freezed == songsLists ? _self._songsLists : songsLists // ignore: cast_nullable_to_non_nullable
-as List<int>?,
+songsLists: null == songsLists ? _self._songsLists : songsLists // ignore: cast_nullable_to_non_nullable
+as List<int>,
   ));
 }
 

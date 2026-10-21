@@ -31,17 +31,6 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 //             等 bindings 里注册了对应函数再接（按钮先禁用占位）。
 // ════════════════════════════════════════════════════════════════
 
-/// 歌单列表的排序方式
-enum PlaylistSortMode {
-  byTitle('歌单名称', 1),
-  bySongCount('歌曲数量', 2);
-
-  final String label;
-  final int value;
-
-  const PlaylistSortMode(this.label, this.value);
-}
-
 class PlaylistViewPage extends StatefulWidget {
   const PlaylistViewPage({super.key});
 
@@ -50,58 +39,14 @@ class PlaylistViewPage extends StatefulWidget {
 }
 
 class _PlaylistViewPageState extends State<PlaylistViewPage> {
-  /// 当前选中的排序方式
-  PlaylistSortMode _selectedSort = PlaylistSortMode.byTitle;
-
-  /// 是否升序（true = 升序，false = 降序）
-  bool _isAscending = true;
-
   @override
   void initState() {
     super.initState();
-
-    final frontCache = AppCache.frontCacheRef;
-    final sortValue = frontCache.getInt('playlistSortWays') ?? 1;
-    final isAscending = frontCache.getBool('playlistIsAscending') ?? true;
-    _selectedSort = PlaylistSortMode.values.firstWhere(
-      (v) => v.value == sortValue,
-      orElse: () => PlaylistSortMode.byTitle,
-    );
-    _isAscending = isAscending;
 
     // 进页面的时候拉一遍歌单列表（后端接口还没做，现在是空列表）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PlaylistProvider>().getAllPlaylists();
     });
-  }
-
-  // 切换升降序
-  void _toggleAscending() {
-    setState(() {
-      _isAscending = !_isAscending;
-    });
-
-    AppCache.frontCacheRef.setBool('playlistIsAscending', _isAscending);
-  }
-
-  /// 按当前排序方式排好（不动 PlaylistProvider 里那份原列表）
-  List<PlaylistBasicInfo> _getSortedPlaylists(List<PlaylistBasicInfo> source) {
-    int compare(PlaylistBasicInfo a, PlaylistBasicInfo b) =>
-        switch (_selectedSort) {
-          PlaylistSortMode.byTitle => AppCache.collator.compare(
-            a.title,
-            b.title,
-          ),
-          // 数量一样的时候再按名字排，保证顺序稳定
-          PlaylistSortMode.bySongCount =>
-            a.songCount == b.songCount
-                ? AppCache.collator.compare(a.title, b.title)
-                : a.songCount.compareTo(b.songCount),
-        };
-
-    final sorted = List<PlaylistBasicInfo>.of(source);
-    sorted.sort((a, b) => _isAscending ? compare(a, b) : compare(b, a));
-    return sorted;
   }
 
   /// 打开某个歌单：先把歌单装进 Provider，再往路由栈里压一条记录
@@ -121,9 +66,8 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
           Icon(TablerIcons.playlist, size: 64, color: theme.colorEdge),
           const SizedBox(height: 15),
           Text('还没有任何歌单', style: theme.midTextStyle),
-          // TODO(后端): 歌单接口做完之后，这句提示要改掉
-          const SizedBox(height: 5),
-          Text('歌单后端接口还没做，做完就能新建歌单了', style: theme.littleTextStyle),
+          // const SizedBox(height: 5),
+          // Text('歌单后端接口还没做，做完就能新建歌单了', style: theme.littleTextStyle),
         ],
       ),
     );
@@ -133,9 +77,8 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
   Widget build(BuildContext context) {
     // watch 放在最前面：歌单列表变了、主题变了都要重画
     final theme = context.watch<AppTheme>();
-    final playlists = _getSortedPlaylists(
-      context.watch<PlaylistProvider>().playlists,
-    );
+    final playlists = context.watch<PlaylistProvider>().playlists.toList()
+      ..sort((a, b) => a.playlistId.compareTo(b.playlistId));
 
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
       (provider) => provider.curBasicInfo != null,

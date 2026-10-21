@@ -74,6 +74,17 @@ class JunkFusionDLLBindings {
   late final _getAllAlbumView = _getAllAlbumViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  ffi.Pointer<ffi.Char> getAllPlaylistView() {
+    return _getAllPlaylistView();
+  }
+
+  late final _getAllPlaylistViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllPlaylistView',
+      );
+  late final _getAllPlaylistView = _getAllPlaylistViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }
@@ -94,6 +105,17 @@ class JunkFusionDLLBindings {
         'getCompleteAlbumInfo',
       );
   late final _getCompleteAlbumInfo = _getCompleteAlbumInfoPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  ffi.Pointer<ffi.Char> getCompletePlaylistInfo(int id) {
+    return _getCompletePlaylistInfo(id);
+  }
+
+  late final _getCompletePlaylistInfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getCompletePlaylistInfo',
+      );
+  late final _getCompletePlaylistInfo = _getCompletePlaylistInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   ffi.Pointer<ffi.Char> getCompleteSongInfo(int songId) {

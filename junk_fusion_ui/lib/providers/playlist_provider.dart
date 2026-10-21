@@ -57,15 +57,13 @@ class PlaylistProvider extends ChangeNotifier {
 
   /// 拉一遍歌单列表（进歌单页的时候调一次）
   void getAllPlaylists() {
-    // TODO(后端): getAllPlaylistView() 注册好之后，这里换成：
-    //   _playlists = (jsonDecode(
-    //                 UtilFunction.cPtr2String(bindings.getAllPlaylistView()),
-    //               )?[CoordinatorMacro.playlistsList] as List<dynamic>)
-    //       .map((e) => PlaylistBasicInfo.fromJson(e))
-    //       .toList();
-    _playlists = [];
-
-    print('[PlaylistProvider] 歌单接口还没做，getAllPlaylists() 先返回空列表');
+    _playlists =
+        (jsonDecode(
+                  UtilFunction.cPtr2String(bindings.getAllPlaylistView()),
+                )?[CoordinatorMacro.playlistsList]
+                as List<dynamic>)
+            .map((e) => PlaylistBasicInfo.fromJson(e))
+            .toList();
     notifyListeners();
   }
 
@@ -76,19 +74,16 @@ class PlaylistProvider extends ChangeNotifier {
         .where((each) => each.playlistId == playlistId)
         .firstOrNull;
 
-    // TODO(后端): getCompletePlaylistInfo(playlistId) 注册好之后，这里换成：
-    //   _curDetailInfo = PlaylistDetailInfo.fromJson(
-    //     jsonDecode(
-    //       UtilFunction.cPtr2String(bindings.getCompletePlaylistInfo(playlistId)),
-    //     ),
-    //   );
-    //   final songIdMap = {for (final e in songProvider.songs) e.songId: e};
-    //   _songsInPlaylist = _curDetailInfo!.songsLists
-    //       ?.map((each) => songIdMap[each])
-    //       .whereType<SongBasicInfo>()
-    //       .toList() ?? [];
-    _curDetailInfo = null;
-    _songsInPlaylist = [];
+    _curDetailInfo = PlaylistDetailInfo.fromJson(
+      jsonDecode(
+        UtilFunction.cPtr2String(bindings.getCompletePlaylistInfo(playlistId)),
+      ),
+    );
+    final songIdMap = {for (final e in songProvider.songs) e.songId: e};
+    _songsInPlaylist = _curDetailInfo!.songsLists
+        .map((each) => songIdMap[each])
+        .whereType<SongBasicInfo>()
+        .toList();
 
     notifyListeners();
   }

@@ -23,7 +23,6 @@
 #include <utility>
 #include <variant>
 
-
 std::unique_ptr<dllManager> dllManager::instance = nullptr;
 
 dllManager::dllManager() {}
@@ -33,8 +32,8 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     cacheDir = juce::File{cacheDirId};
     logInfoDir = cacheDir.getChildFile("log");
     if (!logInfoDir.exists()) logInfoDir.createDirectory();
-    songImageDir = cacheDir.getChildFile("songImage");
-    if (!songImageDir.exists()) songImageDir.createDirectory();
+    imageDir = cacheDir.getChildFile("image");
+    if (!imageDir.exists()) imageDir.createDirectory();
 
     constexpr size_t kUiMaxSize = 5 * 1024 * 1024; // 5 MB
     constexpr size_t kUiMaxFiles = 3;

@@ -45,4 +45,18 @@ namespace ConvertUtils {
         }
     }
 
+    template <typename T> juce::StringArray vectorToStringArray(std::vector<T> vec) {
+        juce::StringArray arr;
+        static_assert(
+            std::is_same_v<T, int> || std::is_same_v<T, int64_t> || std::is_same_v<T, float> ||
+                std::is_same_v<T, double> || std::is_same_v<T, juce::String> ||
+                std::is_same_v<T, std::string>,
+            "vectorToStringArray throw type error"
+        );
+        for (auto& e : vec) {
+            arr.add(juce::String{e});
+        }
+        return arr;
+    }
+
 } // namespace ConvertUtils

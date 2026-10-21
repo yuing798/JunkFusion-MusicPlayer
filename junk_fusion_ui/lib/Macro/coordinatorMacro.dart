@@ -9,4 +9,5 @@ abstract class CoordinatorMacro {
   static const String songsList = "songsList";
   static const String albumsList = "albumsList";
   static const String songIdList = "songIdList";
+  static const String playlistsList = "playlistsList";
 }

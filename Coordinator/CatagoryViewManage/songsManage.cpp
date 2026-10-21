@@ -375,7 +375,7 @@ SongsManage::insertSong(const juce::File& path) {
                 if (!info.hash.has_value()) break;
 
                 juce::File hashImageDir{
-                    dllManager::getInstance().getSongImageDir().getChildFile(info.hash.value())
+                    dllManager::getInstance().getImageDir().getChildFile(info.hash.value())
                 };
                 // data存在说明一定有图片，所以直接使用.value()就行了
                 //  直接用哈希值作为文件夹名，所有该图片相关的缓存文件都放在同一个文件夹中

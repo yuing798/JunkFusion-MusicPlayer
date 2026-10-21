@@ -25,7 +25,9 @@ inline const char* createSongsTableSQL = R"(
         hash TEXT,
         timeDomainSpec BLOB,
         albumId INTEGER,
-        FOREIGN KEY (albumId) REFERENCES albums(albumId)
+        playlistId INTEGER,
+        FOREIGN KEY (albumId) REFERENCES albums(albumId),
+        FOREIGN KEY (playlistId) REFERENCES playlists(id)
     )
 )";
 /**
@@ -39,6 +41,15 @@ inline const char* createAlbumsTableSQL = R"(
         albumId             INTEGER PRIMARY KEY AUTOINCREMENT,
         title              TEXT,
         albumArtists             TEXT,
+        hash TEXT
+    )
+)";
+
+inline const char* createPlaylistTableSQL = R"(
+
+    CREATE TABLE IF NOT EXISTS playlists(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
         hash TEXT
     )
 )";

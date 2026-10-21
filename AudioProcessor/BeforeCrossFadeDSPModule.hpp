@@ -1,4 +1,4 @@
-#include "AudioPreProcess.hpp"
+#pragma once
 #include "AudioRingBuffer.hpp"
 #include "SmoothSliderControl.hpp"
 #include "Stretch.hpp"

@@ -1,5 +1,6 @@
 #include "./Yvar.hpp"
 #include "juce_core/juce_core.h"
+#include <optional>
 
 Yvar Yvar::read(const char* key) const {
     if (!value.isObject()) {
@@ -34,20 +35,20 @@ int Yvar::toInt() const {
     }
 }
 
-float Yvar::toFloat32() const {
-    if (value.isDouble()) {
-        return static_cast<float>(value);
-    } else {
-        return 0.0f;
-    }
-}
-
 juce::String Yvar::toString() {
 
     if (value.isArray() || value.isObject()) {
         return juce::JSON::toString(value);
     } else {
         return value.toString();
+    }
+}
+
+std::optional<juce::String> Yvar::toOptStr() {
+    if (value.isString()) {
+        return value.toString();
+    } else {
+        return std::nullopt;
     }
 }
 juce::StringArray Yvar::toStringArray() const {

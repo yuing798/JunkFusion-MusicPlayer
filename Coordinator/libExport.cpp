@@ -1,10 +1,12 @@
 #include "./libExport.h"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
+#include "Macro/PlaylistMacro.hpp"
 #include "Macro/SongInfoMacro.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Macro/coordinatorMacro.hpp"
 #include "Model/SongInfo.hpp"
+#include "Model/playlistInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
@@ -12,6 +14,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include "juce_osc/juce_osc.h"
+#include <cstdint>
 #include <cstdlib>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -183,5 +186,25 @@ extern "C" {
         return ConvertUtils::object2Uint8t(
             dllManager::getInstance().getDbContext()->albumsManage.getCompleteInfo(albumId)
         );
+    }
+    const char* getAllPlaylistView() {
+        juce::var obj{new juce::DynamicObject()};
+        obj.getDynamicObject()->setProperty(
+            CoordinatorMacro::playlistsList,
+            dllManager::getInstance().getDbContext()->playListManage.getAllPlayListView()
+        );
+        return ConvertUtils::object2Uint8t(obj);
+    }
+    const char* getCompletePlaylistInfo(long long id) {
+        return ConvertUtils::object2Uint8t(
+            dllManager::getInstance()
+                .getDbContext()
+                ->playListManage.getCompleteInfo(id)
+                .toCompleteJson()
+        );
+    }
+    int createNewPlaylist(const char* request) {
+        Yvar obj{juce::JSON::fromString(request)};
+        PlaylistInfo info{PlaylistInfo::fromJson(obj)};
     }
 }

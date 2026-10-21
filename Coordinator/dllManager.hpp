@@ -19,14 +19,13 @@
 #include <string>
 #include <variant>
 
-
 class dllManager {
 private:
     juce::String systemCountry;
 
-    juce::File cacheDir;     // 缓存文件夹
-    juce::File logInfoDir;   // 日志文件夹
-    juce::File songImageDir; // 歌曲图片
+    juce::File cacheDir;   // 缓存文件夹
+    juce::File logInfoDir; // 日志文件夹
+    juce::File imageDir;   // 歌曲图片
 
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
@@ -40,7 +39,7 @@ public:
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);
 
-    juce::File& getSongImageDir() { return songImageDir; }
+    juce::File& getImageDir() { return imageDir; }
 
     static dllManager& getInstance() {
         if (!instance) {
