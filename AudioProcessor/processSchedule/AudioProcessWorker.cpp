@@ -47,7 +47,7 @@ void AudioProcessorPuller::run() {
                 if (jsonObj.hasProperty(AudioMacro::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
                     auto playObj{jsonObj.read(AudioMacro::play)};
-                    float targetSeconds{playObj.read(AudioMacro::targetPTS).toFloat32()};
+                    double targetSeconds{playObj.read(AudioMacro::targetPTS).toDouble()};
                     auto playInfoObj{playObj.read(AudioMacro::playInfo)};
                     auto isSeek = playObj.read(AudioMacro::isSeek).toBool();
                     auto isNewSong = playObj.read(AudioMacro::isNewSong).toBool();
@@ -73,15 +73,15 @@ void AudioProcessorPuller::run() {
                     };
 
                     if (identifyParam == SliderParam::masterVolume) {
-                        float value{sliderValueVar.toFloat32()};
+                        double value{sliderValueVar.toDouble()};
                         if (onMasterVolumeChange) onMasterVolumeChange(value);
                     }
                     if (identifyParam == SliderParam::pitchShifter) {
-                        float value{sliderValueVar.toFloat32()};
+                        double value{sliderValueVar.toDouble()};
                         if (onPitchShifterChange) onPitchShifterChange(value);
                     }
                     if (identifyParam == SliderParam::speedShifter) {
-                        auto value{sliderValueVar.toFloat32()};
+                        auto value{sliderValueVar.toDouble()};
                         if (onSpeedShifterChange) onSpeedShifterChange(value);
                     }
                 }

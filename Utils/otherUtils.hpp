@@ -1,15 +1,9 @@
 #pragma once
 #include "juce_core/juce_core.h"
-#include <cstddef>
-#include <cstdint>
-#include <memory>
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
-#include <utility>
-#include <vector>
-#include <zmq.hpp>
 
 namespace OtherUtils {
 

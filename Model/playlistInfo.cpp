@@ -12,15 +12,15 @@ juce::var PlaylistInfo::toBasicJson() {
     ptr->setProperty(PlaylistMacro::hash, ConvertUtils::optValueToVar(hash));
     return obj;
 }
-juce::var PlaylistInfo::toCompleteJson() {
-    auto obj{toBasicJson()};
+juce::var PlaylistInfo::toDetailJson() {
+    juce::var obj{new juce::DynamicObject()};
     obj.getDynamicObject()->setProperty(
         PlaylistMacro::songList,
         ConvertUtils::vectorToArrayVar(songIdList)
     );
     return obj;
 }
-PlaylistInfo PlaylistInfo::fromJson(Yvar obj) {
+PlaylistInfo PlaylistInfo::fromCompleteJson(Yvar obj) {
     PlaylistInfo info{};
     info.title = obj.read(PlaylistMacro::title).toString();
     info.hash = obj.read(PlaylistMacro::hash).toOptStr();

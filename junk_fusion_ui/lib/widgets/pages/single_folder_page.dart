@@ -6,7 +6,7 @@ import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
-// AlbumCoverImage（哈希 → songImage/<hash>/original.jpg）目前住在
+// AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
 // single_album_page.dart 里，先复用；以后抽到 widgets/ 下面更合适
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:provider/provider.dart';
@@ -196,8 +196,9 @@ class _SingleFolderPageState extends State<SingleFolderPage> {
                               width: 36,
                               child: Center(
                                 child: Text(
-                                  song.trackNumber?.toString() ??
-                                      '${index + 1}',
+                                  "a",
+                                  // song.trackNumber?.toString() ??
+                                  //     '${index + 1}',
                                   style: theme.littleTextStyle,
                                 ),
                               ),

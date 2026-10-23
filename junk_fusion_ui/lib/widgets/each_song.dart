@@ -195,7 +195,7 @@ class _HoverPlayButtonState extends State<HoverPlayButton> {
                 child: (widget.hash != null)
                     ? Image.file(
                         File(
-                          '${AppCache.cacheDirString}/songImage/${widget.hash}/original.jpg',
+                          '${AppCache.cacheDirString}/image/${widget.hash}/original.jpg',
                         ),
                         fit: BoxFit.cover,
                       )

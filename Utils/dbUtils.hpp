@@ -20,6 +20,7 @@ namespace DbUtils {
         try {
             auto result{sql.getColumn(colName)};
             if (result.isNull()) return std::nullopt;
+            if (result.isInteger() && result.getInt64() == INT64T_MAX) return std::nullopt;
             if constexpr (std::is_same_v<T, int>) {
                 return result.getInt();
             } else if constexpr (std::is_same_v<T, juce::String> ||

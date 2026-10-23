@@ -61,7 +61,7 @@ class CppCallbackManager {
     ) {
       print("准备更新歌曲元数据信息:songId:$songId ");
 
-      songProvider.requestUpdateSongInfo(songId: songId);
+      songProvider.requestUpdateSongBasicInfo(songId: songId);
     });
 
     _onPlayNextOrPreviousSong = ffi.NativeCallable<IntFuncFunction>.listener((

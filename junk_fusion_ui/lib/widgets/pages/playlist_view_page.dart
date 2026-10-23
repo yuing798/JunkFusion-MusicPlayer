@@ -7,7 +7,7 @@ import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/widgets/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
-// AlbumCoverImage（哈希 → songImage/<hash>/original.jpg）目前住在
+// AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
 // single_album_page.dart 里，先复用；以后抽到 widgets/ 下面更合适
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:provider/provider.dart';
@@ -125,39 +125,6 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
 
               // 弹性空间（把排序控件推到最右边）
               const Spacer(),
-
-              // ── 排序方式下拉框 ──
-              SizedBox(
-                width: 200,
-                child: CustomComboBox<PlaylistSortMode>(
-                  value: _selectedSort,
-                  items: PlaylistSortMode.values,
-                  itemLabel: (each) => each.label,
-                  onChanged: (mode) async {
-                    if (mode == null) return;
-                    setState(() {
-                      _selectedSort = mode;
-                    });
-                    final frontCache = AppCache.frontCacheRef;
-                    frontCache.setInt('playlistSortWays', mode.value);
-                  },
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // ── 升降序切换按钮 ──
-              IconButton(
-                icon: Icon(
-                  _isAscending
-                      ? TablerIcons.arrowBigDownLineFilled
-                      : TablerIcons.arrowBigUpLineFilled,
-                  size: 32,
-                ),
-                onPressed: _toggleAscending,
-                tooltip: _isAscending ? '升序' : '降序',
-                color: theme.colorTextMain,
-              ),
             ],
           ),
         ),

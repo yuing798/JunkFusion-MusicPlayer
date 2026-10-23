@@ -165,11 +165,18 @@ extern "C" {
 
         return ConvertUtils::object2Uint8t(obj);
     }
-    const char* getCompleteSongInfo(long long songId) {
-        auto info{
-            dllManager::getInstance().getDbContext()->songsManage.getCompleteSongInfo(songId)
-        };
-        return ConvertUtils::object2Uint8t(info.toCompleteJson());
+    const char* getBasicSongInfo(long long songId) {
+        return ConvertUtils::object2Uint8t(
+            dllManager::getInstance()
+                .getDbContext()
+                ->songsManage.getBasicSongInfo(songId)
+                .toBasicJson()
+        );
+    }
+
+    const char* getDetailSongInfo(long long songId) {
+        auto info{dllManager::getInstance().getDbContext()->songsManage.getDetailSongInfo(songId)};
+        return ConvertUtils::object2Uint8t(info.toDetailJson());
     }
     void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
 
@@ -182,9 +189,9 @@ extern "C" {
         return ConvertUtils::object2Uint8t(obj);
     }
 
-    const char* getCompleteAlbumInfo(long long albumId) {
+    const char* getDetailAlbumInfo(long long albumId) {
         return ConvertUtils::object2Uint8t(
-            dllManager::getInstance().getDbContext()->albumsManage.getCompleteInfo(albumId)
+            dllManager::getInstance().getDbContext()->albumsManage.getDetailInfo(albumId)
         );
     }
     const char* getAllPlaylistView() {
@@ -195,16 +202,17 @@ extern "C" {
         );
         return ConvertUtils::object2Uint8t(obj);
     }
-    const char* getCompletePlaylistInfo(long long id) {
+    const char* getDetailPlaylistInfo(long long id) {
         return ConvertUtils::object2Uint8t(
             dllManager::getInstance()
                 .getDbContext()
-                ->playListManage.getCompleteInfo(id)
-                .toCompleteJson()
+                ->playListManage.getDetailInfo(id)
+                .toDetailJson()
         );
     }
     int createNewPlaylist(const char* request) {
         Yvar obj{juce::JSON::fromString(request)};
-        PlaylistInfo info{PlaylistInfo::fromJson(obj)};
+        PlaylistInfo info{PlaylistInfo::fromCompleteJson(obj)};
+        return dllManager::getInstance().getDbContext()->playListManage.createNewPlaylist(info);
     }
 }

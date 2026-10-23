@@ -68,9 +68,6 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
       orElse: () => AlbumSortMode.byTitle,
     );
     _isAscending = isAscending;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlbumProvider>().getAllAlbums();
-    });
   }
 
   // 切换升降序
@@ -115,10 +112,6 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
     final playback = context.read<PlaybackProvider>();
     final albumP = context.read<AlbumProvider>();
 
-    // print(123);
-    // print(playback.playList);
-    // print("\n");
-    // print(albumP.songsInAlbums);
     if (playback.playList != albumP.songsInAlbums) {
       // 先设置播放列表再切歌：setNewSong 内部会把「当前播放列表」缓存到本地，
 

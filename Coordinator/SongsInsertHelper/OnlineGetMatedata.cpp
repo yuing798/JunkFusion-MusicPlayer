@@ -334,7 +334,7 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
                     bestHash = juce::String(hash);
 
                     juce::File hashImageDir{
-                        dllManager::getInstance().getSongImageDir().getChildFile(hash)
+                        dllManager::getInstance().getImageDir().getChildFile(hash)
                     };
 
                     if (hashImageDir.exists()) {

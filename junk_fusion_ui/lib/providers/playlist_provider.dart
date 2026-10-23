@@ -21,7 +21,7 @@ import 'package:junk_fusion_ui/utils/util_function.dart';
 // ── 需要的后端接口（详细约定见我给的那份清单）──────────────────
 //   getAllPlaylistView()
 //     → { "playlistsList": [ {playlistId, title, songCount, hash}, ... ] }
-//   getCompletePlaylistInfo(playlistId)
+//   getDetailPlaylistInfo(playlistId)
 //     → { playlistId, title, hash, songsLists: [songId, ...] }
 //   createPlaylist(title) -> 新 playlistId（失败 -1）
 //   renamePlaylist(playlistId, newTitle)
@@ -76,7 +76,7 @@ class PlaylistProvider extends ChangeNotifier {
 
     _curDetailInfo = PlaylistDetailInfo.fromJson(
       jsonDecode(
-        UtilFunction.cPtr2String(bindings.getCompletePlaylistInfo(playlistId)),
+        UtilFunction.cPtr2String(bindings.getDetailPlaylistInfo(playlistId)),
       ),
     );
     final songIdMap = {for (final e in songProvider.songs) e.songId: e};

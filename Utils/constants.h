@@ -2,6 +2,7 @@
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_core/juce_core.h"
+#include <cstdint>
 
 // attachment别名
 using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
@@ -13,6 +14,8 @@ using SmoothExpValue = juce::SmoothedValue<float, juce::ValueSmoothingTypes::Mul
 // 日志id
 static constexpr const char* LogAudioID{"audio"};
 static constexpr const char* LogDllID{"dll"};
+
+static constexpr const int64_t INT64T_MAX = 9223372036854775807;
 
 // 禁止拷贝和移动的宏
 #define DONT_COPY_AND_MOVE(ClassName)                                                              \

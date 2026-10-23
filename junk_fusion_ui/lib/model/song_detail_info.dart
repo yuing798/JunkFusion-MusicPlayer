@@ -16,8 +16,9 @@ abstract class SongDetailInfo with _$SongDetailInfo {
     int? bpm,
     String? key,
 
-    String? hash,
     required List<double> timeDomainSpec,
+    int? trackNumber,
+    int? discNumber,
   }) = _SongDetailInfo;
 
   factory SongDetailInfo.fromJson(Map<String, dynamic> json) =>

@@ -27,6 +27,17 @@ class JunkFusionDLLBindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
   late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
 
+  int createNewPlaylist(ffi.Pointer<ffi.Char> request) {
+    return _createNewPlaylist(request);
+  }
+
+  late final _createNewPlaylistPtr =
+      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Char>)>>(
+        'createNewPlaylist',
+      );
+  late final _createNewPlaylist = _createNewPlaylistPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+
   /// @brief dll初始化
   ///
   /// @param cacheDirId 缓存目录
@@ -96,37 +107,48 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
-  ffi.Pointer<ffi.Char> getCompleteAlbumInfo(int albumId) {
-    return _getCompleteAlbumInfo(albumId);
+  ffi.Pointer<ffi.Char> getBasicSongInfo(int songId) {
+    return _getBasicSongInfo(songId);
   }
 
-  late final _getCompleteAlbumInfoPtr =
+  late final _getBasicSongInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getCompleteAlbumInfo',
+        'getBasicSongInfo',
       );
-  late final _getCompleteAlbumInfo = _getCompleteAlbumInfoPtr
+  late final _getBasicSongInfo = _getBasicSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  ffi.Pointer<ffi.Char> getCompletePlaylistInfo(int id) {
-    return _getCompletePlaylistInfo(id);
+  ffi.Pointer<ffi.Char> getDetailAlbumInfo(int albumId) {
+    return _getDetailAlbumInfo(albumId);
   }
 
-  late final _getCompletePlaylistInfoPtr =
+  late final _getDetailAlbumInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getCompletePlaylistInfo',
+        'getDetailAlbumInfo',
       );
-  late final _getCompletePlaylistInfo = _getCompletePlaylistInfoPtr
+  late final _getDetailAlbumInfo = _getDetailAlbumInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  ffi.Pointer<ffi.Char> getCompleteSongInfo(int songId) {
-    return _getCompleteSongInfo(songId);
+  ffi.Pointer<ffi.Char> getDetailPlaylistInfo(int id) {
+    return _getDetailPlaylistInfo(id);
   }
 
-  late final _getCompleteSongInfoPtr =
+  late final _getDetailPlaylistInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getCompleteSongInfo',
+        'getDetailPlaylistInfo',
       );
-  late final _getCompleteSongInfo = _getCompleteSongInfoPtr
+  late final _getDetailPlaylistInfo = _getDetailPlaylistInfoPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  ffi.Pointer<ffi.Char> getDetailSongInfo(int songId) {
+    return _getDetailSongInfo(songId);
+  }
+
+  late final _getDetailSongInfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getDetailSongInfo',
+      );
+  late final _getDetailSongInfo = _getDetailSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   void pausePlay() {

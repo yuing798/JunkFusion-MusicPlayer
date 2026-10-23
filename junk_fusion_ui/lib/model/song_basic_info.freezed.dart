@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SongBasicInfo {
 
- int get songId; double get duration; String get title; List<String>? get artists; String? get album; bool get isMyLike; int get playNum; String? get hash; int? get trackNumber; int? get discNumber;
+ int get songId; double get duration; String get title; List<String>? get artists; String? get album; bool get isMyLike; int get playNum; String? get hash;
 /// Create a copy of SongBasicInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $SongBasicInfoCopyWith<SongBasicInfo> get copyWith => _$SongBasicInfoCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SongBasicInfo&&(identical(other.songId, songId) || other.songId == songId)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.title, title) || other.title == title)&&const DeepCollectionEquality().equals(other.artists, artists)&&(identical(other.album, album) || other.album == album)&&(identical(other.isMyLike, isMyLike) || other.isMyLike == isMyLike)&&(identical(other.playNum, playNum) || other.playNum == playNum)&&(identical(other.hash, hash) || other.hash == hash)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.discNumber, discNumber) || other.discNumber == discNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SongBasicInfo&&(identical(other.songId, songId) || other.songId == songId)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.title, title) || other.title == title)&&const DeepCollectionEquality().equals(other.artists, artists)&&(identical(other.album, album) || other.album == album)&&(identical(other.isMyLike, isMyLike) || other.isMyLike == isMyLike)&&(identical(other.playNum, playNum) || other.playNum == playNum)&&(identical(other.hash, hash) || other.hash == hash));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,songId,duration,title,const DeepCollectionEquality().hash(artists),album,isMyLike,playNum,hash,trackNumber,discNumber);
+int get hashCode => Object.hash(runtimeType,songId,duration,title,const DeepCollectionEquality().hash(artists),album,isMyLike,playNum,hash);
 
 @override
 String toString() {
-  return 'SongBasicInfo(songId: $songId, duration: $duration, title: $title, artists: $artists, album: $album, isMyLike: $isMyLike, playNum: $playNum, hash: $hash, trackNumber: $trackNumber, discNumber: $discNumber)';
+  return 'SongBasicInfo(songId: $songId, duration: $duration, title: $title, artists: $artists, album: $album, isMyLike: $isMyLike, playNum: $playNum, hash: $hash)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $SongBasicInfoCopyWith<$Res>  {
   factory $SongBasicInfoCopyWith(SongBasicInfo value, $Res Function(SongBasicInfo) _then) = _$SongBasicInfoCopyWithImpl;
 @useResult
 $Res call({
- int songId, double duration, String title, List<String>? artists, String? album, bool isMyLike, int playNum, String? hash, int? trackNumber, int? discNumber
+ int songId, double duration, String title, List<String>? artists, String? album, bool isMyLike, int playNum, String? hash
 });
 
 
@@ -65,7 +65,7 @@ class _$SongBasicInfoCopyWithImpl<$Res>
 
 /// Create a copy of SongBasicInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? songId = null,Object? duration = null,Object? title = null,Object? artists = freezed,Object? album = freezed,Object? isMyLike = null,Object? playNum = null,Object? hash = freezed,Object? trackNumber = freezed,Object? discNumber = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? songId = null,Object? duration = null,Object? title = null,Object? artists = freezed,Object? album = freezed,Object? isMyLike = null,Object? playNum = null,Object? hash = freezed,}) {
   return _then(_self.copyWith(
 songId: null == songId ? _self.songId : songId // ignore: cast_nullable_to_non_nullable
 as int,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
@@ -75,9 +75,7 @@ as List<String>?,album: freezed == album ? _self.album : album // ignore: cast_n
 as String?,isMyLike: null == isMyLike ? _self.isMyLike : isMyLike // ignore: cast_nullable_to_non_nullable
 as bool,playNum: null == playNum ? _self.playNum : playNum // ignore: cast_nullable_to_non_nullable
 as int,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
-as String?,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
-as int?,discNumber: freezed == discNumber ? _self.discNumber : discNumber // ignore: cast_nullable_to_non_nullable
-as int?,
+as String?,
   ));
 }
 
@@ -162,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int songId,  double duration,  String title,  List<String>? artists,  String? album,  bool isMyLike,  int playNum,  String? hash,  int? trackNumber,  int? discNumber)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int songId,  double duration,  String title,  List<String>? artists,  String? album,  bool isMyLike,  int playNum,  String? hash)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SongBasicInfo() when $default != null:
-return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.album,_that.isMyLike,_that.playNum,_that.hash,_that.trackNumber,_that.discNumber);case _:
+return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.album,_that.isMyLike,_that.playNum,_that.hash);case _:
   return orElse();
 
 }
@@ -183,10 +181,10 @@ return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.albu
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int songId,  double duration,  String title,  List<String>? artists,  String? album,  bool isMyLike,  int playNum,  String? hash,  int? trackNumber,  int? discNumber)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int songId,  double duration,  String title,  List<String>? artists,  String? album,  bool isMyLike,  int playNum,  String? hash)  $default,) {final _that = this;
 switch (_that) {
 case _SongBasicInfo():
-return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.album,_that.isMyLike,_that.playNum,_that.hash,_that.trackNumber,_that.discNumber);case _:
+return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.album,_that.isMyLike,_that.playNum,_that.hash);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +201,10 @@ return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.albu
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int songId,  double duration,  String title,  List<String>? artists,  String? album,  bool isMyLike,  int playNum,  String? hash,  int? trackNumber,  int? discNumber)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int songId,  double duration,  String title,  List<String>? artists,  String? album,  bool isMyLike,  int playNum,  String? hash)?  $default,) {final _that = this;
 switch (_that) {
 case _SongBasicInfo() when $default != null:
-return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.album,_that.isMyLike,_that.playNum,_that.hash,_that.trackNumber,_that.discNumber);case _:
+return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.album,_that.isMyLike,_that.playNum,_that.hash);case _:
   return null;
 
 }
@@ -218,7 +216,7 @@ return $default(_that.songId,_that.duration,_that.title,_that.artists,_that.albu
 @JsonSerializable()
 
 class _SongBasicInfo implements SongBasicInfo {
-  const _SongBasicInfo({required this.songId, required this.duration, required this.title, required final  List<String>? artists, this.album, required this.isMyLike, required this.playNum, this.hash, this.trackNumber, this.discNumber}): _artists = artists;
+  const _SongBasicInfo({required this.songId, required this.duration, required this.title, required final  List<String>? artists, this.album, required this.isMyLike, required this.playNum, this.hash}): _artists = artists;
   factory _SongBasicInfo.fromJson(Map<String, dynamic> json) => _$SongBasicInfoFromJson(json);
 
 @override final  int songId;
@@ -237,8 +235,6 @@ class _SongBasicInfo implements SongBasicInfo {
 @override final  bool isMyLike;
 @override final  int playNum;
 @override final  String? hash;
-@override final  int? trackNumber;
-@override final  int? discNumber;
 
 /// Create a copy of SongBasicInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -253,16 +249,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SongBasicInfo&&(identical(other.songId, songId) || other.songId == songId)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.title, title) || other.title == title)&&const DeepCollectionEquality().equals(other._artists, _artists)&&(identical(other.album, album) || other.album == album)&&(identical(other.isMyLike, isMyLike) || other.isMyLike == isMyLike)&&(identical(other.playNum, playNum) || other.playNum == playNum)&&(identical(other.hash, hash) || other.hash == hash)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.discNumber, discNumber) || other.discNumber == discNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SongBasicInfo&&(identical(other.songId, songId) || other.songId == songId)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.title, title) || other.title == title)&&const DeepCollectionEquality().equals(other._artists, _artists)&&(identical(other.album, album) || other.album == album)&&(identical(other.isMyLike, isMyLike) || other.isMyLike == isMyLike)&&(identical(other.playNum, playNum) || other.playNum == playNum)&&(identical(other.hash, hash) || other.hash == hash));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,songId,duration,title,const DeepCollectionEquality().hash(_artists),album,isMyLike,playNum,hash,trackNumber,discNumber);
+int get hashCode => Object.hash(runtimeType,songId,duration,title,const DeepCollectionEquality().hash(_artists),album,isMyLike,playNum,hash);
 
 @override
 String toString() {
-  return 'SongBasicInfo(songId: $songId, duration: $duration, title: $title, artists: $artists, album: $album, isMyLike: $isMyLike, playNum: $playNum, hash: $hash, trackNumber: $trackNumber, discNumber: $discNumber)';
+  return 'SongBasicInfo(songId: $songId, duration: $duration, title: $title, artists: $artists, album: $album, isMyLike: $isMyLike, playNum: $playNum, hash: $hash)';
 }
 
 
@@ -273,7 +269,7 @@ abstract mixin class _$SongBasicInfoCopyWith<$Res> implements $SongBasicInfoCopy
   factory _$SongBasicInfoCopyWith(_SongBasicInfo value, $Res Function(_SongBasicInfo) _then) = __$SongBasicInfoCopyWithImpl;
 @override @useResult
 $Res call({
- int songId, double duration, String title, List<String>? artists, String? album, bool isMyLike, int playNum, String? hash, int? trackNumber, int? discNumber
+ int songId, double duration, String title, List<String>? artists, String? album, bool isMyLike, int playNum, String? hash
 });
 
 
@@ -290,7 +286,7 @@ class __$SongBasicInfoCopyWithImpl<$Res>
 
 /// Create a copy of SongBasicInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? songId = null,Object? duration = null,Object? title = null,Object? artists = freezed,Object? album = freezed,Object? isMyLike = null,Object? playNum = null,Object? hash = freezed,Object? trackNumber = freezed,Object? discNumber = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? songId = null,Object? duration = null,Object? title = null,Object? artists = freezed,Object? album = freezed,Object? isMyLike = null,Object? playNum = null,Object? hash = freezed,}) {
   return _then(_SongBasicInfo(
 songId: null == songId ? _self.songId : songId // ignore: cast_nullable_to_non_nullable
 as int,duration: null == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
@@ -300,9 +296,7 @@ as List<String>?,album: freezed == album ? _self.album : album // ignore: cast_n
 as String?,isMyLike: null == isMyLike ? _self.isMyLike : isMyLike // ignore: cast_nullable_to_non_nullable
 as bool,playNum: null == playNum ? _self.playNum : playNum // ignore: cast_nullable_to_non_nullable
 as int,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
-as String?,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
-as int?,discNumber: freezed == discNumber ? _self.discNumber : discNumber // ignore: cast_nullable_to_non_nullable
-as int?,
+as String?,
   ));
 }
 

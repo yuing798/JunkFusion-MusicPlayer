@@ -116,8 +116,6 @@ SongInfo SongsManage::getBasicInfoCol(SQLite::Statement& query) {
     info.title = query.getColumn("title").getString();
     info.artists = DbUtils::getOptCol<juce::StringArray>(query, "artists");
     info.album = DbUtils::getOptCol<juce::String>(query, "album");
-    info.trackNumber = DbUtils::getOptCol<int>(query, "trackNumber");
-    info.discNumber = DbUtils::getOptCol<int>(query, "discNumber");
 
     // ── 用户信息 ──
     info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
@@ -125,10 +123,12 @@ SongInfo SongsManage::getBasicInfoCol(SQLite::Statement& query) {
     info.hash = DbUtils::getOptCol<juce::String>(query, "hash");
     return info;
 }
-SongInfo SongsManage::getCompleteInfoCol(SQLite::Statement& query) {
-    SongInfo info{getBasicInfoCol(query)};
-
+SongInfo SongsManage::getDetailInfoCol(SQLite::Statement& query) {
+    SongInfo info{};
+    info.trackNumber = DbUtils::getOptCol<int>(query, "trackNumber");
+    info.discNumber = DbUtils::getOptCol<int>(query, "discNumber");
     // ── FFmpeg 解码层 ──
+
     info.bitRate = query.getColumn("bitRate").getInt64();
     info.bitDepth = query.getColumn("bitDepth").getInt();
     info.sampleRate = query.getColumn("sampleRate").getInt();
@@ -151,18 +151,14 @@ SongInfo SongsManage::getCompleteInfoCol(SQLite::Statement& query) {
     info.timeDomainSpec = DbUtils::getBlob<double>(query, "timeDomainSpec");
     return info;
 }
-
-SongInfo SongsManage::getCompleteSongInfo(int64_t songId) {
+SongInfo SongsManage::getBasicSongInfo(int64_t songId) {
     try {
         SQLite::Statement query{
             dbManage.readDb(),
             R"(
-                SELECT songId,
-                duration, title, artists, album,
-                trackNumber,discNumber,
-                bitRate, bitDepth, sampleRate, channelLayoutMask,  codecName,
-                bpm, key, hash ,
-                isMyLike, playNum, timeDomainSpec 
+                SELECT songId, 
+                duration, title, artists, album, 
+                isMyLike, playNum, hash
                 FROM songs WHERE songId = :songId
             )"
         };
@@ -170,7 +166,7 @@ SongInfo SongsManage::getCompleteSongInfo(int64_t songId) {
 
         SongInfo info;
         if (query.executeStep()) {
-            info = getCompleteInfoCol(query);
+            info = getBasicInfoCol(query);
         } else {
             throw SQLite::Exception{"无法根据id找到歌曲信息:路径:" + std::to_string(songId)};
         }
@@ -178,7 +174,39 @@ SongInfo SongsManage::getCompleteSongInfo(int64_t songId) {
 
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->info(
-            "SongsManage::getCompleteSongInfo(int64_t songId)发生数据库错误:{}",
+            "SongsManage::getBasicSongInfo(int64_t songId)发生数据库错误:{}",
+            e.what()
+        );
+        return {};
+    }
+}
+
+SongInfo SongsManage::getDetailSongInfo(int64_t songId) {
+    try {
+        SQLite::Statement query{
+            dbManage.readDb(),
+            R"(
+                SELECT 
+                trackNumber,discNumber,
+                bitRate, bitDepth, sampleRate, channelLayoutMask,  codecName,
+                bpm, key, 
+                timeDomainSpec 
+                FROM songs WHERE songId = :songId
+            )"
+        };
+        query.bind(":songId", songId);
+
+        SongInfo info;
+        if (query.executeStep()) {
+            info = getDetailInfoCol(query);
+        } else {
+            throw SQLite::Exception{"无法根据id找到歌曲信息:路径:" + std::to_string(songId)};
+        }
+        return info;
+
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->info(
+            "SongsManage::getDetailSongInfo(int64_t songId)发生数据库错误:{}",
             e.what()
         );
         return {};
@@ -192,9 +220,8 @@ juce::Array<juce::var> SongsManage::getAllSongsBasicInfo() {
         SQLite::Statement query(dbManage.readDb(), R"(
             SELECT songId, 
             duration, title, artists, album, 
-            trackNumber, discNumber,
             isMyLike, playNum, hash
-            FROM songs 
+            FROM songs ORDER BY songId
         )");
 
         while (query.executeStep()) {

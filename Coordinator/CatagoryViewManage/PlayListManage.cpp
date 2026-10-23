@@ -6,6 +6,7 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <cstdint>
 #include <spdlog/spdlog.h>
 
 juce::Array<juce::var> PlayListManage::getAllPlayListView() {
@@ -32,7 +33,7 @@ juce::Array<juce::var> PlayListManage::getAllPlayListView() {
         return {};
     }
 }
-PlaylistInfo PlayListManage::getCompleteInfo(int64_t id) {
+PlaylistInfo PlayListManage::getDetailInfo(int64_t id) {
     try {
         SQLite::Statement selectSql{
             dbManage.readDb(),
@@ -56,7 +57,7 @@ PlaylistInfo PlayListManage::getCompleteInfo(int64_t id) {
         return info;
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->debug(
-            "PlayListManage::getCompleteInfo(int64_t id) throw db error:{}",
+            "PlayListManage::getDetailInfo(int64_t id) throw db error:{}",
             e.what()
         );
         return {};
@@ -100,3 +101,4 @@ bool PlayListManage::createNewPlaylist(PlaylistInfo info) {
         return false;
     }
 }
+void PlayListManage::addNewSongs(int64_t id, std::vector<int64_t> songIds) {}

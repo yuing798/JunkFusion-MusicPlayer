@@ -132,6 +132,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
       _loadWindowState();
       widget.songProvider.getAllSongs();
       widget.playbackProvider.initPlaybackProvider();
+      widget.albumProvider.getAllAlbums();
     });
   }
 
@@ -277,7 +278,9 @@ class JunkFusionAppState extends State<JunkFusionApp>
       //数据层，没画布
       providers: [
         ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
-        ChangeNotifierProvider<AlbumProvider>.value(value: widget.albumProvider),
+        ChangeNotifierProvider<AlbumProvider>.value(
+          value: widget.albumProvider,
+        ),
         ChangeNotifierProvider<PlaylistProvider>.value(
           value: widget.playlistProvider,
         ),

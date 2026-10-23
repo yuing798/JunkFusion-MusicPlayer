@@ -10,7 +10,6 @@ import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
-import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 // ════════════════════════════════════════════════════════════════
 // song_provider.dart — 歌曲列表状态管理
@@ -83,13 +82,13 @@ class SongProvider extends ChangeNotifier {
   }
 
   //更新某条歌曲
-  void requestUpdateSongInfo({required int songId}) {
+  void requestUpdateSongBasicInfo({required int songId}) {
     final index = _songs.indexWhere((s) => s.songId == songId);
     if (index == -1) return;
 
     final old = _songs[index];
     final resultMap = jsonDecode(
-      UtilFunction.cPtr2String(bindings.getCompleteSongInfo(songId)),
+      UtilFunction.cPtr2String(bindings.getBasicSongInfo(songId)),
     );
     final updated = SongBasicInfo.fromJson(resultMap);
 

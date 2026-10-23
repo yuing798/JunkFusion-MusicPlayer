@@ -25,7 +25,7 @@ private:
 
     juce::File cacheDir;   // 缓存文件夹
     juce::File logInfoDir; // 日志文件夹
-    juce::File imageDir;   // 歌曲图片
+    juce::File imageDir;   // 图片
 
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者

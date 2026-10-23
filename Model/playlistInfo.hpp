@@ -12,6 +12,6 @@ struct PlaylistInfo {
     std::vector<int64_t> songIdList;
 
     juce::var toBasicJson();
-    juce::var toCompleteJson();
-    static PlaylistInfo fromJson(Yvar obj);
+    juce::var toDetailJson();
+    static PlaylistInfo fromCompleteJson(Yvar obj);
 };

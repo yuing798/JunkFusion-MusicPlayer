@@ -200,45 +200,6 @@ class _AllMusicPageState extends State<AllMusicPage> {
                         frontCache.setInt("sortWays", mode.value);
                       },
                     ),
-                    // child: DropdownButtonHideUnderline(
-                    //   child: DropdownButton2<SortMode>(
-                    //     // isExpanded: true,
-                    //     // isDense: true,
-                    //     hint: Text(
-                    //       '排序方式',
-                    //       style: TextStyle(
-                    //         fontSize: 14,
-                    //         color: Theme.of(context).hintColor,
-                    //       ),
-                    //     ),
-                    //     items: SortMode.values
-                    //         .map(
-                    //           (SortMode mode) => DropdownItem<SortMode>(
-                    //             value: mode,
-                    //             height: 40,
-                    //             child: Text(
-                    //               mode.label,
-                    //               style: theme.comboTextStyle,
-                    //             ),
-                    //           ),
-                    //         )
-                    //         .toList(),
-                    //     // value: _selectedSort,
-                    //     onChanged: (SortMode? mode) async {
-                    //       if (mode == null) return;
-                    //       setState(() {
-                    //         _selectedSort = mode;
-                    //       });
-                    //       final frontCache = AppCache.frontCacheRef;
-                    //       frontCache.setInt("sortWays", mode.value);
-                    //     },
-                    //     buttonStyleData: const ButtonStyleData(
-                    //       padding: EdgeInsets.symmetric(horizontal: 16),
-                    //       height: 40,
-                    //       width: 140,
-                    //     ),
-                    //   ),
-                    // ),
                   ),
 
                   const SizedBox(width: 8),

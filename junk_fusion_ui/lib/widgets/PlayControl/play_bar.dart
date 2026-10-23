@@ -108,7 +108,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           (playback.curBasicInfo!.hash != null)
               ? Image.file(
                   File(
-                    '${AppCache.cacheDirString}/songImage/${playback.curBasicInfo!.hash}/original.jpg',
+                    '${AppCache.cacheDirString}/image/${playback.curBasicInfo!.hash}/original.jpg',
                   ),
                   width: 50,
                   height: 50,

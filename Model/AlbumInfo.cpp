@@ -18,15 +18,8 @@ juce::var AlbumInfo::toBasicJson() {
     obj.getDynamicObject()->setProperty(AlbumInfoMacro::hash, ConvertUtils::optValueToVar(hash));
     return obj;
 }
-juce::var AlbumInfo::toCompleteJson() {
+juce::var AlbumInfo::toDetailJson() {
     juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::albumId, albumId);
-    obj.getDynamicObject()->setProperty(
-        AlbumInfoMacro::albumArtists,
-        ConvertUtils::stringArray2ArrayVar(albumArtists)
-    );
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::title, title);
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::hash, ConvertUtils::optValueToVar(hash));
     obj.getDynamicObject()->setProperty(
         AlbumInfoMacro::songsLists,
         ConvertUtils::vectorToArrayVar(songsList)

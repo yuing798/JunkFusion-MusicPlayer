@@ -6,7 +6,7 @@ import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
-// AlbumCoverImage（哈希 → songImage/<hash>/original.jpg）目前住在
+// AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
 // single_album_page.dart 里，先复用；以后抽到 widgets/ 下面更合适
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:provider/provider.dart';
@@ -220,7 +220,10 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
                             SizedBox(
                               width: 40,
                               child: IconButton(
-                                icon: const Icon(TablerIcons.playlistX, size: 22),
+                                icon: const Icon(
+                                  TablerIcons.playlistX,
+                                  size: 22,
+                                ),
                                 tooltip: '移出歌单（还没接后端）',
                                 onPressed: null,
                               ),

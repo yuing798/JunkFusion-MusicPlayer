@@ -22,6 +22,7 @@
 class SongsManage {
 private:
     CenterDbManage& dbManage;
+    const int numRowsEachPage = 300; // 每一页多少首歌
 
     // 获取元数据数组(比如多个艺术家)
     juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
@@ -29,7 +30,7 @@ private:
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
 
     SongInfo getBasicInfoCol(SQLite::Statement& query);
-    SongInfo getCompleteInfoCol(SQLite::Statement& query);
+    SongInfo getDetailInfoCol(SQLite::Statement& query);
 
 public:
     explicit SongsManage(CenterDbManage& dbManage) : dbManage(dbManage) {};
@@ -50,8 +51,9 @@ public:
      */
     std::variant<std::string, InsertSongResult> insertSong(const juce::File& path);
 
-    // 得到某一首歌的全部SongInfo信息
-    SongInfo getCompleteSongInfo(int64_t songId);
+    // 得到某一首歌的详细SongInfo信息
+    SongInfo getDetailSongInfo(int64_t songId);
+    SongInfo getBasicSongInfo(int64_t songId);
 
     // 得到所有歌曲的基本信息用于UI视图
     juce::Array<juce::var> getAllSongsBasicInfo();

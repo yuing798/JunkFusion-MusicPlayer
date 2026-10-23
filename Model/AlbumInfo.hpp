@@ -17,7 +17,5 @@ struct AlbumInfo {
     juce::var toBasicJson();
 
     // 将所有信息转化为json
-    juce::var toCompleteJson();
-
-    static AlbumInfo getBasicInfoCol(SQLite::Statement& sql);
+    juce::var toDetailJson();
 };

@@ -10,28 +10,13 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-juce::var SongInfo::toCompleteJson() {
+juce::var SongInfo::toDetailJson() {
     juce::var obj{new juce::DynamicObject()};
 
     auto ptr{obj.getDynamicObject()};
 
-    // ── 0. 主键 ──
-    ptr->setProperty(SongInfoMacro::songId, songId);
-
-    // ── 1. 文件信息 ──
-    ptr->setProperty(SongInfoMacro::duration, duration);
-
-    ptr->setProperty(SongInfoMacro::title, title);
-    ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
-    ptr->setProperty(SongInfoMacro::album, ConvertUtils::optValueToVar(album));
     ptr->setProperty(SongInfoMacro::trackNumber, ConvertUtils::optValueToVar(trackNumber));
     ptr->setProperty(SongInfoMacro::discNumber, ConvertUtils::optValueToVar(discNumber));
-
-    // ── 5. 用户信息 ──
-    ptr->setProperty(SongInfoMacro::isMyLike, isMyLike);
-    ptr->setProperty(SongInfoMacro::playNum, playNum);
-
-    ptr->setProperty(SongInfoMacro::hash, ConvertUtils::optValueToVar(hash));
 
     // ── 3. FFmpeg 解码层 ──
     ptr->setProperty(SongInfoMacro::bitRate, bitRate);
@@ -53,17 +38,13 @@ juce::var SongInfo::toBasicJson() {
 
     auto ptr{obj.getDynamicObject()};
 
-    // ── 0. 主键 ──
-    ptr->setProperty(SongInfoMacro::songId, songId);
-
     // ── 1. 文件信息 ──
+    ptr->setProperty(SongInfoMacro::songId, songId);
     ptr->setProperty(SongInfoMacro::duration, duration);
 
     ptr->setProperty(SongInfoMacro::title, title);
     ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
     ptr->setProperty(SongInfoMacro::album, ConvertUtils::optValueToVar(album));
-    ptr->setProperty(SongInfoMacro::trackNumber, ConvertUtils::optValueToVar(trackNumber));
-    ptr->setProperty(SongInfoMacro::discNumber, ConvertUtils::optValueToVar(discNumber));
 
     // ── 5. 用户信息 ──
     ptr->setProperty(SongInfoMacro::isMyLike, isMyLike);

@@ -54,13 +54,13 @@ class AlbumProvider extends ChangeNotifier {
 
     // print(
     //   jsonDecode(
-    //     UtilFunction.cPtr2String(bindings.getCompleteAlbumInfo(albumId)),
+    //     UtilFunction.cPtr2String(bindings.getDetailAlbumInfo(albumId)),
     //   ),
     // );
 
     _curDetailInfo = AlbumDetailInfo.fromJson(
       jsonDecode(
-        UtilFunction.cPtr2String(bindings.getCompleteAlbumInfo(albumId)),
+        UtilFunction.cPtr2String(bindings.getDetailAlbumInfo(albumId)),
       ),
     );
 

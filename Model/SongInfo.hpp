@@ -42,6 +42,6 @@ struct SongInfo {
     std::vector<double> timeDomainSpec;
 
     // 将songInfo转化为var，才能推送给前端
-    juce::var toCompleteJson();
+    juce::var toDetailJson();
     juce::var toBasicJson();
 };

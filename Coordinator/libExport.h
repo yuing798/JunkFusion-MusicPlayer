@@ -47,8 +47,9 @@ extern "C" {
     DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调
     DLL_EXPORT void registerOnUpdateSongInfo(Int64Func cb);
     DLL_EXPORT const char* getAllSongs();
-    DLL_EXPORT const char* getCompleteSongInfo(long long songId);
-    DLL_EXPORT const char* getCompleteAlbumInfo(long long albumId);
+    DLL_EXPORT const char* getDetailSongInfo(long long songId);
+    DLL_EXPORT const char* getBasicSongInfo(long long songId);
+    DLL_EXPORT const char* getDetailAlbumInfo(long long albumId);
     DLL_EXPORT void requestOnPlayStateSync(IntFunc cb);
 
     /**
@@ -58,7 +59,7 @@ extern "C" {
      */
     DLL_EXPORT const char* getAllAlbumView();
     DLL_EXPORT const char* getAllPlaylistView();
-    DLL_EXPORT const char* getCompletePlaylistInfo(long long id);
+    DLL_EXPORT const char* getDetailPlaylistInfo(long long id);
     DLL_EXPORT int createNewPlaylist(const char* request);
 
 #ifdef __cplusplus

@@ -1,6 +1,5 @@
 #include "./AlbumsManage.hpp"
 #include "Coordinator/CenterDbManage/CenterDbManage.hpp"
-#include "Coordinator/CenterDbManage/dbTable.hpp"
 #include "Model/AlbumInfo.hpp"
 #include "Model/SongInfo.hpp"
 #include "Utils/Yvar.hpp"
@@ -224,8 +223,8 @@ std::optional<int64_t> AlbumsManage::getAlbumId(int64_t songId) {
 std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
     SQLite::Statement sql{
         dbManage.readDb(),
-        "SELECT songId FROM songs WHERE albumId = :albumId ORDER BY discNumber IS NULL, "
-        "discNumber,trackNumber IS NULL, trackNumber,songId "
+        "SELECT songId FROM songs WHERE albumId = :albumId ORDER BY "
+        "discNumber,trackNumber,songId "
 
     };
     sql.bind(":albumId", albumId);
@@ -235,17 +234,9 @@ std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
     }
     return songsList;
 }
-juce::var AlbumsManage::getCompleteInfo(int64_t albumId) {
-    SQLite::Statement selectAlbumQuery{
-        dbManage.readDb(),
-        "SELECT albumId, title,albumArtists,hash FROM albums WHERE albumId=:albumId"
-    };
-    selectAlbumQuery.bind(":albumId", albumId);
+juce::var AlbumsManage::getDetailInfo(int64_t albumId) {
     AlbumInfo info{};
-    if (selectAlbumQuery.executeStep()) {
-        info = getBasicInfoCol(selectAlbumQuery);
-    }
 
     info.songsList = getSongsList(albumId);
-    return info.toCompleteJson();
+    return info.toDetailJson();
 }
