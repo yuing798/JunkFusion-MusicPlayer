@@ -1,15 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/playlist_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
-import 'package:junk_fusion_ui/widgets/combo_box.dart';
+import 'package:junk_fusion_ui/widgets/hover_play_button.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
 // AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
 // single_album_page.dart 里，先复用；以后抽到 widgets/ 下面更合适
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
+import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -104,14 +108,12 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
           height: 80,
           child: Row(
             children: [
-              // ── 新建歌单 ──
-              // TODO(后端): createPlaylist(title) 注册好之后把这个按钮接上：
-              //   先弹一个输入框要名字 → createPlaylist → getAllPlaylists()
-              //   现在后端还没有歌单接口，所以先禁用占位
+              // ── 新建歌单（弹窗在 widgets/popupWindow/playlist_create_window.dart） ──
               SizedBox(
                 height: 40,
                 child: TextButton(
-                  onPressed: null, // TODO(后端): 接口好了换成新建歌单的逻辑
+                  onPressed: () =>
+                      context.read<PlaylistProvider>().createPlaylist(null),
                   style: TextButton.styleFrom(
                     backgroundColor: theme.colorHover,
                     foregroundColor: theme.colorTextMain,
@@ -135,16 +137,9 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
               ? _buildEmptyHint(theme)
               : DynMouseScroll(
                   builder: (context_, controler_, physics_) {
-                    return GridView.builder(
+                    return ListView.builder(
                       controller: controler_,
                       physics: physics_,
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 220,
-                            mainAxisSpacing: 15,
-                            crossAxisSpacing: 15,
-                            childAspectRatio: 0.72,
-                          ),
                       itemCount: playlists.length,
                       padding: EdgeInsets.only(
                         right: 10, // 给滚动条留点位置
@@ -153,10 +148,25 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
                       itemBuilder: (context, index) {
                         final playlist = playlists[index];
 
-                        return _PlaylistCard(
-                          key: ValueKey(playlist.playlistId),
-                          playlist: playlist,
+                        return GestureDetector(
                           onTap: () => _openPlaylist(playlist),
+                          onSecondaryTapDown: (details) => showRootContextMenu(
+                            context: context,
+                            position: details.globalPosition,
+                            useBarrier: true,
+                            items: [
+                              ContextMenuItem(
+                                label: "删除歌单",
+                                onTap: () => context
+                                    .read<PlaylistProvider>()
+                                    .deletePlaylist(playlist.playlistId),
+                              ),
+                            ],
+                          ),
+                          child: _PlaylistCard(
+                            key: ValueKey(playlist.playlistId),
+                            playlist: playlist,
+                          ),
                         );
                       },
                     );
@@ -181,68 +191,34 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
 class _PlaylistCard extends StatefulWidget {
   final PlaylistBasicInfo playlist;
 
-  /// 点卡片本体：打开这个歌单
-  final VoidCallback onTap;
-
-  const _PlaylistCard({super.key, required this.playlist, required this.onTap});
+  const _PlaylistCard({super.key, required this.playlist});
 
   @override
   State<_PlaylistCard> createState() => _PlaylistCardState();
 }
 
 class _PlaylistCardState extends State<_PlaylistCard> {
-  /// 鼠标是否悬浮在卡片上
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<AppTheme>();
-    final playlist = widget.playlist;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(8),
-          color: _isHovered ? theme.colorHover : theme.colorCell,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── 封面（正方形，居中） ──
-              Expanded(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: AlbumCoverImage(hash: playlist.hash),
+    return Row(
+      children: [
+        SizedBox(
+          width: 50,
+          height: 50,
+          child: (widget.playlist.hash != null)
+              ? Image.file(
+                  File(
+                    '${AppCache.cacheDirString}/image/${widget.playlist.hash}/original.jpg',
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // ── 歌单名（单行省略） ──
-              Tooltip(
-                message: playlist.title,
-                child: Text(
-                  playlist.title,
-                  style: theme.midTextStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-              const SizedBox(height: 2),
-
-              // ── 歌曲数量 ──
-              Text('共 ${playlist.songCount} 首', style: theme.littleTextStyle),
-            ],
-          ),
+                  fit: BoxFit.cover,
+                )
+              : Image.asset("assets/image/JunkFusion.png", fit: BoxFit.cover),
         ),
-      ),
+        const VerticalDivider(width: 10),
+        Text(widget.playlist.title),
+        const Spacer(),
+        Text(widget.playlist.createTime),
+      ],
     );
   }
 }

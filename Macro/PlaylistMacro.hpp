@@ -5,4 +5,5 @@ namespace PlaylistMacro{
     static constexpr const char* title = "title" ;
     static constexpr const char* hash = "hash" ;
     static constexpr const char* songList = "songList" ;
+    static constexpr const char* createTime = "createTime" ;
 }

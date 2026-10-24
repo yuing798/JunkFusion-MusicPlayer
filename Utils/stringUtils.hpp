@@ -1,6 +1,7 @@
 #pragma once
 
 #include "juce_core/juce_core.h"
+#include <cstdint>
 namespace StringUtils {
 
     /**
@@ -28,5 +29,22 @@ namespace StringUtils {
 
     // 对字符串进行Lucene特殊字符筛选并在前面加上反斜杠
     std::string escapeLucene(const std::string& input);
+
+    template <typename T>
+    std::string vectorToString(const std::vector<T>& vec, const char* separtor) {
+        static_assert(
+            std::is_same_v<T, int> || std::is_same_v<T, int64_t> || std::is_same_v<T, double> ||
+                std::is_same_v<T, float>,
+            "vectorToString throw type error"
+        );
+        std::string res;
+        for (size_t i = 0; i < vec.size(); i++) {
+            res += std::to_string(vec[i]);
+            if (i != vec.size() - 1) {
+                res += separtor;
+            }
+        }
+        return res;
+    }
 
 } // namespace StringUtils

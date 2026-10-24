@@ -58,11 +58,12 @@ extern "C" {
      * @return DLL_EXPORT const* 所有专辑视图的json字符串
      */
     DLL_EXPORT const char* getAllAlbumView();
-    DLL_EXPORT const char* getDetailPlaylistInfo(long long id);
 
+    DLL_EXPORT const char* getDetailPlaylistInfo(long long id);
+    DLL_EXPORT const char* getPlaylistBasicInfo(long long id);
     DLL_EXPORT const char* getAllPlaylistView();
-    DLL_EXPORT int createNewPlaylist(const char* request);
-    DLL_EXPORT void allNewSongsInPlaylist(long long playlistId, const char* songIdsJson);
+    DLL_EXPORT long long createNewPlaylist(const char* title, const char* coverPath);
+    DLL_EXPORT void addNewSongsToPlaylist(long long playlistId, const char* songIdsJson);
     DLL_EXPORT void removeSongsInPlaylist(long long playlistId, const char* songIdsJson);
     DLL_EXPORT void deletePlaylist(long long playlistId);
     DLL_EXPORT void renamePlaylist(long long playlistId, const char* title);

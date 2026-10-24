@@ -16,6 +16,7 @@
 #include "juce_osc/juce_osc.h"
 #include <cstdint>
 #include <cstdlib>
+#include <optional>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -211,12 +212,18 @@ extern "C" {
                 .toDetailJson()
         );
     }
-    int createNewPlaylist(const char* request) {
-        Yvar obj{juce::JSON::fromString(request)};
-        PlaylistInfo info{PlaylistInfo::fromCompleteJson(obj)};
-        return dllManager::getInstance().getDbContext()->playListManage.createNewPlaylist(info);
+    const char* getPlaylistBasicInfo(long long id) {
+        return ConvertUtils::object2Uint8t(
+            dllManager::getInstance().getDbContext()->playListManage.getBasicInfo(id).toBasicJson()
+        );
     }
-    void allNewSongsInPlaylist(long long playlistId, const char* songIdsJson) {
+    long long createNewPlaylist(const char* title, const char* coverPath) {
+        return dllManager::getInstance().getDbContext()->playListManage.createNewPlaylist(
+            title,
+            coverPath != nullptr ? std::optional<juce::File>{juce::File{coverPath}} : std::nullopt
+        );
+    }
+    void addNewSongsToPlaylist(long long playlistId, const char* songIdsJson) {
         std::vector<int64_t> songIds =
             Yvar{juce::JSON::fromString(songIdsJson)}.toVector<int64_t>();
         dllManager::getInstance().getDbContext()->playListManage.addNewSongs(playlistId, songIds);

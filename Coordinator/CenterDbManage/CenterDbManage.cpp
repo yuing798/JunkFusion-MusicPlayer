@@ -104,7 +104,7 @@ static const char* createPlaylistTableSQL = R"(
     CREATE TABLE IF NOT EXISTS playlists(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
-        createdAt TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+        createdAt TEXT NOT NULL DEFAULT (date('now', 'localtime')),
         hash TEXT
     )
 )";

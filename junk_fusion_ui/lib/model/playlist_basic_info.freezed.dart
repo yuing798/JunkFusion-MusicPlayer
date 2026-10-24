@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PlaylistBasicInfo {
 
- int get playlistId; String get title;/// 歌单里的歌曲数量（网格卡片上显示，也用来排序）
- int get songCount;/// 封面哈希：取歌单里第一首有封面的歌（和专辑一个做法），没有就是空串
+ int get playlistId; String get title; String get createTime;/// 封面哈希：取歌单里第一首有封面的歌（和专辑一个做法），没有就是空串
  String? get hash;
 /// Create a copy of PlaylistBasicInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -30,16 +29,16 @@ $PlaylistBasicInfoCopyWith<PlaylistBasicInfo> get copyWith => _$PlaylistBasicInf
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaylistBasicInfo&&(identical(other.playlistId, playlistId) || other.playlistId == playlistId)&&(identical(other.title, title) || other.title == title)&&(identical(other.songCount, songCount) || other.songCount == songCount)&&(identical(other.hash, hash) || other.hash == hash));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaylistBasicInfo&&(identical(other.playlistId, playlistId) || other.playlistId == playlistId)&&(identical(other.title, title) || other.title == title)&&(identical(other.createTime, createTime) || other.createTime == createTime)&&(identical(other.hash, hash) || other.hash == hash));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,playlistId,title,songCount,hash);
+int get hashCode => Object.hash(runtimeType,playlistId,title,createTime,hash);
 
 @override
 String toString() {
-  return 'PlaylistBasicInfo(playlistId: $playlistId, title: $title, songCount: $songCount, hash: $hash)';
+  return 'PlaylistBasicInfo(playlistId: $playlistId, title: $title, createTime: $createTime, hash: $hash)';
 }
 
 
@@ -50,7 +49,7 @@ abstract mixin class $PlaylistBasicInfoCopyWith<$Res>  {
   factory $PlaylistBasicInfoCopyWith(PlaylistBasicInfo value, $Res Function(PlaylistBasicInfo) _then) = _$PlaylistBasicInfoCopyWithImpl;
 @useResult
 $Res call({
- int playlistId, String title, int songCount, String? hash
+ int playlistId, String title, String createTime, String? hash
 });
 
 
@@ -67,12 +66,12 @@ class _$PlaylistBasicInfoCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistBasicInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? playlistId = null,Object? title = null,Object? songCount = null,Object? hash = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? playlistId = null,Object? title = null,Object? createTime = null,Object? hash = freezed,}) {
   return _then(_self.copyWith(
 playlistId: null == playlistId ? _self.playlistId : playlistId // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,songCount: null == songCount ? _self.songCount : songCount // ignore: cast_nullable_to_non_nullable
-as int,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
+as String,createTime: null == createTime ? _self.createTime : createTime // ignore: cast_nullable_to_non_nullable
+as String,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -158,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int playlistId,  String title,  int songCount,  String? hash)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int playlistId,  String title,  String createTime,  String? hash)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlaylistBasicInfo() when $default != null:
-return $default(_that.playlistId,_that.title,_that.songCount,_that.hash);case _:
+return $default(_that.playlistId,_that.title,_that.createTime,_that.hash);case _:
   return orElse();
 
 }
@@ -179,10 +178,10 @@ return $default(_that.playlistId,_that.title,_that.songCount,_that.hash);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int playlistId,  String title,  int songCount,  String? hash)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int playlistId,  String title,  String createTime,  String? hash)  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistBasicInfo():
-return $default(_that.playlistId,_that.title,_that.songCount,_that.hash);case _:
+return $default(_that.playlistId,_that.title,_that.createTime,_that.hash);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +198,10 @@ return $default(_that.playlistId,_that.title,_that.songCount,_that.hash);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int playlistId,  String title,  int songCount,  String? hash)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int playlistId,  String title,  String createTime,  String? hash)?  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistBasicInfo() when $default != null:
-return $default(_that.playlistId,_that.title,_that.songCount,_that.hash);case _:
+return $default(_that.playlistId,_that.title,_that.createTime,_that.hash);case _:
   return null;
 
 }
@@ -214,13 +213,12 @@ return $default(_that.playlistId,_that.title,_that.songCount,_that.hash);case _:
 @JsonSerializable()
 
 class _PlaylistBasicInfo implements PlaylistBasicInfo {
-  const _PlaylistBasicInfo({required this.playlistId, required this.title, required this.songCount, this.hash});
+  const _PlaylistBasicInfo({required this.playlistId, required this.title, required this.createTime, this.hash});
   factory _PlaylistBasicInfo.fromJson(Map<String, dynamic> json) => _$PlaylistBasicInfoFromJson(json);
 
 @override final  int playlistId;
 @override final  String title;
-/// 歌单里的歌曲数量（网格卡片上显示，也用来排序）
-@override final  int songCount;
+@override final  String createTime;
 /// 封面哈希：取歌单里第一首有封面的歌（和专辑一个做法），没有就是空串
 @override final  String? hash;
 
@@ -237,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaylistBasicInfo&&(identical(other.playlistId, playlistId) || other.playlistId == playlistId)&&(identical(other.title, title) || other.title == title)&&(identical(other.songCount, songCount) || other.songCount == songCount)&&(identical(other.hash, hash) || other.hash == hash));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaylistBasicInfo&&(identical(other.playlistId, playlistId) || other.playlistId == playlistId)&&(identical(other.title, title) || other.title == title)&&(identical(other.createTime, createTime) || other.createTime == createTime)&&(identical(other.hash, hash) || other.hash == hash));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,playlistId,title,songCount,hash);
+int get hashCode => Object.hash(runtimeType,playlistId,title,createTime,hash);
 
 @override
 String toString() {
-  return 'PlaylistBasicInfo(playlistId: $playlistId, title: $title, songCount: $songCount, hash: $hash)';
+  return 'PlaylistBasicInfo(playlistId: $playlistId, title: $title, createTime: $createTime, hash: $hash)';
 }
 
 
@@ -257,7 +255,7 @@ abstract mixin class _$PlaylistBasicInfoCopyWith<$Res> implements $PlaylistBasic
   factory _$PlaylistBasicInfoCopyWith(_PlaylistBasicInfo value, $Res Function(_PlaylistBasicInfo) _then) = __$PlaylistBasicInfoCopyWithImpl;
 @override @useResult
 $Res call({
- int playlistId, String title, int songCount, String? hash
+ int playlistId, String title, String createTime, String? hash
 });
 
 
@@ -274,12 +272,12 @@ class __$PlaylistBasicInfoCopyWithImpl<$Res>
 
 /// Create a copy of PlaylistBasicInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? playlistId = null,Object? title = null,Object? songCount = null,Object? hash = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? playlistId = null,Object? title = null,Object? createTime = null,Object? hash = freezed,}) {
   return _then(_PlaylistBasicInfo(
 playlistId: null == playlistId ? _self.playlistId : playlistId // ignore: cast_nullable_to_non_nullable
 as int,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,songCount: null == songCount ? _self.songCount : songCount // ignore: cast_nullable_to_non_nullable
-as int,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
+as String,createTime: null == createTime ? _self.createTime : createTime // ignore: cast_nullable_to_non_nullable
+as String,hash: freezed == hash ? _self.hash : hash // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

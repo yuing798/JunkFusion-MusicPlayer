@@ -5,4 +5,5 @@ abstract class PlaylistMacro {
   static const String title = "title";
   static const String hash = "hash";
   static const String songList = "songList";
+  static const String createTime = "createTime";
 }

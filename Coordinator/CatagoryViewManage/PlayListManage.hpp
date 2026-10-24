@@ -4,6 +4,7 @@
 #include "Model/playlistInfo.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
+#include <optional>
 #include <vector>
 class PlayListManage {
 private:
@@ -14,7 +15,8 @@ public:
 
     juce::Array<juce::var> getAllPlayListView();
     PlaylistInfo getDetailInfo(int64_t id);
-    bool createNewPlaylist(PlaylistInfo info);
+    PlaylistInfo getBasicInfo(int64_t id);
+    int64_t createNewPlaylist(juce::String title, std::optional<juce::File> coverPath);
     void addNewSongs(int64_t id, std::vector<int64_t> songIds);
     void removeSongs(int64_t id, std::vector<int64_t> songIds);
     void deletePlaylist(int64_t id);

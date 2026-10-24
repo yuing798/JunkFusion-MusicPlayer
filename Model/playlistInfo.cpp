@@ -10,6 +10,7 @@ juce::var PlaylistInfo::toBasicJson() {
     ptr->setProperty(PlaylistMacro::id, id);
     ptr->setProperty(PlaylistMacro::title, title);
     ptr->setProperty(PlaylistMacro::hash, ConvertUtils::optValueToVar(hash));
+    ptr->setProperty(PlaylistMacro::createTime, createTime);
     return obj;
 }
 juce::var PlaylistInfo::toDetailJson() {
@@ -24,6 +25,7 @@ PlaylistInfo PlaylistInfo::fromCompleteJson(Yvar obj) {
     PlaylistInfo info{};
     info.title = obj.read(PlaylistMacro::title).toString();
     info.hash = obj.read(PlaylistMacro::hash).toOptStr();
+    info.createTime = obj.read(PlaylistMacro::createTime).toString();
     info.songIdList = obj.read(PlaylistMacro::songList).toVector<int64_t>();
     return info;
 }

@@ -201,6 +201,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.14"
+  desktop_drop:
+    dependency: "direct main"
+    description:
+      name: desktop_drop
+      sha256: "47ded09c85909edfed644fd4cbb5051b040d0aed5c79e7e062ea4b3b7156dbe4"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.8.4"
+  directory_tree:
+    dependency: transitive
+    description:
+      name: directory_tree
+      sha256: "01286dcc310a235881366622961558cc1a472c9b1e58a2732f23cab6cd6e1130"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.0"
   dropdown_button2:
     dependency: "direct main"
     description:
@@ -209,6 +225,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.1.0"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      sha256: "3bce007a596ff8b3119c45d68aaef631272537c03d30e5d4534dd24bf4c5eaa2"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -257,6 +281,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.1.1"
+  flex_color_scheme:
+    dependency: "direct main"
+    description:
+      name: flex_color_scheme
+      sha256: ab854146f201d2d62cc251fd525ef023b84182c4a0bfe4ae4c18ffc505b412d3
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "8.4.0"
+  flex_seed_scheme:
+    dependency: transitive
+    description:
+      name: flex_seed_scheme
+      sha256: a3183753bbcfc3af106224bff3ab3e1844b73f58062136b7499919f49f3667e7
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.0.1"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -270,6 +310,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "4.1.0"
+  flutter_directory_tree:
+    dependency: "direct main"
+    description:
+      name: flutter_directory_tree
+      sha256: "6f0e523dceb049a70ddfdd07a4c4aba706878ce9a216271b54a5ea4fb3ed4958"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.0"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -973,6 +1021,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.4.0"
+  universal_platform:
+    dependency: transitive
+    description:
+      name: universal_platform
+      sha256: "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.1.0"
+  uuid:
+    dependency: transitive
+    description:
+      name: uuid
+      sha256: "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.6.0"
   vector_math:
     dependency: transitive
     description:

@@ -6,6 +6,7 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <optional>
@@ -80,4 +81,5 @@ namespace DbUtils {
             spdlog::get(LogDllID)->debug("getBlob发生错误:列名{},错误信息{}", name, e.what());
         }
     }
+
 } // namespace DbUtils

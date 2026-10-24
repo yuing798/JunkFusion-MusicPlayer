@@ -10,7 +10,7 @@ _PlaylistBasicInfo _$PlaylistBasicInfoFromJson(Map<String, dynamic> json) =>
     _PlaylistBasicInfo(
       playlistId: (json['playlistId'] as num).toInt(),
       title: json['title'] as String,
-      songCount: (json['songCount'] as num).toInt(),
+      createTime: json['createTime'] as String,
       hash: json['hash'] as String?,
     );
 
@@ -18,6 +18,6 @@ Map<String, dynamic> _$PlaylistBasicInfoToJson(_PlaylistBasicInfo instance) =>
     <String, dynamic>{
       'playlistId': instance.playlistId,
       'title': instance.title,
-      'songCount': instance.songCount,
+      'createTime': instance.createTime,
       'hash': instance.hash,
     };

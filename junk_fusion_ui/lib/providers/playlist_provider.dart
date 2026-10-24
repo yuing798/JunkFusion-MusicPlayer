@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:ffi';
 
+import 'package:collection/collection.dart';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
@@ -8,6 +11,7 @@ import 'package:junk_fusion_ui/model/playlist_detail_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
+import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 // ════════════════════════════════════════════════════════════════
 // playlist_provider.dart — 歌单视图的数据源
@@ -85,6 +89,51 @@ class PlaylistProvider extends ChangeNotifier {
         .whereType<SongBasicInfo>()
         .toList();
 
+    notifyListeners();
+  }
+
+  /// 打开「新建歌单」弹窗（标题输入 + 点选/拖拽封面图片）
+  Future<int?> _createEmptyPlaylist() async {
+    final result = await DialogUtil.showPlaylistCreateDialog();
+    // 用户点了取消 / 关掉了弹窗
+    if (result == null) return null;
+    final ptrTitle = UtilFunction.string2cPtr(result.title);
+    final ptrCover = result.imagePath != null
+        ? UtilFunction.string2cPtr(result.imagePath!)
+        : nullptr;
+    final id = bindings.createNewPlaylist(ptrTitle, ptrCover);
+    malloc.free(ptrTitle);
+    malloc.free(ptrCover);
+    //   context.read<PlaylistProvider>().getAllPlaylists(); // 刷新列表
+    // 现在后端还没有歌单接口，先把弹窗拿到的东西打出来
+    print('[歌单] 待创建：${result.title}，封面图片：${result.imagePath ?? '（没选）'}');
+    return id;
+  }
+
+  void createPlaylist(List<int>? songsList) async {
+    final playlistId = await _createEmptyPlaylist();
+    if (playlistId == null) return;
+    if (songsList != null) {
+      final ptr = UtilFunction.string2cPtr(jsonEncode(songsList));
+      bindings.addNewSongsToPlaylist(playlistId, ptr);
+      malloc.free(ptr);
+    }
+    _playlists.add(
+      jsonDecode(
+        UtilFunction.cPtr2String(bindings.getBasicSongInfo(playlistId)),
+      ),
+    );
+    notifyListeners();
+  }
+
+  void deletePlaylist(int playlistId) {
+    bindings.deletePlaylist(playlistId);
+    final index = _playlists.indexWhere(
+      (each) => each.playlistId == playlistId,
+    );
+    if (index != -1) {
+      _playlists.removeAt(index);
+    }
     notifyListeners();
   }
 

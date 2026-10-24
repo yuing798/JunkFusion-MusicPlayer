@@ -10,6 +10,7 @@ struct PlaylistInfo {
     juce::String title;
     std::optional<juce::String> hash;
     std::vector<int64_t> songIdList;
+    juce::String createTime;
 
     juce::var toBasicJson();
     juce::var toDetailJson();
