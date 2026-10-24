@@ -194,6 +194,7 @@ extern "C" {
             dllManager::getInstance().getDbContext()->albumsManage.getDetailInfo(albumId)
         );
     }
+
     const char* getAllPlaylistView() {
         juce::var obj{new juce::DynamicObject()};
         obj.getDynamicObject()->setProperty(
@@ -214,5 +215,31 @@ extern "C" {
         Yvar obj{juce::JSON::fromString(request)};
         PlaylistInfo info{PlaylistInfo::fromCompleteJson(obj)};
         return dllManager::getInstance().getDbContext()->playListManage.createNewPlaylist(info);
+    }
+    void allNewSongsInPlaylist(long long playlistId, const char* songIdsJson) {
+        std::vector<int64_t> songIds =
+            Yvar{juce::JSON::fromString(songIdsJson)}.toVector<int64_t>();
+        dllManager::getInstance().getDbContext()->playListManage.addNewSongs(playlistId, songIds);
+    }
+    void removeSongsInPlaylist(long long playlistId, const char* songIdsJson) {
+        std::vector<int64_t> songIds =
+            Yvar{juce::JSON::fromString(songIdsJson)}.toVector<int64_t>();
+        dllManager::getInstance().getDbContext()->playListManage.removeSongs(playlistId, songIds);
+    }
+    void deletePlaylist(long long playlistId) {
+        dllManager::getInstance().getDbContext()->playListManage.deletePlaylist(playlistId);
+    }
+    void renamePlaylist(long long playlistId, const char* title) {
+        dllManager::getInstance().getDbContext()->playListManage.renamePlayList(playlistId, title);
+    }
+    void updateCoverByPath(long long playlistId, const char* coverPath) {
+        auto hash =
+            dllManager::getInstance().getDbContext()->playListManage.coverPathCopyAndConvertToHash(
+                juce::File{coverPath}
+            );
+        dllManager::getInstance().getDbContext()->playListManage.updateCover(playlistId, hash);
+    }
+    void updateCoverBySongId(long long playlistId, long long songId) {
+        dllManager::getInstance().getDbContext()->playListManage.updateCover(playlistId, songId);
     }
 }
