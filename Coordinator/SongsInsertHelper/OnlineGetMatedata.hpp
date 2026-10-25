@@ -21,9 +21,9 @@ public:
         std::string print; // 指纹
 
         // 以下三个如果有的话发送过来，进行查找打分
-        std::optional<juce::String> title;
-        std::optional<juce::StringArray> artists;
-        std::optional<juce::String> album;
+        std::optional<std::string> title;
+        std::optional<std::vector<std::string>> artists;
+        std::optional<std::string> album;
         bool needCover{false};
     };
 
@@ -32,7 +32,7 @@ private:
     // std::queue<Task> mTaskQueue;
     // std::mutex mtx;
     static constexpr const char* AcoustIdKey = "lp1ajcs0Bd"; // 用来指纹搜索的AcoustId的密钥
-    // juce::String systemCountry;                              // 系统国家，用来专辑打分
+    // std::string systemCountry;                              // 系统国家，用来专辑打分
 
     // 搜索专辑图片，因为可能需要分为多次搜索
     static std::optional<std::string> searchCoverURL(std::string term, std::string entity);
@@ -44,12 +44,12 @@ public:
     // void setTask(Task task);
 
     struct Result {
-        std::optional<juce::String> finalTitle;
-        std::optional<juce::StringArray> finalArtists;
-        std::optional<juce::String> finalAlbum;
-        std::optional<juce::String> finalHash;
-        std::optional<juce::StringArray> finalAlbumArtists;
+        std::optional<std::string> finalTitle;
+        std::optional<std::vector<std::string>> finalArtists;
+        std::optional<std::string> finalAlbum;
+        std::optional<std::string> finalHash;
+        std::optional<std::vector<std::string>> finalAlbumArtists;
     };
 
-    static Result process(juce::String systemCountry, Task task);
+    static Result process(std::string systemCountry, Task task);
 };

@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <mutex>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <queue>
 #include <sha1.h>
@@ -38,11 +39,11 @@ std::optional<std::string> OnlineGetMatedata::searchCoverURL(std::string term, s
     );
 
     if (coverSearch.status_code == 200) {
-        Yvar coverSearchRes{juce::JSON::fromString(juce::String(coverSearch.text))};
+        Yvar coverSearchRes{nlohmann::json::parse(coverSearch.text)};
         if (coverSearchRes.hasProperty("resultCount") &&
             coverSearchRes.read("resultCount").toInt() > 0) {
             auto firstResult = coverSearchRes.read("results").read(0);
-            return firstResult.read("artworkUrl100").toString().toStdString();
+            return firstResult.read("artworkUrl100").toString();
         }
     }
     return std::nullopt;
@@ -80,7 +81,7 @@ std::optional<std::string> OnlineGetMatedata::searchCoverURL(std::string term, s
 // }
 
 OnlineGetMatedata::Result
-OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task task) {
+OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task task) {
     spdlog::get(LogDllID)->debug("开始根据指纹搜索元数据:歌曲ID:{}", task.songId);
 
     Result result;
@@ -88,9 +89,9 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
     spdlog::get(LogDllID)->debug(
         "已有数据内容为:songId:{},title:{},artists:{},album:{}",
         task.songId,
-        task.title.has_value() ? task.title.value().toStdString() : "",
-        task.artists.has_value() ? task.artists.value().joinIntoString(" / ").toStdString() : "",
-        task.album.has_value() ? task.album.value().toStdString() : ""
+        task.title.has_value() ? task.title.value() : "",
+        task.artists.has_value() ? StringUtils::vectorToString(task.artists.value(), " / ") : "",
+        task.album.has_value() ? task.album.value() : ""
     );
 
     // 发起 POST 请求
@@ -117,7 +118,7 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
         };
         std::vector<RecordingResult> recordingResults;
 
-        Yvar v{juce::JSON::fromString(juce::String(res.text))};
+        Yvar v{nlohmann::json::parse(res.text)};
         auto results{v.read("results")};
 
         for (int resultIndex = 0; resultIndex < results.size(); resultIndex++) {
@@ -158,13 +159,13 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
                 if (task.artists.has_value()) {
                     auto searchArtists{recording.read("artists")}; // 搜索到的艺术家列表
 
-                    juce::StringArray remoteArtistNames;
+                    std::vector<std::string> remoteArtistNames;
                     for (int i = 0; i < searchArtists.size(); i++) {
                         auto artist = searchArtists.read(i);
-                        remoteArtistNames.add(artist.read("name").toString());
+                        remoteArtistNames.push_back(artist.read("name").toString());
                     }
 
-                    if (!remoteArtistNames.isEmpty()) {
+                    if (!remoteArtistNames.empty()) {
                         double calcResult{StringUtils::calcArtistsSimlarity(
                             task.artists.value(),
                             remoteArtistNames
@@ -202,7 +203,7 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
                                 .read(bestRecordingIt->recordingIndex)};
         auto releases{finalRecording.read("releases")};
 
-        spdlog::get(LogDllID)->debug("获取到的releases内容:{}", releases.toString().toStdString());
+        spdlog::get(LogDllID)->debug("获取到的releases内容:{}", releases.toString());
 
         int bestReleaseIndex{0};
         struct ReleaseResult {
@@ -215,7 +216,8 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
         for (int releaseIndex = 0; releaseIndex < releases.size(); releaseIndex++) {
             auto release{releases.read(releaseIndex)};
             auto remoteAlbumTitle{release.read("title")};
-            auto country{release.read("country").toString().toUpperCase()};
+            auto country = release.read("country").toString();
+            StringUtils::toUpperCaseInPlace(country);
 
             ReleaseResult releaseResult;
             releaseResult.releaseindex = releaseIndex;
@@ -263,51 +265,51 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
         auto bestTitle = finalRecording.read("title").toString();
 
         auto bestArtists{finalRecording.read("artists")};
-        juce::StringArray bestArtistsArray;
+        std::vector<std::string> bestArtistsArray;
 
         for (int i = 0; i < bestArtists.size(); i++) {
             auto artist{bestArtists.read(i).read("name").toString()};
-            bestArtistsArray.add(artist);
+            bestArtistsArray.push_back(artist);
         }
 
         auto finalRelease{finalRecording.read("releases").read(bestReleaseIndex)};
 
-        juce::String bestAlbum = finalRelease.read("title").toString();
+        std::string bestAlbum = finalRelease.read("title").toString();
 
         spdlog::get(LogDllID)->debug(
             "id:{}:最终联网搜索获得的歌名:{},艺术家组合名:{},专辑名:{}",
             task.songId,
-            bestTitle.toStdString(),
-            bestArtistsArray.joinIntoString(" / ").toStdString(),
-            bestAlbum.toStdString()
+            bestTitle,
+            StringUtils::vectorToString(bestArtistsArray, " / "),
+            bestAlbum
         );
-        juce::String bestHash;
-        juce::StringArray bestAlbumArtists;
+        std::string bestHash;
+        std::vector<std::string> bestAlbumArtists;
         auto finalAlbumArtistsVar{finalRelease.read("artists")};
         for (int i = 0; i < finalAlbumArtistsVar.size(); i++) {
             auto name{finalAlbumArtistsVar.read(i).read("name").toString()};
-            bestAlbumArtists.add(name);
+            bestAlbumArtists.push_back(name);
         }
 
         if (task.needCover) {
 
             std::string primaryArtist;
             for (int i = 0; i < bestAlbumArtists.size(); i++) {
-                if (!StringUtils::isVariousArtists(bestAlbumArtists[i].toStdString())) {
+                if (!StringUtils::isVariousArtists(bestAlbumArtists[i])) {
                     // 如果是群星等名字不能发给apple做搜索，否则极大降低成功率
-                    primaryArtist = bestAlbumArtists[i].toStdString();
+                    primaryArtist = bestAlbumArtists[i];
                     break; // 搜索专辑图只需主艺术家名
                 }
             }
 
-            if (primaryArtist.empty() && !bestArtistsArray.isEmpty()) {
-                primaryArtist = bestArtistsArray[0].toStdString();
+            if (primaryArtist.empty() && !bestArtistsArray.empty()) {
+                primaryArtist = bestArtistsArray[0];
             } // 如果专辑艺术家不可用的话，发送歌曲艺术家
 
-            auto searchTerms{primaryArtist + " " + bestAlbum.toStdString()};
+            auto searchTerms{primaryArtist + " " + bestAlbum};
             auto coverURL{searchCoverURL(searchTerms, "album")};
             if (coverURL == std::nullopt) {
-                searchTerms = primaryArtist + " " + bestTitle.toStdString();
+                searchTerms = primaryArtist + " " + bestTitle;
                 coverURL = searchCoverURL(searchTerms, "song");
                 // 艺术家加上专辑名走不到就改用歌曲名称
                 if (coverURL == std::nullopt) {
@@ -331,7 +333,7 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
                     SHA1 sha1;
                     auto hash = sha1(imgRes.text.data(), imgRes.text.size());
                     spdlog::get(LogDllID)->debug("联网搜索到图片哈希值:{}", hash);
-                    bestHash = juce::String(hash);
+                    bestHash = std::string(hash);
 
                     juce::File hashImageDir{
                         dllManager::getInstance().getImageDir().getChildFile(hash)
@@ -359,95 +361,23 @@ OnlineGetMatedata::process(juce::String systemCountry, OnlineGetMatedata::Task t
         }
         spdlog::get(LogDllID)->debug("联网搜索歌曲元数据完成，歌曲ID:{}", task.songId);
 
-        if (!task.title.has_value() && bestTitle.isNotEmpty()) {
+        if (!task.title.has_value() && !bestTitle.empty()) {
             result.finalTitle = bestTitle;
         }
-        if (!task.artists.has_value() && !bestArtistsArray.isEmpty()) {
+        if (!task.artists.has_value() && !bestArtistsArray.empty()) {
             result.finalArtists = bestArtistsArray;
         }
-        if (!task.album.has_value() && bestAlbum.isNotEmpty()) {
+        if (!task.album.has_value() && !bestAlbum.empty()) {
             result.finalAlbum = bestAlbum;
         }
-        if (task.needCover && bestHash.isNotEmpty()) {
+        if (task.needCover && !bestHash.empty()) {
             result.finalHash = bestHash;
         }
-        if (!bestAlbumArtists.isEmpty()) {
+        if (!bestAlbumArtists.empty()) {
             result.finalAlbumArtists = bestAlbumArtists;
         }
         return result;
 
-        // bool foundValue{false}; // 是否联网搜索到了想要的内容
-        // std::string sqlStr = "UPDATE songs SET ";
-        // juce::StringArray writeArray;
-        // if (task.title.isEmpty()) {
-        //     if (finalTitle.isNotEmpty()) {
-        //         writeArray.add("title = :title");
-        //         foundValue = true;
-        //     }
-        // }
-        // if (task.artists.isEmpty()) {
-        //     if (!finalArtistsArr.isEmpty()) {
-        //         writeArray.add("artists = :artists");
-        //         foundValue = true;
-        //     }
-        // }
-        // if (task.album.isEmpty()) {
-        //     if (finalAlbum.isNotEmpty()) {
-        //         writeArray.add("album = :album");
-        //         foundValue = true;
-        //     }
-        // }
-        // if (task.needCover) {
-        //     if (finalCoverHash.isNotEmpty()) {
-        //         writeArray.add("hash = :hash");
-        //         foundValue = true;
-        //     }
-        // }
-        // if (foundValue == false) {
-        //     return;
-        // }
-        // sqlStr += writeArray.joinIntoString(",").toStdString();
-        // sqlStr += " WHERE songId = :songId";
-
-        // dbManage->write([&](SQLite::Database& db) {
-        //     try {
-        //         spdlog::get(LogDllID)->debug("最终联网搜索的sql语句为:{}", sqlStr);
-        //         SQLite::Statement sql{db, sqlStr};
-        //         if (task.title.isEmpty()) {
-        //             if (finalTitle.isNotEmpty()) {
-        //                 sql.bind(":title", finalTitle.toStdString());
-        //             }
-        //         }
-        //         if (task.artists.isEmpty()) {
-        //             if (!finalArtistsArr.isEmpty()) {
-        //                 sql.bind(":artists",
-        //                 juce::JSON::toString(finalArtistsArr).toStdString());
-        //             }
-        //         }
-        //         if (task.album.isEmpty()) {
-        //             if (finalAlbum.isNotEmpty()) {
-        //                 sql.bind(":album", finalAlbum.toStdString());
-        //             }
-        //         }
-        //         if (task.needCover) {
-        //             if (finalCoverHash.isNotEmpty()) {
-        //                 sql.bind(":hash", finalCoverHash.toStdString());
-        //             }
-        //         }
-        //         sql.bind(":songId", task.songId);
-        //         sql.exec();
-
-        //     } catch (SQLite::Exception& e) {
-        //         spdlog::get(LogDllID)->debug("联网搜索写入数据库失败:{}", e.what());
-        //     }
-
-        //     juce::var resultObj{new juce::DynamicObject()};
-
-        //     if (foundValue) {
-        //         if (dllManager::getInstance().getSongsManager().OnUpdateSongInfo)
-        //             dllManager::getInstance().getSongsManager().OnUpdateSongInfo(task.songId);
-        //     }
-        // });
     } else {
         spdlog::get(LogDllID)
             ->error("请求失败！错误码: {} | 服务器返回的错误信息: {}", res.status_code, res.text);

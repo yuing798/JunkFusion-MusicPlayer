@@ -1,14 +1,14 @@
 #include "./PlayInfo.hpp"
 #include "Macro/SongInfoMacro.hpp"
 #include "Utils/convertUtils.hpp"
+#include <nlohmann/json_fwd.hpp>
 
-juce::var PlayInfo::toJson() {
-    juce::var obj{new juce::DynamicObject()};
-    auto ptr{obj.getDynamicObject()};
-    ptr->setProperty(SongInfoMacro::path, path);
-    ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
-    ptr->setProperty(SongInfoMacro::duration, duration);
-    ptr->setProperty(SongInfoMacro::title, title);
+nlohmann::json PlayInfo::toJson() {
+    nlohmann::json obj;
+    obj[SongInfoMacro::path] = path;
+    obj[SongInfoMacro::artists] = ConvertUtils::optValueToVar(artists);
+    obj[SongInfoMacro::duration] = duration;
+    obj[SongInfoMacro::title] = title;
     return obj;
 }
 PlayInfo PlayInfo::fromJson(Yvar json) {

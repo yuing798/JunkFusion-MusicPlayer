@@ -6,23 +6,18 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <nlohmann/json_fwd.hpp>
 
-juce::var AlbumInfo::toBasicJson() {
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::albumId, albumId);
-    obj.getDynamicObject()->setProperty(
-        AlbumInfoMacro::albumArtists,
-        ConvertUtils::stringArray2ArrayVar(albumArtists)
-    );
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::title, title);
-    obj.getDynamicObject()->setProperty(AlbumInfoMacro::hash, ConvertUtils::optValueToVar(hash));
+nlohmann::json AlbumInfo::toBasicJson() {
+    nlohmann::json obj;
+    obj[AlbumInfoMacro::albumId] = albumId;
+    obj[AlbumInfoMacro::albumArtists] = ConvertUtils::optValueToVar(albumArtists);
+    obj[AlbumInfoMacro::title] = title;
+    obj[AlbumInfoMacro::hash] = ConvertUtils::optValueToVar(hash);
     return obj;
 }
-juce::var AlbumInfo::toDetailJson() {
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(
-        AlbumInfoMacro::songsLists,
-        ConvertUtils::vectorToArrayVar(songsList)
-    );
+nlohmann::json AlbumInfo::toDetailJson() {
+    nlohmann::json obj;
+    obj[AlbumInfoMacro::songsLists] = songsList;
     return obj;
 }

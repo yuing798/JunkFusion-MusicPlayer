@@ -98,13 +98,13 @@ static const char* createAlbumsTableSQL = R"(
  *             （和歌曲封面共用同一套按哈希去重的图片缓存）。
  *             为 NULL 表示没有单独设置封面，视图层会自动退回
  *             「歌单里第一首有封面的歌」（见 PlayListManage.cpp 里的视图查询）
- * @param createdAt description:添加到表中的时间
+ * @param createTime description:添加到表中的时间
  */
 static const char* createPlaylistTableSQL = R"(
     CREATE TABLE IF NOT EXISTS playlists(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
-        createdAt TEXT NOT NULL DEFAULT (date('now', 'localtime')),
+        createTime TEXT NOT NULL DEFAULT (date('now', 'localtime')),
         hash TEXT
     )
 )";

@@ -17,6 +17,7 @@
     "chromaprint",
     "taglib",
     "signalsmith-stretch",
-    "fmt"
+    "fmt",
+    "nlohmann-json"
   ]
 }

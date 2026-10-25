@@ -10,19 +10,6 @@ target_sources(Utils
         stringUtils.cpp #字符串工具
 )
 
-target_link_libraries(Utils
-    PUBLIC
-
-        juce::juce_core
-        SQLiteCpp
-        
-    PRIVATE
-        
-        spdlog::spdlog#日志系统
-        juce::juce_recommended_config_flags#基础编译与调试配置
-        juce::juce_recommended_lto_flags#链接时代码优化
-        juce::juce_recommended_warning_flags#推荐的警告级别
-)
 target_include_directories(Utils
     PRIVATE
         ${CMAKE_SOURCE_DIR}

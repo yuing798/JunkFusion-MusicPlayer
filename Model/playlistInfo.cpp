@@ -3,22 +3,19 @@
 #include "Utils/convertUtils.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 
-juce::var PlaylistInfo::toBasicJson() {
-    juce::var obj{new juce::DynamicObject()};
-    auto ptr{obj.getDynamicObject()};
-    ptr->setProperty(PlaylistMacro::id, id);
-    ptr->setProperty(PlaylistMacro::title, title);
-    ptr->setProperty(PlaylistMacro::hash, ConvertUtils::optValueToVar(hash));
-    ptr->setProperty(PlaylistMacro::createTime, createTime);
+nlohmann::json PlaylistInfo::toBasicJson() {
+    nlohmann::json obj;
+    obj[PlaylistMacro::id] = id;
+    obj[PlaylistMacro::title] = title;
+    obj[PlaylistMacro::hash] = ConvertUtils::optValueToVar(hash);
+    obj[PlaylistMacro::createTime] = createTime;
     return obj;
 }
-juce::var PlaylistInfo::toDetailJson() {
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(
-        PlaylistMacro::songList,
-        ConvertUtils::vectorToArrayVar(songIdList)
-    );
+nlohmann::json PlaylistInfo::toDetailJson() {
+    nlohmann::json obj;
+    obj[PlaylistMacro::songList] = songIdList;
     return obj;
 }
 PlaylistInfo PlaylistInfo::fromCompleteJson(Yvar obj) {

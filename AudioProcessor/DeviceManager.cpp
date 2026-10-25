@@ -5,6 +5,8 @@
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <memory>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
@@ -73,55 +75,56 @@ void DeviceManager::disconnectProcessor() {
     mPlayer.setProcessor(nullptr);
 }
 
-juce::var DeviceManager::getAvailDeviceType() {
-    // 获取所有的驱动类型集合 (比如 ASIO, WASAPI, DirectSound)
-    const auto& types{mManager.getAvailableDeviceTypes()};
-    std::string logInfo{"检测到的驱动类型有:"};
-    juce::Array<juce::var> deviceTypeList;
+nlohmann::json DeviceManager::getAvailDeviceType() {
+    const auto& types = mManager.getAvailableDeviceTypes();
+
+    std::string logInfo = "检测到的驱动类型有:";
+    nlohmann::json deviceTypeList = nlohmann::json::array();
 
     for (auto* type : types) {
         auto typeName = type->getTypeName();
         logInfo += typeName.toStdString();
-        deviceTypeList.add(typeName);
+        deviceTypeList.push_back(typeName.toStdString());
     }
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AudioMacro::deviceTypeList, juce::var(deviceTypeList));
+
+    nlohmann::json obj = nlohmann::json::object();
+    obj[AudioMacro::deviceTypeList] = std::move(deviceTypeList);
     return obj;
 }
-juce::var DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
-    if (type == nullptr) return juce::var();
+nlohmann::json DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
+    if (type == nullptr) return nlohmann::json::object();
     auto deviceNames = type->getDeviceNames();
     // 将 deviceNames 转换为 juce::var
-    juce::Array<juce::var> nameArray;
+    auto nameArray = nlohmann::json::array();
     for (const auto& name : deviceNames)
-        nameArray.add(name);
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AudioMacro::deviceList, juce::var(nameArray));
+        nameArray.push_back(name.toStdString());
+    nlohmann::json obj = nlohmann::json::object();
+    obj[AudioMacro::deviceList] = nameArray;
     return obj;
 }
-juce::var DeviceManager::getAvailSampleRateList() {
+nlohmann::json DeviceManager::getAvailSampleRateList() {
     if (auto* device = mManager.getCurrentAudioDevice()) {
         auto sampleRateList = device->getAvailableSampleRates();
-        juce::Array<juce::var> array;
+        auto array = nlohmann::json::array();
         for (auto& sr : sampleRateList) {
-            array.add(juce::String(sr, 2)); // 保留两位小数
+            array.push_back(sr); // 保留两位小数
         }
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioMacro::sampleRateList, juce::var(array));
+        auto obj = nlohmann::json::object();
+        obj[AudioMacro::sampleRateList] = array;
         return obj;
     }
     return {};
 }
 
-juce::var DeviceManager::getAvailBufferSizeList() {
+nlohmann::json DeviceManager::getAvailBufferSizeList() {
     if (auto* device = mManager.getCurrentAudioDevice()) {
         auto bufferSizeList = device->getAvailableBufferSizes();
-        juce::Array<juce::var> array;
+        auto array = nlohmann::json::array();
         for (auto& bufferSize : bufferSizeList) {
-            array.add(bufferSize);
+            array.push_back(bufferSize);
         }
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioMacro::bufferSizeList, juce::var(array));
+        auto obj = nlohmann::json::object();
+        obj[AudioMacro::bufferSizeList] = array;
         return obj;
     }
     return {};

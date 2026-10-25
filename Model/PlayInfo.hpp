@@ -2,13 +2,16 @@
 
 #include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
+#include <string>
+#include <vector>
 struct PlayInfo {
-    juce::String path;
+    std::string path;
     double duration{0.0};
-    juce::String title;
-    std::optional<juce::StringArray> artists;
+    std::string title;
+    std::optional<std::vector<std::string>> artists;
 
-    juce::var toJson();
+    nlohmann::json toJson();
     static PlayInfo fromJson(Yvar json);
 };

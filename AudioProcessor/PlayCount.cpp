@@ -4,20 +4,18 @@
 #include "juce_core/juce_core.h"
 #include <algorithm>
 #include <cmath>
+#include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 
 void PlayCount::updatePlayCount() {
-    juce::var obj{new juce::DynamicObject()};
-    {
-        auto ptr{obj.getDynamicObject()};
-        ptr->setProperty(AudioMacro::updatePlayCount, mPath);
-    }
-    mWorker.sender->sendMessage(juce::JSON::toString(obj).toStdString());
+    nlohmann::json obj;
+    obj[AudioMacro::updatePlayCount] = mPath;
+    mWorker.sender->sendMessage(obj.dump());
     // spdlog::get(LogAudioID)->debug("通知协调者更新播放次数:路径:{}", mPath);
 }
 
-void PlayCount::setNewSong(juce::String path, double duration) {
+void PlayCount::setNewSong(std::string path, double duration) {
     if (mPath == path) return;
     mPath = path;
     mCurrentSampleCount = 0;

@@ -16,6 +16,7 @@
 #include "juce_osc/juce_osc.h"
 #include <cstdint>
 #include <cstdlib>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -43,47 +44,40 @@ extern "C" {
             auto logger{spdlog::get(LogDllID)};
             logger->info("开始导入歌曲");
             logger->debug("jsonStr == {}", jsonStr);
-            Yvar obj{juce::JSON::fromString(jsonStr)};
+            Yvar obj{nlohmann::json::parse(jsonStr)};
             auto filePaths{obj.read(CoordinatorMacro::filePaths)};
             std::vector<juce::File> paths;
             for (int i = 0; i < filePaths.size(); i++) {
                 paths.push_back(juce::File{filePaths.read(i).toString()});
             }
-            juce::Array<juce::var> errorFiles;
-            juce::Array<juce::var> songInfos;
+            nlohmann::json errorFiles;
+            nlohmann::json songInfos;
             for (auto& path : paths) {
                 auto result = dllManager::getInstance().insertSong(path);
                 if (std::holds_alternative<std::string>(result)) {
                     auto errorMsg = std::get<std::string>(result);
-                    juce::var errorObj{new juce::DynamicObject()};
-                    errorObj.getDynamicObject()->setProperty(
-                        CoordinatorMacro::errorFileName,
-                        path.getFileName()
-                    );
-                    errorObj.getDynamicObject()->setProperty(
-                        CoordinatorMacro::errorFileReason,
-                        juce::String{errorMsg}
-                    );
-                    errorFiles.add(errorObj);
+                    nlohmann::json errorObj;
+                    errorObj[CoordinatorMacro::errorFileName] = path.getFileName().toStdString();
+                    errorObj[CoordinatorMacro::errorFileReason] = errorMsg;
+                    errorFiles.push_back(errorObj);
                 } else if (std::holds_alternative<SongInfo>(result)) {
                     auto songInfo = std::get<SongInfo>(result);
-                    songInfos.add(songInfo.toBasicJson());
+                    songInfos.push_back(songInfo.toBasicJson());
                 }
             }
 
-            juce::var resultObj{new juce::DynamicObject()};
+            nlohmann::json resultObj;
             {
-
-                resultObj.getDynamicObject()->setProperty(CoordinatorMacro::errorFiles, errorFiles);
+                resultObj[CoordinatorMacro::errorFiles] = errorFiles;
 
                 std::string resultStr{
                     "导入歌曲完成，成功" + std::to_string(paths.size()) + "首，失败" +
                     std::to_string(errorFiles.size()) + "首\n失败文件：\n" +
-                    juce::JSON::toString(errorFiles).toStdString()
+                    nlohmann::json{errorFiles}.dump()
                 };
                 logger->info(resultStr);
             }
-            resultObj.getDynamicObject()->setProperty(CoordinatorMacro::songsList, songInfos);
+            resultObj[CoordinatorMacro::songsList] = songInfos;
 
             // 发送最终数据
             if (dllManager::getInstance().onLightSongDataImportOver)
@@ -104,48 +98,40 @@ extern "C" {
     void play(long long songId, double targetSeconds, int isSeek, int isNewSong) {
         auto info =
             dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();
-        juce::var playObj{new juce::DynamicObject()};
+        nlohmann::json playObj;
         {
-            playObj.getDynamicObject()->setProperty(AudioMacro::playInfo, info);
-            playObj.getDynamicObject()->setProperty(AudioMacro::targetPTS, targetSeconds);
-            playObj.getDynamicObject()->setProperty(AudioMacro::isSeek, isSeek == 0 ? false : true);
-            playObj.getDynamicObject()->setProperty(
-                AudioMacro::isNewSong,
-                isNewSong == 0 ? false : true
-            );
+            playObj[AudioMacro::playInfo] = info;
+            playObj[AudioMacro::targetPTS] = targetSeconds;
+            playObj[AudioMacro::isSeek] = isSeek == 0 ? false : true;
+            playObj[AudioMacro::isNewSong] = isNewSong == 0 ? false : true;
         }
-        juce::var resultObj{new juce::DynamicObject()};
-        resultObj.getDynamicObject()->setProperty(AudioMacro::play, playObj);
-        dllManager::getInstance().sendMessage2AudioProcess(resultObj);
+        nlohmann::json resultObj;
+        resultObj[AudioMacro::play] = playObj;
+        dllManager::getInstance().sendMessage2AudioProcess(resultObj.dump());
     }
     void pausePlay() {
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioMacro::pause, "");
+        nlohmann::json obj;
+        obj[AudioMacro::pause] = "";
         dllManager::getInstance().sendMessage2AudioProcess(obj);
     }
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
     void sendSliderValue(const char* identify, double value, int isOSC) {
-        auto identifyParam = juce::String(identify);
+        auto identifyParam = identify;
         if (isOSC) {
-            jassert(identifyParam.startsWith("/"));
             juce::OSCMessage msg(identifyParam, static_cast<float>(value));
             dllManager::getInstance().sendOSCMessage2AudioProcessor(msg);
         } else {
-            juce::var obj{new juce::DynamicObject()};
+            nlohmann::json obj;
 
-            juce::var paramAndValueObj{new juce::DynamicObject()};
+            nlohmann::json paramAndValueObj;
             {
-                auto ptr{paramAndValueObj.getDynamicObject()};
-                jassert(ptr);
-                ptr->setProperty(AudioMacro::sliderParam, identifyParam);
-                ptr->setProperty(AudioMacro::sliderValue, value);
+                paramAndValueObj[AudioMacro::sliderParam] = identifyParam;
+                paramAndValueObj[AudioMacro::sliderValue] = value;
             }
             {
-                auto ptr{obj.getDynamicObject()};
-                jassert(ptr);
-                ptr->setProperty(AudioMacro::setSliderValue, paramAndValueObj);
+                obj[AudioMacro::setSliderValue] = paramAndValueObj;
             }
             dllManager::getInstance().sendMessage2AudioProcess(obj);
         }
@@ -161,8 +147,8 @@ extern "C" {
     const char* getAllSongs() {
         auto songsList =
             dllManager::getInstance().getDbContext()->songsManage.getAllSongsBasicInfo();
-        auto obj{new juce::DynamicObject()};
-        obj->setProperty(CoordinatorMacro::songsList, songsList);
+        auto obj{nlohmann::json::object()};
+        obj[CoordinatorMacro::songsList] = songsList;
 
         return ConvertUtils::object2Uint8t(obj);
     }
@@ -182,11 +168,9 @@ extern "C" {
     void requestOnPlayStateSync(IntFunc cb) { dllManager::getInstance().onPlayStateSync = cb; }
 
     const char* getAllAlbumView() {
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(
-            CoordinatorMacro::albumsList,
-            dllManager::getInstance().getDbContext()->albumsManage.getAllAlbumsView()
-        );
+        nlohmann::json obj;
+        obj[CoordinatorMacro::albumsList] =
+            dllManager::getInstance().getDbContext()->albumsManage.getAllAlbumsView();
         return ConvertUtils::object2Uint8t(obj);
     }
 
@@ -197,11 +181,9 @@ extern "C" {
     }
 
     const char* getAllPlaylistView() {
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(
-            CoordinatorMacro::playlistsList,
-            dllManager::getInstance().getDbContext()->playListManage.getAllPlayListView()
-        );
+        nlohmann::json obj;
+        obj[CoordinatorMacro::playlistsList] =
+            dllManager::getInstance().getDbContext()->playListManage.getAllPlayListView();
         return ConvertUtils::object2Uint8t(obj);
     }
     const char* getDetailPlaylistInfo(long long id) {
@@ -218,19 +200,19 @@ extern "C" {
         );
     }
     long long createNewPlaylist(const char* title, const char* coverPath) {
+
         return dllManager::getInstance().getDbContext()->playListManage.createNewPlaylist(
             title,
-            coverPath != nullptr ? std::optional<juce::File>{juce::File{coverPath}} : std::nullopt
+            !std::string{coverPath}.empty() ? std::optional<juce::File>{juce::File{coverPath}}
+                                            : std::nullopt
         );
     }
     void addNewSongsToPlaylist(long long playlistId, const char* songIdsJson) {
-        std::vector<int64_t> songIds =
-            Yvar{juce::JSON::fromString(songIdsJson)}.toVector<int64_t>();
+        std::vector<int64_t> songIds = Yvar{nlohmann::json::parse(songIdsJson)}.toVector<int64_t>();
         dllManager::getInstance().getDbContext()->playListManage.addNewSongs(playlistId, songIds);
     }
     void removeSongsInPlaylist(long long playlistId, const char* songIdsJson) {
-        std::vector<int64_t> songIds =
-            Yvar{juce::JSON::fromString(songIdsJson)}.toVector<int64_t>();
+        std::vector<int64_t> songIds = Yvar{nlohmann::json::parse(songIdsJson)}.toVector<int64_t>();
         dllManager::getInstance().getDbContext()->playListManage.removeSongs(playlistId, songIds);
     }
     void deletePlaylist(long long playlistId) {

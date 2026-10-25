@@ -21,7 +21,7 @@
 
 class dllManager {
 private:
-    juce::String systemCountry;
+    std::string systemCountry;
 
     juce::File cacheDir;   // 缓存文件夹
     juce::File logInfoDir; // 日志文件夹
@@ -65,7 +65,7 @@ public:
     std::function<void(int)> onPlayStateSync;      // 请求同步播放状态
     std::function<void(int64_t)> onUpdateSongInfo; // 更新播放信息
 
-    void sendMessage2AudioProcess(juce::var& obj);
+    void sendMessage2AudioProcess(const std::string& obj);
     void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
 
     std::variant<std::string, SongInfo> insertSong(const juce::File& path);

@@ -55,7 +55,7 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
 
   /// 打开某个歌单：先把歌单装进 Provider，再往路由栈里压一条记录
   void _openPlaylist(PlaylistBasicInfo playlist) {
-    context.read<PlaylistProvider>().setNewPlaylist(playlist.playlistId);
+    context.read<PlaylistProvider>().setNewPlaylist(playlist.id);
     context.read<PagesRouteController>().push(
       PagesRouteTable.singlePlaylist(playlist),
     );
@@ -82,7 +82,7 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
     // watch 放在最前面：歌单列表变了、主题变了都要重画
     final theme = context.watch<AppTheme>();
     final playlists = context.watch<PlaylistProvider>().playlists.toList()
-      ..sort((a, b) => a.playlistId.compareTo(b.playlistId));
+      ..sort((a, b) => a.id.compareTo(b.id));
 
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
       (provider) => provider.curBasicInfo != null,
@@ -159,12 +159,12 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
                                 label: "删除歌单",
                                 onTap: () => context
                                     .read<PlaylistProvider>()
-                                    .deletePlaylist(playlist.playlistId),
+                                    .deletePlaylist(playlist.id),
                               ),
                             ],
                           ),
                           child: _PlaylistCard(
-                            key: ValueKey(playlist.playlistId),
+                            key: ValueKey(playlist.id),
                             playlist: playlist,
                           ),
                         );

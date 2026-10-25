@@ -7,6 +7,7 @@
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <zmq.hpp>
 class DeviceManager : public juce::ChangeListener { // 监听声卡变动
 private:
@@ -32,10 +33,10 @@ public:
 
     // AudioDeviceManager::getCpuUsage()
     // 测量的是：“你的音频回调函数（processBlock）每次执行所花费的时间，占声卡给你的极限时间的百分比。”
-    juce::var getAvailDeviceType();
-    juce::var getAvailDevice(juce::AudioIODeviceType* type);
-    juce::var getAvailSampleRateList();
-    juce::var getAvailBufferSizeList();
+    nlohmann::json getAvailDeviceType();
+    nlohmann::json getAvailDevice(juce::AudioIODeviceType* type);
+    nlohmann::json getAvailSampleRateList();
+    nlohmann::json getAvailBufferSizeList();
 
     DONT_COPY_AND_MOVE(DeviceManager)
 };

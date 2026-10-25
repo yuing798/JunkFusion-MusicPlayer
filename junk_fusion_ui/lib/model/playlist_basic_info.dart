@@ -19,7 +19,7 @@ part "playlist_basic_info.g.dart";
 @freezed
 abstract class PlaylistBasicInfo with _$PlaylistBasicInfo {
   const factory PlaylistBasicInfo({
-    required int playlistId,
+    required int id,
     required String title,
     required String createTime,
 

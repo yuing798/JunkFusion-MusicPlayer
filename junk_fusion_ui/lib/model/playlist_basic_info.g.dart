@@ -8,7 +8,7 @@ part of 'playlist_basic_info.dart';
 
 _PlaylistBasicInfo _$PlaylistBasicInfoFromJson(Map<String, dynamic> json) =>
     _PlaylistBasicInfo(
-      playlistId: (json['playlistId'] as num).toInt(),
+      id: (json['id'] as num).toInt(),
       title: json['title'] as String,
       createTime: json['createTime'] as String,
       hash: json['hash'] as String?,
@@ -16,7 +16,7 @@ _PlaylistBasicInfo _$PlaylistBasicInfoFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$PlaylistBasicInfoToJson(_PlaylistBasicInfo instance) =>
     <String, dynamic>{
-      'playlistId': instance.playlistId,
+      'id': instance.id,
       'title': instance.title,
       'createTime': instance.createTime,
       'hash': instance.hash,

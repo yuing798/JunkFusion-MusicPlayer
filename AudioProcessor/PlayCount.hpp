@@ -15,7 +15,7 @@ private:
     double mSampleRate{44100.0};
     std::atomic<int64_t> mCurrentSampleCount{0};
     bool hadUpdate{false}; // 这首歌是否已经更新
-    juce::String mPath;
+    std::string mPath;
     std::atomic_bool isStop{false};
 
     void updatePlayCount();
@@ -23,7 +23,7 @@ private:
 public:
     PlayCount(AudioProcessWorker& w) : mWorker(w) {}
 
-    void setNewSong(juce::String path, double duration);
+    void setNewSong(std::string path, double duration);
     void prepareToPlay(float sampleRate);
 
     void processBlock(int numSamples);

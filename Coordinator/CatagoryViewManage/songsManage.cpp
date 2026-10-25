@@ -14,6 +14,7 @@
 #include <cstring>
 
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <sha1.h>
 #include <spdlog/spdlog.h>
@@ -33,18 +34,18 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
+std::vector<std::string> SongsManage::getTags(TagLib::PropertyMap& map, const char* key) {
     if (!map.contains(key) || map[key].isEmpty()) {
-        return juce::StringArray{};
+        return std::vector<std::string>{};
     }
 
     const TagLib::StringList& rawList = map[key];
-    juce::StringArray finalItems;
+    std::vector<std::string> finalItems;
 
     // 如果 TagLib 提取出了真正的多元素数组 (FLAC 或 ID3v2.4)
     if (rawList.size() > 1) {
         for (const auto& item : rawList) {
-            finalItems.add(item.to8Bit(true));
+            finalItems.push_back(item.to8Bit(true));
         }
     }
     // 如果 TagLib 只提取到了 1 个元素 (旧版 ID3v2.3 硬编码斜杠的情况)
@@ -67,7 +68,7 @@ juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key
                     auto start = token.find_first_not_of(" ");
                     auto end = token.find_last_not_of(" ");
                     if (start != std::string::npos) {
-                        finalItems.add(token.substr(start, end - start + 1));
+                        finalItems.push_back(token.substr(start, end - start + 1));
                     }
                     token.clear();
                 } else {
@@ -78,10 +79,10 @@ juce::StringArray SongsManage::getTags(TagLib::PropertyMap& map, const char* key
             auto start = token.find_first_not_of(" ");
             auto end = token.find_last_not_of(" ");
             if (start != std::string::npos) {
-                finalItems.add(token.substr(start, end - start + 1));
+                finalItems.push_back(token.substr(start, end - start + 1));
             }
         } else {
-            finalItems.add(rawStr);
+            finalItems.push_back(rawStr);
         }
     }
 
@@ -114,13 +115,13 @@ SongInfo SongsManage::getBasicInfoCol(SQLite::Statement& query) {
 
     // ── 标签 ──
     info.title = query.getColumn("title").getString();
-    info.artists = DbUtils::getOptCol<juce::StringArray>(query, "artists");
-    info.album = DbUtils::getOptCol<juce::String>(query, "album");
+    info.artists = DbUtils::getOptCol<std::vector<std::string>>(query, "artists");
+    info.album = DbUtils::getOptCol<std::string>(query, "album");
 
     // ── 用户信息 ──
     info.isMyLike = query.getColumn("isMyLike").getInt() != 0;
     info.playNum = query.getColumn("playNum").getInt();
-    info.hash = DbUtils::getOptCol<juce::String>(query, "hash");
+    info.hash = DbUtils::getOptCol<std::string>(query, "hash");
     return info;
 }
 SongInfo SongsManage::getDetailInfoCol(SQLite::Statement& query) {
@@ -140,13 +141,13 @@ SongInfo SongsManage::getDetailInfoCol(SQLite::Statement& query) {
         av_channel_layout_from_mask(&layout, channelLayoutMask);
         char layoutBuffer[64] = {0};
         av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
-        info.channelLayout = juce::String(layoutBuffer);
+        info.channelLayout = std::string(layoutBuffer);
     }
-    info.codecName = DbUtils::getOptCol<juce::String>(query, "codecName");
+    info.codecName = DbUtils::getOptCol<std::string>(query, "codecName");
 
     // ── AI 分析 ──
     info.bpm = DbUtils::getOptCol<int>(query, "bpm");
-    info.key = DbUtils::getOptCol<juce::String>(query, "key");
+    info.key = DbUtils::getOptCol<std::string>(query, "key");
 
     info.timeDomainSpec = DbUtils::getBlob<double>(query, "timeDomainSpec");
     return info;
@@ -212,8 +213,8 @@ SongInfo SongsManage::getDetailSongInfo(int64_t songId) {
         return {};
     }
 }
-juce::Array<juce::var> SongsManage::getAllSongsBasicInfo() {
-    juce::Array<juce::var> results;
+nlohmann::json SongsManage::getAllSongsBasicInfo() {
+    nlohmann::json results;
 
     try {
 
@@ -226,7 +227,7 @@ juce::Array<juce::var> SongsManage::getAllSongsBasicInfo() {
 
         while (query.executeStep()) {
 
-            results.add(getBasicInfoCol(query).toBasicJson());
+            results.push_back(getBasicInfoCol(query).toBasicJson());
         }
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
@@ -311,7 +312,7 @@ SongsManage::insertSong(const juce::File& path) {
         char layoutBuffer[64] = {0};
         av_channel_layout_describe(&layout, layoutBuffer, sizeof(layoutBuffer));
 
-        info.channelLayout = juce::String(layoutBuffer);
+        info.channelLayout = std::string(layoutBuffer);
     }
 
     // 位深 —— 仅 PCM 编码有意义，压缩编码 bits_per_coded_sample 为其解码位深
@@ -341,7 +342,7 @@ SongsManage::insertSong(const juce::File& path) {
 
             // Title
             auto titles = getTags(map, "TITLE");
-            if (!titles.isEmpty()) {
+            if (!titles.empty()) {
                 info.title = titles[0];
                 result.titleIsFileName = false;
             } else {
@@ -351,19 +352,19 @@ SongsManage::insertSong(const juce::File& path) {
 
             // Artist
             auto artists = getTags(map, "ARTIST");
-            if (!artists.isEmpty()) {
+            if (!artists.empty()) {
                 info.artists = artists;
             }
 
             // Album
             auto albums = getTags(map, "ALBUM");
-            if (!albums.isEmpty()) {
+            if (!albums.empty()) {
                 info.album = albums[0];
             }
 
             {
                 auto albumArtists{getTags(map, "ALBUMARTIST")};
-                if (!albumArtists.isEmpty()) {
+                if (!albumArtists.empty()) {
                     result.albumArtists = albumArtists;
                 }
             }
@@ -434,7 +435,7 @@ SongsManage::insertSong(const juce::File& path) {
         stmt.bind(":fileSize", fileSize);
         stmt.bind(":lastModifiedTime", lastModifiedTime);
         stmt.bind(":duration", info.duration);
-        stmt.bind(":title", info.title.toStdString());
+        stmt.bind(":title", info.title);
         // ── FFmpeg 必选 int 字段 ──
         stmt.bind(":bitRate", info.bitRate);
         stmt.bind(":bitDepth", info.bitDepth);
@@ -546,13 +547,13 @@ PlayInfo SongsManage::getPlayInfo(int64_t songId) {
             info.path = sql.getColumn("filePath").getString();
             info.duration = sql.getColumn("duration").getDouble();
             info.title = sql.getColumn("title").getString();
-            Yvar originArtists{juce::JSON::fromString(sql.getColumn("artists").getString())};
+            Yvar originArtists{nlohmann::json::parse(sql.getColumn("artists").getString())};
             info.artists = originArtists.toStringArray();
 
         } else {
             throw SQLite::Exception{"我草他妈的找不着:" + std::to_string(songId)};
         }
-        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, info.path.toStdString());
+        spdlog::get(LogDllID)->debug("成功获取:id:{},路径:{}", songId, info.path);
         return info;
     } catch (const SQLite::Exception& e) {
         auto logger{spdlog::get(LogDllID)};

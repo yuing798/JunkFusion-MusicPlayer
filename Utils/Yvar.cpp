@@ -1,65 +1,67 @@
 #include "./Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <optional>
+#include <string>
+#include <vector>
 
 Yvar Yvar::read(const char* key) const {
-    if (!value.isObject()) {
+    if (!value.is_object()) {
         return {};
     }
-    if (!value.hasProperty(key)) {
+    if (!value.contains(key)) {
         return {};
     }
     return value[key];
 }
 Yvar Yvar::read(int index) const {
-    if (!value.isArray()) {
+    if (!value.is_array()) {
         return {};
     }
-    if (index < 0 || index >= value.size()) {
+    if (index < 0 || index >= (int)value.size()) {
         return {};
     }
     return value[index];
 }
 double Yvar::toDouble() const {
-    if (value.isDouble()) {
+    if (value.is_number_float()) {
         return static_cast<double>(value);
     } else {
         return 0.0;
     }
 }
 int Yvar::toInt() const {
-    if (value.isInt()) {
+    if (value.is_number_integer()) {
         return static_cast<int>(value);
     } else {
         return -1;
     }
 }
 
-juce::String Yvar::toString() {
+std::string Yvar::toString() {
 
-    if (value.isArray() || value.isObject()) {
-        return juce::JSON::toString(value);
+    if (value.is_array() || value.is_object()) {
+        return value.dump();
     } else {
-        return value.toString();
+        return value;
     }
 }
 
-std::optional<juce::String> Yvar::toOptStr() {
-    if (value.isString()) {
-        return value.toString();
+std::optional<std::string> Yvar::toOptStr() {
+    if (value.is_string()) {
+        return value;
     } else {
         return std::nullopt;
     }
 }
-juce::StringArray Yvar::toStringArray() const {
-    if (!value.isArray()) return juce::StringArray{};
-    juce::StringArray arr;
-    for (int i = 0; i < value.size(); i++) {
-        arr.add(read(i).toString());
+std::vector<std::string> Yvar::toStringArray() const {
+    if (!value.is_array()) return std::vector<std::string>{};
+    std::vector<std::string> arr;
+    for (int i = 0; i < (int)value.size(); i++) {
+        arr.push_back(read(i).toString());
     }
     return arr;
 }
 bool Yvar::toBool() const {
-    if (!value.isBool()) return 0;
+    if (!value.is_boolean()) return 0;
     return static_cast<bool>(value);
 }

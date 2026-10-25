@@ -75,7 +75,7 @@ class PlaylistProvider extends ChangeNotifier {
   /// （和 AlbumProvider.setNewAlbum() 一个套路，SinglePlaylistPage 从这里读）
   void setNewPlaylist(int playlistId) {
     _curBasicInfo = _playlists
-        .where((each) => each.playlistId == playlistId)
+        .where((each) => each.id == playlistId)
         .firstOrNull;
 
     _curDetailInfo = PlaylistDetailInfo.fromJson(
@@ -100,8 +100,11 @@ class PlaylistProvider extends ChangeNotifier {
     final ptrTitle = UtilFunction.string2cPtr(result.title);
     final ptrCover = result.imagePath != null
         ? UtilFunction.string2cPtr(result.imagePath!)
-        : nullptr;
+        : UtilFunction.string2cPtr("");
+
+    print("准备执行后端函数:createNewPlaylist");
     final id = bindings.createNewPlaylist(ptrTitle, ptrCover);
+    print("返回结果$id");
     malloc.free(ptrTitle);
     malloc.free(ptrCover);
     //   context.read<PlaylistProvider>().getAllPlaylists(); // 刷新列表
@@ -118,9 +121,16 @@ class PlaylistProvider extends ChangeNotifier {
       bindings.addNewSongsToPlaylist(playlistId, ptr);
       malloc.free(ptr);
     }
-    _playlists.add(
+    print(
       jsonDecode(
-        UtilFunction.cPtr2String(bindings.getBasicSongInfo(playlistId)),
+        UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
+      ),
+    );
+    _playlists.add(
+      PlaylistBasicInfo.fromJson(
+        jsonDecode(
+          UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
+        ),
       ),
     );
     notifyListeners();
@@ -128,9 +138,7 @@ class PlaylistProvider extends ChangeNotifier {
 
   void deletePlaylist(int playlistId) {
     bindings.deletePlaylist(playlistId);
-    final index = _playlists.indexWhere(
-      (each) => each.playlistId == playlistId,
-    );
+    final index = _playlists.indexWhere((each) => each.id == playlistId);
     if (index != -1) {
       _playlists.removeAt(index);
     }

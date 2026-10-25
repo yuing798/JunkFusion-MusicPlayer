@@ -6,6 +6,7 @@
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <vector>
 class AlbumsManage {
@@ -15,21 +16,21 @@ private:
 public:
     AlbumsManage(CenterDbManage& dbManage) : dbManage(dbManage) {}
 
-    juce::Array<juce::var> getAllAlbumsView();
+    nlohmann::json getAllAlbumsView();
 
     std::optional<int64_t> checkAlbumExist(
-        juce::String albumTitle,
-        juce::StringArray artists,
-        std::optional<juce::String> hash
+        std::string albumTitle,
+        std::vector<std::string> artists,
+        std::optional<std::string> hash
     );
 
     std::optional<int64_t> insertAlbum(
-        juce::String albumTitle,
-        juce::StringArray artists,
-        std::optional<juce::String> hash
+        std::string albumTitle,
+        std::vector<std::string> artists,
+        std::optional<std::string> hash
     );
     std::optional<int64_t> getAlbumId(int64_t songId);
     std::vector<int64_t> getSongsList(int64_t albumId);
-    juce::var getDetailInfo(int64_t albumId);
+    nlohmann::json getDetailInfo(int64_t albumId);
     AlbumInfo getBasicInfoCol(SQLite::Statement& sql);
 }; // namespace AlbumsManage

@@ -18,20 +18,21 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
-juce::Array<juce::var> PlayListManage::getAllPlayListView() {
+nlohmann::json PlayListManage::getAllPlayListView() {
     try {
         SQLite::Statement selectSql{
             dbManage.readDb(),
-            "SELECT playlistId,title,hash FROM playlists"
+            "SELECT id,title,hash,createTime FROM playlists"
         };
-        juce::Array<juce::var> playlists;
+        nlohmann::json playlists;
         while (selectSql.executeStep()) {
             PlaylistInfo info{};
-            info.id = selectSql.getColumn("albumId").getInt64();
+            info.id = selectSql.getColumn("id").getInt64();
             info.title = selectSql.getColumn("title").getString();
-            info.hash = selectSql.getColumn("hash").getString();
-            juce::var finalObj{info.toBasicJson()};
-            playlists.add(finalObj);
+            info.hash = DbUtils::getOptCol<std::string>(selectSql, "hash");
+            info.createTime = selectSql.getColumn("createTime").getString();
+            nlohmann::json finalObj{info.toBasicJson()};
+            playlists.push_back(finalObj);
         }
         return playlists;
     } catch (SQLite::Exception& e) {
@@ -46,14 +47,15 @@ PlaylistInfo PlayListManage::getBasicInfo(int64_t id) {
     try {
         SQLite::Statement selectSql{
             dbManage.readDb(),
-            "SELECT playlistId,title,hash FROM playlists WHERE id=:id"
+            "SELECT title,hash,createTime FROM playlists WHERE id=:id"
         };
         PlaylistInfo info;
         selectSql.bind(":id", id);
         if (selectSql.executeStep()) {
-            info.id = selectSql.getColumn("albumId").getInt64();
+            info.id = id;
             info.title = selectSql.getColumn("title").getString();
-            info.hash = selectSql.getColumn("hash").getString();
+            info.hash = DbUtils::getOptCol<std::string>(selectSql, "hash");
+            info.createTime = selectSql.getColumn("createTime").getString();
         }
         return info;
     } catch (SQLite::Exception& e) {
@@ -85,26 +87,30 @@ PlaylistInfo PlayListManage::getDetailInfo(int64_t id) {
         return {};
     }
 }
-int64_t PlayListManage::createNewPlaylist(juce::String title, std::optional<juce::File> coverPath) {
+int64_t PlayListManage::createNewPlaylist(std::string title, std::optional<juce::File> coverPath) {
     try {
+        spdlog::get(LogDllID)->info("准备创建新歌单:标题{}", title);
         auto res = dbManage.write([&](SQLite::Database& db) {
             SQLite::Statement insertNew1{
                 db,
                 "INSERT INTO playlists (title,hash) VALUES (:title,:hash)"
             };
 
-            std::optional<juce::String> hash;
+            std::optional<std::string> hash;
             if (coverPath.has_value()) {
                 hash = coverPathCopyAndConvertToHash(coverPath.value());
             }
             DbUtils::bindOptValue(insertNew1, ":hash", hash);
-            insertNew1.bind(":title", title.toStdString());
-            return db.getLastInsertRowid();
+            insertNew1.bind(":title", title);
+            insertNew1.exec();
+            auto id = db.getLastInsertRowid();
+            spdlog::get(LogDllID)->debug("创建新歌单返回的ID为{}", id);
+            return id;
         });
         return res;
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->error(
-            "PlayListManage::createNewPlaylist(PlaylistInfo info) throw db error:{}",
+            "PlayListManage::createNewPlaylist throw db error:{}",
             e.what()
         );
         return -1;
@@ -140,7 +146,7 @@ void PlayListManage::addNewSongs(int64_t id, std::vector<int64_t> songIds) {
                 selectHashStr += " ) ";
                 SQLite::Statement selectHashStmt{db, selectHashStr};
                 while (selectHashStmt.executeStep()) {
-                    auto hash = DbUtils::getOptCol<juce::String>(selectHashStmt, "hash");
+                    auto hash = DbUtils::getOptCol<std::string>(selectHashStmt, "hash");
                     if (hash.has_value()) {
                         updateCover(id, hash.value());
                         break;
@@ -191,31 +197,31 @@ void PlayListManage::deletePlaylist(int64_t id) {
         spdlog::get(LogDllID)->error("PlayListManage::deletePlaylist throw db error:{}", e.what());
     }
 }
-void PlayListManage::renamePlayList(int64_t id, juce::String title) {
+void PlayListManage::renamePlayList(int64_t id, std::string title) {
     try {
         dbManage.write([&](SQLite::Database& db) {
             SQLite::Statement updateStmt{db, "UPDATE playlists SET title=:title WHERE id=:id"};
             updateStmt.bind(":id", id);
-            updateStmt.bind(":title", title.toStdString());
+            updateStmt.bind(":title", title);
             updateStmt.exec();
         });
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->error("PlayListManage::renamePlayList throw db error:{}", e.what());
     }
 }
-void PlayListManage::updateCover(int64_t id, juce::String hash) {
+void PlayListManage::updateCover(int64_t id, std::string hash) {
     try {
         dbManage.write([&](SQLite::Database& db) {
             SQLite::Statement updateStmt{db, "UPDATE playlists SET hash=:hash WHERE id=:id"};
             updateStmt.bind(":id", id);
-            updateStmt.bind(":hash", hash.toStdString());
+            updateStmt.bind(":hash", hash);
             updateStmt.exec();
         });
     } catch (SQLite::Exception& e) {
         spdlog::get(LogDllID)->error("PlayListManage::updateCover throw db error:{}", e.what());
     }
 }
-juce::String PlayListManage::coverPathCopyAndConvertToHash(juce::File coverPath) {
+std::string PlayListManage::coverPathCopyAndConvertToHash(juce::File coverPath) {
     SHA1 sha1;
     auto hash = sha1(coverPath.loadFileAsString().toStdString());
     juce::File target =
@@ -232,12 +238,12 @@ void PlayListManage::updateCover(int64_t id, int64_t songId) {
             SQLite::Transaction t{db};
             SQLite::Statement searchStmt{db, "SELECT hash FROM songs WHERE songId=:songId"};
             searchStmt.bind(":songId", songId);
-            juce::String hash;
+            std::string hash;
             if (searchStmt.executeStep()) {
                 hash = searchStmt.getColumn(":hash").getString();
             }
             SQLite::Statement updateStmt{db, "UPDATE playlists SET hash=:hash WHERE id=:id"};
-            updateStmt.bind(":hash", hash.toStdString());
+            updateStmt.bind(":hash", hash);
             updateStmt.bind(":id", id);
             updateStmt.exec();
             t.commit();

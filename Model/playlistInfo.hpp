@@ -3,16 +3,17 @@
 #include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <vector>
 struct PlaylistInfo {
     int64_t id{0};
-    juce::String title;
-    std::optional<juce::String> hash;
+    std::string title;
+    std::optional<std::string> hash;
     std::vector<int64_t> songIdList;
-    juce::String createTime;
+    std::string createTime;
 
-    juce::var toBasicJson();
-    juce::var toDetailJson();
+    nlohmann::json toBasicJson();
+    nlohmann::json toDetailJson();
     static PlaylistInfo fromCompleteJson(Yvar obj);
 };

@@ -11,6 +11,7 @@
 #include <SQLiteCpp/Transaction.h>
 #include <cstdint>
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -25,7 +26,7 @@ private:
     const int numRowsEachPage = 300; // 每一页多少首歌
 
     // 获取元数据数组(比如多个艺术家)
-    juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
+    std::vector<std::string> getTags(TagLib::PropertyMap& map, const char* key);
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
 
@@ -39,7 +40,7 @@ public:
     struct InsertSongResult {
 
         SongInfo info;
-        std::optional<juce::StringArray> albumArtists;
+        std::optional<std::vector<std::string>> albumArtists;
         bool titleIsFileName{false}; // title是否为文件名
     };
 
@@ -56,7 +57,7 @@ public:
     SongInfo getBasicSongInfo(int64_t songId);
 
     // 得到所有歌曲的基本信息用于UI视图
-    juce::Array<juce::var> getAllSongsBasicInfo();
+    nlohmann::json getAllSongsBasicInfo();
 
     void reverseMyLike(int64_t id);
     PlayInfo getPlayInfo(int64_t songId); // 根据ID获得路径和歌曲时长

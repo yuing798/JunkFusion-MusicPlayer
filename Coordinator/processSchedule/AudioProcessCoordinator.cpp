@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <zmq.hpp>
 AudioProcessCoordinator::AudioProcessCoordinator() {
@@ -157,24 +158,16 @@ void AudioProcessSuber::run() {
         if (rst.has_value()) {
             // Utils::writeEmergencyLog("suber收到消息");
             std::string data(static_cast<char*>(msg.data()), msg.size());
-            Yvar obj = juce::JSON::fromString(juce::String(data));
+            Yvar obj = nlohmann::json::parse(data);
             // spdlog::get(LogDllID)->debug("suber收到消息:{}", obj.toString().toStdString());
             if (!obj.isObject()) {
-                OtherUtils::writeEmergencyLog(
-                    "AudioProcessSuber接收到未知格式:" + obj.toString().toStdString()
-                );
-                spdlog::get(LogDllID)->error(
-                    "AudioProcessSuber接收到未知格式:{}",
-                    obj.toString().toStdString()
-                );
+                OtherUtils::writeEmergencyLog("AudioProcessSuber接收到未知格式:" + obj.toString());
+                spdlog::get(LogDllID)->error("AudioProcessSuber接收到未知格式:{}", obj.toString());
                 continue;
             };
             if (obj.hasProperty(AudioMacro::errorPopupWindowMsg)) {
                 auto receiverMsg = obj.read(AudioMacro::errorPopupWindowMsg).toString();
-                spdlog::get(LogDllID)->debug(
-                    "sub接收到发送错误弹窗消息:{}",
-                    receiverMsg.toStdString()
-                );
+                spdlog::get(LogDllID)->debug("sub接收到发送错误弹窗消息:{}", receiverMsg);
                 // Utils::writeEmergencyLog("sub接收到发送错误弹窗消息");
                 auto cString{ConvertUtils::copyStringOnHeap(receiverMsg)};
 
@@ -200,9 +193,7 @@ void AudioProcessSuber::run() {
             }
             if (obj.hasProperty(AudioMacro::updatePlayCount)) {
                 auto path{obj.read(AudioMacro::updatePlayCount).toString()};
-                dllManager::getInstance().getDbContext()->songsManage.updatePlayCount(
-                    path.toStdString()
-                );
+                dllManager::getInstance().getDbContext()->songsManage.updatePlayCount(path);
             }
             if (obj.hasProperty(AudioMacro::playStateSync)) {
                 if (dllManager::getInstance().onPlayStateSync) {

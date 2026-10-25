@@ -2,18 +2,20 @@
 
 #include "juce_core/juce_core.h"
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <optional>
+#include <string>
 #include <type_traits>
 #include <vector>
 
 // 用于安全读取json的类
 class Yvar {
 private:
-    juce::var value{};
+    nlohmann::json value;
 
 public:
     Yvar() = default;
-    Yvar(juce::var value) : value(std::move(value)) {}
+    Yvar(nlohmann::json value) : value(std::move(value)) {}
 
     // 安全读取对象的键值对
     Yvar read(const char* key) const;
@@ -23,18 +25,18 @@ public:
 
     double toDouble() const;
     int toInt() const;
-    juce::StringArray toStringArray() const;
+    std::vector<std::string> toStringArray() const;
     bool toBool() const;
 
-    juce::String toString();
-    std::optional<juce::String> toOptStr();
-    bool isVoid() { return value.isVoid(); }
-    bool isObject() { return value.isObject(); }
-    bool hasProperty(const char* key) { return value.hasProperty(key); }
+    std::string toString();
+    std::optional<std::string> toOptStr();
+    bool isVoid() { return value.is_null(); }
+    bool isObject() { return value.is_object(); }
+    bool hasProperty(const char* key) { return value.contains(key); }
     int size() { return value.size(); }
 
     template <typename T> std::vector<T> toVector() {
-        if (!value.isArray()) return {};
+        if (!value.is_array()) return {};
         std::vector<T> vec;
         for (int i = 0; i < size(); i++) {
             T value;

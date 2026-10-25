@@ -33,7 +33,8 @@ void AudioProcessorPuller::run() {
             // OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
             spdlog::get(LogAudioID)->debug("音频进程puller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
-            Yvar jsonObj{juce::JSON::fromString(juce::String(command))};
+            nlohmann::json obj;
+            Yvar jsonObj{obj.parse(command)};
             if (!jsonObj.isObject()) {
                 OtherUtils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
