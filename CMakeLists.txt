@@ -21,6 +21,8 @@ find_package(Chromaprint CONFIG REQUIRED) #音频指纹提取
 find_package(taglib CONFIG REQUIRED) #歌曲艺术家元数据获取
 find_path(SIGNALSMITH_STRETCH_INCLUDE_DIRS "signalsmith-stretch/signalsmith-stretch.h")
 find_package(fmt CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+
 
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
@@ -48,9 +50,34 @@ set_target_properties(JunkFusionCoordinator PROPERTIES
 set_target_properties(JunkFusionAudioProcess PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>_bin"
 )
+
+target_link_libraries(Utils
+    PUBLIC
+
+        juce::juce_core
+        SQLiteCpp
+        
+        
+    PRIVATE
+        nlohmann_json::nlohmann_json
+        spdlog::spdlog#日志系统
+        juce::juce_recommended_config_flags#基础编译与调试配置
+        juce::juce_recommended_lto_flags#链接时代码优化
+        juce::juce_recommended_warning_flags#推荐的警告级别
+)
+
 target_link_libraries(Models
     PUBLIC
         Utils
+        juce::juce_core
+        SQLiteCpp
+        # ${FFMPEG_LIBRARIES}
+
+    PRIVATE
+        nlohmann_json::nlohmann_json
+        juce::juce_recommended_config_flags#基础编译与调试配置
+        juce::juce_recommended_lto_flags#链接时代码优化
+        juce::juce_recommended_warning_flags#推荐的警告级别
 )
 target_link_libraries(JunkFusionCoordinator 
     PRIVATE

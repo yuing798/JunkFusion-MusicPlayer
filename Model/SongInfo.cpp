@@ -1,5 +1,6 @@
 #include "./SongInfo.hpp"
 #include "Macro/SongInfoMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/convertUtils.hpp"
 #include "Utils/dbUtils.hpp"
 #include <SQLiteCpp/Database.h>
@@ -10,66 +11,31 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-juce::var SongInfo::toCompleteJson() {
-    juce::var obj{new juce::DynamicObject()};
-
-    auto ptr{obj.getDynamicObject()};
-
-    // ── 0. 主键 ──
-    ptr->setProperty(SongInfoMacro::songId, songId);
-
-    // ── 1. 文件信息 ──
-    ptr->setProperty(SongInfoMacro::duration, duration);
-
-    ptr->setProperty(SongInfoMacro::title, title);
-    ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
-    ptr->setProperty(SongInfoMacro::album, ConvertUtils::optValueToVar(album));
-    ptr->setProperty(SongInfoMacro::trackNumber, ConvertUtils::optValueToVar(trackNumber));
-    ptr->setProperty(SongInfoMacro::discNumber, ConvertUtils::optValueToVar(discNumber));
-
-    // ── 5. 用户信息 ──
-    ptr->setProperty(SongInfoMacro::isMyLike, isMyLike);
-    ptr->setProperty(SongInfoMacro::playNum, playNum);
-
-    ptr->setProperty(SongInfoMacro::hash, ConvertUtils::optValueToVar(hash));
-
-    // ── 3. FFmpeg 解码层 ──
-    ptr->setProperty(SongInfoMacro::bitRate, bitRate);
-    ptr->setProperty(SongInfoMacro::sampleRate, sampleRate);
-    ptr->setProperty(SongInfoMacro::channelLayout, channelLayout);
-    ptr->setProperty(SongInfoMacro::bitDepth, bitDepth);
-    ptr->setProperty(SongInfoMacro::codecName, ConvertUtils::optValueToVar(codecName));
-
-    // ── 4. AI 分析 ──
-    ptr->setProperty(SongInfoMacro::bpm, ConvertUtils::optValueToVar(bpm));
-    ptr->setProperty(SongInfoMacro::key, ConvertUtils::optValueToVar(key));
-
-    ptr->setProperty(SongInfoMacro::timeDomainSpec, ConvertUtils::vectorToArrayVar(timeDomainSpec));
+Yvar SongInfo::toDetailJson() const {
+    Yvar obj = Yvar::object();
+    obj.set(SongInfoMacro::trackNumber, Yvar::fromOptional(trackNumber));
+    obj.set(SongInfoMacro::discNumber, Yvar::fromOptional(discNumber));
+    obj.set(SongInfoMacro::bitRate, bitRate);
+    obj.set(SongInfoMacro::sampleRate, sampleRate);
+    obj.set(SongInfoMacro::channelLayout, channelLayout);
+    obj.set(SongInfoMacro::bitDepth, bitDepth);
+    obj.set(SongInfoMacro::codecName, Yvar::fromOptional(codecName));
+    obj.set(SongInfoMacro::bpm, Yvar::fromOptional(bpm));
+    obj.set(SongInfoMacro::key, Yvar::fromOptional(key));
+    obj.set(SongInfoMacro::timeDomainSpec, timeDomainSpec);
 
     return obj;
-} // 将songInfo转化为var，才能推送给前端
-juce::var SongInfo::toBasicJson() {
-    juce::var obj{new juce::DynamicObject()};
-
-    auto ptr{obj.getDynamicObject()};
-
-    // ── 0. 主键 ──
-    ptr->setProperty(SongInfoMacro::songId, songId);
-
-    // ── 1. 文件信息 ──
-    ptr->setProperty(SongInfoMacro::duration, duration);
-
-    ptr->setProperty(SongInfoMacro::title, title);
-    ptr->setProperty(SongInfoMacro::artists, ConvertUtils::stringArray2ArrayVar(artists));
-    ptr->setProperty(SongInfoMacro::album, ConvertUtils::optValueToVar(album));
-    ptr->setProperty(SongInfoMacro::trackNumber, ConvertUtils::optValueToVar(trackNumber));
-    ptr->setProperty(SongInfoMacro::discNumber, ConvertUtils::optValueToVar(discNumber));
-
-    // ── 5. 用户信息 ──
-    ptr->setProperty(SongInfoMacro::isMyLike, isMyLike);
-    ptr->setProperty(SongInfoMacro::playNum, playNum);
-
-    ptr->setProperty(SongInfoMacro::hash, ConvertUtils::optValueToVar(hash));
+} // 将songInfo转化为Yvar，才能推送给前端
+Yvar SongInfo::toBasicJson() const {
+    Yvar obj = Yvar::object();
+    obj.set(SongInfoMacro::songId, songId);
+    obj.set(SongInfoMacro::duration, duration);
+    obj.set(SongInfoMacro::title, title);
+    obj.set(SongInfoMacro::artists, Yvar::fromOptional(artists));
+    obj.set(SongInfoMacro::album, Yvar::fromOptional(album));
+    obj.set(SongInfoMacro::isMyLike, isMyLike);
+    obj.set(SongInfoMacro::playNum, playNum);
+    obj.set(SongInfoMacro::hash, Yvar::fromOptional(hash));
 
     return obj;
 }

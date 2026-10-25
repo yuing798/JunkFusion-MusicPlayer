@@ -27,38 +27,6 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-// WaveFormAnaly::WaveFormAnaly(CenterDbManage* dbManage)
-//     : juce::Thread("WaveFormAnaly"), dbManage(dbManage), mOnlineGetMatedata(dbManage) {}
-
-// void WaveFormAnaly::setTask(WaveFormAnaly::Task task) {
-//     std::lock_guard<std::mutex> lock(mtx);
-//     mTaskQueue.push(std::move(task));
-//     notify();
-//     if (!isThreadRunning()) startThread();
-// }
-
-// void WaveFormAnaly::run() {
-//     while (!threadShouldExit()) {
-//         Task task;
-//         bool hasTask = false;
-
-//         {
-//             std::lock_guard<std::mutex> lock(mtx);
-//             if (!mTaskQueue.empty()) {
-//                 task = std::move(mTaskQueue.front());
-//                 mTaskQueue.pop();
-//                 hasTask = true;
-//             }
-//         }
-
-//         if (hasTask) {
-//             processSingleFile(task);
-//         } else {
-//             wait(-1);
-//         }
-//     }
-// }
-
 WaveFormAnaly::Result WaveFormAnaly::process(WaveFormAnaly::Task task) {
 
     int result{0}; // 解码层结果，一般成功返回零

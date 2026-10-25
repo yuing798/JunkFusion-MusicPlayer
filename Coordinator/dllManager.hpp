@@ -19,14 +19,13 @@
 #include <string>
 #include <variant>
 
-
 class dllManager {
 private:
-    juce::String systemCountry;
+    std::string systemCountry;
 
-    juce::File cacheDir;     // 缓存文件夹
-    juce::File logInfoDir;   // 日志文件夹
-    juce::File songImageDir; // 歌曲图片
+    juce::File cacheDir;   // 缓存文件夹
+    juce::File logInfoDir; // 日志文件夹
+    juce::File imageDir;   // 图片
 
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
@@ -40,7 +39,7 @@ public:
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);
 
-    juce::File& getSongImageDir() { return songImageDir; }
+    juce::File& getImageDir() { return imageDir; }
 
     static dllManager& getInstance() {
         if (!instance) {
@@ -66,7 +65,7 @@ public:
     std::function<void(int)> onPlayStateSync;      // 请求同步播放状态
     std::function<void(int64_t)> onUpdateSongInfo; // 更新播放信息
 
-    void sendMessage2AudioProcess(juce::var& obj);
+    void sendMessage2AudioProcess(const std::string& obj);
     void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
 
     std::variant<std::string, SongInfo> insertSong(const juce::File& path);

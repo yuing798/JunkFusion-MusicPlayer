@@ -9,7 +9,7 @@ import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
-import 'package:junk_fusion_ui/widgets/combo_box.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
@@ -308,7 +308,7 @@ class _AlbumActionButton extends StatelessWidget {
 //
 // 后端 albums 表里的 hash 就是这张专辑的封面哈希（Model/AlbumInfo.cpp 的
 // albumViewtoJson() 吐出来的那个 hash），封面文件跟歌曲封面共用一份缓存：
-//   ${AppCache.cacheDirString}/songImage/<hash>/original.jpg
+//   ${AppCache.cacheDirString}/image/<hash>/original.jpg
 // 所以不需要单独的专辑封面目录；hash 为空（后端存的是 ""，比如专辑里的歌
 // 都没有封面）时退回默认图。
 // ════════════════════════════════════════════════════════════════
@@ -329,7 +329,7 @@ class AlbumCoverImage extends StatelessWidget {
     if (coverHash == null || coverHash.isEmpty) return placeholder;
 
     return Image.file(
-      File('${AppCache.cacheDirString}/songImage/$coverHash/original.jpg'),
+      File('${AppCache.cacheDirString}/image/$coverHash/original.jpg'),
       fit: BoxFit.cover,
       // 缓存文件被删了/解码失败时别让界面炸成红框，退回默认图
       errorBuilder: (_, _, _) => placeholder,

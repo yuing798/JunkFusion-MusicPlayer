@@ -67,16 +67,16 @@ GodProcessor::GodProcessor(
         mSystemAudioControl->onPlay = [this]() {
             play(mPlayInfo, mProgressBar.getCurSeconds(), 0, 0);
             mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
-            juce::var obj{new juce::DynamicObject()};
-            obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 1);
-            mWorker.sender->sendMessage(juce::JSON::toString(obj).toStdString());
+            Yvar obj = Yvar::object();
+            obj.set(AudioMacro::playStateSync, 1);
+            mWorker.sender->sendMessage(obj.dump());
         };
         mSystemAudioControl->onPause = [this]() {
             pausePlay();
             mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
-            juce::var obj{new juce::DynamicObject()};
-            obj.getDynamicObject()->setProperty(AudioMacro::playStateSync, 0);
-            mWorker.sender->sendMessage(juce::JSON::toString(obj).toStdString());
+            Yvar obj = Yvar::object();
+            obj.set(AudioMacro::playStateSync, 0);
+            mWorker.sender->sendMessage(obj.dump());
         };
 
         mSystemAudioControl->onNext = [this] { playNextOrPreviousSong(true); };
@@ -142,11 +142,9 @@ GodProcessor::GodProcessor(
 }
 
 void GodProcessor::playNextOrPreviousSong(bool nextOrPrevious) {
-    juce::var obj{new juce::DynamicObject()};
-    auto ptr{obj.getDynamicObject()};
-    jassert(ptr);
-    ptr->setProperty(AudioMacro::onPlayNextOrPreviousSong, nextOrPrevious);
-    mWorker.sender->sendMessage(juce::JSON::toString(obj).toStdString());
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::onPlayNextOrPreviousSong, nextOrPrevious);
+    mWorker.sender->sendMessage(obj.dump());
 }
 
 void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) {
@@ -223,12 +221,11 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
     if (isNewSong) {
         mPlayInfo = info;
         // spdlog::get(LogAudioID)
-        //     ->debug("准备播放新歌:{}", Yvar{info.toJson()}.toString().toStdString());
+        //     ->debug("准备播放新歌:{}", info.toJson().toString());
 
         SystemAudioControl::MediaMetadata data{};
-        data.title = info.title.toStdString();
-        if (info.artists.has_value())
-            data.artists = ConvertUtils::stringArrayToVector(info.artists.value());
+        data.title = info.title;
+        if (info.artists.has_value()) data.artists = info.artists.value();
         mSystemAudioControl->updateMetadata(data);
 
         mPlayCount.setNewSong(info.path, info.duration);
@@ -238,7 +235,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
             // 如果是新歌且原歌正在播放，切换甲板索引,采取600ms的交叉淡化长度
 
             mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
-                info.path.toStdString(),
+                info.path,
                 targetSeconds
             );
             mCrossFade.setCrossFadeBegin(true); // 先开新歌再切甲板
@@ -248,7 +245,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
 
             mCrossFade.flipDeck();
             mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
-                info.path.toStdString(),
+                info.path,
                 targetSeconds
             );
             mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.reset();
@@ -258,7 +255,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
             // 正常的播放
             continuePlay(targetSeconds);
             mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
-                info.path.toStdString(),
+                info.path,
                 targetSeconds
             );
         }
@@ -269,7 +266,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
                 !mPlayPauseControl.getIsFullMute()) {
                 // 不是新歌但是跳转位置，且原歌曲正在播放，采取50ms交叉长度
                 mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
-                    mPlayInfo.path.toStdString(),
+                    mPlayInfo.path,
                     targetSeconds
                 );
                 mCrossFade.setCrossFadeBegin(false);
@@ -279,7 +276,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
 
                 mCrossFade.flipDeck();
                 mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
-                    info.path.toStdString(),
+                    info.path,
                     targetSeconds
                 );
                 mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.reset();
@@ -287,7 +284,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
 
             } else {
                 mDoubleDecks[mCrossFade.getMainDeckIndex()].module.beginNewDecoderThread(
-                    info.path.toStdString(),
+                    info.path,
                     targetSeconds
                 );
                 continuePlay(targetSeconds);

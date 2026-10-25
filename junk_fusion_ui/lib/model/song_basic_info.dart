@@ -18,8 +18,6 @@ abstract class SongBasicInfo with _$SongBasicInfo {
 
     required int playNum,
     String? hash,
-    int? trackNumber,
-    int? discNumber,
   }) = _SongBasicInfo;
 
   factory SongBasicInfo.fromJson(Map<String, dynamic> json) =>

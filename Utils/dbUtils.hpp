@@ -6,6 +6,7 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <optional>
@@ -20,17 +21,17 @@ namespace DbUtils {
         try {
             auto result{sql.getColumn(colName)};
             if (result.isNull()) return std::nullopt;
+            if (result.isInteger() && result.getInt64() == INT64T_MAX) return std::nullopt;
             if constexpr (std::is_same_v<T, int>) {
                 return result.getInt();
-            } else if constexpr (std::is_same_v<T, juce::String> ||
-                                 std::is_same_v<T, std::string>) {
+            } else if constexpr (std::is_same_v<T, std::string>) {
                 return result.getString();
             } else if constexpr (std::is_same_v<T, int64_t>) {
                 return result.getInt64();
             } else if constexpr (std::is_same_v<T, double>) {
                 return result.getDouble();
-            } else if constexpr (std::is_same_v<T, juce::StringArray>) {
-                return Yvar{juce::JSON::fromString(result.getString())}.toStringArray();
+            } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+                return Yvar::parse(result.getString()).toStringArray();
             } else {
                 return std::nullopt;
             }
@@ -40,19 +41,13 @@ namespace DbUtils {
         }
     }
 
-    template <typename T>
-    void bindOptValue(SQLite::Statement& stmt, const char* name, const std::optional<T>& v) {
+    template <typename T1>
+    void bindOptValue(SQLite::Statement& stmt, const char* name, const std::optional<T1>& v) {
 
         try {
-            if constexpr (std::is_same_v<T, juce::String>) {
+            if constexpr (std::is_same_v<T1, std::vector<std::string>>) {
                 if (v.has_value()) {
-                    stmt.bind(name, v.value().toStdString());
-                } else {
-                    stmt.bind(name);
-                }
-            } else if constexpr (std::is_same_v<T, juce::StringArray>) {
-                if (v.has_value()) {
-                    stmt.bind(name, juce::JSON::toString(v.value()).toStdString());
+                    stmt.bind(name, Yvar::fromVector(v.value()).dump());
                 } else {
                     stmt.bind(name);
                 }
@@ -79,4 +74,5 @@ namespace DbUtils {
             spdlog::get(LogDllID)->debug("getBlob发生错误:列名{},错误信息{}", name, e.what());
         }
     }
+
 } // namespace DbUtils

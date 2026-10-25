@@ -5,9 +5,9 @@ import 'package:junk_fusion_ui/providers/folder_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
-import 'package:junk_fusion_ui/widgets/combo_box.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
-// AlbumCoverImage（哈希 → songImage/<hash>/original.jpg）目前住在
+// AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
 // single_album_page.dart 里，先复用；以后抽到 widgets/ 下面更合适
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:provider/provider.dart';

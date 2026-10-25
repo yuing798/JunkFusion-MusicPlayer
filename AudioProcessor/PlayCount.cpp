@@ -1,5 +1,6 @@
 #include "./PlayCount.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "juce_core/juce_core.h"
 #include <algorithm>
@@ -8,16 +9,13 @@
 #include <string>
 
 void PlayCount::updatePlayCount() {
-    juce::var obj{new juce::DynamicObject()};
-    {
-        auto ptr{obj.getDynamicObject()};
-        ptr->setProperty(AudioMacro::updatePlayCount, mPath);
-    }
-    mWorker.sender->sendMessage(juce::JSON::toString(obj).toStdString());
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::updatePlayCount, mPath);
+    mWorker.sender->sendMessage(obj.dump());
     // spdlog::get(LogAudioID)->debug("通知协调者更新播放次数:路径:{}", mPath);
 }
 
-void PlayCount::setNewSong(juce::String path, double duration) {
+void PlayCount::setNewSong(std::string path, double duration) {
     if (mPath == path) return;
     mPath = path;
     mCurrentSampleCount = 0;

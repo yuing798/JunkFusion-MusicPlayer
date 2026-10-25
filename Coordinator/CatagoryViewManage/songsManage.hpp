@@ -4,6 +4,7 @@
 #include "../SongsInsertHelper/WaveFormAnaly.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Model/SongInfo.hpp"
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/SQLiteCpp.h>
@@ -22,14 +23,15 @@
 class SongsManage {
 private:
     CenterDbManage& dbManage;
+    const int numRowsEachPage = 300; // 每一页多少首歌
 
     // 获取元数据数组(比如多个艺术家)
-    juce::StringArray getTags(TagLib::PropertyMap& map, const char* key);
+    std::vector<std::string> getTags(TagLib::PropertyMap& map, const char* key);
     // 将字符串转换为数组并只提取从开头数的有效数据
     std::optional<int> getTagInt(TagLib::PropertyMap& map, const char* key);
 
     SongInfo getBasicInfoCol(SQLite::Statement& query);
-    SongInfo getCompleteInfoCol(SQLite::Statement& query);
+    SongInfo getDetailInfoCol(SQLite::Statement& query);
 
 public:
     explicit SongsManage(CenterDbManage& dbManage) : dbManage(dbManage) {};
@@ -38,7 +40,7 @@ public:
     struct InsertSongResult {
 
         SongInfo info;
-        std::optional<juce::StringArray> albumArtists;
+        std::optional<std::vector<std::string>> albumArtists;
         bool titleIsFileName{false}; // title是否为文件名
     };
 
@@ -50,11 +52,12 @@ public:
      */
     std::variant<std::string, InsertSongResult> insertSong(const juce::File& path);
 
-    // 得到某一首歌的全部SongInfo信息
-    SongInfo getCompleteSongInfo(int64_t songId);
+    // 得到某一首歌的详细SongInfo信息
+    SongInfo getDetailSongInfo(int64_t songId);
+    SongInfo getBasicSongInfo(int64_t songId);
 
     // 得到所有歌曲的基本信息用于UI视图
-    juce::Array<juce::var> getAllSongsBasicInfo();
+    Yvar getAllSongsBasicInfo();
 
     void reverseMyLike(int64_t id);
     PlayInfo getPlayInfo(int64_t songId); // 根据ID获得路径和歌曲时长

@@ -23,7 +23,6 @@
 #include <utility>
 #include <variant>
 
-
 std::unique_ptr<dllManager> dllManager::instance = nullptr;
 
 dllManager::dllManager() {}
@@ -33,8 +32,8 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     cacheDir = juce::File{cacheDirId};
     logInfoDir = cacheDir.getChildFile("log");
     if (!logInfoDir.exists()) logInfoDir.createDirectory();
-    songImageDir = cacheDir.getChildFile("songImage");
-    if (!songImageDir.exists()) songImageDir.createDirectory();
+    imageDir = cacheDir.getChildFile("image");
+    if (!imageDir.exists()) imageDir.createDirectory();
 
     constexpr size_t kUiMaxSize = 5 * 1024 * 1024; // 5 MB
     constexpr size_t kUiMaxFiles = 3;
@@ -51,8 +50,10 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         dllLogger->set_pattern(pattern);
 #ifdef JF_DEBUG
         dllLogger->set_level(spdlog::level::debug);
+        dllLogger->flush_on(spdlog::level::debug);
 #else
         dllLogger->set_level(spdlog::level::info);
+        dllLogger->flush_on(spdlog::level::err);
 #endif
 
         spdlog::register_logger(dllLogger);
@@ -76,12 +77,11 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 
     mDbContext = std::make_unique<DbContext>(dbFile.getFullPathName().toStdString());
 
-    systemCountry = juce::SystemStats::getUserRegion().toUpperCase();
+    systemCountry = juce::SystemStats::getUserRegion().toUpperCase().toStdString();
 }
 
-void dllManager::sendMessage2AudioProcess(juce::var& obj) {
-    auto jsonStr{juce::JSON::toString(obj).toStdString()};
-    mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(jsonStr);
+void dllManager::sendMessage2AudioProcess(const std::string& obj) {
+    mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(obj);
 }
 
 dllManager::~dllManager() {
@@ -97,7 +97,7 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
         auto& songInfo{successRst.info};
         // spdlog::get(LogDllID)->debug(
         //     "songsManage.insertSong的结果为:{}",
-        //     Yvar{songInfo.toDetailJson()}.toString().toStdString()
+        //     songInfo.toDetailJson().toString()
         // );
         // return songInfo;
 
@@ -123,7 +123,7 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
         if (!songInfo.hash) {
             needSearchCoverHash = true;
         }
-        std::optional<juce::StringArray> albumArtists;
+        std::optional<std::vector<std::string>> albumArtists;
         if (successRst.albumArtists.has_value()) {
             albumArtists = successRst.albumArtists.value();
         } else {
@@ -188,7 +188,7 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
                         songInfo.duration,
                         std::move(print),
                         successRst.titleIsFileName ? std::nullopt
-                                                   : std::optional<juce::String>{songInfo.title},
+                                                   : std::optional<std::string>{songInfo.title},
                                                    songInfo.artists,
                                                    songInfo.album,
                                                    needSearchCoverHash

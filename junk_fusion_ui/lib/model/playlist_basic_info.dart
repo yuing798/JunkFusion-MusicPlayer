@@ -19,11 +19,9 @@ part "playlist_basic_info.g.dart";
 @freezed
 abstract class PlaylistBasicInfo with _$PlaylistBasicInfo {
   const factory PlaylistBasicInfo({
-    required int playlistId,
+    required int id,
     required String title,
-
-    /// 歌单里的歌曲数量（网格卡片上显示，也用来排序）
-    required int songCount,
+    required String createTime,
 
     /// 封面哈希：取歌单里第一首有封面的歌（和专辑一个做法），没有就是空串
     String? hash,

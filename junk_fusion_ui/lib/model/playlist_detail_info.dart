@@ -16,12 +16,6 @@ part "playlist_detail_info.g.dart";
 @freezed
 abstract class PlaylistDetailInfo with _$PlaylistDetailInfo {
   const factory PlaylistDetailInfo({
-    required int playlistId,
-    required String title,
-
-    /// 封面哈希：歌单里第一首有封面的歌，没有就是空串
-    String? hash,
-
     /// 歌单里的歌曲 id（按歌单内的顺序）
     List<int>? songsLists,
   }) = _PlaylistDetailInfo;

@@ -1,6 +1,5 @@
 #include "./AlbumsManage.hpp"
 #include "Coordinator/CenterDbManage/CenterDbManage.hpp"
-#include "Coordinator/CenterDbManage/dbTable.hpp"
 #include "Model/AlbumInfo.hpp"
 #include "Model/SongInfo.hpp"
 #include "Utils/Yvar.hpp"
@@ -20,22 +19,20 @@
 #include <string>
 #include <vector>
 
-juce::Array<juce::var> AlbumsManage::getAllAlbumsView() {
+Yvar AlbumsManage::getAllAlbumsView() {
     SQLite::Statement selectSql{
         dbManage.readDb(),
         "SELECT albumId,title,albumArtists,hash FROM albums"
     };
-    juce::Array<juce::var> albums;
+    Yvar albums = Yvar::array();
     while (selectSql.executeStep()) {
         AlbumInfo info{};
         info.albumId = selectSql.getColumn("albumId").getInt64();
         info.title = selectSql.getColumn("title").getString();
         info.albumArtists =
-            Yvar{juce::JSON::fromString(selectSql.getColumn("albumArtists").getString())}
-                .toStringArray();
+            Yvar::parse(selectSql.getColumn("albumArtists").getString()).toStringArray();
         info.hash = selectSql.getColumn("hash").getString();
-        juce::var finalObj{info.toBasicJson()};
-        albums.add(finalObj);
+        albums.push(info.toBasicJson());
     }
     return albums;
 }
@@ -43,19 +40,19 @@ juce::Array<juce::var> AlbumsManage::getAllAlbumsView() {
 AlbumInfo AlbumsManage::getBasicInfoCol(SQLite::Statement& sql) {
     AlbumInfo info{};
     info.albumId = sql.getColumn("albumId").getInt64();
-    info.hash = DbUtils::getOptCol<juce::String>(sql, "hash");
-    info.albumArtists = DbUtils::getOptCol<juce::StringArray>(sql, "albumArtists");
+    info.hash = DbUtils::getOptCol<std::string>(sql, "hash");
+    info.albumArtists = DbUtils::getOptCol<std::vector<std::string>>(sql, "albumArtists");
     info.title = sql.getColumn("title").getString();
     return info;
 }
 
 // 检查这张专辑是否存在并返回相应的albumId
 std::optional<int64_t> AlbumsManage::checkAlbumExist(
-    juce::String title,
-    juce::StringArray artists,
-    std::optional<juce::String> hash
+    std::string title,
+    std::vector<std::string> artists,
+    std::optional<std::string> hash
 ) {
-    if (title.isEmpty() || artists.isEmpty()) return std::nullopt;
+    if (title.empty() || artists.empty()) return std::nullopt;
 
     try {
         struct AlbumIdAndTitle {
@@ -67,7 +64,7 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
             "SELECT albumId , title FROM albums WHERE title = :title"
         };
         std::vector<AlbumIdAndTitle> titles;
-        searchTitle.bind(":title", title.toStdString());
+        searchTitle.bind(":title", title);
         while (searchTitle.executeStep()) {
             titles.push_back(
                 {searchTitle.getColumn("albumId").getInt64(),
@@ -119,13 +116,13 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
             }
         }
         if (scores.empty()) return std::nullopt;
-        juce::StringArray selectArtistsIds; // 用来搜索的scores中的id号组成的序列
+        std::vector<std::string> selectArtistsIds; // 用来搜索的scores中的id号组成的序列
         for (auto& score : scores) {
-            selectArtistsIds.add(juce::String(score.albumId));
+            selectArtistsIds.push_back(std::to_string(score.albumId));
         }
         std::string selectArtistsStr{"SELECT albumId,albumArtists FROM albums WHERE albumId IN ("};
 
-        selectArtistsStr += selectArtistsIds.joinIntoString(",").toStdString();
+        selectArtistsStr += StringUtils::vectorToString(selectArtistsIds, ",");
         selectArtistsStr += ")";
 
         SQLite::Statement selectArtistsSql{dbManage.readDb(), selectArtistsStr};
@@ -136,12 +133,10 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
 
         while (selectArtistsSql.executeStep()) {
             int64_t albumId = selectArtistsSql.getColumn("albumId").getInt64();
-            juce::String originAlbumArtists =
-                selectArtistsSql.getColumn("albumArtists").getString();
+            std::string originAlbumArtists = selectArtistsSql.getColumn("albumArtists").getString();
 
             // 解析 JSON 数组
-            auto originAlbumArtistsArr =
-                Yvar{juce::JSON::fromString(originAlbumArtists)}.toStringArray();
+            auto originAlbumArtistsArr = Yvar::parse(originAlbumArtists).toStringArray();
 
             // 计算艺术家相似度（0.0 ~ 1.0）
             double artistsMatchScore =
@@ -173,11 +168,11 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
     return std::nullopt;
 }
 std::optional<int64_t> AlbumsManage::insertAlbum(
-    juce::String title,
-    juce::StringArray artists,
-    std::optional<juce::String> hash
+    std::string title,
+    std::vector<std::string> artists,
+    std::optional<std::string> hash
 ) {
-    if (title.isEmpty() || artists.isEmpty()) return std::nullopt;
+    if (title.empty() || artists.empty()) return std::nullopt;
     auto result = dbManage.write([&](SQLite::Database& db) -> std::optional<int64_t> {
         try {
             SQLite::Statement insert{
@@ -190,8 +185,8 @@ std::optional<int64_t> AlbumsManage::insertAlbum(
                 )
 
             };
-            insert.bind(":title", title.toStdString());
-            insert.bind(":albumArtists", juce::JSON::toString(artists).toStdString());
+            insert.bind(":title", title);
+            insert.bind(":albumArtists", Yvar::fromVector(artists).dump());
             DbUtils::bindOptValue(insert, ":hash", hash);
             insert.exec();
             return db.getLastInsertRowid();
@@ -224,8 +219,8 @@ std::optional<int64_t> AlbumsManage::getAlbumId(int64_t songId) {
 std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
     SQLite::Statement sql{
         dbManage.readDb(),
-        "SELECT songId FROM songs WHERE albumId = :albumId ORDER BY discNumber IS NULL, "
-        "discNumber,trackNumber IS NULL, trackNumber,songId "
+        "SELECT songId FROM songs WHERE albumId = :albumId ORDER BY "
+        "discNumber,trackNumber,songId "
 
     };
     sql.bind(":albumId", albumId);
@@ -235,17 +230,9 @@ std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
     }
     return songsList;
 }
-juce::var AlbumsManage::getCompleteInfo(int64_t albumId) {
-    SQLite::Statement selectAlbumQuery{
-        dbManage.readDb(),
-        "SELECT albumId, title,albumArtists,hash FROM albums WHERE albumId=:albumId"
-    };
-    selectAlbumQuery.bind(":albumId", albumId);
+Yvar AlbumsManage::getDetailInfo(int64_t albumId) {
     AlbumInfo info{};
-    if (selectAlbumQuery.executeStep()) {
-        info = getBasicInfoCol(selectAlbumQuery);
-    }
 
     info.songsList = getSongsList(albumId);
-    return info.toCompleteJson();
+    return info.toDetailJson();
 }

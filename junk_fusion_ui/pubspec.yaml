@@ -32,13 +32,10 @@ dependencies:
     sdk: flutter
   freezed_annotation: ^3.1.0 # 运行时需要用到的注解
   json_annotation: ^4.12.0 # 👈 新增：用于 JSON 的注解
-  # tabler_icons: ^2.5.0+1 #svg图标支持
   tabler_icons_plus: ^3.44.0 #增强版图标
   shared_preferences: ^2.5.0 #和localStorage一样，做轻量数据存储
   ffi: ^2.2.0
   file_picker: ^11.0.3
-  # google_fonts: ^8.2.1
-  # flutter_improved_scrolling: ^0.0.4 #更好用的滚动条
   smooth_scroll_multiplatform: ^ 1.0.8 #他妈的这个逼玩意才是唯一能够实现平滑滚动的，,虽然说不能实现键盘操作
   package_rename_plus: ^1.11.0
   provider: ^6.1.2
@@ -54,6 +51,9 @@ dependencies:
   dropdown_button2: ^3.1.0 #comboBox
   intl4x: ^1.0.1 #字符串排序
   flutter_alone: ^4.1.0 #单应用模式应用锁
+  desktop_drop: ^0.8.4 #文件拖拽
+  flutter_directory_tree: ^1.0.0 #树状视图
+  flex_color_scheme: 8.4.0 #主题和色彩
 
 dependency_overrides:
   meta: ^1.19.0

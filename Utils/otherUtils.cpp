@@ -6,6 +6,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <spdlog/common.h>
 #include <stdio.h>
 #include <string>
 #include <utility>
@@ -45,10 +46,12 @@ void OtherUtils::initAudioLogger(juce::File cacheDir) {
         audioLogger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [thread %t] %v");
 #ifdef JF_DEBUG
         audioLogger->set_level(spdlog::level::debug);
+        audioLogger->flush_on(spdlog::level::debug);
 #else
-        audioLogger->set_level(spdlog::level::err);
-#endif
+        audioLogger->set_level(spdlog::level::info);
         audioLogger->flush_on(spdlog::level::err); // 遇到错误立刻刷盘
+#endif
+
         spdlog::register_logger(audioLogger);
     }
     spdlog::get(LogAudioID)->debug("音频进程日志初始化完成");

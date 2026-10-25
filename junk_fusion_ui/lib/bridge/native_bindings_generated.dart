@@ -19,6 +19,22 @@ class JunkFusionDLLBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
+  void addNewSongsToPlaylist(
+    int playlistId,
+    ffi.Pointer<ffi.Char> songIdsJson,
+  ) {
+    return _addNewSongsToPlaylist(playlistId, songIdsJson);
+  }
+
+  late final _addNewSongsToPlaylistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('addNewSongsToPlaylist');
+  late final _addNewSongsToPlaylist = _addNewSongsToPlaylistPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
   void closeBackend() {
     return _closeBackend();
   }
@@ -26,6 +42,33 @@ class JunkFusionDLLBindings {
   late final _closeBackendPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('closeBackend');
   late final _closeBackend = _closeBackendPtr.asFunction<void Function()>();
+
+  int createNewPlaylist(
+    ffi.Pointer<ffi.Char> title,
+    ffi.Pointer<ffi.Char> coverPath,
+  ) {
+    return _createNewPlaylist(title, coverPath);
+  }
+
+  late final _createNewPlaylistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.LongLong Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+        >
+      >('createNewPlaylist');
+  late final _createNewPlaylist = _createNewPlaylistPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>();
+
+  void deletePlaylist(int playlistId) {
+    return _deletePlaylist(playlistId);
+  }
+
+  late final _deletePlaylistPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
+        'deletePlaylist',
+      );
+  late final _deletePlaylist = _deletePlaylistPtr
+      .asFunction<void Function(int)>();
 
   /// @brief dll初始化
   ///
@@ -74,6 +117,17 @@ class JunkFusionDLLBindings {
   late final _getAllAlbumView = _getAllAlbumViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  ffi.Pointer<ffi.Char> getAllPlaylistView() {
+    return _getAllPlaylistView();
+  }
+
+  late final _getAllPlaylistViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllPlaylistView',
+      );
+  late final _getAllPlaylistView = _getAllPlaylistViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }
@@ -85,26 +139,59 @@ class JunkFusionDLLBindings {
   late final _getAllSongs = _getAllSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
-  ffi.Pointer<ffi.Char> getCompleteAlbumInfo(int albumId) {
-    return _getCompleteAlbumInfo(albumId);
+  ffi.Pointer<ffi.Char> getBasicSongInfo(int songId) {
+    return _getBasicSongInfo(songId);
   }
 
-  late final _getCompleteAlbumInfoPtr =
+  late final _getBasicSongInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getCompleteAlbumInfo',
+        'getBasicSongInfo',
       );
-  late final _getCompleteAlbumInfo = _getCompleteAlbumInfoPtr
+  late final _getBasicSongInfo = _getBasicSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  ffi.Pointer<ffi.Char> getCompleteSongInfo(int songId) {
-    return _getCompleteSongInfo(songId);
+  ffi.Pointer<ffi.Char> getDetailAlbumInfo(int albumId) {
+    return _getDetailAlbumInfo(albumId);
   }
 
-  late final _getCompleteSongInfoPtr =
+  late final _getDetailAlbumInfoPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getCompleteSongInfo',
+        'getDetailAlbumInfo',
       );
-  late final _getCompleteSongInfo = _getCompleteSongInfoPtr
+  late final _getDetailAlbumInfo = _getDetailAlbumInfoPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  ffi.Pointer<ffi.Char> getDetailPlaylistInfo(int id) {
+    return _getDetailPlaylistInfo(id);
+  }
+
+  late final _getDetailPlaylistInfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getDetailPlaylistInfo',
+      );
+  late final _getDetailPlaylistInfo = _getDetailPlaylistInfoPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  ffi.Pointer<ffi.Char> getDetailSongInfo(int songId) {
+    return _getDetailSongInfo(songId);
+  }
+
+  late final _getDetailSongInfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getDetailSongInfo',
+      );
+  late final _getDetailSongInfo = _getDetailSongInfoPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  ffi.Pointer<ffi.Char> getPlaylistBasicInfo(int id) {
+    return _getPlaylistBasicInfo(id);
+  }
+
+  late final _getPlaylistBasicInfoPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getPlaylistBasicInfo',
+      );
+  late final _getPlaylistBasicInfo = _getPlaylistBasicInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   void pausePlay() {
@@ -192,6 +279,35 @@ class JunkFusionDLLBindings {
   late final _registerOnUpdateSongInfo = _registerOnUpdateSongInfoPtr
       .asFunction<void Function(Int64Func)>();
 
+  void removeSongsInPlaylist(
+    int playlistId,
+    ffi.Pointer<ffi.Char> songIdsJson,
+  ) {
+    return _removeSongsInPlaylist(playlistId, songIdsJson);
+  }
+
+  late final _removeSongsInPlaylistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('removeSongsInPlaylist');
+  late final _removeSongsInPlaylist = _removeSongsInPlaylistPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
+  void renamePlaylist(int playlistId, ffi.Pointer<ffi.Char> title) {
+    return _renamePlaylist(playlistId, title);
+  }
+
+  late final _renamePlaylistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('renamePlaylist');
+  late final _renamePlaylist = _renamePlaylistPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
   void requestOnPlayStateSync(IntFunc cb) {
     return _requestOnPlayStateSync(cb);
   }
@@ -240,6 +356,30 @@ class JunkFusionDLLBindings {
         'toggleMyLike',
       );
   late final _toggleMyLike = _toggleMyLikePtr.asFunction<void Function(int)>();
+
+  void updateCoverByPath(int playlistId, ffi.Pointer<ffi.Char> coverPath) {
+    return _updateCoverByPath(playlistId, coverPath);
+  }
+
+  late final _updateCoverByPathPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('updateCoverByPath');
+  late final _updateCoverByPath = _updateCoverByPathPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
+  void updateCoverBySongId(int playlistId, int songId) {
+    return _updateCoverBySongId(playlistId, songId);
+  }
+
+  late final _updateCoverBySongIdPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.LongLong, ffi.LongLong)>
+      >('updateCoverBySongId');
+  late final _updateCoverBySongId = _updateCoverBySongIdPtr
+      .asFunction<void Function(int, int)>();
 }
 
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;

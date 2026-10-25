@@ -35,7 +35,6 @@ class CppCallbackManager {
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
   ffi.NativeCallable<Int64FuncFunction>? _onUpdateSongInfo;
   ffi.NativeCallable<IntFuncFunction>? _onPlayNextOrPreviousSong;
-  // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
 
@@ -61,7 +60,7 @@ class CppCallbackManager {
     ) {
       print("准备更新歌曲元数据信息:songId:$songId ");
 
-      songProvider.requestUpdateSongInfo(songId: songId);
+      songProvider.requestUpdateSongBasicInfo(songId: songId);
     });
 
     _onPlayNextOrPreviousSong = ffi.NativeCallable<IntFuncFunction>.listener((
@@ -78,6 +77,7 @@ class CppCallbackManager {
       ffi.Pointer<ffi.Char> ptr,
     ) {
       final dartString = UtilFunction.cPtr2String(ptr);
+      // print(dartString);
       Map<String, dynamic> obj = jsonDecode(dartString);
       final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
       List<SongBasicInfo> songsList = [];

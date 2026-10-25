@@ -1,5 +1,6 @@
 #include "./DeviceManager.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
@@ -73,55 +74,56 @@ void DeviceManager::disconnectProcessor() {
     mPlayer.setProcessor(nullptr);
 }
 
-juce::var DeviceManager::getAvailDeviceType() {
-    // 获取所有的驱动类型集合 (比如 ASIO, WASAPI, DirectSound)
-    const auto& types{mManager.getAvailableDeviceTypes()};
-    std::string logInfo{"检测到的驱动类型有:"};
-    juce::Array<juce::var> deviceTypeList;
+Yvar DeviceManager::getAvailDeviceType() {
+    const auto& types = mManager.getAvailableDeviceTypes();
+
+    std::string logInfo = "检测到的驱动类型有:";
+    Yvar deviceTypeList = Yvar::array();
 
     for (auto* type : types) {
         auto typeName = type->getTypeName();
         logInfo += typeName.toStdString();
-        deviceTypeList.add(typeName);
+        deviceTypeList.push_back(typeName.toStdString());
     }
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AudioMacro::deviceTypeList, juce::var(deviceTypeList));
+
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::deviceTypeList, std::move(deviceTypeList));
     return obj;
 }
-juce::var DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
-    if (type == nullptr) return juce::var();
+Yvar DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
+    if (type == nullptr) return Yvar::object();
     auto deviceNames = type->getDeviceNames();
-    // 将 deviceNames 转换为 juce::var
-    juce::Array<juce::var> nameArray;
+    // 将 deviceNames 转换为 Yvar
+    Yvar nameArray = Yvar::array();
     for (const auto& name : deviceNames)
-        nameArray.add(name);
-    juce::var obj{new juce::DynamicObject()};
-    obj.getDynamicObject()->setProperty(AudioMacro::deviceList, juce::var(nameArray));
+        nameArray.push_back(name.toStdString());
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::deviceList, nameArray);
     return obj;
 }
-juce::var DeviceManager::getAvailSampleRateList() {
+Yvar DeviceManager::getAvailSampleRateList() {
     if (auto* device = mManager.getCurrentAudioDevice()) {
         auto sampleRateList = device->getAvailableSampleRates();
-        juce::Array<juce::var> array;
+        Yvar array = Yvar::array();
         for (auto& sr : sampleRateList) {
-            array.add(juce::String(sr, 2)); // 保留两位小数
+            array.push_back(sr); // 保留两位小数
         }
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioMacro::sampleRateList, juce::var(array));
+        Yvar obj = Yvar::object();
+        obj.set(AudioMacro::sampleRateList, array);
         return obj;
     }
     return {};
 }
 
-juce::var DeviceManager::getAvailBufferSizeList() {
+Yvar DeviceManager::getAvailBufferSizeList() {
     if (auto* device = mManager.getCurrentAudioDevice()) {
         auto bufferSizeList = device->getAvailableBufferSizes();
-        juce::Array<juce::var> array;
+        auto array = Yvar::array();
         for (auto& bufferSize : bufferSizeList) {
-            array.add(bufferSize);
+            array.push_back(bufferSize);
         }
-        juce::var obj{new juce::DynamicObject()};
-        obj.getDynamicObject()->setProperty(AudioMacro::bufferSizeList, juce::var(array));
+        auto obj = Yvar::object();
+        obj.set(AudioMacro::bufferSizeList, array);
         return obj;
     }
     return {};

@@ -129,9 +129,16 @@ class JunkFusionAppState extends State<JunkFusionApp>
     _initSystemTray();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print("准备加载窗口缓存状态");
       _loadWindowState();
+      print("准备从后端拉取所有歌曲");
       widget.songProvider.getAllSongs();
+      print("准备初始化播放状态");
       widget.playbackProvider.initPlaybackProvider();
+      print("准备从后端拉取所有专辑");
+      widget.albumProvider.getAllAlbums();
+      print("准备从后端拉取所有歌单");
+      widget.playlistProvider.getAllPlaylists();
     });
   }
 
@@ -277,7 +284,9 @@ class JunkFusionAppState extends State<JunkFusionApp>
       //数据层，没画布
       providers: [
         ChangeNotifierProvider<SongProvider>.value(value: widget.songProvider),
-        ChangeNotifierProvider<AlbumProvider>.value(value: widget.albumProvider),
+        ChangeNotifierProvider<AlbumProvider>.value(
+          value: widget.albumProvider,
+        ),
         ChangeNotifierProvider<PlaylistProvider>.value(
           value: widget.playlistProvider,
         ),

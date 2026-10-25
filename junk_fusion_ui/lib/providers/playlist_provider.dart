@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:ffi';
 
+import 'package:collection/collection.dart';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
@@ -8,6 +11,7 @@ import 'package:junk_fusion_ui/model/playlist_detail_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
+import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 // ════════════════════════════════════════════════════════════════
 // playlist_provider.dart — 歌单视图的数据源
@@ -21,7 +25,7 @@ import 'package:junk_fusion_ui/utils/util_function.dart';
 // ── 需要的后端接口（详细约定见我给的那份清单）──────────────────
 //   getAllPlaylistView()
 //     → { "playlistsList": [ {playlistId, title, songCount, hash}, ... ] }
-//   getCompletePlaylistInfo(playlistId)
+//   getDetailPlaylistInfo(playlistId)
 //     → { playlistId, title, hash, songsLists: [songId, ...] }
 //   createPlaylist(title) -> 新 playlistId（失败 -1）
 //   renamePlaylist(playlistId, newTitle)
@@ -57,15 +61,13 @@ class PlaylistProvider extends ChangeNotifier {
 
   /// 拉一遍歌单列表（进歌单页的时候调一次）
   void getAllPlaylists() {
-    // TODO(后端): getAllPlaylistView() 注册好之后，这里换成：
-    //   _playlists = (jsonDecode(
-    //                 UtilFunction.cPtr2String(bindings.getAllPlaylistView()),
-    //               )?[CoordinatorMacro.playlistsList] as List<dynamic>)
-    //       .map((e) => PlaylistBasicInfo.fromJson(e))
-    //       .toList();
-    _playlists = [];
-
-    print('[PlaylistProvider] 歌单接口还没做，getAllPlaylists() 先返回空列表');
+    _playlists =
+        (jsonDecode(
+                  UtilFunction.cPtr2String(bindings.getAllPlaylistView()),
+                )?[CoordinatorMacro.playlistsList]
+                as List<dynamic>)
+            .map((e) => PlaylistBasicInfo.fromJson(e))
+            .toList();
     notifyListeners();
   }
 
@@ -73,23 +75,74 @@ class PlaylistProvider extends ChangeNotifier {
   /// （和 AlbumProvider.setNewAlbum() 一个套路，SinglePlaylistPage 从这里读）
   void setNewPlaylist(int playlistId) {
     _curBasicInfo = _playlists
-        .where((each) => each.playlistId == playlistId)
+        .where((each) => each.id == playlistId)
         .firstOrNull;
 
-    // TODO(后端): getCompletePlaylistInfo(playlistId) 注册好之后，这里换成：
-    //   _curDetailInfo = PlaylistDetailInfo.fromJson(
-    //     jsonDecode(
-    //       UtilFunction.cPtr2String(bindings.getCompletePlaylistInfo(playlistId)),
-    //     ),
-    //   );
-    //   final songIdMap = {for (final e in songProvider.songs) e.songId: e};
-    //   _songsInPlaylist = _curDetailInfo!.songsLists
-    //       ?.map((each) => songIdMap[each])
-    //       .whereType<SongBasicInfo>()
-    //       .toList() ?? [];
-    _curDetailInfo = null;
-    _songsInPlaylist = [];
+    _curDetailInfo = PlaylistDetailInfo.fromJson(
+      jsonDecode(
+        UtilFunction.cPtr2String(bindings.getDetailPlaylistInfo(playlistId)),
+      ),
+    );
+    if (_curDetailInfo?.songsLists != null) {
+      final songIdMap = {for (final e in songProvider.songs) e.songId: e};
+      _songsInPlaylist = _curDetailInfo!.songsLists!
+          .map((each) => songIdMap[each])
+          .whereType<SongBasicInfo>()
+          .toList();
+    }
+    notifyListeners();
+  }
 
+  /// 打开「新建歌单」弹窗（标题输入 + 点选/拖拽封面图片）
+  Future<int?> _createEmptyPlaylist() async {
+    final result = await DialogUtil.showPlaylistCreateDialog();
+    // 用户点了取消 / 关掉了弹窗
+    if (result == null) return null;
+    final ptrTitle = UtilFunction.string2cPtr(result.title);
+    final ptrCover = result.imagePath != null
+        ? UtilFunction.string2cPtr(result.imagePath!)
+        : UtilFunction.string2cPtr("");
+
+    print("准备执行后端函数:createNewPlaylist");
+    final id = bindings.createNewPlaylist(ptrTitle, ptrCover);
+    print("返回结果$id");
+    malloc.free(ptrTitle);
+    malloc.free(ptrCover);
+    //   context.read<PlaylistProvider>().getAllPlaylists(); // 刷新列表
+    // 现在后端还没有歌单接口，先把弹窗拿到的东西打出来
+    print('[歌单] 待创建：${result.title}，封面图片：${result.imagePath ?? '（没选）'}');
+    return id;
+  }
+
+  void createPlaylist(List<int>? songsList) async {
+    final playlistId = await _createEmptyPlaylist();
+    if (playlistId == null) return;
+    if (songsList != null) {
+      final ptr = UtilFunction.string2cPtr(jsonEncode(songsList));
+      bindings.addNewSongsToPlaylist(playlistId, ptr);
+      malloc.free(ptr);
+    }
+    print(
+      jsonDecode(
+        UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
+      ),
+    );
+    _playlists.add(
+      PlaylistBasicInfo.fromJson(
+        jsonDecode(
+          UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
+        ),
+      ),
+    );
+    notifyListeners();
+  }
+
+  void deletePlaylist(int playlistId) {
+    bindings.deletePlaylist(playlistId);
+    final index = _playlists.indexWhere((each) => each.id == playlistId);
+    if (index != -1) {
+      _playlists.removeAt(index);
+    }
     notifyListeners();
   }
 
