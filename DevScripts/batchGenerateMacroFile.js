@@ -9,16 +9,18 @@ const inputFiles =
     "BridgeMacro/coordinatorMacro.jsonc",
     "BridgeMacro/sliderParam.jsonc",
     "BridgeMacro/AlbumInfo.jsonc",
-    "BridgeMacro/playlistMacro.jsonc"
+    "BridgeMacro/playlistMacro.jsonc",
+    "BridgeMacro/FileMacro.jsonc"
   ];
-const namespaceArr = ["SongInfoMacro","CoordinatorMacro","SliderParam","AlbumInfoMacro","PlaylistMacro"]
+const namespaceArr = ["SongInfoMacro","CoordinatorMacro","SliderParam","AlbumInfoMacro","PlaylistMacro","FileMacro"];
 const outputFiles = 
   [
     ["Macro/SongInfoMacro.hpp","junk_fusion_ui/lib/Macro/SongInfoMacro.dart"],
     ["Macro/coordinatorMacro.hpp","junk_fusion_ui/lib/Macro/coordinatorMacro.dart"],
     ["Macro/sliderParam.hpp","junk_fusion_ui/lib/Macro/sliderParam.dart"],
     ["Macro/AlbumInfoMacro.hpp","junk_fusion_ui/lib/Macro/AlbumInfoMacro.dart"],
-    ["Macro/PlaylistMacro.hpp","junk_fusion_ui/lib/Macro/PlaylistMacro.dart"]
+    ["Macro/PlaylistMacro.hpp","junk_fusion_ui/lib/Macro/PlaylistMacro.dart"],
+    ["Macro/FileMacro.hpp","junk_fusion_ui/lib/Macro/FileMacro.dart"]
   ];
 
 for(let i=0;i<inputFiles.length;i++){

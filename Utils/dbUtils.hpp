@@ -72,6 +72,7 @@ namespace DbUtils {
             return buffer;
         } catch (SQLite::Exception& e) {
             spdlog::get(LogDllID)->debug("getBlob发生错误:列名{},错误信息{}", name, e.what());
+            return std::vector<T>{};
         }
     }
 

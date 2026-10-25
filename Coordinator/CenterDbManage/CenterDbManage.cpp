@@ -75,6 +75,9 @@ static const char* createAlbumDiscTrackIndexSQL =
 static const char* createAlbumIdIndexSQL =
     "CREATE INDEX IF NOT EXISTS albumIdIndex ON songs(albumId)";
 
+static const char* createSongFolderTableSQL =
+    "CREATE TABLE IF NOT EXISTS SongFolders (rootPath TEXT NOT NULL)";
+
 /**
  * @brief 专辑表
  * @param albumArtists 获取到的专辑艺术家名字
@@ -155,6 +158,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createSongsTableSQL);
         db.exec(createPlaylistTableSQL);
         db.exec(createPlaylistSongsTableSQL);
+        db.exec(createSongFolderTableSQL);
 
         db.exec(createPlaylistsSongsOrderByUserIndex);
         db.exec(createAlbumDiscTrackIndexSQL);
