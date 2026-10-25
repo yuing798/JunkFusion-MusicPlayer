@@ -33,45 +33,40 @@ void AudioProcessorPuller::run() {
             // OtherUtils::writeEmergencyLog("puller接收到了消息" + command);
             spdlog::get(LogAudioID)->debug("音频进程puller收到pusher的命令:{}", command);
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
-            nlohmann::json obj;
-            Yvar jsonObj{obj.parse(command)};
+            Yvar jsonObj = Yvar::parse(command);
             if (!jsonObj.isObject()) {
                 OtherUtils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
-                if (jsonObj.hasProperty(AudioMacro::killAudioProcess)) {
+                if (jsonObj.has(AudioMacro::killAudioProcess)) {
                     juce::MessageManager::callAsync([]() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();
                     });
                     continue;
                 }
-                if (jsonObj.hasProperty(AudioMacro::play)) {
+                if (jsonObj.has(AudioMacro::play)) {
                     spdlog::get(LogAudioID)->debug("收到播放指令");
-                    auto playObj{jsonObj.read(AudioMacro::play)};
+                    const Yvar playObj = jsonObj.read(AudioMacro::play);
                     double targetSeconds{playObj.read(AudioMacro::targetPTS).toDouble()};
-                    auto playInfoObj{playObj.read(AudioMacro::playInfo)};
                     auto isSeek = playObj.read(AudioMacro::isSeek).toBool();
                     auto isNewSong = playObj.read(AudioMacro::isNewSong).toBool();
 
-                    auto info{PlayInfo::fromJson(playInfoObj)};
-                    // spdlog::get(LogAudioID)->debug("路径:{}", info.path.toStdString());
+                    auto info{PlayInfo::fromJson(playObj.read(AudioMacro::playInfo))};
+                    // spdlog::get(LogAudioID)->debug("路径:{}", info.path);
 
                     if (onPlay) onPlay(info, targetSeconds, isSeek, isNewSong);
                     continue;
                 }
-                if (jsonObj.hasProperty(AudioMacro::pause)) {
+                if (jsonObj.has(AudioMacro::pause)) {
                     spdlog::get(LogAudioID)->debug("收到暂停指令");
                     if (onPausePlay) onPausePlay();
                     continue;
                 }
-                if (jsonObj.hasProperty(AudioMacro::setSliderValue)) {
-                    auto identifyParam{jsonObj.read(AudioMacro::setSliderValue)
-                                           .read(AudioMacro::sliderParam)
-                                           .toString()};
+                if (jsonObj.has(AudioMacro::setSliderValue)) {
+                    const Yvar sliderObj = jsonObj.read(AudioMacro::setSliderValue);
+                    auto identifyParam{sliderObj.read(AudioMacro::sliderParam).toString()};
 
-                    auto sliderValueVar{
-                        jsonObj.read(AudioMacro::setSliderValue).read(AudioMacro::sliderValue)
-                    };
+                    const Yvar sliderValueVar = sliderObj.read(AudioMacro::sliderValue);
 
                     if (identifyParam == SliderParam::masterVolume) {
                         double value{sliderValueVar.toDouble()};

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -43,7 +43,7 @@ struct SongInfo {
     std::optional<std::string> hash;
     std::vector<double> timeDomainSpec;
 
-    // 将songInfo转化为var，才能推送给前端
-    nlohmann::json toDetailJson();
-    nlohmann::json toBasicJson();
+    // 将songInfo转化为Yvar，才能推送给前端
+    Yvar toDetailJson() const;
+    Yvar toBasicJson() const;
 };

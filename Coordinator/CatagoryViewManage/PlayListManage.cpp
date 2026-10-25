@@ -18,21 +18,21 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
-nlohmann::json PlayListManage::getAllPlayListView() {
+Yvar PlayListManage::getAllPlayListView() {
+
     try {
         SQLite::Statement selectSql{
             dbManage.readDb(),
             "SELECT id,title,hash,createTime FROM playlists"
         };
-        nlohmann::json playlists;
+        Yvar playlists = Yvar::array();
         while (selectSql.executeStep()) {
             PlaylistInfo info{};
             info.id = selectSql.getColumn("id").getInt64();
             info.title = selectSql.getColumn("title").getString();
             info.hash = DbUtils::getOptCol<std::string>(selectSql, "hash");
             info.createTime = selectSql.getColumn("createTime").getString();
-            nlohmann::json finalObj{info.toBasicJson()};
-            playlists.push_back(finalObj);
+            playlists.push(info.toBasicJson());
         }
         return playlists;
     } catch (SQLite::Exception& e) {
@@ -40,7 +40,7 @@ nlohmann::json PlayListManage::getAllPlayListView() {
             "PlayListManage::getAllPlayListView() throw db error:{}",
             e.what()
         );
-        return {};
+        return Yvar::array();
     }
 }
 PlaylistInfo PlayListManage::getBasicInfo(int64_t id) {

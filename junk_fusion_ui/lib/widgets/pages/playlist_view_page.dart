@@ -44,16 +44,6 @@ class PlaylistViewPage extends StatefulWidget {
 }
 
 class _PlaylistViewPageState extends State<PlaylistViewPage> {
-  @override
-  void initState() {
-    super.initState();
-
-    // 进页面的时候拉一遍歌单列表（后端接口还没做，现在是空列表）
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PlaylistProvider>().getAllPlaylists();
-    });
-  }
-
   /// 打开某个歌单：先把歌单装进 Provider，再往路由栈里压一条记录
   void _openPlaylist(PlaylistBasicInfo playlist) {
     context.read<PlaylistProvider>().setNewPlaylist(playlist.id);

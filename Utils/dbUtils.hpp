@@ -9,7 +9,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -32,7 +31,7 @@ namespace DbUtils {
             } else if constexpr (std::is_same_v<T, double>) {
                 return result.getDouble();
             } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
-                return Yvar{nlohmann::json::parse(result.getString())}.toStringArray();
+                return Yvar::parse(result.getString()).toStringArray();
             } else {
                 return std::nullopt;
             }
@@ -48,8 +47,7 @@ namespace DbUtils {
         try {
             if constexpr (std::is_same_v<T1, std::vector<std::string>>) {
                 if (v.has_value()) {
-                    nlohmann::json j = v.value();
-                    stmt.bind(name, j.dump());
+                    stmt.bind(name, Yvar::fromVector(v.value()).dump());
                 } else {
                     stmt.bind(name);
                 }

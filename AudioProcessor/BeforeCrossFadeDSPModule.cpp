@@ -1,7 +1,7 @@
 #include "./BeforeCrossFadeDSPModule.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
-#include <nlohmann/json.hpp>
 
 BeforeCrossFadeDSPModule::BeforeCrossFadeDSPModule(
     AudioProcessWorker& worker,
@@ -11,8 +11,8 @@ BeforeCrossFadeDSPModule::BeforeCrossFadeDSPModule(
       mStretch(mSmoothSlider) {
     mDecoder.sendErrorMsg = [this](std::string msg) {
         std::string errorStr = "FFmpeg解码错误:" + msg;
-        nlohmann::json obj;
-        obj[AudioMacro::errorPopupWindowMsg] = errorStr;
+        Yvar obj = Yvar::object();
+        obj.set(AudioMacro::errorPopupWindowMsg, errorStr);
         auto jsonStr{obj.dump()};
         mWorker.sender->sendMessage(jsonStr);
     };

@@ -16,7 +16,6 @@
 #include <cstddef>
 #include <cstdlib>
 #include <mutex>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <queue>
 #include <sha1.h>
@@ -39,11 +38,10 @@ std::optional<std::string> OnlineGetMatedata::searchCoverURL(std::string term, s
     );
 
     if (coverSearch.status_code == 200) {
-        Yvar coverSearchRes{nlohmann::json::parse(coverSearch.text)};
-        if (coverSearchRes.hasProperty("resultCount") &&
-            coverSearchRes.read("resultCount").toInt() > 0) {
+        Yvar coverSearchRes = Yvar::parse(coverSearch.text);
+        if (coverSearchRes.read("resultCount").toInt() > 0) {
             auto firstResult = coverSearchRes.read("results").read(0);
-            return firstResult.read("artworkUrl100").toString();
+            return firstResult.read("artworkUrl100").toOptStr();
         }
     }
     return std::nullopt;
@@ -118,23 +116,23 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
         };
         std::vector<RecordingResult> recordingResults;
 
-        Yvar v{nlohmann::json::parse(res.text)};
-        auto results{v.read("results")};
+        Yvar v = Yvar::parse(res.text);
+        const Yvar results = v.read("results");
 
         for (int resultIndex = 0; resultIndex < results.size(); resultIndex++) {
-            double printScore{results.read(resultIndex).read("score").toDouble()};
+            const Yvar result = results.read(resultIndex);
+            double printScore{result.read("score").toDouble()};
             // 原始分数
             if (printScore <= 0.7) {
                 continue;
             } // 指纹匹配度小于0.7直接退出
 
-            for (int recordingIndex = 0;
-                 recordingIndex < results.read(resultIndex).read("recordings").size();
-                 recordingIndex++) {
+            const Yvar recordings = result.read("recordings");
+            for (int recordingIndex = 0; recordingIndex < recordings.size(); recordingIndex++) {
 
                 RecordingResult recordingResult;
                 recordingResult.score *= printScore;
-                auto recording{results.read(resultIndex).read("recordings").read(recordingIndex)};
+                const Yvar recording = recordings.read(recordingIndex);
                 auto recordingDuration{recording.read("duration").toDouble()};
                 auto durationScore{1 - std::abs(recordingDuration - task.duration) / task.duration};
                 if (durationScore <= 0.85) {
@@ -157,12 +155,12 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
                     // recordingResult.score *= titleScore;
                 }
                 if (task.artists.has_value()) {
-                    auto searchArtists{recording.read("artists")}; // 搜索到的艺术家列表
+                    const Yvar searchArtists = recording.read("artists"); // 搜索到的艺术家列表
 
                     std::vector<std::string> remoteArtistNames;
                     for (int i = 0; i < searchArtists.size(); i++) {
-                        auto artist = searchArtists.read(i);
-                        remoteArtistNames.push_back(artist.read("name").toString());
+                        auto name = searchArtists.read(i).read("name").toString();
+                        if (!name.empty()) remoteArtistNames.push_back(std::move(name));
                     }
 
                     if (!remoteArtistNames.empty()) {
@@ -198,10 +196,10 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
             spdlog::get(LogDllID)->debug("找不到合适的recording,提前返回");
             return {};
         }
-        auto finalRecording{results.read(bestRecordingIt->resultIndex)
-                                .read("recordings")
-                                .read(bestRecordingIt->recordingIndex)};
-        auto releases{finalRecording.read("releases")};
+        const Yvar finalRecording = results.read(bestRecordingIt->resultIndex)
+                                        .read("recordings")
+                                        .read(bestRecordingIt->recordingIndex);
+        const Yvar releases = finalRecording.read("releases");
 
         spdlog::get(LogDllID)->debug("获取到的releases内容:{}", releases.toString());
 
@@ -214,8 +212,8 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
         // if (task.album.isNotEmpty()) {
 
         for (int releaseIndex = 0; releaseIndex < releases.size(); releaseIndex++) {
-            auto release{releases.read(releaseIndex)};
-            auto remoteAlbumTitle{release.read("title")};
+            const Yvar release = releases.read(releaseIndex);
+            const Yvar remoteAlbumTitle = release.read("title");
             auto country = release.read("country").toString();
             StringUtils::toUpperCaseInPlace(country);
 
@@ -264,15 +262,15 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
 
         auto bestTitle = finalRecording.read("title").toString();
 
-        auto bestArtists{finalRecording.read("artists")};
+        const Yvar bestArtists = finalRecording.read("artists");
         std::vector<std::string> bestArtistsArray;
 
         for (int i = 0; i < bestArtists.size(); i++) {
-            auto artist{bestArtists.read(i).read("name").toString()};
-            bestArtistsArray.push_back(artist);
+            auto artist = bestArtists.read(i).read("name").toString();
+            if (!artist.empty()) bestArtistsArray.push_back(std::move(artist));
         }
 
-        auto finalRelease{finalRecording.read("releases").read(bestReleaseIndex)};
+        const Yvar finalRelease = finalRecording.read("releases").read(bestReleaseIndex);
 
         std::string bestAlbum = finalRelease.read("title").toString();
 
@@ -285,10 +283,10 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
         );
         std::string bestHash;
         std::vector<std::string> bestAlbumArtists;
-        auto finalAlbumArtistsVar{finalRelease.read("artists")};
+        const Yvar finalAlbumArtistsVar = finalRelease.read("artists");
         for (int i = 0; i < finalAlbumArtistsVar.size(); i++) {
-            auto name{finalAlbumArtistsVar.read(i).read("name").toString()};
-            bestAlbumArtists.push_back(name);
+            auto name = finalAlbumArtistsVar.read(i).read("name").toString();
+            if (!name.empty()) bestAlbumArtists.push_back(std::move(name));
         }
 
         if (task.needCover) {

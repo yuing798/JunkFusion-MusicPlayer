@@ -15,7 +15,7 @@ using SmoothExpValue = juce::SmoothedValue<float, juce::ValueSmoothingTypes::Mul
 static constexpr const char* LogAudioID{"audio"};
 static constexpr const char* LogDllID{"dll"};
 
-static constexpr const int64_t INT64T_MAX = 9223372036854775807;
+static constexpr const int64_t INT64T_MAX = std::numeric_limits<int64_t>::max();
 
 // 禁止拷贝和移动的宏
 #define DONT_COPY_AND_MOVE(ClassName)                                                              \

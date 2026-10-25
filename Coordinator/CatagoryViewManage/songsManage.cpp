@@ -14,7 +14,6 @@
 #include <cstring>
 
 #include <memory>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <sha1.h>
 #include <spdlog/spdlog.h>
@@ -213,8 +212,8 @@ SongInfo SongsManage::getDetailSongInfo(int64_t songId) {
         return {};
     }
 }
-nlohmann::json SongsManage::getAllSongsBasicInfo() {
-    nlohmann::json results;
+Yvar SongsManage::getAllSongsBasicInfo() {
+    Yvar results = Yvar::array();
 
     try {
 
@@ -227,7 +226,7 @@ nlohmann::json SongsManage::getAllSongsBasicInfo() {
 
         while (query.executeStep()) {
 
-            results.push_back(getBasicInfoCol(query).toBasicJson());
+            results.push(getBasicInfoCol(query).toBasicJson());
         }
     } catch (const SQLite::Exception& e) {
         auto logger = spdlog::get(LogDllID);
@@ -547,7 +546,7 @@ PlayInfo SongsManage::getPlayInfo(int64_t songId) {
             info.path = sql.getColumn("filePath").getString();
             info.duration = sql.getColumn("duration").getDouble();
             info.title = sql.getColumn("title").getString();
-            Yvar originArtists{nlohmann::json::parse(sql.getColumn("artists").getString())};
+            Yvar originArtists = Yvar::parse(sql.getColumn("artists").getString());
             info.artists = originArtists.toStringArray();
 
         } else {

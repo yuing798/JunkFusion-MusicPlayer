@@ -1,10 +1,10 @@
 #pragma once
 
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -16,8 +16,8 @@ struct AlbumInfo {
     std::vector<int64_t> songsList; // 这张专辑的歌曲列表
 
     // 将专辑视图的信息转为json，只需要艺术家，标题，hash三个属性
-    nlohmann::json toBasicJson();
+    Yvar toBasicJson() const;
 
     // 将所有信息转化为json
-    nlohmann::json toDetailJson();
+    Yvar toDetailJson() const;
 };

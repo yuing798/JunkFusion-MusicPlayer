@@ -1,16 +1,16 @@
 #include "./PlayCount.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "juce_core/juce_core.h"
 #include <algorithm>
 #include <cmath>
-#include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 
 void PlayCount::updatePlayCount() {
-    nlohmann::json obj;
-    obj[AudioMacro::updatePlayCount] = mPath;
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::updatePlayCount, mPath);
     mWorker.sender->sendMessage(obj.dump());
     // spdlog::get(LogAudioID)->debug("通知协调者更新播放次数:路径:{}", mPath);
 }

@@ -117,12 +117,14 @@ class PlaybackProvider extends ChangeNotifier {
       }
     }
     _playMode = AppCache.frontCacheRef.getInt("cycleMode") ?? 0;
-
     notifyListeners();
 
     if (_curBasicInfo != null) {
+      // print(1243124);
       bindings.play(_curBasicInfo!.songId, _currentTimeStamp, 0, 1);
+      // print(1353532);
       bindings.pausePlay();
+      // print(89890);
     } //为了在后端初始化的时候存储播放信息
   }
 

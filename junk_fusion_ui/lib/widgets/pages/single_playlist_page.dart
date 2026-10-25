@@ -155,16 +155,6 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
 
               const SizedBox(width: 10),
 
-              // ── 把当前播放列表存进这个歌单 ──
-              // TODO(后端): addSongsToPlaylist(playlistId, songIdListJson)
-              //   注册好之后接上：拿 PlaybackProvider.playList 的 songId 列表
-              //   （或者让用户先多选歌曲）再调用
-              _PlaylistActionButton(
-                icon: TablerIcons.playlistAdd,
-                label: '添加歌曲',
-                onTap: null, // TODO(后端): 接口好了再打开
-              ),
-
               const Spacer(),
             ],
           ),
@@ -211,21 +201,6 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
                                   playback.setPlayList(songs);
                                   playback.saveState();
                                 },
-                              ),
-                            ),
-
-                            // ── 移出歌单 ──
-                            // TODO(后端): removeSongsFromPlaylist(playlistId, songIdListJson)
-                            //   注册好之后把 onPressed 接上（现在禁用占位）
-                            SizedBox(
-                              width: 40,
-                              child: IconButton(
-                                icon: const Icon(
-                                  TablerIcons.playlistX,
-                                  size: 22,
-                                ),
-                                tooltip: '移出歌单（还没接后端）',
-                                onPressed: null,
                               ),
                             ),
                           ],

@@ -1,28 +1,17 @@
 #pragma once
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
-#include <cstdint>
-#include <nlohmann/json.hpp>
-#include <optional>
-#include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace ConvertUtils {
 
-    // 把对象转换为const char*
-    const char* object2Uint8t(nlohmann::json obj);
+    // 把 Yvar 对象转换为 const char*（堆上拷贝一份，由 freeString 释放）
+    const char* object2Uint8t(const Yvar& obj);
 
-    nlohmann::json charPtr2object(const char* ptr);
+    // 把字符串解析成 Yvar（解析失败返回空值，不会抛异常）
+    Yvar charPtr2Yvar(const char* ptr);
 
-    // 将cpp字符串转为字符串指针的形式并拷贝一份到堆上面
+    // 将cpp字符串转为字符串指针的形式并拷贝一份到堆上面，要传递给dart使用的字符串必须拷贝到堆上
     const char* copyStringOnHeap(std::string& str);
-
-    template <typename T> nlohmann::json optValueToVar(const std::optional<T>& value) {
-        if (value.has_value()) {
-            return value.value();
-        } else {
-            return nlohmann::json{};
-        }
-    }
 
 } // namespace ConvertUtils

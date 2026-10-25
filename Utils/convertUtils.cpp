@@ -1,28 +1,17 @@
 #include "./convertUtils.hpp"
-#include "juce_core/juce_core.h"
-#include "juce_core/system/juce_PlatformDefs.h"
-#include <cstddef>
+#include "Utils/Yvar.hpp"
 #include <cstdlib>
 #include <cstring>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
-#include <optional>
 #include <string>
-#include <vector>
 
-const char* ConvertUtils::object2Uint8t(nlohmann::json obj) {
-
-    std::string json = obj.dump();
-
-    auto cPtr = copyStringOnHeap(json);
-    return cPtr;
+const char* ConvertUtils::object2Uint8t(const Yvar& obj) {
+    std::string jsonStr = obj.dump();
+    return copyStringOnHeap(jsonStr);
 }
 
-nlohmann::json ConvertUtils::charPtr2object(const char* ptr) {
-    // 1. 解析 JSON
-    nlohmann::json parsed = nlohmann::json::parse(ptr);
-
-    return parsed;
+Yvar ConvertUtils::charPtr2Yvar(const char* ptr) {
+    if (ptr == nullptr) return Yvar{};
+    return Yvar::parse(ptr);
 }
 
 const char* ConvertUtils::copyStringOnHeap(std::string& str) {

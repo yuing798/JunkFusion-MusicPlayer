@@ -14,28 +14,25 @@
 #include <algorithm>
 #include <cstdint>
 #include <fmt/format.h>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 
-nlohmann::json AlbumsManage::getAllAlbumsView() {
+Yvar AlbumsManage::getAllAlbumsView() {
     SQLite::Statement selectSql{
         dbManage.readDb(),
         "SELECT albumId,title,albumArtists,hash FROM albums"
     };
-    nlohmann::json albums;
+    Yvar albums = Yvar::array();
     while (selectSql.executeStep()) {
         AlbumInfo info{};
         info.albumId = selectSql.getColumn("albumId").getInt64();
         info.title = selectSql.getColumn("title").getString();
         info.albumArtists =
-            Yvar{nlohmann::json::parse(selectSql.getColumn("albumArtists").getString())}
-                .toStringArray();
+            Yvar::parse(selectSql.getColumn("albumArtists").getString()).toStringArray();
         info.hash = selectSql.getColumn("hash").getString();
-        auto finalObj{info.toBasicJson()};
-        albums.push_back(finalObj);
+        albums.push(info.toBasicJson());
     }
     return albums;
 }
@@ -139,8 +136,7 @@ std::optional<int64_t> AlbumsManage::checkAlbumExist(
             std::string originAlbumArtists = selectArtistsSql.getColumn("albumArtists").getString();
 
             // 解析 JSON 数组
-            auto originAlbumArtistsArr =
-                Yvar{nlohmann::json::parse(originAlbumArtists)}.toStringArray();
+            auto originAlbumArtistsArr = Yvar::parse(originAlbumArtists).toStringArray();
 
             // 计算艺术家相似度（0.0 ~ 1.0）
             double artistsMatchScore =
@@ -190,8 +186,7 @@ std::optional<int64_t> AlbumsManage::insertAlbum(
 
             };
             insert.bind(":title", title);
-            nlohmann::json j = artists;
-            insert.bind(":albumArtists", j.dump());
+            insert.bind(":albumArtists", Yvar::fromVector(artists).dump());
             DbUtils::bindOptValue(insert, ":hash", hash);
             insert.exec();
             return db.getLastInsertRowid();
@@ -235,7 +230,7 @@ std::vector<int64_t> AlbumsManage::getSongsList(int64_t albumId) {
     }
     return songsList;
 }
-nlohmann::json AlbumsManage::getDetailInfo(int64_t albumId) {
+Yvar AlbumsManage::getDetailInfo(int64_t albumId) {
     AlbumInfo info{};
 
     info.songsList = getSongsList(albumId);

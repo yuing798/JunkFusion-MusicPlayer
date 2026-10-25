@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "juce_audio_devices/juce_audio_devices.h"
 #include "juce_audio_processors_headless/juce_audio_processors_headless.h"
@@ -7,7 +8,6 @@
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <zmq.hpp>
 class DeviceManager : public juce::ChangeListener { // 监听声卡变动
 private:
@@ -33,10 +33,10 @@ public:
 
     // AudioDeviceManager::getCpuUsage()
     // 测量的是：“你的音频回调函数（processBlock）每次执行所花费的时间，占声卡给你的极限时间的百分比。”
-    nlohmann::json getAvailDeviceType();
-    nlohmann::json getAvailDevice(juce::AudioIODeviceType* type);
-    nlohmann::json getAvailSampleRateList();
-    nlohmann::json getAvailBufferSizeList();
+    Yvar getAvailDeviceType();
+    Yvar getAvailDevice(juce::AudioIODeviceType* type);
+    Yvar getAvailSampleRateList();
+    Yvar getAvailBufferSizeList();
 
     DONT_COPY_AND_MOVE(DeviceManager)
 };

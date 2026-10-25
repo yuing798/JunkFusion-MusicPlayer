@@ -2,9 +2,9 @@
 
 #include "Coordinator/CenterDbManage/CenterDbManage.hpp"
 #include "Model/playlistInfo.hpp"
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <vector>
 class PlayListManage {
@@ -14,7 +14,7 @@ private:
 public:
     PlayListManage(CenterDbManage& dbManage) : dbManage(dbManage) {}
 
-    nlohmann::json getAllPlayListView();
+    Yvar getAllPlayListView();
     PlaylistInfo getDetailInfo(int64_t id);
     PlaylistInfo getBasicInfo(int64_t id);
     int64_t createNewPlaylist(std::string title, std::optional<juce::File> coverPath);

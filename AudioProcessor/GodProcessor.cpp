@@ -18,8 +18,6 @@
 #include "processSchedule/OscReceiver.hpp"
 #include <cstddef>
 #include <memory>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -69,15 +67,15 @@ GodProcessor::GodProcessor(
         mSystemAudioControl->onPlay = [this]() {
             play(mPlayInfo, mProgressBar.getCurSeconds(), 0, 0);
             mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Play);
-            nlohmann::json obj;
-            obj[AudioMacro::playStateSync] = 1;
+            Yvar obj = Yvar::object();
+            obj.set(AudioMacro::playStateSync, 1);
             mWorker.sender->sendMessage(obj.dump());
         };
         mSystemAudioControl->onPause = [this]() {
             pausePlay();
             mSystemAudioControl->updatePlaybackState(SystemAudioControl::PlaybackState::Pause);
-            nlohmann::json obj;
-            obj[AudioMacro::playStateSync] = 0;
+            Yvar obj = Yvar::object();
+            obj.set(AudioMacro::playStateSync, 0);
             mWorker.sender->sendMessage(obj.dump());
         };
 
@@ -144,8 +142,8 @@ GodProcessor::GodProcessor(
 }
 
 void GodProcessor::playNextOrPreviousSong(bool nextOrPrevious) {
-    nlohmann::json obj;
-    obj[AudioMacro::onPlayNextOrPreviousSong] = nextOrPrevious;
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::onPlayNextOrPreviousSong, nextOrPrevious);
     mWorker.sender->sendMessage(obj.dump());
 }
 
@@ -223,7 +221,7 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
     if (isNewSong) {
         mPlayInfo = info;
         // spdlog::get(LogAudioID)
-        //     ->debug("准备播放新歌:{}", Yvar{info.toJson()}.toString().toStdString());
+        //     ->debug("准备播放新歌:{}", info.toJson().toString());
 
         SystemAudioControl::MediaMetadata data{};
         data.title = info.title;

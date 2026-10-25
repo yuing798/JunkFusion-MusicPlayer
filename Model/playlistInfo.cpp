@@ -1,24 +1,23 @@
 #include "./playlistInfo.hpp"
 #include "Macro/PlaylistMacro.hpp"
-#include "Utils/convertUtils.hpp"
+#include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
-#include <nlohmann/json_fwd.hpp>
 
-nlohmann::json PlaylistInfo::toBasicJson() {
-    nlohmann::json obj;
-    obj[PlaylistMacro::id] = id;
-    obj[PlaylistMacro::title] = title;
-    obj[PlaylistMacro::hash] = ConvertUtils::optValueToVar(hash);
-    obj[PlaylistMacro::createTime] = createTime;
+Yvar PlaylistInfo::toBasicJson() const {
+    Yvar obj = Yvar::object();
+    obj.set(PlaylistMacro::id, id);
+    obj.set(PlaylistMacro::title, title);
+    obj.set(PlaylistMacro::hash, Yvar::fromOptional(hash));
+    obj.set(PlaylistMacro::createTime, createTime);
     return obj;
 }
-nlohmann::json PlaylistInfo::toDetailJson() {
-    nlohmann::json obj;
-    obj[PlaylistMacro::songList] = songIdList;
+Yvar PlaylistInfo::toDetailJson() const {
+    Yvar obj = Yvar::object();
+    obj.set(PlaylistMacro::songList, songIdList);
     return obj;
 }
-PlaylistInfo PlaylistInfo::fromCompleteJson(Yvar obj) {
+PlaylistInfo PlaylistInfo::fromCompleteJson(const Yvar& obj) {
     PlaylistInfo info{};
     info.title = obj.read(PlaylistMacro::title).toString();
     info.hash = obj.read(PlaylistMacro::hash).toOptStr();

@@ -3,7 +3,6 @@
 #include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
 #include <cstdint>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <vector>
 struct PlaylistInfo {
@@ -13,7 +12,7 @@ struct PlaylistInfo {
     std::vector<int64_t> songIdList;
     std::string createTime;
 
-    nlohmann::json toBasicJson();
-    nlohmann::json toDetailJson();
-    static PlaylistInfo fromCompleteJson(Yvar obj);
+    Yvar toBasicJson() const;
+    Yvar toDetailJson() const;
+    static PlaylistInfo fromCompleteJson(const Yvar& obj);
 };

@@ -1,12 +1,11 @@
 #include "./DeviceManager.hpp"
 #include "Macro/audioMacro.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_core/system/juce_PlatformDefs.h"
 #include <memory>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
@@ -75,11 +74,11 @@ void DeviceManager::disconnectProcessor() {
     mPlayer.setProcessor(nullptr);
 }
 
-nlohmann::json DeviceManager::getAvailDeviceType() {
+Yvar DeviceManager::getAvailDeviceType() {
     const auto& types = mManager.getAvailableDeviceTypes();
 
     std::string logInfo = "检测到的驱动类型有:";
-    nlohmann::json deviceTypeList = nlohmann::json::array();
+    Yvar deviceTypeList = Yvar::array();
 
     for (auto* type : types) {
         auto typeName = type->getTypeName();
@@ -87,44 +86,44 @@ nlohmann::json DeviceManager::getAvailDeviceType() {
         deviceTypeList.push_back(typeName.toStdString());
     }
 
-    nlohmann::json obj = nlohmann::json::object();
-    obj[AudioMacro::deviceTypeList] = std::move(deviceTypeList);
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::deviceTypeList, std::move(deviceTypeList));
     return obj;
 }
-nlohmann::json DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
-    if (type == nullptr) return nlohmann::json::object();
+Yvar DeviceManager::getAvailDevice(juce::AudioIODeviceType* type) {
+    if (type == nullptr) return Yvar::object();
     auto deviceNames = type->getDeviceNames();
-    // 将 deviceNames 转换为 juce::var
-    auto nameArray = nlohmann::json::array();
+    // 将 deviceNames 转换为 Yvar
+    Yvar nameArray = Yvar::array();
     for (const auto& name : deviceNames)
         nameArray.push_back(name.toStdString());
-    nlohmann::json obj = nlohmann::json::object();
-    obj[AudioMacro::deviceList] = nameArray;
+    Yvar obj = Yvar::object();
+    obj.set(AudioMacro::deviceList, nameArray);
     return obj;
 }
-nlohmann::json DeviceManager::getAvailSampleRateList() {
+Yvar DeviceManager::getAvailSampleRateList() {
     if (auto* device = mManager.getCurrentAudioDevice()) {
         auto sampleRateList = device->getAvailableSampleRates();
-        auto array = nlohmann::json::array();
+        Yvar array = Yvar::array();
         for (auto& sr : sampleRateList) {
             array.push_back(sr); // 保留两位小数
         }
-        auto obj = nlohmann::json::object();
-        obj[AudioMacro::sampleRateList] = array;
+        Yvar obj = Yvar::object();
+        obj.set(AudioMacro::sampleRateList, array);
         return obj;
     }
     return {};
 }
 
-nlohmann::json DeviceManager::getAvailBufferSizeList() {
+Yvar DeviceManager::getAvailBufferSizeList() {
     if (auto* device = mManager.getCurrentAudioDevice()) {
         auto bufferSizeList = device->getAvailableBufferSizes();
-        auto array = nlohmann::json::array();
+        auto array = Yvar::array();
         for (auto& bufferSize : bufferSizeList) {
             array.push_back(bufferSize);
         }
-        auto obj = nlohmann::json::object();
-        obj[AudioMacro::bufferSizeList] = array;
+        auto obj = Yvar::object();
+        obj.set(AudioMacro::bufferSizeList, array);
         return obj;
     }
     return {};

@@ -97,7 +97,7 @@ std::variant<std::string, SongInfo> dllManager::insertSong(const juce::File& pat
         auto& songInfo{successRst.info};
         // spdlog::get(LogDllID)->debug(
         //     "songsManage.insertSong的结果为:{}",
-        //     Yvar{songInfo.toDetailJson()}.toString().toStdString()
+        //     songInfo.toDetailJson().toString()
         // );
         // return songInfo;
 
