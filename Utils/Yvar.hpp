@@ -73,17 +73,27 @@ namespace YvarDetail {
         }
     }
 
-    /** @brief 把白名单里的值转成 json，顺带处理 string_view 和空指针 */
+    /**
+     * @brief 把白名单里的值转成 json，顺带处理 string_view 和空指针
+     *
+     * 注意：这里**必须**用圆括号 `nlohmann::json(v)`，不能用花括号 `nlohmann::json{v}`。
+     * 因为 basic_json 有一个 `basic_json(std::initializer_list<basic_json>, ...)` 构造函数，
+     * 而 C++ 规定列表初始化(花括号)时 initializer_list 构造函数优先，结果是:
+     *     nlohmann::json{0}          -> [0]        数组！不是数字 0
+     *     nlohmann::json{"abc"}      -> ["abc"]    数组！不是字符串
+     *     nlohmann::json{3.14}       -> [3.14]
+     * 圆括号是普通重载决议，会正确选到 basic_json(int) / basic_json(string) 等。
+     */
     template <typename T> nlohmann::json toJsonValue(const T& v) {
         using U = std::decay_t<T>;
 
         if constexpr (std::is_same_v<U, std::string_view>) {
-            return nlohmann::json{std::string{v}};
+            return nlohmann::json(std::string{v});
         } else if constexpr (std::is_same_v<U, const char*> || std::is_same_v<U, char*>) {
             // 空指针写成 null，而不是让 std::string(nullptr) 在运行时炸
-            return v == nullptr ? nlohmann::json{} : nlohmann::json{std::string(v)};
+            return v == nullptr ? nlohmann::json() : nlohmann::json(std::string(v));
         } else {
-            return nlohmann::json{v};
+            return nlohmann::json(v);
         }
     }
 
@@ -185,9 +195,13 @@ public:
         return result;
     }
 
-    /** @brief optional 有值写值、没值写 null */
+    /**
+     * @brief optional 有值写值、没值写 null
+     *
+     * 同样必须用圆括号：`nlohmann::json{item.value()}` 会把标量包成单元素数组。
+     */
     template <typename T> static Yvar fromOptional(const std::optional<T>& item) {
-        return item.has_value() ? Yvar{nlohmann::json{item.value()}} : Yvar{};
+        return item.has_value() ? Yvar{nlohmann::json(item.value())} : Yvar{};
     }
 
     /** @brief 解析失败返回空值，保证后续可选链依然成立(不抛异常) */

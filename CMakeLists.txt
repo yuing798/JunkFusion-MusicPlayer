@@ -56,10 +56,10 @@ target_link_libraries(Utils
 
         juce::juce_core
         SQLiteCpp
-        nlohmann_json::nlohmann_json
+        
         
     PRIVATE
-        
+        nlohmann_json::nlohmann_json
         spdlog::spdlog#日志系统
         juce::juce_recommended_config_flags#基础编译与调试配置
         juce::juce_recommended_lto_flags#链接时代码优化
@@ -84,13 +84,11 @@ target_link_libraries(JunkFusionCoordinator
         Models
         Utils
         fmt::fmt
-        nlohmann_json::nlohmann_json
 )
 target_link_libraries(JunkFusionAudioProcess
     PRIVATE
         Models
         Utils
-        nlohmann_json::nlohmann_json
 )
 add_custom_target(DeployRuntime ALL
     DEPENDS JunkFusionCoordinator JunkFusionAudioProcess  # 依赖两个核心目标

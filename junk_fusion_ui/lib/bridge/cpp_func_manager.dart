@@ -88,9 +88,9 @@ class CppCallbackManager {
       }
       songProvider.addNewSong(songsList);
 
-      final errorFiles = obj[CoordinatorMacro.errorFiles] as List<dynamic>?;
+      final errorFiles = obj[CoordinatorMacro.errorFiles] as List<dynamic>;
 
-      if (errorFiles == null) {
+      if (errorFiles.isEmpty) {
         DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");
       } else {
         final buffer = StringBuffer()

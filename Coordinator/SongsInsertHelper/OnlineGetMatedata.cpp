@@ -47,42 +47,11 @@ std::optional<std::string> OnlineGetMatedata::searchCoverURL(std::string term, s
     return std::nullopt;
 }
 
-// void OnlineGetMatedata::setTask(OnlineGetMatedata::Task task) {
-//     std::lock_guard<std::mutex> lock{mtx};
-//     mTaskQueue.push(std::move(task));
-//     notify();
-//     if (!isThreadRunning()) startThread();
-// }
-// void OnlineGetMatedata::run() {
-//     while (!threadShouldExit()) {
-//         Task task;
-//         bool hasTask = false;
-
-//         // 1. 缩小锁的作用域，仅在弹出任务时持锁
-//         {
-//             std::lock_guard<std::mutex> lock(mtx);
-//             if (!mTaskQueue.empty()) {
-//                 task = std::move(mTaskQueue.front());
-//                 mTaskQueue.pop();
-//                 hasTask = true;
-//             }
-//         } // 锁在此处自动释放
-
-//         // 2. 根据是否有任务决定处理还是休眠
-//         if (hasTask) {
-//             searchDataByPrint(std::move(task)); // 在锁外执行耗时任务
-//         } else {
-//             // 在【无锁状态】下安全挂起等待新任务！
-//             wait(-1);
-//         }
-//     }
-// }
-
 OnlineGetMatedata::Result
 OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task task) {
     spdlog::get(LogDllID)->debug("开始根据指纹搜索元数据:歌曲ID:{}", task.songId);
 
-    Result result;
+    Result onLineResult;
 
     spdlog::get(LogDllID)->debug(
         "已有数据内容为:songId:{},title:{},artists:{},album:{}",
@@ -360,21 +329,21 @@ OnlineGetMatedata::process(std::string systemCountry, OnlineGetMatedata::Task ta
         spdlog::get(LogDllID)->debug("联网搜索歌曲元数据完成，歌曲ID:{}", task.songId);
 
         if (!task.title.has_value() && !bestTitle.empty()) {
-            result.finalTitle = bestTitle;
+            onLineResult.finalTitle = bestTitle;
         }
         if (!task.artists.has_value() && !bestArtistsArray.empty()) {
-            result.finalArtists = bestArtistsArray;
+            onLineResult.finalArtists = bestArtistsArray;
         }
         if (!task.album.has_value() && !bestAlbum.empty()) {
-            result.finalAlbum = bestAlbum;
+            onLineResult.finalAlbum = bestAlbum;
         }
         if (task.needCover && !bestHash.empty()) {
-            result.finalHash = bestHash;
+            onLineResult.finalHash = bestHash;
         }
         if (!bestAlbumArtists.empty()) {
-            result.finalAlbumArtists = bestAlbumArtists;
+            onLineResult.finalAlbumArtists = bestAlbumArtists;
         }
-        return result;
+        return onLineResult;
 
     } else {
         spdlog::get(LogDllID)
