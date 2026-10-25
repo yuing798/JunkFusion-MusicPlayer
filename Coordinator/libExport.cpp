@@ -73,7 +73,7 @@ extern "C" {
                 std::string resultStr{
                     "导入歌曲完成，成功" + std::to_string(paths.size()) + "首，失败" +
                     std::to_string(errorFiles.size()) + "首\n失败文件：\n" +
-                    nlohmann::json{errorFiles}.dump()
+                    nlohmann::json(errorFiles).dump()
                 };
                 logger->info(resultStr);
             }

@@ -190,7 +190,8 @@ std::optional<int64_t> AlbumsManage::insertAlbum(
 
             };
             insert.bind(":title", title);
-            insert.bind(":albumArtists", nlohmann::json{artists}.dump());
+            nlohmann::json j = artists;
+            insert.bind(":albumArtists", j.dump());
             DbUtils::bindOptValue(insert, ":hash", hash);
             insert.exec();
             return db.getLastInsertRowid();

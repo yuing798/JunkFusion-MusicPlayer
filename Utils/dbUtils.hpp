@@ -48,7 +48,8 @@ namespace DbUtils {
         try {
             if constexpr (std::is_same_v<T1, std::vector<std::string>>) {
                 if (v.has_value()) {
-                    stmt.bind(name, nlohmann::json{v.value()}.dump());
+                    nlohmann::json j = v.value();
+                    stmt.bind(name, j.dump());
                 } else {
                     stmt.bind(name);
                 }

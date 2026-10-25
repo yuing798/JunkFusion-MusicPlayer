@@ -35,7 +35,6 @@ class CppCallbackManager {
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
   ffi.NativeCallable<Int64FuncFunction>? _onUpdateSongInfo;
   ffi.NativeCallable<IntFuncFunction>? _onPlayNextOrPreviousSong;
-  // ffi.NativeCallable<StringFuncFunction>? _onGetAllSongsOver;
   ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
 
@@ -78,6 +77,7 @@ class CppCallbackManager {
       ffi.Pointer<ffi.Char> ptr,
     ) {
       final dartString = UtilFunction.cPtr2String(ptr);
+      // print(dartString);
       Map<String, dynamic> obj = jsonDecode(dartString);
       final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
       List<SongBasicInfo> songsList = [];
@@ -88,9 +88,9 @@ class CppCallbackManager {
       }
       songProvider.addNewSong(songsList);
 
-      final errorFiles = obj[CoordinatorMacro.errorFiles] as List<dynamic>;
+      final errorFiles = obj[CoordinatorMacro.errorFiles] as List<dynamic>?;
 
-      if (errorFiles.isEmpty) {
+      if (errorFiles == null) {
         DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");
       } else {
         final buffer = StringBuffer()

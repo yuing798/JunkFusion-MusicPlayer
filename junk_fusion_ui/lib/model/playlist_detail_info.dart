@@ -17,7 +17,7 @@ part "playlist_detail_info.g.dart";
 abstract class PlaylistDetailInfo with _$PlaylistDetailInfo {
   const factory PlaylistDetailInfo({
     /// 歌单里的歌曲 id（按歌单内的顺序）
-    required List<int> songsLists,
+    List<int>? songsLists,
   }) = _PlaylistDetailInfo;
 
   factory PlaylistDetailInfo.fromJson(Map<String, dynamic> json) =>

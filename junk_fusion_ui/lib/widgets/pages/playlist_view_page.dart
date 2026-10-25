@@ -8,6 +8,7 @@ import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/playlist_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/hash_image_or_default.dart';
 import 'package:junk_fusion_ui/widgets/hover_play_button.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
 // AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
@@ -149,6 +150,7 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
                         final playlist = playlists[index];
 
                         return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () => _openPlaylist(playlist),
                           onSecondaryTapDown: (details) => showRootContextMenu(
                             context: context,
@@ -181,8 +183,6 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
 // ════════════════════════════════════════════════════════════════
 // _PlaylistCard — 单个歌单卡片
 //
-// 自上而下：封面（正方形）→ 歌单名 →「共 N 首」
-//
 // TODO(后端): 卡片还没有右键菜单（重命名 / 删除歌单 / 播放）。
 //             等歌单管理接口注册好之后，和专辑卡片一起接
 //             flutter_root_context_menu（用法参考
@@ -205,14 +205,7 @@ class _PlaylistCardState extends State<_PlaylistCard> {
         SizedBox(
           width: 50,
           height: 50,
-          child: (widget.playlist.hash != null)
-              ? Image.file(
-                  File(
-                    '${AppCache.cacheDirString}/image/${widget.playlist.hash}/original.jpg',
-                  ),
-                  fit: BoxFit.cover,
-                )
-              : Image.asset("assets/image/JunkFusion.png", fit: BoxFit.cover),
+          child: HashImageOrDefault(hash: widget.playlist.hash),
         ),
         const VerticalDivider(width: 10),
         Text(widget.playlist.title),

@@ -6,7 +6,7 @@ import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
-import 'package:junk_fusion_ui/widgets/combo_box.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';

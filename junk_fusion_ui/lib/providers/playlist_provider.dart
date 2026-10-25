@@ -83,12 +83,13 @@ class PlaylistProvider extends ChangeNotifier {
         UtilFunction.cPtr2String(bindings.getDetailPlaylistInfo(playlistId)),
       ),
     );
-    final songIdMap = {for (final e in songProvider.songs) e.songId: e};
-    _songsInPlaylist = _curDetailInfo!.songsLists
-        .map((each) => songIdMap[each])
-        .whereType<SongBasicInfo>()
-        .toList();
-
+    if (_curDetailInfo?.songsLists != null) {
+      final songIdMap = {for (final e in songProvider.songs) e.songId: e};
+      _songsInPlaylist = _curDetailInfo!.songsLists!
+          .map((each) => songIdMap[each])
+          .whereType<SongBasicInfo>()
+          .toList();
+    }
     notifyListeners();
   }
 

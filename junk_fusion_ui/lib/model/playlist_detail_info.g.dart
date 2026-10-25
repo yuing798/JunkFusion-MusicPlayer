@@ -8,8 +8,8 @@ part of 'playlist_detail_info.dart';
 
 _PlaylistDetailInfo _$PlaylistDetailInfoFromJson(Map<String, dynamic> json) =>
     _PlaylistDetailInfo(
-      songsLists: (json['songsLists'] as List<dynamic>)
-          .map((e) => (e as num).toInt())
+      songsLists: (json['songsLists'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
           .toList(),
     );
 
