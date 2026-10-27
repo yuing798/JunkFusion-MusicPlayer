@@ -62,7 +62,7 @@ class PlaybackProvider extends ChangeNotifier {
     final json = jsonDecode(
       UtilFunction.cPtr2String(bindings.getDetailSongInfo(songId)),
     );
-    print(json);
+    // print(json);
     _curDetailInfo = SongDetailInfo.fromJson(json);
   }
 

@@ -76,7 +76,7 @@ static const char* createAlbumIdIndexSQL =
     "CREATE INDEX IF NOT EXISTS albumIdIndex ON songs(albumId)";
 
 static const char* createSongFolderTableSQL =
-    "CREATE TABLE IF NOT EXISTS SongFolders (rootPath TEXT NOT NULL)";
+    "CREATE TABLE IF NOT EXISTS SongFolders (rootPath TEXT NOT NULL )";
 
 /**
  * @brief 专辑表

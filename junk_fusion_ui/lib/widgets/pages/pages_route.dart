@@ -24,9 +24,10 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 //   3. PagesRouteView —— 把当前这一页画出来，并在左上角补一个返回按钮
 //      （栈底 = 最开始那一页时按钮禁用）。
 //
-// 左侧导航栏（widgets/left_column.dart）不再自己存「选中项」，而是读
-// PagesRouteController.currentNavId，所以点左侧按钮 / 点返回按钮之后，
-// 高亮都会自动同步。
+// 左侧图标栏（widgets/layout/icon_rail.dart）和中间栏
+// （widgets/layout/sidebar_host.dart）不自己存「选中项」，而是读
+// PagesRouteController.currentNavId，所以点图标 / 点返回按钮之后，
+// 高亮和中间栏都会自动同步。
 //
 // 注意：这里不是 Flutter 的 Navigator，只是一个自己维护的页面栈 ——
 // 页面都画在主内容区里，左侧导航栏和底部播放条不参与路由。
@@ -53,7 +54,8 @@ class PagesRouteEntry {
 // ════════════════════════════════════════════════════════════════
 // 路由表
 //
-// navId 和 widgets/left_column.dart 里 _NavButton 的 id 一一对应：
+// navId 和 widgets/nav/pages_nav_table.dart 里 PagesNavSection 的 id
+// 一一对应（图标、名字也在那张表里，两边改 id 要一起改）：
 //   0 所有音乐   1 我喜欢     2 最近播放
 //   3 专辑       4 歌单       5 文件夹    6 风格
 //   7 AI助手     8 效果器     9 均衡器    10 音箱阵列   11 设置
@@ -258,21 +260,19 @@ class PagesRouteView extends StatelessWidget {
       children: [
         // ── 左上角：返回上一页 ──
         SizedBox(
-          height: 40,
+          height: 30,
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(TablerIcons.arrowLeft, size: 32),
+                icon: const Icon(TablerIcons.arrowLeft, size: 24),
                 // onPressed = null 就是禁用态（IconButton 自己会画成灰的）
                 onPressed: pagesRoute.canGoBack ? pagesRoute.goBack : null,
                 tooltip: pagesRoute.canGoBack ? '返回上一页' : '已经是第一页了',
                 color: theme.colorTextMain,
                 disabledColor: theme.colorEdge,
-                // 默认的 IconButton 自带 8 的 padding + 40x40 最小尺寸，
-                // 图标 32 会撑出这 40 高的行，这里把它压回 40x40
                 style: IconButton.styleFrom(
                   padding: EdgeInsets.zero,
-                  minimumSize: const Size(40, 40),
+                  minimumSize: const Size(32, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
