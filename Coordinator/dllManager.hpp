@@ -2,8 +2,9 @@
 
 #include "CenterDbManage/CenterDbmanage.hpp"
 #include "CenterDbManage/dbContext.hpp"
-#include "Coordinator/SongsInsertHelper/OnlineGetMatedata.hpp"
 #include "Model/SongInfo.hpp"
+#include "SongsInsertHelper/SongImport.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "catagoryViewManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
@@ -21,8 +22,6 @@
 
 class dllManager {
 private:
-    std::string systemCountry;
-
     juce::File cacheDir;   // 缓存文件夹
     juce::File logInfoDir; // 日志文件夹
     juce::File imageDir;   // 图片
@@ -33,9 +32,23 @@ private:
     static std::unique_ptr<dllManager> instance;
 
     std::unique_ptr<DbContext> mDbContext;
-    juce::ThreadPool waveFormAnalyPool{5}; // 用来做波形分析和联网搜索的线程池
+    std::unique_ptr<SongImport> mSongImport;
 
 public:
+    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
+    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
+    std::function<void(int)> onPlayNextOrPreviousSong;
+    std::function<void(int)> onPlayStateSync;      // 请求同步播放状态
+    std::function<void(int64_t)> onUpdateSongInfo; // 更新播放信息
+
+    void sendMessage2AudioProcess(const std::string& obj);
+    void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
+
+    Yvar openNewSongFolder(const juce::File& path); // 打开新的歌曲文件夹
+
+    DbContext* getDbContext() noexcept { return mDbContext.get(); }
+    SongImport* getSongImportClass() noexcept { return mSongImport.get(); }
+
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);
 
@@ -57,18 +70,4 @@ public:
     DONT_COPY_AND_MOVE(dllManager)
 
     ~dllManager();
-
-    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
-    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
-    std::function<void(int)> onPlayNextOrPreviousSong;
-    std::function<void(const char*)> onLightSongDataImportOver;
-    std::function<void(int)> onPlayStateSync;      // 请求同步播放状态
-    std::function<void(int64_t)> onUpdateSongInfo; // 更新播放信息
-
-    void sendMessage2AudioProcess(const std::string& obj);
-    void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
-
-    std::variant<std::string, SongInfo> insertSong(const juce::File& path);
-
-    DbContext* getDbContext() noexcept { return mDbContext.get(); }
 };

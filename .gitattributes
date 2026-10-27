@@ -1,4 +1,4 @@
-* text=auto eol=lf
+* text=auto 
 
 # 必须 CRLF 的例外（老式 .bat 对 LF 不友好）
 *.bat text eol=crlf

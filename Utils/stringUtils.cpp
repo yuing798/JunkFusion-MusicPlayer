@@ -1,5 +1,6 @@
 #include "./stringUtils.hpp"
 #include "juce_core/juce_core.h"
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,14 @@ namespace StringUtils {
         if (start == std::string::npos) return "";
         auto end = s.find_last_not_of(ws);
         return s.substr(start, end - start + 1);
+    }
+    std::string wrap(const std::string& s, const std::string& token) {
+        std::string result;
+        result.reserve(s.size() + token.size() * 2);
+        result += token;
+        result += s;
+        result += token;
+        return result;
     }
 
     void toUpperCaseInPlace(std::string& s) {
@@ -54,17 +63,17 @@ namespace StringUtils {
         return s;
     }
     int levenshteinDistance(const std::string& s1, const std::string& s2) {
-        const int len1 = s1.length();
-        const int len2 = s2.length();
+        const size_t len1 = s1.length();
+        const size_t len2 = s2.length();
         std::vector<std::vector<int>> dp(len1 + 1, std::vector<int>(len2 + 1));
 
-        for (int i = 0; i <= len1; ++i)
+        for (size_t i = 0; i <= len1; ++i)
             dp[i][0] = i;
-        for (int j = 0; j <= len2; ++j)
+        for (size_t j = 0; j <= len2; ++j)
             dp[0][j] = j;
 
-        for (int i = 1; i <= len1; ++i) {
-            for (int j = 1; j <= len2; ++j) {
+        for (size_t i = 1; i <= len1; ++i) {
+            for (size_t j = 1; j <= len2; ++j) {
                 int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
                 dp[i][j] = std::min(
                     {dp[i - 1][j] + 1, // 删除
@@ -79,7 +88,7 @@ namespace StringUtils {
     // 计算相似度分数（0~1）
     double stringSimilarity(const std::string& s1, const std::string& s2) {
         if (s1.empty() && s2.empty()) return 1.0;
-        int maxLen = std::max(s1.length(), s2.length());
+        size_t maxLen = std::max(s1.length(), s2.length());
         if (maxLen == 0) return 1.0; // 两者都空
         int distance = levenshteinDistance(s1, s2);
         return 1.0 - static_cast<double>(distance) / maxLen;

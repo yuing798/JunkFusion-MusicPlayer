@@ -30,12 +30,15 @@
 // 所有建表语句都是 IF NOT EXISTS，启动时无条件跑一遍即可（旧库不会被破坏）。
 // ============================================================================
 
+/**
+ * @brief 歌曲表
+ * @param isSingleFile 这个歌曲是单独的文件还是随着某个文件夹导入的同时导入的文件
+ */
 static const std::string createSongsTableSQL = std::format(
     R"(
         CREATE TABLE IF NOT EXISTS songs (
             songId             INTEGER PRIMARY KEY AUTOINCREMENT,
             filePath           TEXT    UNIQUE NOT NULL,
-            fileSize           INTEGER NOT NULL,
             lastModifiedTime   TEXT    NOT NULL,
             duration           REAL NOT NULL,
             title              TEXT NOT NULL,
@@ -55,6 +58,7 @@ static const std::string createSongsTableSQL = std::format(
             hash TEXT,
             timeDomainSpec BLOB,
             albumId INTEGER,
+            isSingleFile INT NOT NULL,
             FOREIGN KEY (albumId) REFERENCES albums(albumId) ON DELETE CASCADE
         )
     )",
@@ -62,6 +66,9 @@ static const std::string createSongsTableSQL = std::format(
     INT64T_MAX,
     INT64T_MAX
 );
+
+static const char* createIsSingleFileIndexSQL =
+    "CREATE INDEX IF NOT EXISTS isSingleFileIndex ON songs(isSingleFile)";
 
 static const char* createDurationIndexSQL =
     "CREATE INDEX IF NOT EXISTS durationIndex ON songs(duration)";
@@ -75,8 +82,19 @@ static const char* createAlbumDiscTrackIndexSQL =
 static const char* createAlbumIdIndexSQL =
     "CREATE INDEX IF NOT EXISTS albumIdIndex ON songs(albumId)";
 
-static const char* createSongFolderTableSQL =
-    "CREATE TABLE IF NOT EXISTS SongFolders (rootPath TEXT NOT NULL )";
+/**
+ * @brief 歌曲文件夹表
+ * @param isRoot 这个文件夹是否为根目录
+ * @param dir 文件夹绝对路径
+ *
+ */
+static const char* createSongFolderTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS songFolders (
+        dir TEXT NOT NULL UNIQUE,
+        lastModifiedTime   TEXT    NOT NULL,
+        isRoot INT NOT NULL
+    )
+)";
 
 /**
  * @brief 专辑表
@@ -165,6 +183,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createAlbumIdIndexSQL);
         db.exec(createDurationIndexSQL);
         db.exec(createPlayNumIndexSQL);
+        db.exec(createIsSingleFileIndexSQL);
 
         if (auto logger{spdlog::get(LogDllID)}) {
             logger->debug("数据库初始化完成:{}", path);

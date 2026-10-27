@@ -128,6 +128,20 @@ class JunkFusionDLLBindings {
   late final _getAllPlaylistView = _getAllPlaylistViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  /// @brief Get the Root Dir object获得在应用中注册过的所有文件夹根目录
+  ///
+  /// @return DLL_EXPORT const*
+  ffi.Pointer<ffi.Char> getAllRootDirView() {
+    return _getAllRootDirView();
+  }
+
+  late final _getAllRootDirViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllRootDirView',
+      );
+  late final _getAllRootDirView = _getAllRootDirViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   ffi.Pointer<ffi.Char> getAllSongs() {
     return _getAllSongs();
   }
@@ -150,6 +164,25 @@ class JunkFusionDLLBindings {
   late final _getBasicSongInfo = _getBasicSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// @brief Get the Child Dir And Song Id List object
+  ///
+  /// @param parentDir
+  /// @return {songIdList:[id1,id2,......],dirArr:[subDir1,subDir2,......]}
+  ffi.Pointer<ffi.Char> getChildDirAndSongIdList(
+    ffi.Pointer<ffi.Char> parentDir,
+  ) {
+    return _getChildDirAndSongIdList(parentDir);
+  }
+
+  late final _getChildDirAndSongIdListPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('getChildDirAndSongIdList');
+  late final _getChildDirAndSongIdList = _getChildDirAndSongIdListPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   ffi.Pointer<ffi.Char> getDetailAlbumInfo(int albumId) {
     return _getDetailAlbumInfo(albumId);
   }
@@ -161,6 +194,7 @@ class JunkFusionDLLBindings {
   late final _getDetailAlbumInfo = _getDetailAlbumInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// 歌单管理函数
   ffi.Pointer<ffi.Char> getDetailPlaylistInfo(int id) {
     return _getDetailPlaylistInfo(id);
   }
@@ -193,6 +227,50 @@ class JunkFusionDLLBindings {
       );
   late final _getPlaylistBasicInfo = _getPlaylistBasicInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  /// @brief 获得单独导入的文件的songIdList，作为独立虚拟文件夹节点渲染在前端
+  ///
+  /// @return [songId1,songId2,......]
+  ffi.Pointer<ffi.Char> getSingleImportSongs() {
+    return _getSingleImportSongs();
+  }
+
+  late final _getSingleImportSongsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getSingleImportSongs',
+      );
+  late final _getSingleImportSongs = _getSingleImportSongsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 导入整个文件夹
+  ///
+  /// @param dir
+  /// @return DLL_EXPORT
+  void importNewSongFolder(ffi.Pointer<ffi.Char> dir) {
+    return _importNewSongFolder(dir);
+  }
+
+  late final _importNewSongFolderPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'importNewSongFolder',
+      );
+  late final _importNewSongFolder = _importNewSongFolderPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  /// @brief 导入单独的几个文件
+  ///
+  /// @param files
+  /// @return DLL_EXPORT
+  void importSongs(ffi.Pointer<ffi.Char> files) {
+    return _importSongs(files);
+  }
+
+  late final _importSongsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'importSongs',
+      );
+  late final _importSongs = _importSongsPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
   void pausePlay() {
     return _pausePlay();
