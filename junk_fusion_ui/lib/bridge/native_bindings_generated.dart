@@ -323,17 +323,27 @@ class JunkFusionDLLBindings {
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
       .asFunction<void Function(StringFunc)>();
 
-  void registerOnLightSongDataImportOver(StringFunc cb) {
-    return _registerOnLightSongDataImportOver(cb);
+  void registerOnAddNewSong(StringFunc cb) {
+    return _registerOnAddNewSong(cb);
   }
 
-  late final _registerOnLightSongDataImportOverPtr =
+  late final _registerOnAddNewSongPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
-        'registerOnLightSongDataImportOver',
+        'registerOnAddNewSong',
       );
-  late final _registerOnLightSongDataImportOver =
-      _registerOnLightSongDataImportOverPtr
-          .asFunction<void Function(StringFunc)>();
+  late final _registerOnAddNewSong = _registerOnAddNewSongPtr
+      .asFunction<void Function(StringFunc)>();
+
+  void registerOnDeleteSong(Int64Func cb) {
+    return _registerOnDeleteSong(cb);
+  }
+
+  late final _registerOnDeleteSongPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(Int64Func)>>(
+        'registerOnDeleteSong',
+      );
+  late final _registerOnDeleteSong = _registerOnDeleteSongPtr
+      .asFunction<void Function(Int64Func)>();
 
   void registerOnPlayNextOrPreviousSong(IntFunc cb) {
     return _registerOnPlayNextOrPreviousSong(cb);
@@ -346,16 +356,16 @@ class JunkFusionDLLBindings {
   late final _registerOnPlayNextOrPreviousSong =
       _registerOnPlayNextOrPreviousSongPtr.asFunction<void Function(IntFunc)>();
 
-  void registerOnUpdateSongInfo(Int64Func cb) {
+  void registerOnUpdateSongInfo(StringFunc cb) {
     return _registerOnUpdateSongInfo(cb);
   }
 
   late final _registerOnUpdateSongInfoPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(Int64Func)>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
         'registerOnUpdateSongInfo',
       );
   late final _registerOnUpdateSongInfo = _registerOnUpdateSongInfoPtr
-      .asFunction<void Function(Int64Func)>();
+      .asFunction<void Function(StringFunc)>();
 
   void removeSongsInPlaylist(
     int playlistId,
@@ -413,17 +423,6 @@ class JunkFusionDLLBindings {
       >('sendSliderValue');
   late final _sendSliderValue = _sendSliderValuePtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, double, int)>();
-
-  void someImport(ffi.Pointer<ffi.Char> arg0) {
-    return _someImport(arg0);
-  }
-
-  late final _someImportPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
-        'someImport',
-      );
-  late final _someImport = _someImportPtr
-      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
   void toggleMyLike(int songId) {
     return _toggleMyLike(songId);

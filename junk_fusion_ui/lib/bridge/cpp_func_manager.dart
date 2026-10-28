@@ -1,18 +1,11 @@
 import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'dart:io';
-import 'package:ffi/ffi.dart';
-import 'package:junk_fusion_ui/Macro/SongInfoMacro.dart';
-import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
-import 'package:junk_fusion_ui/bridge/dll_invoke.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
-import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
-import 'package:junk_fusion_ui/widgets/popup_window.dart';
-import 'package:provider/provider.dart';
 import './native_bindings_generated.dart';
 
 final ffi.DynamicLibrary _libPath = () {
@@ -33,10 +26,11 @@ final bindings = JunkFusionDLLBindings(_libPath);
 class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
-  ffi.NativeCallable<Int64FuncFunction>? _onUpdateSongInfo;
+  ffi.NativeCallable<StringFuncFunction>? _onUpdateSongInfo;
   ffi.NativeCallable<IntFuncFunction>? _onPlayNextOrPreviousSong;
-  ffi.NativeCallable<StringFuncFunction>? _onLightSongDataImportOver;
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
+  ffi.NativeCallable<StringFuncFunction>? _onAddNewSong;
+  ffi.NativeCallable<Int64FuncFunction>? _onDeleteSong;
 
   /// 2. 注册回调到 C++
   void setupCallbacks(SongProvider songProvider, PlaybackProvider playback) {
@@ -55,12 +49,12 @@ class CppCallbackManager {
     ) {
       playback.updateCurrentPTS(value);
     });
-    _onUpdateSongInfo = ffi.NativeCallable<Int64FuncFunction>.listener((
-      int songId,
+    _onUpdateSongInfo = ffi.NativeCallable<StringFuncFunction>.listener((
+      ffi.Pointer<ffi.Char> ptr,
     ) {
-      print("准备更新歌曲元数据信息:songId:$songId ");
-
-      songProvider.requestUpdateSongBasicInfo(songId: songId);
+      final dartStr = UtilFunction.cPtr2String(ptr);
+      final obj = SongBasicInfo.fromJson(jsonDecode(dartStr));
+      songProvider.addNewSong(obj);
     });
 
     _onPlayNextOrPreviousSong = ffi.NativeCallable<IntFuncFunction>.listener((
@@ -73,40 +67,15 @@ class CppCallbackManager {
       }
     });
 
-    _onLightSongDataImportOver = ffi.NativeCallable<StringFuncFunction>.listener((
+    _onAddNewSong = ffi.NativeCallable<StringFuncFunction>.listener((
       ffi.Pointer<ffi.Char> ptr,
     ) {
-      final dartString = UtilFunction.cPtr2String(ptr);
-      // print(dartString);
-      Map<String, dynamic> obj = jsonDecode(dartString);
-      final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>;
-      List<SongBasicInfo> songsList = [];
-      for (int i = 0; i < songsRaw.length; i++) {
-        songsList.add(
-          SongBasicInfo.fromJson(songsRaw[i] as Map<String, dynamic>),
-        );
-      }
-      songProvider.addNewSong(songsList);
-
-      final errorFiles = obj[CoordinatorMacro.errorFiles] as List<dynamic>;
-
-      if (errorFiles.isEmpty) {
-        DialogUtil.showInfoDialog("全部歌曲导入成功，总计${songsList.length}首歌曲");
-      } else {
-        final buffer = StringBuffer()
-          ..write(
-            '歌曲导入完成，总共导入${songsList.length + errorFiles.length}首，成功${songsList.length}首\n失败文件:\n',
-          );
-
-        for (final file in errorFiles) {
-          final errorLine =
-              "${file[CoordinatorMacro.errorFileName] as String}:${file[CoordinatorMacro.errorFileReason] as String}";
-          buffer.writeln(errorLine); // writeln 会自动加上换行符
-        }
-
-        final message = buffer.toString();
-        DialogUtil.showInfoDialog(message);
-      }
+      final dartStr = UtilFunction.cPtr2String(ptr);
+      final obj = SongBasicInfo.fromJson(jsonDecode(dartStr));
+      songProvider.addNewSong(obj);
+    });
+    _onDeleteSong = ffi.NativeCallable<Int64FuncFunction>.listener((int id) {
+      songProvider.deleteSong(id);
     });
     _onPlayStateSync = ffi.NativeCallable<IntFuncFunction>.listener((
       int value,
@@ -121,9 +90,8 @@ class CppCallbackManager {
     bindings.registerOnPlayNextOrPreviousSong(
       _onPlayNextOrPreviousSong!.nativeFunction,
     );
-    bindings.registerOnLightSongDataImportOver(
-      _onLightSongDataImportOver!.nativeFunction,
-    );
+    bindings.registerOnAddNewSong(_onAddNewSong!.nativeFunction);
+    bindings.registerOnDeleteSong(_onDeleteSong!.nativeFunction);
     bindings.requestOnPlayStateSync(_onPlayStateSync!.nativeFunction);
   }
 
@@ -134,7 +102,8 @@ class CppCallbackManager {
     bindings.registerOnUpdateSongInfo(ffi.nullptr);
     bindings.registerOnPlayNextOrPreviousSong(ffi.nullptr);
     // bindings.registerOnGetAllSongsOver(ffi.nullptr);
-    bindings.registerOnLightSongDataImportOver(ffi.nullptr);
+    bindings.registerOnAddNewSong(ffi.nullptr);
+    bindings.registerOnDeleteSong(ffi.nullptr);
     bindings.requestOnPlayStateSync(ffi.nullptr);
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
@@ -142,8 +111,8 @@ class CppCallbackManager {
     _currentPTSCallback?.close();
     _onUpdateSongInfo?.close();
     _onPlayNextOrPreviousSong?.close();
-    // _onGetAllSongsOver?.close();
-    _onLightSongDataImportOver?.close();
+    _onAddNewSong?.close();
+    _onDeleteSong?.close();
     _onPlayStateSync?.close();
   }
 }

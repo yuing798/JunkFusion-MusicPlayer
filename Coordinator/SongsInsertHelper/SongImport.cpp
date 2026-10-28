@@ -23,190 +23,213 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-std::optional<int64_t> SongImport::checkAndInsertSong(const juce::File& path, bool isSingleFile) {
+void SongImport::checkAndInsertSong(const juce::File& path, bool isSingleFile) {
 
-    auto isSongIntable = mDbContext.songsManage.checkSongHasImport(path);
-    if (isSongIntable == SongsManage::SongHasImportRes::HasImport) {
-        return std::nullopt;
-    }
-
-    auto result = insertLightSongInfo(path, isSingleFile, isSongIntable);
-    if (result.has_value()) {
-        auto successRst{result.value()};
-        auto& songInfo{successRst.info};
-
-        // 检查并插入专辑
-
-        bool needSearchAlbumArtists{false};
-        if (successRst.albumArtists.has_value()) {
-            needSearchAlbumArtists = true;
-        }
-        bool needSearchSongTitle{false};
-        if (successRst.titleIsFileName) {
-            needSearchSongTitle = true;
-        }
-        bool needSearchArtists(false);
-        if (!songInfo.artists.has_value()) {
-            needSearchArtists = true;
-        }
-        bool needSearchAlbum{false};
-        if (!songInfo.album) {
-            needSearchAlbum = true;
-        }
-        bool needSearchCoverHash{false};
-        if (!songInfo.hash) {
-            needSearchCoverHash = true;
-        }
-        std::optional<std::vector<std::string>> albumArtists;
-        if (successRst.albumArtists.has_value()) {
-            albumArtists = successRst.albumArtists.value();
-        } else {
-            albumArtists = songInfo.artists;
+    songImportPool.addJob([=, this] {
+        auto isSongIntable = mDbContext.songsManage.checkSongHasImport(path);
+        if (isSongIntable == SongsManage::SongHasImportRes::HasImport) {
+            return;
         }
 
-        bool needInsertOrCheckAlbum{false}; // 是否需要立刻插入专辑，而不是搜索后再插入
-        if (!needSearchAlbum && !needSearchArtists) {
-            needInsertOrCheckAlbum = true;
-        }
+        auto result = insertLightSongInfo(path, isSingleFile, isSongIntable);
+        if (result.has_value()) {
+            auto successRst{result.value()};
+            auto& songInfo{successRst.info};
 
-        if (needInsertOrCheckAlbum) {
-            std::optional<int64_t> albumId;
-            albumId = mDbContext.albumsManage.checkAlbumExist(
-                songInfo.album.value(),
-                albumArtists.value(),
-                songInfo.hash
-            );
-            if (!albumId.has_value()) {
-                albumId = mDbContext.albumsManage.insertAlbum(
+            // 检查并插入专辑
+
+            bool needSearchAlbumArtists{false};
+            if (successRst.albumArtists.has_value()) {
+                needSearchAlbumArtists = true;
+            }
+            bool needSearchSongTitle{false};
+            if (successRst.titleIsFileName) {
+                needSearchSongTitle = true;
+            }
+            bool needSearchArtists(false);
+            if (!songInfo.artists.has_value()) {
+                needSearchArtists = true;
+            }
+            bool needSearchAlbum{false};
+            if (!songInfo.album) {
+                needSearchAlbum = true;
+            }
+            bool needSearchCoverHash{false};
+            if (!songInfo.hash) {
+                needSearchCoverHash = true;
+            }
+            std::optional<std::vector<std::string>> albumArtists;
+            if (successRst.albumArtists.has_value()) {
+                albumArtists = successRst.albumArtists.value();
+            } else {
+                albumArtists = songInfo.artists;
+            }
+
+            bool needInsertOrCheckAlbum{false}; // 是否需要立刻插入专辑，而不是搜索后再插入
+            if (!needSearchAlbum && !needSearchArtists) {
+                needInsertOrCheckAlbum = true;
+            }
+
+            if (needInsertOrCheckAlbum) {
+                std::optional<int64_t> albumId;
+                albumId = mDbContext.albumsManage.checkAlbumExist(
                     songInfo.album.value(),
                     albumArtists.value(),
                     songInfo.hash
                 );
-            }
-
-            mDbContext.dbManage.write([&](SQLite::Database& db) {
-                SQLite::Statement updateAlbumId{
-                    db,
-                    "UPDATE songs SET albumId=:albumId WHERE songId=:songId"
-                };
-                DbUtils::bindOptValue(updateAlbumId, ":albumId", albumId);
-                updateAlbumId.bind(":songId", songInfo.songId);
-                updateAlbumId.exec();
-            });
-        }
-
-        // return songInfo;
-
-        // 波形获取
-        waveFormAnalyPool.addJob([=, this] {
-            auto& songInfo{successRst.info};
-
-            bool needSearchSongInfo{false}; // 是否需要联网搜索歌曲信息
-            if (needSearchSongTitle || needSearchAlbum || needSearchArtists ||
-                needSearchCoverHash) {
-                needSearchSongInfo = true;
-            }
-
-            auto waveFormAnalyResult =
-                waveFormAnaly({path.getFullPathName().toStdString(), needSearchSongInfo});
-
-            OnlineSearchRes onlineGetMetadataResult;
-            if (needSearchSongInfo && waveFormAnalyResult.print.has_value()) {
-                auto print{waveFormAnalyResult.print.value()};
-
-                // 专辑艺术家如果没有不需要联网搜索，因为如果要搜索专辑艺术家的话每首歌都需要这么做
-                onlineGetMetadataResult =  onlineSearch(
-                    {
-                        songInfo.songId,
-                        songInfo.duration,
-                        std::move(print),
-                        successRst.titleIsFileName ? std::nullopt
-                                                   : std::optional<std::string>{songInfo.title},
-                                                   songInfo.artists,
-                                                   songInfo.album,
-                                                   needSearchCoverHash
-
-                    }
-                );
-            }
-            try {
+                if (!albumId.has_value()) {
+                    albumId = mDbContext.albumsManage.insertAlbum(
+                        songInfo.album.value(),
+                        albumArtists.value(),
+                        songInfo.hash
+                    );
+                }
 
                 mDbContext.dbManage.write([&](SQLite::Database& db) {
-                    SQLite::Transaction t{db};
-                    SQLite::Statement sql1{
+                    SQLite::Statement updateAlbumId{
                         db,
-                        "UPDATE songs SET "
-                        "title=COALESCE(:title,title),artists=COALESCE(:artists,artists),album="
-                        "COALESCE(:album,album),hash=COALESCE(:hash,hash),timeDomainSpec=:"
-                        "timeDomainSpec WHERE songId=:songId"
+                        "UPDATE songs SET albumId=:albumId WHERE songId=:songId"
                     };
+                    DbUtils::bindOptValue(updateAlbumId, ":albumId", albumId);
+                    updateAlbumId.bind(":songId", songInfo.songId);
+                    updateAlbumId.exec();
+                });
+            }
 
-                    if (needSearchSongTitle) {
-                        DbUtils::bindOptValue(sql1, ":title", onlineGetMetadataResult.finalTitle);
-                    }
-                    if (needSearchArtists) {
-                        DbUtils::bindOptValue(
-                            sql1,
-                            ":artists",
-                            onlineGetMetadataResult.finalArtists
-                        );
-                    }
+            // return songInfo;
 
-                    if (needSearchAlbum) {
-                        DbUtils::bindOptValue(sql1, ":album", onlineGetMetadataResult.finalAlbum);
-                    }
+            // 波形获取
+            waveFormAnalyPool.addJob([=, this] {
+                auto& songInfo{successRst.info};
 
-                    if (needSearchCoverHash) {
-                        DbUtils::bindOptValue(sql1, ":hash", onlineGetMetadataResult.finalHash);
-                    }
+                bool needSearchSongInfo{false}; // 是否需要联网搜索歌曲信息
+                if (needSearchSongTitle || needSearchAlbum || needSearchArtists ||
+                    needSearchCoverHash) {
+                    needSearchSongInfo = true;
+                }
 
-                    sql1.bind(
-                        ":timeDomainSpec",
-                        waveFormAnalyResult.blobBuffer.data(),
-                        static_cast<int>(waveFormAnalyResult.blobBuffer.size() * sizeof(double))
+                auto waveFormAnalyResult =
+                    waveFormAnaly({path.getFullPathName().toStdString(), needSearchSongInfo});
+
+                OnlineSearchRes onlineGetMetadataResult;
+                if (needSearchSongInfo && waveFormAnalyResult.print.has_value()) {
+                    auto print{waveFormAnalyResult.print.value()};
+
+                    // 专辑艺术家如果没有不需要联网搜索，因为如果要搜索专辑艺术家的话每首歌都需要这么做
+                    onlineGetMetadataResult =  onlineSearch(
+                        {
+                            songInfo.songId,
+                            songInfo.duration,
+                            std::move(print),
+                            successRst.titleIsFileName ? std::nullopt
+                                                       : std::optional<std::string>{songInfo.title},
+                                                       songInfo.artists,
+                                                       songInfo.album,
+                                                       needSearchCoverHash
+
+                        }
                     );
-                    sql1.bind(":songId", songInfo.songId);
-                    sql1.exec();
+                }
+                try {
 
-                    if (needSearchAlbum || needSearchAlbumArtists || needSearchCoverHash) {
-                        auto albumId = mDbContext.albumsManage.getAlbumId(songInfo.songId);
-                        if (albumId.has_value()) {
+                    mDbContext.dbManage.write([&](SQLite::Database& db) {
+                        SQLite::Transaction t{db};
+                        SQLite::Statement sql1{
+                            db,
+                            "UPDATE songs SET "
+                            "title=COALESCE(:title,title),artists=COALESCE(:artists,artists),album="
+                            "COALESCE(:album,album),hash=COALESCE(:hash,hash),timeDomainSpec=:"
+                            "timeDomainSpec WHERE songId=:songId"
+                        };
 
-                            SQLite::Statement sql2{
-                                db,
-                                "UPDATE albums SET "
-                                "title=COALESCE(:title,title),albumArtists=COALESCE(:albumArtists,"
-                                "albumArtists),hash=COALESCE(:hash,hash) WHERE albumId=:albumId"
-                            };
-
+                        if (needSearchSongTitle) {
                             DbUtils::bindOptValue(
-                                sql2,
+                                sql1,
                                 ":title",
+                                onlineGetMetadataResult.finalTitle
+                            );
+                        }
+                        if (needSearchArtists) {
+                            DbUtils::bindOptValue(
+                                sql1,
+                                ":artists",
+                                onlineGetMetadataResult.finalArtists
+                            );
+                        }
+
+                        if (needSearchAlbum) {
+                            DbUtils::bindOptValue(
+                                sql1,
+                                ":album",
                                 onlineGetMetadataResult.finalAlbum
                             );
-                            DbUtils::bindOptValue(
-                                sql2,
-                                ":albumArtists",
-                                onlineGetMetadataResult.finalAlbumArtists.has_value()
-                                    ? onlineGetMetadataResult.finalAlbumArtists
-                                    : onlineGetMetadataResult.finalArtists
-                            );
-                            DbUtils::bindOptValue(sql2, ":hash", onlineGetMetadataResult.finalHash);
-                            DbUtils::bindOptValue(sql2, ":albumId", albumId);
-                            sql2.exec();
                         }
-                    }
-                    t.commit();
-                });
-                if (onUpdateSongInfo) onUpdateSongInfo(songInfo.songId);
-            } catch (SQLite::Exception& e) {
-                spdlog::get(LogDllID)->error("dllManager::insertSong发生数据库错误:{}", e.what());
-            }
-        });
 
-        return songInfo.songId;
-    }
-    return std::nullopt;
+                        if (needSearchCoverHash) {
+                            DbUtils::bindOptValue(sql1, ":hash", onlineGetMetadataResult.finalHash);
+                        }
+
+                        sql1.bind(
+                            ":timeDomainSpec",
+                            waveFormAnalyResult.blobBuffer.data(),
+                            static_cast<int>(waveFormAnalyResult.blobBuffer.size() * sizeof(double))
+                        );
+                        sql1.bind(":songId", songInfo.songId);
+                        sql1.exec();
+
+                        if (needSearchAlbum || needSearchAlbumArtists || needSearchCoverHash) {
+                            auto albumId = mDbContext.albumsManage.getAlbumId(songInfo.songId);
+                            if (albumId.has_value()) {
+
+                                SQLite::Statement sql2{
+                                    db,
+                                    "UPDATE albums SET "
+                                    "title=COALESCE(:title,title),albumArtists=COALESCE(:"
+                                    "albumArtists,"
+                                    "albumArtists),hash=COALESCE(:hash,hash) WHERE albumId=:albumId"
+                                };
+
+                                DbUtils::bindOptValue(
+                                    sql2,
+                                    ":title",
+                                    onlineGetMetadataResult.finalAlbum
+                                );
+                                DbUtils::bindOptValue(
+                                    sql2,
+                                    ":albumArtists",
+                                    onlineGetMetadataResult.finalAlbumArtists.has_value()
+                                        ? onlineGetMetadataResult.finalAlbumArtists
+                                        : onlineGetMetadataResult.finalArtists
+                                );
+                                DbUtils::bindOptValue(
+                                    sql2,
+                                    ":hash",
+                                    onlineGetMetadataResult.finalHash
+                                );
+                                DbUtils::bindOptValue(sql2, ":albumId", albumId);
+                                sql2.exec();
+                            }
+                        }
+                        t.commit();
+                    });
+                    if (onUpdateSongInfo)
+                        onUpdateSongInfo(
+                            ConvertUtils::object2Uint8t(mDbContext.songsManage
+                                                            .getBasicSongInfo(songInfo.songId)
+                                                            .toBasicJson())
+                        );
+                } catch (SQLite::Exception& e) {
+                    spdlog::get(LogDllID)->error(
+                        "dllManager::insertSong发生数据库错误:{}",
+                        e.what()
+                    );
+                }
+            });
+
+            return;
+        }
+        return;
+    });
 }
 
 SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
@@ -1108,22 +1131,16 @@ std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSong
     }
 
     result.info = std::move(info);
+    if (onAddNewSong) onAddNewSong(ConvertUtils::object2Uint8t(result.info.toBasicJson()));
 
     return result;
 }
 
 void SongImport::importSingleSongs(Yvar songPaths) {
-    auto songIdList = Yvar::array();
     for (int i = 0; i < songPaths.size(); i++) {
         auto file = juce::File{songPaths.read(i).toString()};
-        auto insertRes = checkAndInsertSong(file, true);
-        if (insertRes.has_value()) {
-            songIdList.push_back(insertRes.value());
-        }
+        checkAndInsertSong(file, true);
     }
-
-    if (onLightSongDataImportOver)
-        onLightSongDataImportOver(ConvertUtils::object2Uint8t(songIdList));
 }
 void SongImport::importNewFolder(const juce::File& folderPath) {
     if (mDbContext.songFolderManage.isDirHasImport(folderPath)) {

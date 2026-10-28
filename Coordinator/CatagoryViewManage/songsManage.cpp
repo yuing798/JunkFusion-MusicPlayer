@@ -341,9 +341,9 @@ void SongsManage::updatePlayCount(std::string path) {
 Yvar SongsManage::getSingleImportSongs() {
     auto songIdList = Yvar::array();
     try {
-        SQLite::Statement sql(dbManage.readDb(), "SELECT songId WHERE isSingleFile=1");
+        SQLite::Statement sql(dbManage.readDb(), "SELECT songId FROM songs WHERE isSingleFile=1");
 
-        if (sql.executeStep()) {
+        while (sql.executeStep()) {
             songIdList.push_back(sql.getColumn("songId").getInt64());
         }
     } catch (const SQLite::Exception& e) {

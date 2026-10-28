@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/widgets/nav/folder_tree_sidebar.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 // ════════════════════════════════════════════════════════════════
@@ -23,8 +24,10 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 //     PagesNavTable.all             // 拍平后的全部段
 //     PagesNavTable.byId(navId)     // navId → 段；null = 没有这一段
 //
-// 表里的 sidebar 目前全是 null（具体内容还没定），SidebarHost 会画占位。
-// 以后某一页的中间栏想好了，就在对应段上补 sidebar： (context) => 组件()
+// 表里的 sidebar：写了的走真实组件（目前只有「文件夹」= 文件夹树），
+// 还写 null 的段由 SidebarHost 画占位。某一页想好了就在对应段上补
+// sidebar: (context) => 组件()。要让这张表保持 const，sidebar 请指向
+// 顶层的构建函数（跟下面的 _buildFolderTreeSidebar 一样）。
 // ════════════════════════════════════════════════════════════════
 
 /// 一个导航段 = 左侧图标栏的一个图标 + 中间栏的一屏内容
@@ -66,7 +69,13 @@ abstract class PagesNavTable {
     [
       PagesNavSection(id: 3, icon: TablerIcons.album, title: '专辑'),
       PagesNavSection(id: 4, icon: TablerIcons.playlist, title: '歌单'),
-      PagesNavSection(id: 5, icon: TablerIcons.folder, title: '文件夹'),
+      PagesNavSection(
+        id: 5,
+        icon: TablerIcons.folder,
+        title: '文件夹',
+        // 文件夹这一段的中间栏是文件夹树
+        sidebar: _buildFolderTreeSidebar,
+      ),
       PagesNavSection(id: 6, icon: TablerIcons.tag, title: '风格'),
     ],
 
@@ -101,3 +110,13 @@ abstract class PagesNavTable {
     return null;
   }
 }
+
+// ════════════════════════════════════════════════════════════════
+// 各段的中间栏构建函数
+//
+// 必须是顶层函数，这样上面那张 const 表才能直接引用（函数 tear-off 是常量）
+// ════════════════════════════════════════════════════════════════
+
+/// 「文件夹」段的中间栏：文件夹树
+Widget _buildFolderTreeSidebar(BuildContext context) =>
+    const FolderTreeSidebar();

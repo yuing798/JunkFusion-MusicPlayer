@@ -137,10 +137,6 @@ extern "C" {
         dllManager::getInstance().onPlayNextOrPreviousSong = cb;
     }
 
-    void registerOnLightSongDataImportOver(StringFunc cb) {
-        dllManager::getInstance().getSongImportClass()->onLightSongDataImportOver = cb;
-    }
-    void registerOnUpdateSongInfo(Int64Func cb) { dllManager::getInstance().onUpdateSongInfo = cb; }
     const char* getAllSongs() {
         auto songsList =
             dllManager::getInstance().getDbContext()->songsManage.getAllSongsBasicInfo();

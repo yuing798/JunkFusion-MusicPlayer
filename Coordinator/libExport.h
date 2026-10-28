@@ -26,7 +26,6 @@ extern "C" {
 
     DLL_EXPORT void toggleMyLike(long long songId);
     DLL_EXPORT void freeString(char* str);
-    DLL_EXPORT void someImport(const char*);
     DLL_EXPORT void closeBackend(); // dll注销
     DLL_EXPORT void registerErrorSendCallback(StringFunc cb);
 
@@ -43,9 +42,8 @@ extern "C" {
     DLL_EXPORT void pausePlay(); // 暂停播放
     DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
-    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb);     // 请求播放下一首或上一首歌曲
-    DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调
-    DLL_EXPORT void registerOnUpdateSongInfo(Int64Func cb);
+    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb); // 请求播放下一首或上一首歌曲
+
     DLL_EXPORT const char* getAllSongs();
     DLL_EXPORT const char* getDetailSongInfo(long long songId);
     DLL_EXPORT const char* getBasicSongInfo(long long songId);
@@ -109,6 +107,10 @@ extern "C" {
      * @return [songId1,songId2,......]
      */
     DLL_EXPORT const char* getSingleImportSongs();
+
+    DLL_EXPORT void registerOnUpdateSongInfo(StringFunc cb);
+    DLL_EXPORT void registerOnAddNewSong(StringFunc cb);
+    DLL_EXPORT void registerOnDeleteSong(Int64Func cb);
 
 #ifdef __cplusplus
 }

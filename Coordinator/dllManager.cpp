@@ -89,10 +89,14 @@ dllManager::~dllManager() {
 Yvar dllManager::openNewSongFolder(const juce::File& path) {
     auto& songFolderManage = getDbContext()->songFolderManage;
     auto dirsNeedToRescan = songFolderManage.checkDirUpdateRecursion(path);
+    auto songIdList = Yvar::array();
     for (auto& dirNeedToRescan : dirsNeedToRescan) {
         auto children = dirNeedToRescan.findChildFiles(juce::File::findFiles, false);
         for (auto& child : children) {
-            mSongImport->checkAndInsertSong(child, false);
+            auto res = mSongImport->checkAndInsertSong(child, false);
+            if (res.has_value()) {
+                songIdList.push_back(res.value());
+            }
         }
     }
     return songFolderManage.getChildDirAndSongIdList(path);

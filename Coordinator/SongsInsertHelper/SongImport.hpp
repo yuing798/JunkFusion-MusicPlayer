@@ -14,6 +14,7 @@ class SongImport {
 private:
     DbContext& mDbContext;
     juce::File& mImageDir;
+    juce::ThreadPool songImportPool{15};   // 用来做轻量歌曲元数据导入的线程池
     juce::ThreadPool waveFormAnalyPool{3}; // 用来做波形分析和联网搜索的线程池
     std::string mSystemCountry = juce::SystemStats::getUserRegion().toUpperCase().toStdString();
 
@@ -83,12 +84,9 @@ public:
      *
      * @param path 歌曲路径
      * @param isSingleFile 是单独导入还是随着文件夹导入
-     * @return std::optional<int64_t> 成功的songId
      */
-    std::optional<int64_t> checkAndInsertSong(const juce::File& path, bool isSingleFile);
-    std::function<void(int64_t)> onUpdateSongInfo; // 请求前端拉取歌曲数据
-    std::function<void(const char*)> onLightSongDataImportOver;
-    std::function<void(const std::string&)> onDirHasRegister;
+    void checkAndInsertSong(const juce::File& path, bool isSingleFile);
+
     void importSingleSongs(Yvar songPaths);
     void importNewFolder(const juce::File& folderPath);
     std::optional<InsertLightSongInfoResult> insertLightSongInfo(
@@ -96,4 +94,8 @@ public:
         bool isSingleFile,
         SongsManage::SongHasImportRes songHasImportRes
     );
+
+    std::function<void(const char*)> onUpdateSongInfo; // 请求前端拉取歌曲数据
+    std::function<void(const char*)> onAddNewSong;     // 前端加入新的歌曲
+    std::function<void(const std::string&)> onDirHasRegister;
 };

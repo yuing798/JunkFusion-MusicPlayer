@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/album_basic_info.dart';
-import 'package:junk_fusion_ui/model/folder_basic_info.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/all_music_page.dart';
-import 'package:junk_fusion_ui/widgets/pages/folder_view_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/folder_content_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
-import 'package:junk_fusion_ui/widgets/pages/single_folder_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_playlist_page.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -97,13 +95,15 @@ abstract class PagesRouteTable {
     builder: _buildPlaylistView,
   );
 
-  /// 文件夹（网格视图）
+  /// 文件夹（树 + 列表）
   ///
-  /// TODO(后端): 文件夹接口还没有，进去现在是空列表（见 FolderProvider）
+  /// 这一页自己不接参数：左侧树点哪个目录，就由 FolderProvider 记着，
+  /// 右侧内容从 FolderProvider 读（见 widgets/pages/folder_content_page.dart）。
+  /// 中间栏的文件夹树在 widgets/nav/folder_tree_sidebar.dart。
   static const PagesRouteEntry folderView = PagesRouteEntry(
     navId: folderViewId,
     title: '文件夹',
-    builder: _buildFolderView,
+    builder: _buildFolderContent,
   );
 
   /// 单张专辑：要在路由表里现造一个（标题用专辑名）
@@ -137,19 +137,8 @@ abstract class PagesRouteTable {
     );
   }
 
-  /// 单个文件夹：进这一页之前要先把文件夹装进 FolderProvider：
-  ///   context.read<FolderProvider>().setNewFolder(folder.path);
-  ///   context.read<PagesRouteController>().push(
-  ///     PagesRouteTable.singleFolder(folder),
-  ///   );
-  static PagesRouteEntry singleFolder(FolderBasicInfo folder) {
-    return PagesRouteEntry(
-      // 单个文件夹属于「文件夹」这一栏
-      navId: folderViewId,
-      title: folder.name,
-      builder: (context) => const SingleFolderPage(),
-    );
-  }
+  /// 单个文件夹不再走路由栈：文件夹视图的「当前目录」由 FolderProvider
+  /// 管（左侧树单击 / 右侧列表双击都在改它），右侧内容只跟着它换，不压栈。
 
   /// 还没开发的页面：占位
   ///
@@ -181,7 +170,7 @@ Widget _buildAlbumView(BuildContext context) => const AlbumViewPage();
 
 Widget _buildPlaylistView(BuildContext context) => const PlaylistViewPage();
 
-Widget _buildFolderView(BuildContext context) => const FolderViewPage();
+Widget _buildFolderContent(BuildContext context) => const FolderContentPage();
 
 // ════════════════════════════════════════════════════════════════
 // 页面栈

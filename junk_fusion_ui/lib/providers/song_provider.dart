@@ -19,28 +19,41 @@ class SongProvider extends ChangeNotifier {
   List<SongBasicInfo> _songs = [];
 
   List<SongBasicInfo> get songs => _songs;
+
+  Map<int, SongBasicInfo> _idToInfoMap = {};
+  Map<int, SongBasicInfo> get idToInfoMap => _idToInfoMap;
+
   int get songCount => _songs.length;
 
-  void getAllSongs() {
-    print("准备后端getAllSongs");
-    final ptr = bindings.getAllSongs();
-    // print("获得getAllSongs返回的指针");
-    final dartString = UtilFunction.cPtr2String(ptr);
-    print("后端获取的字符串为$dartString");
-    Map<String, dynamic> obj = jsonDecode(dartString);
-    final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>?;
-    if (songsRaw == null) return;
-    for (final song in songsRaw) {
-      // print("歌曲信息为");
-      // print(song);
-      _songs.add(SongBasicInfo.fromJson(song as Map<String, dynamic>));
-    }
+  // void getAllSongs() {
+  //   print("准备后端getAllSongs");
+  //   final ptr = bindings.getAllSongs();
+  //   // print("获得getAllSongs返回的指针");
+  //   final dartString = UtilFunction.cPtr2String(ptr);
+  //   print("后端获取的字符串为$dartString");
+  //   Map<String, dynamic> obj = jsonDecode(dartString);
+  //   final songsRaw = obj[CoordinatorMacro.songsList] as List<dynamic>?;
+  //   if (songsRaw == null) return;
+
+  //   // 重新拉之前必须清空：以前这里只 add，调用第二次整个列表就会翻倍。
+  //   // 导入文件夹之后要靠它把新歌补进来，所以不能再是"只追加"。
+  //   _songs.clear();
+  //   for (final song in songsRaw) {
+  //     // print("歌曲信息为");
+  //     // print(song);
+  //     _songs.add(SongBasicInfo.fromJson(song as Map<String, dynamic>));
+  //   }
+  //   notifyListeners();
+  //   // print("getAllSongs执行完毕");
+  // }
+
+  void addNewSong(SongBasicInfo info) {
+    _idToInfoMap[info.songId] = info;
     notifyListeners();
-    // print("getAllSongs执行完毕");
   }
 
-  void addNewSong(List<SongBasicInfo> songsList) {
-    _songs.addAll(songsList);
+  void deleteSong(int songId) {
+    _idToInfoMap.removeWhere((int id, _) => id == songId);
     notifyListeners();
   }
 
@@ -48,7 +61,17 @@ class SongProvider extends ChangeNotifier {
     bindings.toggleMyLike(songId);
   }
 
-  // 导入歌曲
+  // 导入歌曲（单独导入，不是整文件夹）
+  //
+  // 注意后端契约：libExport 的 importSongs(files) 是拿 Yvar::parse(files) 之后
+  // 当**数组**一个个读路径的（SongImport::importSingleSongs），所以要发
+  // ["D:\\a.mp3", ...] 这种纯数组，不能发 {filePaths: [...]} 对象。
+  //
+  // 以前这里调的是 bindings.someImport，但那个函数在 libExport.cpp 里已经被
+  // 注释掉了（DLL 里没有这个符号，一调就抛），所以换成了 importSongs。
+  //
+  // FIXME: importSongs 是同步的，导入多少首就卡多久（每首都要 ffmpeg +
+  //   taglib + 写库）。文件多的话最好由后端开线程导入、导完再回调前端。
   Future<void> songsImport() async {
     // 调用 pickFiles，传入配置参数
     FilePickerResult? result = await FilePicker.pickFiles(
@@ -58,20 +81,22 @@ class SongProvider extends ChangeNotifier {
       lockParentWindow: true,
     );
 
-    if (result != null) {
-      // 获取选中的文件路径（绝对路径）
-      List<String> filePaths = result.files
-          .map((e) => e.path) // 转换为 Iterable<String?>
-          .whereType<String>() // 过滤掉 null，转换为 Iterable<String>
-          .toList(); // 转为 List<String>
+    if (result == null) return;
 
-      Map<String, List<String>> jsonMap = {
-        CoordinatorMacro.filePaths: filePaths,
-      };
+    // 获取选中的文件路径（绝对路径）
+    final filePaths = result.files
+        .map((e) => e.path) // 转换为 Iterable<String?>
+        .whereType<String>() // 过滤掉 null，转换为 Iterable<String>
+        .toList(); // 转为 List<String>
+    if (filePaths.isEmpty) return;
 
-      String jsonMapStr = jsonEncode(jsonMap);
-      final cPtr = UtilFunction.string2cPtr(jsonMapStr);
-      bindings.someImport(cPtr);
+    final jsonArrayStr = jsonEncode(filePaths);
+    final cPtr = UtilFunction.string2cPtr(jsonArrayStr);
+    try {
+      // 导入完成之后后端会回调 onLightSongDataImportOver，新歌由
+      // CppCallbackManager 补进 SongProvider（见 cpp_func_manager.dart）
+      bindings.importSongs(cPtr);
+    } finally {
       ffi.malloc.free(cPtr);
     }
   }
