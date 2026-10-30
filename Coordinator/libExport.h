@@ -108,8 +108,7 @@ extern "C" {
      */
     DLL_EXPORT const char* getSingleImportSongs();
 
-    DLL_EXPORT void registerOnUpdateSongInfo(StringFunc cb);
-    DLL_EXPORT void registerOnAddNewSong(StringFunc cb);
+    DLL_EXPORT void registerOnAddOrUpdateSong(StringFunc cb);
     DLL_EXPORT void registerOnDeleteSong(Int64Func cb);
 
 #ifdef __cplusplus

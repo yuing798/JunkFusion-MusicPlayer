@@ -236,34 +236,6 @@ Yvar SongsManage::getAllSongsBasicInfo() {
 
     return results;
 }
-SongsManage::SongHasImportRes SongsManage::checkSongHasImport(const juce::File& path) {
-    try {
-
-        SQLite::Statement checkQuery(
-            dbManage.readDb(),
-            "SELECT lastModifiedTime FROM songs WHERE filePath = "
-            ":filePath"
-        );
-        checkQuery.bind(":filePath", path.getFullPathName().toStdString());
-
-        if (checkQuery.executeStep()) {
-            std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
-
-            if (existingTime != FileUtils::getFileLastModifiedTime(path)) {
-
-                return SongHasImportRes::NeedUpdate;
-            } else {
-                return SongHasImportRes::HasImport;
-            }
-        } else {
-            return SongHasImportRes::No;
-        }
-
-    } catch (SQLite::Exception& e) {
-        spdlog::get(LogDllID)->error("SongsManage::checkSongHasImport throw db error:{}", e.what());
-        return SongHasImportRes::No;
-    }
-}
 
 PlayInfo SongsManage::getPlayInfo(int64_t songId) {
     spdlog::get(LogDllID)->debug("开始根据id搜索歌曲信息");

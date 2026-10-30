@@ -29,12 +29,6 @@ private:
 public:
     explicit SongsManage(CenterDbManage& dbManage) : dbManage(dbManage) {};
 
-    enum class SongHasImportRes {
-        HasImport,  // 歌曲已经导入
-        NeedUpdate, // 歌曲已经导入但是需要更新，可能是因为用户使用了同名文件覆盖
-        No,         // 完全没有，直接导入即可
-    };
-
     // 得到某一首歌的详细SongInfo信息
     SongInfo getDetailSongInfo(int64_t songId);
     SongInfo getBasicSongInfo(int64_t songId);
@@ -53,7 +47,6 @@ public:
      * @return int64_t songId
      */
 
-    SongHasImportRes checkSongHasImport(const juce::File& path);
     Yvar getSingleImportSongs();
 
     // 获取元数据数组(比如多个艺术家)

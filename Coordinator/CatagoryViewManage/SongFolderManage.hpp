@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 class SongFolderManage {
 private:
     CenterDbManage& dbManage;
@@ -18,6 +19,8 @@ public:
 
     Yvar getAllRootDirView();
     Yvar getChildDirAndSongIdList(const juce::File& parentPath);
+    std::vector<juce::File> getAllDir();
+    std::vector<juce::File> getAllRootDirOrChildDir(bool isRoot);
 
     // 检查这个文件夹是否已经导入，防止全量扫描
     void insertFolderToTable(const juce::File& dir, bool isRoot);

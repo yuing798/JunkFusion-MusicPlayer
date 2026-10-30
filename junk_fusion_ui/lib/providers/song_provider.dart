@@ -20,7 +20,7 @@ class SongProvider extends ChangeNotifier {
 
   List<SongBasicInfo> get songs => _songs;
 
-  Map<int, SongBasicInfo> _idToInfoMap = {};
+  final Map<int, SongBasicInfo> _idToInfoMap = {};
   Map<int, SongBasicInfo> get idToInfoMap => _idToInfoMap;
 
   int get songCount => _songs.length;
@@ -47,7 +47,7 @@ class SongProvider extends ChangeNotifier {
   //   // print("getAllSongs执行完毕");
   // }
 
-  void addNewSong(SongBasicInfo info) {
+  void addOrUpdateSong(SongBasicInfo info) {
     _idToInfoMap[info.songId] = info;
     notifyListeners();
   }

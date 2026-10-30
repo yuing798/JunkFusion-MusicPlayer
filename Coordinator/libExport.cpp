@@ -35,55 +35,6 @@ extern "C" {
             free(str);
         }
     }
-    // void someImport(const char* jsonStr) {
-    //     auto jsonString = std::string(jsonStr);
-    //     juce::Thread::launch([jsonStr = std::move(jsonString)]() {
-    //         auto logger{spdlog::get(LogDllID)};
-    //         logger->info("开始导入歌曲");
-    //         logger->debug("jsonStr == {}", jsonStr);
-    //         Yvar obj = Yvar::parse(jsonStr);
-    //         auto filePaths{obj.read(CoordinatorMacro::filePaths)};
-    //         std::vector<juce::File> paths;
-    //         for (int i = 0; i < filePaths.size(); i++) {
-    //             paths.push_back(juce::File{filePaths.read(i).toString()});
-    //         }
-    //         Yvar errorFiles = Yvar::array();
-    //         Yvar songInfos = Yvar::array();
-    //         for (auto& path : paths) {
-    //             auto result = dllManager::getInstance().checkAndInsertSong(path);
-    //             if (std::holds_alternative<std::string>(result)) {
-    //                 auto errorMsg = std::get<std::string>(result);
-    //                 Yvar errorObj = Yvar::object();
-    //                 errorObj.set(CoordinatorMacro::errorFileName,
-    //                 path.getFileName().toStdString());
-    //                 errorObj.set(CoordinatorMacro::errorFileReason, errorMsg);
-    //                 errorFiles.push(std::move(errorObj));
-    //             } else if (std::holds_alternative<SongInfo>(result)) {
-    //                 auto songInfo = std::get<SongInfo>(result);
-    //                 songInfos.push(songInfo.toBasicJson());
-    //             }
-    //         }
-
-    //         Yvar resultObj = Yvar::object();
-    //         {
-    //             resultObj.set(CoordinatorMacro::errorFiles, errorFiles);
-
-    //             std::string resultStr{
-    //                 "导入歌曲完成，成功" + std::to_string(paths.size()) + "首，失败" +
-    //                 std::to_string(errorFiles.size()) + "首\n失败文件：\n" + errorFiles.dump()
-    //             };
-    //             logger->info(resultStr);
-    //         }
-    //         resultObj.set(CoordinatorMacro::songsList, songInfos);
-
-    //         // 发送最终数据
-    //         if (dllManager::getInstance().onLightSongDataImportOver)
-    //             dllManager::getInstance().onLightSongDataImportOver(
-    //                 ConvertUtils::object2Uint8t(resultObj)
-    //             );
-    //     });
-    //     return;
-    // }
     void closeBackend() {
         spdlog::get(LogDllID)->debug("准备关闭后端");
         dllManager::destroyInstance();
@@ -250,4 +201,6 @@ extern "C" {
             dllManager::getInstance().getDbContext()->songsManage.getSingleImportSongs()
         );
     }
+
+    void registerOnAddOrUpdateSong(StringFunc cb) {}
 }

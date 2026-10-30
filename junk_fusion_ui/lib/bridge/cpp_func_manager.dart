@@ -26,10 +26,9 @@ final bindings = JunkFusionDLLBindings(_libPath);
 class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
-  ffi.NativeCallable<StringFuncFunction>? _onUpdateSongInfo;
   ffi.NativeCallable<IntFuncFunction>? _onPlayNextOrPreviousSong;
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
-  ffi.NativeCallable<StringFuncFunction>? _onAddNewSong;
+  ffi.NativeCallable<StringFuncFunction>? _onAddOrUpdateSong;
   ffi.NativeCallable<Int64FuncFunction>? _onDeleteSong;
 
   /// 2. 注册回调到 C++
@@ -49,12 +48,12 @@ class CppCallbackManager {
     ) {
       playback.updateCurrentPTS(value);
     });
-    _onUpdateSongInfo = ffi.NativeCallable<StringFuncFunction>.listener((
+    _onAddOrUpdateSong = ffi.NativeCallable<StringFuncFunction>.listener((
       ffi.Pointer<ffi.Char> ptr,
     ) {
       final dartStr = UtilFunction.cPtr2String(ptr);
       final obj = SongBasicInfo.fromJson(jsonDecode(dartStr));
-      songProvider.addNewSong(obj);
+      songProvider.addOrUpdateSong(obj);
     });
 
     _onPlayNextOrPreviousSong = ffi.NativeCallable<IntFuncFunction>.listener((
@@ -67,13 +66,6 @@ class CppCallbackManager {
       }
     });
 
-    _onAddNewSong = ffi.NativeCallable<StringFuncFunction>.listener((
-      ffi.Pointer<ffi.Char> ptr,
-    ) {
-      final dartStr = UtilFunction.cPtr2String(ptr);
-      final obj = SongBasicInfo.fromJson(jsonDecode(dartStr));
-      songProvider.addNewSong(obj);
-    });
     _onDeleteSong = ffi.NativeCallable<Int64FuncFunction>.listener((int id) {
       songProvider.deleteSong(id);
     });
@@ -86,11 +78,10 @@ class CppCallbackManager {
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
-    bindings.registerOnUpdateSongInfo(_onUpdateSongInfo!.nativeFunction);
     bindings.registerOnPlayNextOrPreviousSong(
       _onPlayNextOrPreviousSong!.nativeFunction,
     );
-    bindings.registerOnAddNewSong(_onAddNewSong!.nativeFunction);
+    bindings.registerOnAddOrUpdateSong(_onAddOrUpdateSong!.nativeFunction);
     bindings.registerOnDeleteSong(_onDeleteSong!.nativeFunction);
     bindings.requestOnPlayStateSync(_onPlayStateSync!.nativeFunction);
   }
@@ -99,19 +90,16 @@ class CppCallbackManager {
   void dispose() {
     bindings.registerErrorSendCallback(ffi.nullptr); //给cpp的函数指针先分配一个nullPtr
     bindings.registerCurrentPTSCallback(ffi.nullptr);
-    bindings.registerOnUpdateSongInfo(ffi.nullptr);
+    bindings.registerOnAddOrUpdateSong(ffi.nullptr);
     bindings.registerOnPlayNextOrPreviousSong(ffi.nullptr);
-    // bindings.registerOnGetAllSongsOver(ffi.nullptr);
-    bindings.registerOnAddNewSong(ffi.nullptr);
     bindings.registerOnDeleteSong(ffi.nullptr);
     bindings.requestOnPlayStateSync(ffi.nullptr);
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _errorSendcallable?.close();
     _currentPTSCallback?.close();
-    _onUpdateSongInfo?.close();
+    _onAddOrUpdateSong?.close();
     _onPlayNextOrPreviousSong?.close();
-    _onAddNewSong?.close();
     _onDeleteSong?.close();
     _onPlayStateSync?.close();
   }

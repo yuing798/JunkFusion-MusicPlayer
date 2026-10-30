@@ -323,15 +323,15 @@ class JunkFusionDLLBindings {
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
       .asFunction<void Function(StringFunc)>();
 
-  void registerOnAddNewSong(StringFunc cb) {
-    return _registerOnAddNewSong(cb);
+  void registerOnAddOrUpdateSong(StringFunc cb) {
+    return _registerOnAddOrUpdateSong(cb);
   }
 
-  late final _registerOnAddNewSongPtr =
+  late final _registerOnAddOrUpdateSongPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
-        'registerOnAddNewSong',
+        'registerOnAddOrUpdateSong',
       );
-  late final _registerOnAddNewSong = _registerOnAddNewSongPtr
+  late final _registerOnAddOrUpdateSong = _registerOnAddOrUpdateSongPtr
       .asFunction<void Function(StringFunc)>();
 
   void registerOnDeleteSong(Int64Func cb) {
@@ -355,17 +355,6 @@ class JunkFusionDLLBindings {
       );
   late final _registerOnPlayNextOrPreviousSong =
       _registerOnPlayNextOrPreviousSongPtr.asFunction<void Function(IntFunc)>();
-
-  void registerOnUpdateSongInfo(StringFunc cb) {
-    return _registerOnUpdateSongInfo(cb);
-  }
-
-  late final _registerOnUpdateSongInfoPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
-        'registerOnUpdateSongInfo',
-      );
-  late final _registerOnUpdateSongInfo = _registerOnUpdateSongInfoPtr
-      .asFunction<void Function(StringFunc)>();
 
   void removeSongsInPlaylist(
     int playlistId,

@@ -6,15 +6,22 @@
 #include "juce_core/juce_core.h"
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
+
+enum class SongHasImportRes {
+    HasImport,  // 歌曲已经导入
+    NeedUpdate, // 歌曲已经导入但是需要更新，可能是因为用户使用了同名文件覆盖
+    No,         // 完全没有，直接导入即可
+};
 
 // 这个类统一执行歌曲导入逻辑
 class SongImport {
 private:
     DbContext& mDbContext;
     juce::File& mImageDir;
-    juce::ThreadPool songImportPool{15};   // 用来做轻量歌曲元数据导入的线程池
+    // juce::ThreadPool songImportPool{15};   // 用来做轻量歌曲元数据导入的线程池
     juce::ThreadPool waveFormAnalyPool{3}; // 用来做波形分析和联网搜索的线程池
     std::string mSystemCountry = juce::SystemStats::getUserRegion().toUpperCase().toStdString();
 
@@ -75,6 +82,12 @@ private:
         bool titleIsFileName{false}; // title是否为文件名
     };
 
+    std::optional<InsertLightSongInfoResult> insertLightSongInfo(
+        const juce::File& path,
+        bool isSingleFile,
+        SongHasImportRes songHasImportRes
+    );
+
 public:
     explicit SongImport(DbContext& dbContext, juce::File& imageDir)
         : mDbContext(dbContext), mImageDir(imageDir) {}
@@ -84,18 +97,16 @@ public:
      *
      * @param path 歌曲路径
      * @param isSingleFile 是单独导入还是随着文件夹导入
+     * @return bool 插入成功与否
      */
-    void checkAndInsertSong(const juce::File& path, bool isSingleFile);
+    bool
+    importSingleSong(SongHasImportRes updateOrNoInTable, const juce::File& path, bool isSingleFile);
 
-    void importSingleSongs(Yvar songPaths);
-    void importNewFolder(const juce::File& folderPath);
-    std::optional<InsertLightSongInfoResult> insertLightSongInfo(
-        const juce::File& path,
-        bool isSingleFile,
-        SongsManage::SongHasImportRes songHasImportRes
-    );
+    // 插入歌曲，这个函数只限于单独导入的文件
+    void importSongs(Yvar songPaths);
 
-    std::function<void(const char*)> onUpdateSongInfo; // 请求前端拉取歌曲数据
-    std::function<void(const char*)> onAddNewSong;     // 前端加入新的歌曲
+    SongHasImportRes checkSongHasImport(const juce::File& path);
+
+    std::function<void(const char*)> onAddOrUpdateSong;
     std::function<void(const std::string&)> onDirHasRegister;
 };

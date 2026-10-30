@@ -17,6 +17,15 @@
 
 namespace DbUtils {
 
+    /**
+     * @brief 这个函数只有在数据库操作中会使用到，就是生成类似 (:id0,:id1,:id2)之类的数组绑定式
+     *
+     * @param prefix 前缀，就是上文说的:id
+     * @param num 总数
+     * @return std::string (:id0,:id1,:id2)
+     */
+    std::string addPrefixAndIntoVectorString(const std::string& prefix, int num);
+
     template <typename T> std::optional<T> getOptCol(SQLite::Statement& sql, const char* colName) {
         try {
             auto result{sql.getColumn(colName)};

@@ -10,8 +10,6 @@
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstddef>
-#include <filesystem>
-#include <format>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
@@ -35,6 +33,48 @@ Yvar SongFolderManage::getAllRootDirView() {
     }
     return folders;
 }
+std::vector<juce::File> SongFolderManage::getAllDir() {
+    std::vector<juce::File> dirs;
+    try {
+        SQLite::Statement selectSql{
+            dbManage.readDb(),
+            "SELECT dir FROM songFolders WHERE dir IS NOT NULL"
+        };
+
+        while (selectSql.executeStep()) {
+            dirs.push_back(juce::File{selectSql.getColumn("dir").getString()});
+        }
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->error(
+            "SongFolderManage::getAllRootDirWiew throw db error:{}",
+            e.what()
+        );
+    }
+    return dirs;
+}
+
+std::vector<juce::File> SongFolderManage::getAllRootDirOrChildDir(bool isRoot) {
+    std::vector<juce::File> dirs;
+    try {
+        SQLite::Statement selectSql{
+            dbManage.readDb(),
+            "SELECT dir FROM songFolders WHERE  isRoot = :isRoot"
+        };
+
+        selectSql.bind(":isRoot", isRoot);
+
+        while (selectSql.executeStep()) {
+            dirs.push_back(juce::File{selectSql.getColumn("dir").getString()});
+        }
+    } catch (SQLite::Exception& e) {
+        spdlog::get(LogDllID)->error(
+            "SongFolderManage::getAllRootDirOrChildDir throw db error:{}",
+            e.what()
+        );
+    }
+    return dirs;
+}
+
 Yvar SongFolderManage::getChildDirAndSongIdList(const juce::File& parentPath) {
     auto obj = Yvar::object();
     auto dirArr = Yvar::array();

@@ -4,7 +4,6 @@
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
-#include <cstring>
 #include <format>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -33,6 +32,7 @@
 /**
  * @brief 歌曲表
  * @param isSingleFile 这个歌曲是单独的文件还是随着某个文件夹导入的同时导入的文件
+ * @param songFolderId 对应的这个音频文件放在哪个文件夹中，如果isSingleFile=true,则这个字段为空
  */
 static const std::string createSongsTableSQL = std::format(
     R"(
@@ -58,8 +58,9 @@ static const std::string createSongsTableSQL = std::format(
             hash TEXT,
             timeDomainSpec BLOB,
             albumId INTEGER,
-            isSingleFile INT NOT NULL,
-            FOREIGN KEY (albumId) REFERENCES albums(albumId) ON DELETE CASCADE
+            songFolderId INTEGER
+            FOREIGN KEY (albumId) REFERENCES albums(albumId) ON DELETE CASCADE,
+            FOREIGN KEY (songFolderId) REFERENCES songFolders(id) ON DELETE CASCADE
         )
     )",
     INT64T_MAX,
@@ -67,8 +68,8 @@ static const std::string createSongsTableSQL = std::format(
     INT64T_MAX
 );
 
-static const char* createIsSingleFileIndexSQL =
-    "CREATE INDEX IF NOT EXISTS isSingleFileIndex ON songs(isSingleFile)";
+static const char* createSongFolderIdIndexSQL =
+    "CREATE INDEX IF NOT EXISTS songFolderIdIndex ON songs(songFolderId)";
 
 static const char* createDurationIndexSQL =
     "CREATE INDEX IF NOT EXISTS durationIndex ON songs(duration)";
@@ -85,13 +86,14 @@ static const char* createAlbumIdIndexSQL =
 /**
  * @brief 歌曲文件夹表
  * @param isRoot 这个文件夹是否为根目录
- * @param dir 文件夹绝对路径
+ * @param dir 文件夹绝对路径，如果是单独导入的会移动到缓存文件夹里面
  *
  */
 static const char* createSongFolderTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songFolders (
+        id     INTEGER PRIMARY KEY AUTOINCREMENT,
         dir TEXT NOT NULL UNIQUE,
-        lastModifiedTime   TEXT    NOT NULL,
+        lastModifiedTime   TEXT  ,
         isRoot INT NOT NULL
     )
 )";
@@ -183,7 +185,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createAlbumIdIndexSQL);
         db.exec(createDurationIndexSQL);
         db.exec(createPlayNumIndexSQL);
-        db.exec(createIsSingleFileIndexSQL);
+        db.exec(createSongFolderIdIndexSQL);
 
         if (auto logger{spdlog::get(LogDllID)}) {
             logger->debug("数据库初始化完成:{}", path);
