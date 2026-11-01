@@ -83,10 +83,12 @@ class PlaylistProvider extends ChangeNotifier {
         UtilFunction.cPtr2String(bindings.getDetailPlaylistInfo(playlistId)),
       ),
     );
-    if (_curDetailInfo?.songsLists != null) {
-      final songIdMap = {for (final e in songProvider.songs) e.songId: e};
-      _songsInPlaylist = _curDetailInfo!.songsLists!
-          .map((each) => songIdMap[each])
+    // SongProvider 现在是 id -> 基本信息 的缓存：缺的先补一次，再按歌单里的顺序取
+    final songIds = _curDetailInfo?.songsLists;
+    if (songIds != null) {
+      songProvider.ensureSongsLoaded(songIds);
+      _songsInPlaylist = songIds
+          .map((each) => songProvider.idToInfoMap[each])
           .whereType<SongBasicInfo>()
           .toList();
     }

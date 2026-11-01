@@ -6,6 +6,9 @@
 #include <string>
 namespace StringUtils {
 
+    // 两边统一加上字符包裹
+    std::string wrap(const std::string& s, const std::string& token);
+
     // 去首尾空白（ASCII 空白，足够日常使用）
     std::string trim(const std::string& s);
 

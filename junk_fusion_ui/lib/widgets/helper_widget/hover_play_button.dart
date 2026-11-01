@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/hash_image_or_default.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 class HoverPlayButton extends StatefulWidget {
@@ -34,17 +35,7 @@ class _HoverPlayButtonState extends State<HoverPlayButton> {
               child: SizedBox(
                 width: 50,
                 height: 50,
-                child: (widget.hash != null)
-                    ? Image.file(
-                        File(
-                          '${AppCache.cacheDirString}/image/${widget.hash}/original.jpg',
-                        ),
-                        fit: BoxFit.cover,
-                      )
-                    : Image.asset(
-                        "assets/image/JunkFusion.png",
-                        fit: BoxFit.cover,
-                      ),
+                child: HashImageOrDefault(hash: widget.hash),
               ),
             ),
             // 2. 遮罩（黑色半透明，加深图片）

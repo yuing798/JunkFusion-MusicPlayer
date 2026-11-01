@@ -12,3 +12,4 @@ Release_bin/
 TestAudio/
 *.mp3
 acl-reports/
+*.tmp

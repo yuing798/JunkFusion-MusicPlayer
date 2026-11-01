@@ -1,12 +1,12 @@
 #include "./libExport.h"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
-#include "Macro/PlaylistMacro.hpp"
-#include "Macro/SongInfoMacro.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Macro/coordinatorMacro.hpp"
 #include "Model/SongInfo.hpp"
 #include "Model/playlistInfo.hpp"
+#include "SongsInsertHelper/FolderCheckTimer.hpp"
+#include "SongsInsertHelper/SongImport.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
@@ -36,54 +36,6 @@ extern "C" {
         if (str) {
             free(str);
         }
-    }
-    void someImport(const char* jsonStr) {
-        auto jsonString = std::string(jsonStr);
-        juce::Thread::launch([jsonStr = std::move(jsonString)]() {
-            auto logger{spdlog::get(LogDllID)};
-            logger->info("开始导入歌曲");
-            logger->debug("jsonStr == {}", jsonStr);
-            Yvar obj = Yvar::parse(jsonStr);
-            auto filePaths{obj.read(CoordinatorMacro::filePaths)};
-            std::vector<juce::File> paths;
-            for (int i = 0; i < filePaths.size(); i++) {
-                paths.push_back(juce::File{filePaths.read(i).toString()});
-            }
-            Yvar errorFiles = Yvar::array();
-            Yvar songInfos = Yvar::array();
-            for (auto& path : paths) {
-                auto result = dllManager::getInstance().insertSong(path);
-                if (std::holds_alternative<std::string>(result)) {
-                    auto errorMsg = std::get<std::string>(result);
-                    Yvar errorObj = Yvar::object();
-                    errorObj.set(CoordinatorMacro::errorFileName, path.getFileName().toStdString());
-                    errorObj.set(CoordinatorMacro::errorFileReason, errorMsg);
-                    errorFiles.push(std::move(errorObj));
-                } else if (std::holds_alternative<SongInfo>(result)) {
-                    auto songInfo = std::get<SongInfo>(result);
-                    songInfos.push(songInfo.toBasicJson());
-                }
-            }
-
-            Yvar resultObj = Yvar::object();
-            {
-                resultObj.set(CoordinatorMacro::errorFiles, errorFiles);
-
-                std::string resultStr{
-                    "导入歌曲完成，成功" + std::to_string(paths.size()) + "首，失败" +
-                    std::to_string(errorFiles.size()) + "首\n失败文件：\n" + errorFiles.dump()
-                };
-                logger->info(resultStr);
-            }
-            resultObj.set(CoordinatorMacro::songsList, songInfos);
-
-            // 发送最终数据
-            if (dllManager::getInstance().onLightSongDataImportOver)
-                dllManager::getInstance().onLightSongDataImportOver(
-                    ConvertUtils::object2Uint8t(resultObj)
-                );
-        });
-        return;
     }
     void closeBackend() {
         spdlog::get(LogDllID)->debug("准备关闭后端");
@@ -138,10 +90,6 @@ extern "C" {
         dllManager::getInstance().onPlayNextOrPreviousSong = cb;
     }
 
-    void registerOnLightSongDataImportOver(StringFunc cb) {
-        dllManager::getInstance().onLightSongDataImportOver = cb;
-    }
-    void registerOnUpdateSongInfo(Int64Func cb) { dllManager::getInstance().onUpdateSongInfo = cb; }
     const char* getAllSongs() {
         auto songsList =
             dllManager::getInstance().getDbContext()->songsManage.getAllSongsBasicInfo();
@@ -232,5 +180,36 @@ extern "C" {
     }
     void updateCoverBySongId(long long playlistId, long long songId) {
         dllManager::getInstance().getDbContext()->playListManage.updateCover(playlistId, songId);
+    }
+    const char* getChildDirAndSongIdList(const char* parentDir) {
+        auto res = dllManager::getInstance().openNewSongFolder(juce::File{parentDir});
+
+        return ConvertUtils::object2Uint8t(res);
+    }
+    const char* getAllRootDirView() {
+        return ConvertUtils::object2Uint8t(
+            dllManager::getInstance().getDbContext()->songFolderManage.getAllRootDirView()
+        );
+    }
+    void importSongs(const char* files) {
+        Yvar fileJson = Yvar::parse(files);
+        // 单独导入：会先把音频文件拷到 <缓存目录>/songs 再入库
+        dllManager::getInstance().getSongImportClass()->importSongs(fileJson);
+    }
+    void importNewSongFolder(const char* dir) {
+        // 文件夹导入 + 定时监控都在 FolderCheckTimer 里
+        dllManager::getInstance().getFolderCheckTimer()->importNewFolder(juce::File{dir});
+    }
+    const char* getSingleImportSongs() {
+        return ConvertUtils::object2Uint8t(
+            dllManager::getInstance().getDbContext()->songsManage.getSingleImportSongs()
+        );
+    }
+
+    void registerOnAddOrUpdateSong(StringFunc cb) {
+        dllManager::getInstance().getSongImportClass()->onAddOrUpdateSong = cb;
+    }
+    void registerOnDeleteSong(Int64Func cb) {
+        dllManager::getInstance().getSongImportClass()->onDeleteSong = cb;
     }
 }

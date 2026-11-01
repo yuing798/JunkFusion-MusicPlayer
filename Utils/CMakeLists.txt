@@ -8,6 +8,7 @@ target_sources(Utils
         otherUtils.cpp #其他乱七八糟的工具
         dbUtils.cpp #数据库工具
         stringUtils.cpp #字符串工具
+        fileUtils.cpp
 )
 
 target_include_directories(Utils

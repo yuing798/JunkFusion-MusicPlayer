@@ -1,1 +1,10 @@
-* text=auto
+* text=auto 
+
+# 必须 CRLF 的例外（老式 .bat 对 LF 不友好）
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制，避免 text=auto 误判
+*.png binary
+*.jpg binary
+*.pdf binary

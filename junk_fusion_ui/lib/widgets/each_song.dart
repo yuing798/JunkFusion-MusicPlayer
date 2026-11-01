@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
-import 'package:junk_fusion_ui/widgets/hover_play_button.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/hover_play_button.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
