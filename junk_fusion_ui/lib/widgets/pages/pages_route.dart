@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/album_basic_info.dart';
-import 'package:junk_fusion_ui/model/folder_basic_info.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
-import 'package:junk_fusion_ui/widgets/pages/all_music_page.dart';
-import 'package:junk_fusion_ui/widgets/pages/folder_view_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/folder_content_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
-import 'package:junk_fusion_ui/widgets/pages/single_folder_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_playlist_page.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -24,9 +21,10 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 //   3. PagesRouteView —— 把当前这一页画出来，并在左上角补一个返回按钮
 //      （栈底 = 最开始那一页时按钮禁用）。
 //
-// 左侧导航栏（widgets/left_column.dart）不再自己存「选中项」，而是读
-// PagesRouteController.currentNavId，所以点左侧按钮 / 点返回按钮之后，
-// 高亮都会自动同步。
+// 左侧图标栏（widgets/layout/icon_rail.dart）和中间栏
+// （widgets/layout/sidebar_host.dart）不自己存「选中项」，而是读
+// PagesRouteController.currentNavId，所以点图标 / 点返回按钮之后，
+// 高亮和中间栏都会自动同步。
 //
 // 注意：这里不是 Flutter 的 Navigator，只是一个自己维护的页面栈 ——
 // 页面都画在主内容区里，左侧导航栏和底部播放条不参与路由。
@@ -53,16 +51,15 @@ class PagesRouteEntry {
 // ════════════════════════════════════════════════════════════════
 // 路由表
 //
-// navId 和 widgets/left_column.dart 里 _NavButton 的 id 一一对应：
-//   0 所有音乐   1 我喜欢     2 最近播放
+// navId 和 widgets/nav/pages_nav_table.dart 里 PagesNavSection 的 id
+// 一一对应（图标、名字也在那张表里，两边改 id 要一起改）：
+//   1 我喜欢     2 最近播放
 //   3 专辑       4 歌单       5 文件夹    6 风格
 //   7 AI助手     8 效果器     9 均衡器    10 音箱阵列   11 设置
-// 目前 0 / 3 / 4 / 5 有页面了，其它的先走占位页。
+// 目前 3 / 4 / 5 有页面了，其它的先走占位页。
+// （0「所有音乐」已经删掉了：歌曲列表现在只在文件夹视图里呈现）
 // ════════════════════════════════════════════════════════════════
 abstract class PagesRouteTable {
-  /// 左侧导航栏「所有音乐」的 id
-  static const int allMusicId = 0;
-
   /// 左侧导航栏「专辑」的 id
   static const int albumViewId = 3;
 
@@ -71,13 +68,6 @@ abstract class PagesRouteTable {
 
   /// 左侧导航栏「文件夹」的 id
   static const int folderViewId = 5;
-
-  /// 所有音乐
-  static const PagesRouteEntry allMusic = PagesRouteEntry(
-    navId: allMusicId,
-    title: '所有音乐',
-    builder: _buildAllMusic,
-  );
 
   /// 专辑（网格视图）
   static const PagesRouteEntry albumView = PagesRouteEntry(
@@ -95,13 +85,15 @@ abstract class PagesRouteTable {
     builder: _buildPlaylistView,
   );
 
-  /// 文件夹（网格视图）
+  /// 文件夹（树 + 列表）
   ///
-  /// TODO(后端): 文件夹接口还没有，进去现在是空列表（见 FolderProvider）
+  /// 这一页自己不接参数：左侧树点哪个目录，就由 FolderProvider 记着，
+  /// 右侧内容从 FolderProvider 读（见 widgets/pages/folder_content_page.dart）。
+  /// 中间栏的文件夹树在 widgets/nav/folder_tree_sidebar.dart。
   static const PagesRouteEntry folderView = PagesRouteEntry(
     navId: folderViewId,
     title: '文件夹',
-    builder: _buildFolderView,
+    builder: _buildFolderContent,
   );
 
   /// 单张专辑：要在路由表里现造一个（标题用专辑名）
@@ -135,19 +127,8 @@ abstract class PagesRouteTable {
     );
   }
 
-  /// 单个文件夹：进这一页之前要先把文件夹装进 FolderProvider：
-  ///   context.read<FolderProvider>().setNewFolder(folder.path);
-  ///   context.read<PagesRouteController>().push(
-  ///     PagesRouteTable.singleFolder(folder),
-  ///   );
-  static PagesRouteEntry singleFolder(FolderBasicInfo folder) {
-    return PagesRouteEntry(
-      // 单个文件夹属于「文件夹」这一栏
-      navId: folderViewId,
-      title: folder.name,
-      builder: (context) => const SingleFolderPage(),
-    );
-  }
+  /// 单个文件夹不再走路由栈：文件夹视图的「当前目录」由 FolderProvider
+  /// 管（左侧树单击 / 右侧列表双击都在改它），右侧内容只跟着它换，不压栈。
 
   /// 还没开发的页面：占位
   ///
@@ -165,7 +146,6 @@ abstract class PagesRouteTable {
 
   /// 左侧导航栏的 id → 路由项；返回 null 表示这一页还没写
   static PagesRouteEntry? byNavId(int navId) {
-    if (navId == allMusicId) return allMusic;
     if (navId == albumViewId) return albumView;
     if (navId == playlistViewId) return playlistView;
     if (navId == folderViewId) return folderView;
@@ -173,13 +153,11 @@ abstract class PagesRouteTable {
   }
 }
 
-Widget _buildAllMusic(BuildContext context) => const AllMusicPage();
-
 Widget _buildAlbumView(BuildContext context) => const AlbumViewPage();
 
 Widget _buildPlaylistView(BuildContext context) => const PlaylistViewPage();
 
-Widget _buildFolderView(BuildContext context) => const FolderViewPage();
+Widget _buildFolderContent(BuildContext context) => const FolderContentPage();
 
 // ════════════════════════════════════════════════════════════════
 // 页面栈
@@ -189,8 +167,11 @@ Widget _buildFolderView(BuildContext context) => const FolderViewPage();
 // ════════════════════════════════════════════════════════════════
 class PagesRouteController extends ChangeNotifier {
   /// 页面栈
+  ///
+  /// 栈底是应用打开时的第一页：「文件夹」视图（原来这里是「所有音乐」，
+  /// 那一页已经删掉了）。想换成别的页改这一行就行。
   final List<PagesRouteEntry> _stack = <PagesRouteEntry>[
-    PagesRouteTable.allMusic,
+    PagesRouteTable.folderView,
   ];
 
   /// 现在正在显示的这一页
@@ -258,21 +239,19 @@ class PagesRouteView extends StatelessWidget {
       children: [
         // ── 左上角：返回上一页 ──
         SizedBox(
-          height: 40,
+          height: 30,
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(TablerIcons.arrowLeft, size: 32),
+                icon: const Icon(TablerIcons.arrowLeft, size: 24),
                 // onPressed = null 就是禁用态（IconButton 自己会画成灰的）
                 onPressed: pagesRoute.canGoBack ? pagesRoute.goBack : null,
                 tooltip: pagesRoute.canGoBack ? '返回上一页' : '已经是第一页了',
                 color: theme.colorTextMain,
                 disabledColor: theme.colorEdge,
-                // 默认的 IconButton 自带 8 的 padding + 40x40 最小尺寸，
-                // 图标 32 会撑出这 40 高的行，这里把它压回 40x40
                 style: IconButton.styleFrom(
                   padding: EdgeInsets.zero,
-                  minimumSize: const Size(40, 40),
+                  minimumSize: const Size(32, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),

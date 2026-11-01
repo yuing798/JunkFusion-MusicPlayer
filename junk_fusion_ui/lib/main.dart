@@ -131,8 +131,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("准备加载窗口缓存状态");
       _loadWindowState();
-      print("准备从后端拉取所有歌曲");
-      widget.songProvider.getAllSongs();
+      // 歌曲基本信息不再在启动时全量拉取：SongProvider 现在是 id -> 信息的缓存，
+      // 由各页面（文件夹视图等）按需调 ensureSongsLoaded 补，导入/更新时走回调。
       print("准备初始化播放状态");
       widget.playbackProvider.initPlaybackProvider();
       print("准备从后端拉取所有专辑");

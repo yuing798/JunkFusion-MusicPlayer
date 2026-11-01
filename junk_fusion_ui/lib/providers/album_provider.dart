@@ -67,10 +67,11 @@ class AlbumProvider extends ChangeNotifier {
     if (_curDetailInfo == null || _curBasicInfo == null) return;
 
     // print(1);
-    //用map而非set是为了保证顺序正确
-    final songIdMap = {for (final e in songProvider.songs) e.songId: e};
-    _songsInAlbums = _curDetailInfo!.songsLists
-        .map((each) => songIdMap[each])
+    // SongProvider 现在是 id -> 基本信息 的缓存：缺的先补一次，再按专辑里的顺序取
+    final songIds = _curDetailInfo!.songsLists;
+    songProvider.ensureSongsLoaded(songIds);
+    _songsInAlbums = songIds
+        .map((each) => songProvider.idToInfoMap[each])
         .whereType<SongBasicInfo>()
         .toList();
 

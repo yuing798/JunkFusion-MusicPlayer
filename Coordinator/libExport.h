@@ -26,7 +26,6 @@ extern "C" {
 
     DLL_EXPORT void toggleMyLike(long long songId);
     DLL_EXPORT void freeString(char* str);
-    DLL_EXPORT void someImport(const char*);
     DLL_EXPORT void closeBackend(); // dll注销
     DLL_EXPORT void registerErrorSendCallback(StringFunc cb);
 
@@ -43,9 +42,8 @@ extern "C" {
     DLL_EXPORT void pausePlay(); // 暂停播放
     DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
-    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb);     // 请求播放下一首或上一首歌曲
-    DLL_EXPORT void registerOnLightSongDataImportOver(StringFunc cb); // 轻量歌曲数据导入完成的回调
-    DLL_EXPORT void registerOnUpdateSongInfo(Int64Func cb);
+    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb); // 请求播放下一首或上一首歌曲
+
     DLL_EXPORT const char* getAllSongs();
     DLL_EXPORT const char* getDetailSongInfo(long long songId);
     DLL_EXPORT const char* getBasicSongInfo(long long songId);
@@ -59,6 +57,7 @@ extern "C" {
      */
     DLL_EXPORT const char* getAllAlbumView();
 
+    // 歌单管理函数
     DLL_EXPORT const char* getDetailPlaylistInfo(long long id);
     DLL_EXPORT const char* getPlaylistBasicInfo(long long id);
     DLL_EXPORT const char* getAllPlaylistView();
@@ -69,6 +68,48 @@ extern "C" {
     DLL_EXPORT void renamePlaylist(long long playlistId, const char* title);
     DLL_EXPORT void updateCoverByPath(long long playlistId, const char* coverPath);
     DLL_EXPORT void updateCoverBySongId(long long playlistId, long long songId);
+
+    //===================================================================================
+    // 文件夹管理函数
+
+    /**
+     * @brief Get the Child Dir And Song Id List object
+     *
+     * @param parentDir
+     * @return {songIdList:[id1,id2,......],dirArr:[subDir1,subDir2,......]}
+     */
+    DLL_EXPORT const char* getChildDirAndSongIdList(const char* parentDir);
+
+    /**
+     * @brief Get the Root Dir object获得在应用中注册过的所有文件夹根目录
+     *
+     * @return DLL_EXPORT const*
+     */
+    DLL_EXPORT const char* getAllRootDirView();
+    /**
+     * @brief 导入整个文件夹
+     *
+     * @param dir
+     * @return DLL_EXPORT
+     */
+    DLL_EXPORT void importNewSongFolder(const char* dir);
+    /**
+     * @brief 导入单独的几个文件
+     *
+     * @param files
+     * @return DLL_EXPORT
+     */
+    DLL_EXPORT void importSongs(const char* files);
+
+    /**
+     * @brief 获得单独导入的文件的songIdList，作为独立虚拟文件夹节点渲染在前端
+     *
+     * @return [songId1,songId2,......]
+     */
+    DLL_EXPORT const char* getSingleImportSongs();
+
+    DLL_EXPORT void registerOnAddOrUpdateSong(StringFunc cb);
+    DLL_EXPORT void registerOnDeleteSong(Int64Func cb);
 
 #ifdef __cplusplus
 }

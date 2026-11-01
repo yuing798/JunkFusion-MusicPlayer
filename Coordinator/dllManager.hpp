@@ -2,8 +2,9 @@
 
 #include "CenterDbManage/CenterDbmanage.hpp"
 #include "CenterDbManage/dbContext.hpp"
-#include "Coordinator/SongsInsertHelper/OnlineGetMatedata.hpp"
 #include "Model/SongInfo.hpp"
+#include "SongsInsertHelper/SongImport.hpp"
+#include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "catagoryViewManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
@@ -19,13 +20,14 @@
 #include <string>
 #include <variant>
 
+class FolderCheckTimer;
+
 class dllManager {
 private:
-    std::string systemCountry;
-
     juce::File cacheDir;   // 缓存文件夹
     juce::File logInfoDir; // 日志文件夹
     juce::File imageDir;   // 图片
+    juce::File songsDir;   // 单独导入的歌曲拷贝（和 JunkFusion.db 同一层）
 
     std::unique_ptr<OscSender> mOscSender; // 单例模式中的变量最好都是平凡类型的
     std::unique_ptr<AudioProcessCoordinator> mAudioProcessCoordinator; // zmq 版本的后端进程协调者
@@ -33,13 +35,38 @@ private:
     static std::unique_ptr<dllManager> instance;
 
     std::unique_ptr<DbContext> mDbContext;
-    juce::ThreadPool waveFormAnalyPool{5}; // 用来做波形分析和联网搜索的线程池
+    std::unique_ptr<SongImport> mSongImport;
+    std::unique_ptr<FolderCheckTimer> mFolderCheckTimer; // 文件夹定时监控（独立线程）
 
 public:
+    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
+    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
+    std::function<void(int)> onPlayNextOrPreviousSong;
+    std::function<void(int)> onPlayStateSync; // 请求同步播放状态
+
+    /**
+     * @brief 库里某首歌的元数据变了（我喜欢 / 播放次数）
+     *
+     * 查一次这首歌最新的 basic 信息，转成 SongImport::onAddOrUpdateSong 推给前端
+     * （前端 SongProvider.addOrUpdateSong 更新那个 id -> 信息 的缓存）。
+     * 以前这里是 onUpdateSongInfo(int64) 回调，只传 id，现在统一走 add/update 那条路。
+     */
+    void notifySongUpdated(int64_t songId);
+
+    void sendMessage2AudioProcess(const std::string& obj);
+    void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
+
+    Yvar openNewSongFolder(const juce::File& path); // 打开新的歌曲文件夹
+
+    DbContext* getDbContext() noexcept { return mDbContext.get(); }
+    SongImport* getSongImportClass() noexcept { return mSongImport.get(); }
+    FolderCheckTimer* getFolderCheckTimer() noexcept { return mFolderCheckTimer.get(); }
+
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);
 
     juce::File& getImageDir() { return imageDir; }
+    juce::File& getSongsDir() { return songsDir; }
 
     static dllManager& getInstance() {
         if (!instance) {
@@ -57,18 +84,4 @@ public:
     DONT_COPY_AND_MOVE(dllManager)
 
     ~dllManager();
-
-    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
-    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
-    std::function<void(int)> onPlayNextOrPreviousSong;
-    std::function<void(const char*)> onLightSongDataImportOver;
-    std::function<void(int)> onPlayStateSync;      // 请求同步播放状态
-    std::function<void(int64_t)> onUpdateSongInfo; // 更新播放信息
-
-    void sendMessage2AudioProcess(const std::string& obj);
-    void sendOSCMessage2AudioProcessor(juce::OSCMessage& msg) { mOscSender->sendMsg(msg); }
-
-    std::variant<std::string, SongInfo> insertSong(const juce::File& path);
-
-    DbContext* getDbContext() noexcept { return mDbContext.get(); }
 };

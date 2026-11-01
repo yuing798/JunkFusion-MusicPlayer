@@ -5,6 +5,17 @@ import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
+// ════════════════════════════════════════════════════════════════
+// title_bar.dart — 顶栏（通栏）
+//
+// 三段式改造后这条顶栏横跨整个窗口，压在图标栏 / 中间栏 / 内容区上面：
+//   左半边：DragToMoveArea（拖动窗口）
+//   右半边：最小化 / 最大化(还原) / 关闭
+//
+// TODO: 标题栏以后还要扩展（Logo、搜索框之类的位置到时候再定），
+//       原来的 Logo 已经从左侧栏里拿掉了，先不在这里补。
+// ════════════════════════════════════════════════════════════════
+
 class TitleBar extends StatefulWidget {
   const TitleBar({super.key});
 
