@@ -3,7 +3,6 @@ import 'package:junk_fusion_ui/model/album_basic_info.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
-import 'package:junk_fusion_ui/widgets/pages/all_music_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/folder_content_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
@@ -54,15 +53,13 @@ class PagesRouteEntry {
 //
 // navId 和 widgets/nav/pages_nav_table.dart 里 PagesNavSection 的 id
 // 一一对应（图标、名字也在那张表里，两边改 id 要一起改）：
-//   0 所有音乐   1 我喜欢     2 最近播放
+//   1 我喜欢     2 最近播放
 //   3 专辑       4 歌单       5 文件夹    6 风格
 //   7 AI助手     8 效果器     9 均衡器    10 音箱阵列   11 设置
-// 目前 0 / 3 / 4 / 5 有页面了，其它的先走占位页。
+// 目前 3 / 4 / 5 有页面了，其它的先走占位页。
+// （0「所有音乐」已经删掉了：歌曲列表现在只在文件夹视图里呈现）
 // ════════════════════════════════════════════════════════════════
 abstract class PagesRouteTable {
-  /// 左侧导航栏「所有音乐」的 id
-  static const int allMusicId = 0;
-
   /// 左侧导航栏「专辑」的 id
   static const int albumViewId = 3;
 
@@ -71,13 +68,6 @@ abstract class PagesRouteTable {
 
   /// 左侧导航栏「文件夹」的 id
   static const int folderViewId = 5;
-
-  /// 所有音乐
-  static const PagesRouteEntry allMusic = PagesRouteEntry(
-    navId: allMusicId,
-    title: '所有音乐',
-    builder: _buildAllMusic,
-  );
 
   /// 专辑（网格视图）
   static const PagesRouteEntry albumView = PagesRouteEntry(
@@ -156,15 +146,12 @@ abstract class PagesRouteTable {
 
   /// 左侧导航栏的 id → 路由项；返回 null 表示这一页还没写
   static PagesRouteEntry? byNavId(int navId) {
-    if (navId == allMusicId) return allMusic;
     if (navId == albumViewId) return albumView;
     if (navId == playlistViewId) return playlistView;
     if (navId == folderViewId) return folderView;
     return null;
   }
 }
-
-Widget _buildAllMusic(BuildContext context) => const AllMusicPage();
 
 Widget _buildAlbumView(BuildContext context) => const AlbumViewPage();
 
@@ -180,8 +167,11 @@ Widget _buildFolderContent(BuildContext context) => const FolderContentPage();
 // ════════════════════════════════════════════════════════════════
 class PagesRouteController extends ChangeNotifier {
   /// 页面栈
+  ///
+  /// 栈底是应用打开时的第一页：「文件夹」视图（原来这里是「所有音乐」，
+  /// 那一页已经删掉了）。想换成别的页改这一行就行。
   final List<PagesRouteEntry> _stack = <PagesRouteEntry>[
-    PagesRouteTable.allMusic,
+    PagesRouteTable.folderView,
   ];
 
   /// 现在正在显示的这一页

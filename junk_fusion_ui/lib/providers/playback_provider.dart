@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -67,9 +66,9 @@ class PlaybackProvider extends ChangeNotifier {
   }
 
   void _setSongBasicInfo(int songId) {
-    _curBasicInfo = songProvider.songs
-        .where((each) => each.songId == songId)
-        .firstOrNull;
+    // SongProvider 现在是 id -> 基本信息 的缓存，缺的先补一次
+    songProvider.ensureSongsLoaded([songId]);
+    _curBasicInfo = songProvider.idToInfoMap[songId];
   }
 
   void setNewInfo(int songId) {
@@ -109,11 +108,13 @@ class PlaybackProvider extends ChangeNotifier {
           AppCache.frontCacheRef.getString("playListSongIdList") ?? "";
       if (jsonString != "") {
         final tempList = jsonDecode(jsonString) as List<dynamic>;
-        for (final one in tempList) {
-          final id = (one as num).toInt();
-          final info = songProvider.songs
-              .where((i) => i.songId == id)
-              .firstOrNull;
+        final songIds = tempList.map((one) => (one as num).toInt()).toList();
+
+        // 歌单里的歌可能还没进 SongProvider 的缓存，先补一次
+        songProvider.ensureSongsLoaded(songIds);
+
+        for (final id in songIds) {
+          final info = songProvider.idToInfoMap[id];
           if (info != null) {
             _playList.add(info);
           }

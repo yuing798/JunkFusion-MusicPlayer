@@ -3,7 +3,7 @@ target_sources(JunkFusionCoordinator
     PRIVATE
         AlbumsManage.cpp
         ArtistsManage.cpp
-        FileDirManage.cpp
+        SongFolderManage.cpp
         PlayListManage.cpp
         SongsManage.cpp
 )

@@ -199,6 +199,7 @@ class FolderProvider extends ChangeNotifier {
       _curPath = savedSelected;
     }
 
+    _ensureSongsForCurrentFolder();
     _refreshCurrentSongs();
     _structureVersion++;
     notifyListeners();
@@ -220,6 +221,7 @@ class FolderProvider extends ChangeNotifier {
 
     _fetchChildrenInto(path);
     _curPath = path;
+    _ensureSongsForCurrentFolder();
     _refreshCurrentSongs();
     _openToken++;
     _structureVersion++;
@@ -229,14 +231,13 @@ class FolderProvider extends ChangeNotifier {
 
   /// 打开「单独导入」虚拟节点
   ///
-  /// FIXME(后端): SongsManage::getSingleImportSongs() 的 SQL 少了 FROM，而且
-  ///   只 executeStep() 一次 —— "SELECT songId WHERE isSingleFile=1" 会直接报错，
-  ///   就算改对也只会返回一首。正确写法大概是
-  ///   "SELECT songId FROM songs WHERE isSingleFile=1" + while 循环。
-  ///   后端修好之前，这个节点点开永远是空的。
+  /// 后端 getSingleImportSongs() 返回的是 isSingleFile=1 的 songId 数组；
+  /// 这些歌的音频文件已经被后端拷到 <缓存目录>/songs 下，filePath 记的就是
+  /// 缓存路径（见 SongImport::getCachedFileFor）。
   void openSingleImportFolder() {
     _fetchSingleImportSongIds();
     _curPath = singleImportNodeId;
+    _ensureSongsForCurrentFolder();
     _refreshCurrentSongs();
     _openToken++;
     AppCache.frontCacheRef.setString(selectedPathCacheKey, singleImportNodeId);
@@ -275,14 +276,14 @@ class FolderProvider extends ChangeNotifier {
 
   /// 把一个文件夹导入后端，并刷新根目录
   ///
-  /// 这里只负责「导入 + 让树认识它」；打开由调用方再调 [openFolder] ——
-  /// 这样调用方可以先把歌曲表重拉一遍，打开时列表就是全的。
+  /// 这里只负责「导入 + 让树认识它」；打开由调用方再调 [openFolder]。
+  /// 导入过程中每首歌都会走后端的 onAddOrUpdateSong，前端 SongProvider 的缓存
+  /// 会自动补齐，所以不需要再整表重拉。
   ///
   /// FIXME: importNewSongFolder 是同步的：它会把整个文件夹递归扫一遍，每个
-  ///   文件都跑 ffmpeg + taglib 再写库，大文件夹会把界面卡住；而且它不像
-  ///   importSongs 那样回 onLightSongDataImportOver，前端拿不到「导入完成」。
-  ///   最好由后端开线程导入、导完回调前端（顺带把 onDirHasRegister 也注册给
-  ///   前端，现在这个回调根本没设，重复导入是静默的）。
+  ///   文件都跑 ffmpeg + taglib 再写库，大文件夹会把界面卡住。最好由后端开
+  ///   线程导入、导完再回调前端（顺带把 onDirHasRegister 也注册给前端，
+  ///   现在这个回调根本没设，重复导入是静默的）。
   void importFolder(String path) {
     final dirPtr = UtilFunction.string2cPtr(path);
     try {
@@ -402,44 +403,47 @@ class FolderProvider extends ChangeNotifier {
   // 内部工具
   // ════════════════════════════════════════════════════════════
 
-  /// 把当前目录的 songId 解析成 SongBasicInfo
+  /// 打开目录前先把缺的歌曲基本信息补上
+  ///
+  /// 后端返回的只有 songId；SongProvider 现在是「id -> 基本信息」的缓存，
+  /// 没有的就去后端要一份（见 SongProvider.ensureSongsLoaded）。
+  /// 补完 SongProvider 会 notify，_onSongsChanged 里会重新解析一次列表。
+  void _ensureSongsForCurrentFolder() {
+    final path = _curPath;
+    if (path == null) return;
+
+    final ids = path == singleImportNodeId
+        ? _singleImportSongIds
+        : (_songIds[path] ?? const <int>[]);
+
+    final missing = ids
+        .where((id) => !songProvider.idToInfoMap.containsKey(id))
+        .toList();
+    if (missing.isEmpty) return;
+
+    songProvider.ensureSongsLoaded(missing);
+  }
+
+  /// 把当前目录的 songId 解析成 SongBasicInfo（按后端顺序）
   void _refreshCurrentSongs() {
     final path = _curPath;
     if (path == null) {
       _curSongs = [];
       return;
     }
-    if (path == singleImportNodeId) {
-      _curSongs = _resolveSongs(_singleImportSongIds);
-      return;
-    }
-    _curSongs = _resolveSongs(_songIds[path] ?? const []);
-  }
 
-  List<SongBasicInfo> _resolveSongs(List<int> ids) {
-    // 用 map 而不是 set：要保证输出顺序和 ids（= 后端顺序）一致
-    final byId = {for (final song in songProvider.songs) song.songId: song};
+    final ids = path == singleImportNodeId
+        ? _singleImportSongIds
+        : (_songIds[path] ?? const <int>[]);
+
+    // 用列表而不是 set：输出顺序必须和 ids（= 后端顺序）一致
     final resolved = <SongBasicInfo>[];
-    var missingCount = 0;
-
     for (final id in ids) {
-      final song = byId[id];
-      if (song == null) {
-        missingCount++;
-        continue;
-      }
+      final song = songProvider.idToInfoMap[id];
+      if (song == null) continue; // 还没补到的先跳过，补到之后会自己刷新
       resolved.add(song);
     }
-
-    if (missingCount > 0) {
-      // TODO: 这些歌大概是后端刚刚扫描入库、但 SongProvider 里还没有的。
-      //   如果后端会走 registerOnLightSongDataImportOver 回调，
-      //   SongProvider.addNewSong 会补上，这里下次就会自己好；
-      //   否则需要在这里重新拉一次 getAllSongs()（注意那个函数只会追加，
-      //   重复调用会把歌曲列表刷成双份，得先修它）。
-      print('[FolderProvider] 有 $missingCount 首歌不在 SongProvider 里，暂时跳过');
-    }
-    return resolved;
+    _curSongs = resolved;
   }
 
   /// 这个路径现在能不能在树上出现

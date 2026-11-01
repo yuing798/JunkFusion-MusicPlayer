@@ -15,9 +15,11 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // 中间栏（widgets/layout/sidebar_host.dart）都读这一份。
 //
 // navId 和 pages_route.dart 的路由表一一对应，两边改 id 要一起改：
-//   0 所有音乐   1 我喜欢   2 最近播放
+//   1 我喜欢     2 最近播放
 //   3 专辑       4 歌单     5 文件夹    6 风格
 //   7 AI助手     8 效果器   9 均衡器    10 音箱阵列   11 设置
+//
+// （0「所有音乐」已经删掉了：歌曲列表现在只在文件夹视图里呈现）
 //
 // 用法：
 //     PagesNavTable.groups          // 分组（图标栏分组之间画分隔线）
@@ -60,7 +62,6 @@ abstract class PagesNavTable {
   static const List<List<PagesNavSection>> groups = [
     // ── 曲库浏览 ──
     [
-      PagesNavSection(id: 0, icon: TablerIcons.music, title: '所有音乐'),
       PagesNavSection(id: 1, icon: TablerIcons.heart, title: '我喜欢'),
       PagesNavSection(id: 2, icon: TablerIcons.history, title: '最近播放'),
     ],

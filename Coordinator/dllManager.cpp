@@ -1,9 +1,10 @@
 #include "./dllManager.hpp"
 #include "CenterDbManage/dbContext.hpp"
+#include "SongsInsertHelper/FolderCheckTimer.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
-#include "Utils/dbUtils.hpp"
+#include "Utils/convertUtils.hpp"
 #include "juce_core/juce_core.h"
 #include "processSchedule/OscSender.hpp"
 #include <SQLiteCpp/Database.h>
@@ -12,13 +13,11 @@
 #include <SQLiteCpp/Transaction.h>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <spdlog/common.h>
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <utility>
-#include <variant>
 
 std::unique_ptr<dllManager> dllManager::instance = nullptr;
 
@@ -31,6 +30,9 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     if (!logInfoDir.exists()) logInfoDir.createDirectory();
     imageDir = cacheDir.getChildFile("image");
     if (!imageDir.exists()) imageDir.createDirectory();
+    // 单独导入的歌曲拷贝目录，和 JunkFusion.db 在同一个缓存文件夹下
+    songsDir = cacheDir.getChildFile("songs");
+    if (!songsDir.exists()) songsDir.createDirectory();
 
     constexpr size_t kUiMaxSize = 5 * 1024 * 1024; // 5 MB
     constexpr size_t kUiMaxFiles = 3;
@@ -74,14 +76,39 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 
     mDbContext = std::make_unique<DbContext>(dbFile.getFullPathName().toStdString());
 
-    mSongImport = std::make_unique<SongImport>(*(mDbContext.get()), imageDir);
+    mSongImport = std::make_unique<SongImport>(*(mDbContext.get()), imageDir, songsDir);
+
+    // 文件夹定时监控（独立线程，一分钟一轮）。必须在 mSongImport / mDbContext
+    // 之后创建、在它们之前销毁（见析构函数）
+    mFolderCheckTimer =
+        std::make_unique<FolderCheckTimer>(*(mDbContext.get()), *(mSongImport.get()));
+    mFolderCheckTimer->start();
 }
 
 void dllManager::sendMessage2AudioProcess(const std::string& obj) {
     mAudioProcessCoordinator->mAudioProcessPusher->sendMessage(obj);
 }
 
+void dllManager::notifySongUpdated(int64_t songId) {
+    if (!mDbContext || !mSongImport || !mSongImport->onAddOrUpdateSong) return;
+
+    try {
+        const auto info = mDbContext->songsManage.getBasicSongInfo(songId);
+        mSongImport->onAddOrUpdateSong(ConvertUtils::object2Uint8t(info.toBasicJson()));
+    } catch (const std::exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("dllManager::notifySongUpdated 失败 songId={}:{}", songId, e.what());
+    }
+}
+
 dllManager::~dllManager() {
+    // 先停掉监控线程：它还持有 SongImport / DbContext 的引用，
+    // 必须在这两个析构之前 join 掉
+    if (mFolderCheckTimer) {
+        mFolderCheckTimer->stop();
+        mFolderCheckTimer.reset();
+    }
+
     spdlog::get(LogDllID)->debug("---------------------------------------");
     spdlog::shutdown();
 }

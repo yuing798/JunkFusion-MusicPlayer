@@ -2,5 +2,5 @@
 target_sources(JunkFusionCoordinator
     PRIVATE
         SongImport.cpp
-        FolderCheck.cpp
+        FolderCheckTimer.cpp
 )

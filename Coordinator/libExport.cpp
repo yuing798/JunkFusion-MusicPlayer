@@ -5,6 +5,8 @@
 #include "Macro/coordinatorMacro.hpp"
 #include "Model/SongInfo.hpp"
 #include "Model/playlistInfo.hpp"
+#include "SongsInsertHelper/FolderCheckTimer.hpp"
+#include "SongsInsertHelper/SongImport.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/convertUtils.hpp"
@@ -191,10 +193,12 @@ extern "C" {
     }
     void importSongs(const char* files) {
         Yvar fileJson = Yvar::parse(files);
-        dllManager::getInstance().getSongImportClass()->importSingleSongs(fileJson);
+        // 单独导入：会先把音频文件拷到 <缓存目录>/songs 再入库
+        dllManager::getInstance().getSongImportClass()->importSongs(fileJson);
     }
     void importNewSongFolder(const char* dir) {
-        dllManager::getInstance().getSongImportClass()->importNewFolder(juce::File{dir});
+        // 文件夹导入 + 定时监控都在 FolderCheckTimer 里
+        dllManager::getInstance().getFolderCheckTimer()->importNewFolder(juce::File{dir});
     }
     const char* getSingleImportSongs() {
         return ConvertUtils::object2Uint8t(
@@ -202,5 +206,10 @@ extern "C" {
         );
     }
 
-    void registerOnAddOrUpdateSong(StringFunc cb) {}
+    void registerOnAddOrUpdateSong(StringFunc cb) {
+        dllManager::getInstance().getSongImportClass()->onAddOrUpdateSong = cb;
+    }
+    void registerOnDeleteSong(Int64Func cb) {
+        dllManager::getInstance().getSongImportClass()->onDeleteSong = cb;
+    }
 }

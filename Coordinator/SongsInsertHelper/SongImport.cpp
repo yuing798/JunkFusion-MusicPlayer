@@ -26,17 +26,33 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-SongHasImportRes SongImport::checkSongHasImport(const juce::File& path) {
+juce::File SongImport::getCachedFileFor(const juce::File& origin) const {
+    SHA1 sha1;
+    // 原文件完整路径的 SHA1 + 原扩展名。路径是确定的，所以重复导入同一份文件
+    // 一定能算回同一个缓存路径，靠它判重/覆盖，不需要把原路径存进数据库。
+    const std::string hash = sha1(origin.getFullPathName().toStdString());
+    const std::string extension = origin.getFileExtension().toStdString();
+    return mSongsDir.getChildFile(hash + extension);
+}
+
+SongHasImportRes SongImport::checkSongHasImport(const juce::File& path, bool isSingleFile) {
     try {
+        // 单独导入的歌曲在库里存的是缓存路径，先把它算出来再查
+        const juce::File storedFile = isSingleFile ? getCachedFileFor(path) : path;
 
         SQLite::Statement checkQuery(
             mDbContext.dbManage.readDb(),
             "SELECT lastModifiedTime FROM songs WHERE filePath = "
             ":filePath"
         );
-        checkQuery.bind(":filePath", path.getFullPathName().toStdString());
+        checkQuery.bind(":filePath", storedFile.getFullPathName().toStdString());
 
         if (checkQuery.executeStep()) {
+            // 单独导入：缓存副本被人删了，就算源文件没变也得重新拷一份
+            if (isSingleFile && !storedFile.existsAsFile()) {
+                return SongHasImportRes::NeedUpdate;
+            }
+
             std::string existingTime = checkQuery.getColumn("lastModifiedTime").getString();
 
             if (existingTime != FileUtils::getFileLastModifiedTime(path)) {
@@ -139,8 +155,9 @@ bool SongImport::importSingleSong(
                 needSearchSongInfo = true;
             }
 
-            auto waveFormAnalyResult =
-                waveFormAnaly({path.getFullPathName().toStdString(), needSearchSongInfo});
+            auto waveFormAnalyResult = waveFormAnaly(
+                {successRst.finalPath.getFullPathName().toStdString(), needSearchSongInfo}
+            );
 
             OnlineSearchRes onlineGetMetadataResult;
             if (needSearchSongInfo && waveFormAnalyResult.print.has_value()) {
@@ -1071,10 +1088,49 @@ std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSong
 
     avformat_close_input(&inputContext);
 
+    // ── 单独导入的歌曲：把音频文件拷进缓存，之后它的「家」就是缓存副本 ──
+    // 文件夹导入的歌曲保持原样（filePath = 原路径，文件留在用户磁盘上）
+    juce::File storedFile = path;
+    bool copiedToCache = false;
+    if (isSingleFile) {
+        storedFile = getCachedFileFor(path);
+        const bool needCopy =
+            songHasImportRes != SongHasImportRes::HasImport || !storedFile.existsAsFile();
+
+        if (needCopy) {
+            if (!mSongsDir.isDirectory() && !mSongsDir.createDirectory()) {
+                if (logger)
+                    logger->error(
+                        "歌曲缓存目录创建失败，放弃导入:{} / {}",
+                        mSongsDir.getFullPathName().toStdString(),
+                        filePath
+                    );
+                return std::nullopt;
+            }
+
+            // 先写 .tmp 再改名：中途失败/断电都不会留下半个文件
+            const juce::File tmpFile = storedFile.getSiblingFile(storedFile.getFileName() + ".tmp");
+            if (tmpFile.existsAsFile()) tmpFile.deleteFile();
+
+            bool copyOk = path.copyFileTo(tmpFile);
+            if (copyOk) {
+                if (storedFile.existsAsFile() && !storedFile.deleteFile()) copyOk = false;
+                if (copyOk) copyOk = tmpFile.moveFileTo(storedFile);
+            }
+            if (!copyOk) {
+                tmpFile.deleteFile();
+                if (logger) logger->error("拷贝歌曲到缓存失败，放弃导入:{}", filePath);
+                return std::nullopt;
+            }
+            copiedToCache = true;
+        }
+    }
+
     // ── 绑定 songs 表字段的辅助 lambda（复用 INSERT 和 UPDATE 两处） ──
     auto bindSongFields = [&](SQLite::Statement& stmt) {
         // ── 必选字段 ──
-        stmt.bind(":filePath", filePath);
+        stmt.bind(":filePath", storedFile.getFullPathName().toStdString());
+        stmt.bind(":isSingleFile", isSingleFile ? 1 : 0);
         stmt.bind(":lastModifiedTime", lastModifiedTime);
         stmt.bind(":duration", info.duration);
         stmt.bind(":title", info.title);
@@ -1102,7 +1158,7 @@ std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSong
                 SQLite::Statement updateSong(
                     db,
                     "UPDATE songs SET  "
-                    "lastModifiedTime = :lastModifiedTime, "
+                    "lastModifiedTime = :lastModifiedTime, isSingleFile = :isSingleFile, "
                     "duration = :duration, title = :title, artists = :artists, album = :album, "
                     "trackNumber = :trackNumber,  discNumber = :discNumber,"
                     "bitRate = :bitRate, bitDepth = :bitDepth, hash = :hash, "
@@ -1120,12 +1176,12 @@ std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSong
                 // ── 新文件：插入 songs 记录 ──
                 SQLite::Statement insert(
                     db,
-                    "INSERT INTO songs (filePath, lastModifiedTime, "
+                    "INSERT INTO songs (filePath, lastModifiedTime, isSingleFile, "
                     "duration, title, artists, album, "
                     "trackNumber, discNumber,bitRate, bitDepth, "
                     "sampleRate, channelLayoutMask, codecName, hash) "
 
-                    " VALUES (:filePath, :lastModifiedTime, :duration, :title, "
+                    " VALUES (:filePath, :lastModifiedTime, :isSingleFile, :duration, :title, "
                     ":artists, "
                     ":album, "
                     ":trackNumber, :discNumber,:bitRate, :bitDepth, "
@@ -1161,10 +1217,15 @@ std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSong
     } catch (const SQLite::Exception& e) {
         if (logger) logger->error("insert song error:{}", e.what());
 
+        // 已经拷进缓存的副本没有对应记录了，删掉，别留垃圾
+        if (copiedToCache && storedFile.existsAsFile()) storedFile.deleteFile();
+
         return std::nullopt;
     }
 
     result.info = std::move(info);
+    result.finalPath = storedFile;
+    result.copiedToCache = copiedToCache;
     if (onAddOrUpdateSong)
         onAddOrUpdateSong(ConvertUtils::object2Uint8t(result.info.toBasicJson()));
 
@@ -1174,8 +1235,11 @@ std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSong
 void SongImport::importSongs(Yvar songPaths) {
     for (int i = 0; i < songPaths.size(); i++) {
         auto file = juce::File{songPaths.read(i).toString()};
-        auto checkRes = checkSongHasImport(file);
-        if (checkRes != SongHasImportRes::HasImport) continue;
+
+        // 单独导入：查重用的是「算出来的缓存路径」，不是原路径
+        auto checkRes = checkSongHasImport(file, true);
+        if (checkRes == SongHasImportRes::HasImport) continue;
+
         importSingleSong(checkRes, file, true);
     }
 }

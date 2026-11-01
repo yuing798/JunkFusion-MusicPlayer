@@ -326,14 +326,13 @@ class FolderContentPage extends StatelessWidget {
   /// 导入整个文件夹
   ///
   /// 流程：选目录 → 后端 importNewSongFolder（同步递归导入）→ 重拉根目录
-  /// → 重拉歌曲表 → 直接打开这个文件夹。
+  /// → 直接打开这个文件夹。
   ///
-  /// 注意：文件夹导入后端**不会**回调 onLightSongDataImportOver（只有
-  /// importSongs 会），所以新歌只能靠整表重拉拿回来。
+  /// 导入过程中每首歌都会走后端的 onAddOrUpdateSong，SongProvider 的缓存
+  /// 会自动补齐，不用整表重拉。
   Future<void> _importFolder(BuildContext context) async {
     // await 之前先把 provider 抓出来：等用户选完目录回来，context 可能已经失效
     final folder = context.read<FolderProvider>();
-    final songProvider = context.read<SongProvider>();
 
     final String? dirPath = await FilePicker.getDirectoryPath(
       dialogTitle: '选择要导入的文件夹',
@@ -352,9 +351,8 @@ class FolderContentPage extends StatelessWidget {
 
     // 同步导入，大文件夹会卡一会儿（见 FolderProvider.importFolder 的 FIXME）
     folder.importFolder(importPath);
-    // 后端直接把新歌写进库了，不走导入完成回调，只能整表重拉
-    songProvider.getAllSongs();
-    // 导入完直接打开它（顺便让左侧树定位过去）
+    // 导入完直接打开它（顺便让左侧树定位过去）。
+    // 缺的歌曲基本信息由 FolderProvider 按需从后端补，不用整表重拉。
     folder.openFolder(importPath);
 
     await DialogUtil.showInfoDialog('文件夹已导入：$importPath');
@@ -362,11 +360,17 @@ class FolderContentPage extends StatelessWidget {
 
   /// 单独导入歌曲：和「所有音乐」页的导入文件是同一个流程
   ///
-  /// 导入完成后端会回调 onLightSongDataImportOver，新歌由
-  /// CppCallbackManager 补进 SongProvider（会顺便弹一个结果窗）。
+  /// 后端每导入/更新完一首会回调 registerOnAddOrUpdateSong，
+  /// 新歌由 CppCallbackManager 塞进 SongProvider。
   Future<void> _importSongs(BuildContext context) async {
+    final folder = context.read<FolderProvider>();
     final songProvider = context.read<SongProvider>();
+
     await songProvider.songsImport();
+
+    // 正在看「单独导入」的话，重新拉一遍它的 songId 列表，
+    // 新导入的歌才会出现在当前列表里
+    if (folder.isSingleImportOpen) folder.openSingleImportFolder();
   }
 }
 

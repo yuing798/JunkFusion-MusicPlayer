@@ -5,14 +5,10 @@
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
 #include "Utils/dbUtils.hpp"
-#include "Utils/fileUtils.hpp"
-#include "Utils/otherUtils.hpp"
-#include "juce_core/juce_core.h"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
-#include <cstring>
 
 #include <memory>
 #include <optional>
@@ -22,7 +18,6 @@
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
-#include <utility>
 #include <vector>
 
 extern "C" {
@@ -283,9 +278,11 @@ void SongsManage::reverseMyLike(int64_t id) {
             logger->error("[我喜欢]状态更新失败，请重试:{}", e.what());
         }
     });
-    if (dllManager::getInstance().onUpdateSongInfo) dllManager::getInstance().onUpdateSongInfo(id);
+    dllManager::getInstance().notifySongUpdated(id);
 }
 void SongsManage::updatePlayCount(std::string path) {
+    int64_t updatedSongId{0};
+
     dbManage.write([&](SQLite::Database& db) {
         try {
             SQLite::Statement sql{
@@ -296,19 +293,18 @@ void SongsManage::updatePlayCount(std::string path) {
 
             sql.bind(":filePath", path);
             if (sql.executeStep()) {
-                int64_t songId{sql.getColumn("songId").getInt64()};
-                if (dllManager::getInstance().onUpdateSongInfo)
-                    dllManager::getInstance().onUpdateSongInfo(songId);
+                updatedSongId = sql.getColumn("songId").getInt64();
             }
-            return true;
         } catch (SQLite::Exception& e) {
             spdlog::get(LogDllID)->debug(
                 "SongsManage::updatePlayCount(std::string path)发生错误:{}",
                 e.what()
             );
-            return false;
         }
     });
+
+    // 通知放到写事务外面：它内部还要读一次库拿最新信息
+    if (updatedSongId > 0) dllManager::getInstance().notifySongUpdated(updatedSongId);
 }
 Yvar SongsManage::getSingleImportSongs() {
     auto songIdList = Yvar::array();

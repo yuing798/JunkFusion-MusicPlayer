@@ -33,6 +33,11 @@
  * @brief 歌曲表
  * @param isSingleFile 这个歌曲是单独的文件还是随着某个文件夹导入的同时导入的文件
  * @param songFolderId 对应的这个音频文件放在哪个文件夹中，如果isSingleFile=true,则这个字段为空
+ * @param filePath 这个歌曲「真正」的路径：
+ *         · 文件夹导入的歌 = 用户磁盘上的原文件路径（文件夹视图靠它做
+ *           「目录里的文件 → songId」的匹配，不能改成缓存路径）
+ *         · 单独导入的歌 = <缓存目录>/songs/<原路径的sha1>.<扩展名>，也就是拷贝出来的
+ *           那一份；原路径不入库（重复导入靠这个确定的缓存文件名判重）
  */
 static const std::string createSongsTableSQL = std::format(
     R"(
@@ -58,7 +63,8 @@ static const std::string createSongsTableSQL = std::format(
             hash TEXT,
             timeDomainSpec BLOB,
             albumId INTEGER,
-            songFolderId INTEGER
+            songFolderId INTEGER,
+            isSingleFile    INTEGER DEFAULT 0,
             FOREIGN KEY (albumId) REFERENCES albums(albumId) ON DELETE CASCADE,
             FOREIGN KEY (songFolderId) REFERENCES songFolders(id) ON DELETE CASCADE
         )
@@ -86,8 +92,10 @@ static const char* createAlbumIdIndexSQL =
 /**
  * @brief 歌曲文件夹表
  * @param isRoot 这个文件夹是否为根目录
- * @param dir 文件夹绝对路径，如果是单独导入的会移动到缓存文件夹里面
+ * @param dir 文件夹绝对路径
  *
+ * 注意：「单独导入」的歌**不会**进这张表。它们的音频文件会被拷到
+ * <缓存目录>/songs 下，直接把缓存路径写进 songs.filePath。
  */
 static const char* createSongFolderTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songFolders (
