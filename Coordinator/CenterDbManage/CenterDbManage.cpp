@@ -93,7 +93,7 @@ static const char* createSongFolderTableSQL = R"(
     CREATE TABLE IF NOT EXISTS songFolders (
         id     INTEGER PRIMARY KEY AUTOINCREMENT,
         dir TEXT NOT NULL UNIQUE,
-        lastModifiedTime   TEXT  ,
+        lastModifiedTime   TEXT NOT NULL ,
         isRoot INT NOT NULL
     )
 )";
