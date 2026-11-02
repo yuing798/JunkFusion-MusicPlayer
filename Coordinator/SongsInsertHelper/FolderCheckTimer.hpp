@@ -67,18 +67,11 @@ private:
     std::unordered_map<std::string, DirState> compareAllDirState();
 
     /// 把结构变化落库（一个事务里只跑 SQL），返回之后还要做内容比对的目录
-    std::vector<std::string> applyStructureChanges(
-        const std::unordered_map<std::string, DirState>& changes
-    );
+    std::vector<std::string>
+    applyStructureChanges(const std::unordered_map<std::string, DirState>& changes);
 
     /// 对单个目录做文件级比对（事务外，每首歌自己走一次 dbManage.write）
     void syncDirContents(const std::string& dirPath);
-
-    /// 路径结尾补一个分隔符
-    static std::string withTrailingSeparator(const std::string& dir);
-
-    /// path 是不是 dir 本身或它下面的东西
-    static bool isPathUnderDir(const std::string& path, const std::string& dir);
 
     DbContext& mDbContext;
     SongImport& mSongImport;

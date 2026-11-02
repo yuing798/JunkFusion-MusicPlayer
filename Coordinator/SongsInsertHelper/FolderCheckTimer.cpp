@@ -39,11 +39,12 @@ void FolderCheckTimer::stop() {
 
 void FolderCheckTimer::run() {
     while (!threadShouldExit()) {
+
+        checkOnce(); // 这样刚开始就能检查一次，而不是一分钟后再检查
+
         // wait 返回 true 说明被 notify 了（一般就是 stop）
         if (wait(static_cast<double>(checkIntervalMs))) break;
         if (threadShouldExit()) break;
-
-        checkOnce();
     }
 }
 
@@ -190,7 +191,7 @@ FolderCheckTimer::applyStructureChanges(const std::unordered_map<std::string, Di
 
         if (!needDelete) {
             for (const auto& rootDir : deletedRootDirs) {
-                if (isPathUnderDir(row.dir, rootDir)) {
+                if (FileUtils::isPathUnderDir(row.dir, rootDir)) {
                     needDelete = true;
                     break;
                 }
@@ -428,24 +429,4 @@ void FolderCheckTimer::importNewFolder(const juce::File& folderPath) {
                 logger->warn("导入文件夹时跳过:{}", file.getFullPathName().toStdString());
         }
     }
-}
-
-// ════════════════════════════════════════════════════════════════
-// 小工具
-// ════════════════════════════════════════════════════════════════
-
-std::string FolderCheckTimer::withTrailingSeparator(const std::string& dir) {
-    if (dir.empty()) return dir;
-
-    const char last = dir.back();
-    if (last == '\\' || last == '/') return dir;
-
-    const char sep = static_cast<char>(juce::File::getSeparatorChar());
-    return dir + sep;
-}
-bool FolderCheckTimer::isPathUnderDir(const std::string& path, const std::string& dir) {
-    if (path == dir) return true;
-
-    const std::string prefix = withTrailingSeparator(dir);
-    return path.rfind(prefix, 0) == 0;
 }
