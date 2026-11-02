@@ -54,6 +54,7 @@ dependencies:
   desktop_drop: ^0.8.4 #文件拖拽
   flutter_directory_tree: ^1.0.0 #树状视图
   flex_color_scheme: 8.4.0 #主题和色彩
+  toastification: 3.2.2
 
 dependency_overrides:
   meta: ^1.19.0

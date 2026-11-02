@@ -173,6 +173,16 @@ void AudioProcessSuber::run() {
                     dllManager::getInstance().onErrorSendCallback(cString);
                 continue;
             }
+            if (obj.has(AudioMacro::fatalErrorPopupWindowMsg)) {
+                auto receiverMsg =
+                    obj.read(AudioMacro::fatalErrorPopupWindowMsg).toString();
+                spdlog::get(LogDllID)->error("sub接收到发送致命错误弹窗消息:{}", receiverMsg);
+                auto cString{ConvertUtils::copyStringOnHeap(receiverMsg)};
+
+                if (dllManager::getInstance().onFatalErrorSendCallback)
+                    dllManager::getInstance().onFatalErrorSendCallback(cString);
+                continue;
+            }
             if (obj.has(AudioMacro::currentPTS)) {
 
                 double pts = obj.read(AudioMacro::currentPTS).toDouble();

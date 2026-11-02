@@ -45,6 +45,9 @@ extern "C" {
     void registerErrorSendCallback(StringFunc cb) {
         dllManager::getInstance().onErrorSendCallback = cb;
     }
+    void registerFatalErrorSendCallback(StringFunc cb) {
+        dllManager::getInstance().onFatalErrorSendCallback = cb;
+    }
     void play(long long songId, double targetSeconds, int isSeek, int isNewSong) {
         auto info =
             dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();

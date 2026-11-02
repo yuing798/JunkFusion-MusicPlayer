@@ -9,7 +9,10 @@ namespace AudioMacro {
     static constexpr const char* sampleRateList = "sampleRateList";
     static constexpr const char* bufferSizeList = "bufferSizeList";
     static constexpr const char* oscPort = "--oscPort";
+    // 非致命错误：前端弹右下角卡片通知（可以继续操作）
     static constexpr const char* errorPopupWindowMsg = "errorPopupWindowMsg";
+    // 致命错误：前端弹中央模态窗（必须手动关掉才能继续操作）
+    static constexpr const char* fatalErrorPopupWindowMsg = "fatalErrorPopupWindowMsg";
     static constexpr const char* killAudioProcess = "killAudioProcess";
     static constexpr const char* pause = "pause";
     static constexpr const char* songChangeCrossFadeLength = "songChangeCrossFadeLength";

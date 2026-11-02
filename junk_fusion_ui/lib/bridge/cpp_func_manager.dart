@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'dart:io';
@@ -25,6 +26,7 @@ final bindings = JunkFusionDLLBindings(_libPath);
 //统一实现cpp传过来的回调函数
 class CppCallbackManager {
   ffi.NativeCallable<StringFuncFunction>? _errorSendcallable;
+  ffi.NativeCallable<StringFuncFunction>? _fatalErrorSendcallable;
   ffi.NativeCallable<DoubleFuncFunction>? _currentPTSCallback;
   ffi.NativeCallable<IntFuncFunction>? _onPlayNextOrPreviousSong;
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
@@ -33,6 +35,7 @@ class CppCallbackManager {
 
   /// 2. 注册回调到 C++
   void setupCallbacks(SongProvider songProvider, PlaybackProvider playback) {
+    // 非致命错误：右下角卡片通知，自动消失 / 点击消失
     _errorSendcallable = ffi.NativeCallable<StringFuncFunction>.listener((
       ffi.Pointer<ffi.Char> ptr,
     ) {
@@ -41,7 +44,18 @@ class CppCallbackManager {
 
       print("收到来自 C++ 的错误通知: $errorMessage");
 
-      // TODO: 在这里触发错误弹窗逻辑
+      UtilFunction.showErrorMessage(errorMessage);
+    });
+    // 致命错误：屏幕中央的模态窗，必须手动关掉
+    _fatalErrorSendcallable = ffi.NativeCallable<StringFuncFunction>.listener((
+      ffi.Pointer<ffi.Char> ptr,
+    ) {
+      final fatalMessage = UtilFunction.cPtr2String(ptr);
+
+      print("收到来自 C++ 的致命错误: $fatalMessage");
+
+      // 弹模态窗是异步的，这里不等它（回调里也没法等）
+      unawaited(UtilFunction.showFatalMessage(fatalMessage));
     });
     _currentPTSCallback = ffi.NativeCallable<DoubleFuncFunction>.listener((
       double value,
@@ -77,6 +91,9 @@ class CppCallbackManager {
 
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
+    bindings.registerFatalErrorSendCallback(
+      _fatalErrorSendcallable!.nativeFunction,
+    );
     bindings.registerCurrentPTSCallback(_currentPTSCallback!.nativeFunction);
     bindings.registerOnPlayNextOrPreviousSong(
       _onPlayNextOrPreviousSong!.nativeFunction,
@@ -89,6 +106,7 @@ class CppCallbackManager {
   /// 3. 清理资源
   void dispose() {
     bindings.registerErrorSendCallback(ffi.nullptr); //给cpp的函数指针先分配一个nullPtr
+    bindings.registerFatalErrorSendCallback(ffi.nullptr);
     bindings.registerCurrentPTSCallback(ffi.nullptr);
     bindings.registerOnAddOrUpdateSong(ffi.nullptr);
     bindings.registerOnPlayNextOrPreviousSong(ffi.nullptr);
@@ -97,6 +115,7 @@ class CppCallbackManager {
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
     _errorSendcallable?.close();
+    _fatalErrorSendcallable?.close();
     _currentPTSCallback?.close();
     _onAddOrUpdateSong?.close();
     _onPlayNextOrPreviousSong?.close();

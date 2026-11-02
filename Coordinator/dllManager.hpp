@@ -39,8 +39,10 @@ private:
     std::unique_ptr<FolderCheckTimer> mFolderCheckTimer; // 文件夹定时监控（独立线程）
 
 public:
-    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
-    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
+    // cpp主动向前端发送错误数据：非致命 -> 前端弹右下角卡片；致命 -> 前端弹模态窗
+    std::function<void(const char*)> onErrorSendCallback;
+    std::function<void(const char*)> onFatalErrorSendCallback;
+    std::function<void(double)> onCurrentPTSCallback; // 获取当前的播放进度条的callback
     std::function<void(int)> onPlayNextOrPreviousSong;
     std::function<void(int)> onPlayStateSync; // 请求同步播放状态
 

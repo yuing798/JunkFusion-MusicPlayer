@@ -312,6 +312,9 @@ class JunkFusionDLLBindings {
   late final _registerCurrentPTSCallback = _registerCurrentPTSCallbackPtr
       .asFunction<void Function(DoubleFunc)>();
 
+  /// @brief 注册「非致命错误」回调：前端收到后弹右下角卡片通知
+  ///
+  /// 消息体就是一段给人看的文字（比如 FFmpeg 解码失败的原因）。
   void registerErrorSendCallback(StringFunc cb) {
     return _registerErrorSendCallback(cb);
   }
@@ -322,6 +325,22 @@ class JunkFusionDLLBindings {
       );
   late final _registerErrorSendCallback = _registerErrorSendCallbackPtr
       .asFunction<void Function(StringFunc)>();
+
+  /// @brief 注册「致命错误」回调：前端收到后弹中央模态窗，必须手动关掉
+  ///
+  /// 音频进程用 AudioMacro::fatalErrorPopupWindowMsg 这个 key 发出来的消息走这里；
+  /// 目前还没有生产者（解码失败都算非致命），通道先留着。
+  void registerFatalErrorSendCallback(StringFunc cb) {
+    return _registerFatalErrorSendCallback(cb);
+  }
+
+  late final _registerFatalErrorSendCallbackPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
+        'registerFatalErrorSendCallback',
+      );
+  late final _registerFatalErrorSendCallback =
+      _registerFatalErrorSendCallbackPtr
+          .asFunction<void Function(StringFunc)>();
 
   void registerOnAddOrUpdateSong(StringFunc cb) {
     return _registerOnAddOrUpdateSong(cb);

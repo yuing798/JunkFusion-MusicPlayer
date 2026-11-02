@@ -12,11 +12,13 @@ import 'package:junk_fusion_ui/utils/alone_lock.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
+import 'package:junk_fusion_ui/widgets/popupWindow/error_toast.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toastification/toastification.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -299,17 +301,22 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider(create: (_) => AppTheme()),
       ],
 
-      child: MaterialApp(
+      child: ToastificationWrapper(
+        // 错误卡片通知的全局配置（位置/宽度/同时显示几条），
+        // 具体样式和去重逻辑在 widgets/popupWindow/error_toast.dart
+        config: ErrorToast.config,
         //有画布,且overlay就在这里面
-        title: 'JunkFusion',
-        navigatorKey: navigatorKey,
+        child: MaterialApp(
+          title: 'JunkFusion',
+          navigatorKey: navigatorKey,
 
-        debugShowCheckedModeBanner: false, //关闭右上角 DEBUG 标签
-        theme: ThemeData(
-          fontFamily: "OpenSans",
-          fontFamilyFallback: ["NotoSansSC"],
+          debugShowCheckedModeBanner: false, //关闭右上角 DEBUG 标签
+          theme: ThemeData(
+            fontFamily: "OpenSans",
+            fontFamilyFallback: ["NotoSansSC"],
+          ),
+          home: const App(),
         ),
-        home: const App(),
       ),
     );
   }
