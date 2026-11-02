@@ -1,5 +1,6 @@
 #include "./FolderCheckTimer.hpp"
 #include "Utils/constants.h"
+#include "Utils/dbUtils.hpp"
 #include "Utils/fileUtils.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Exception.h>
@@ -65,11 +66,25 @@ void FolderCheckTimer::checkOnce() {
     const auto changes = compareAllDirState();
     if (changes.empty()) return;
 
+    // 只刷了时间戳的话结构没变（前端那棵树不用动）；有新增/删除才算结构变了
+    bool structureChanged = false;
+    for (const auto& each : changes) {
+        if (each.second.sqlState != SqlState::Update) {
+            structureChanged = true;
+            break;
+        }
+    }
+
     const auto dirsToSync = applyStructureChanges(changes);
     for (const auto& dir : dirsToSync) {
         if (threadShouldExit()) break;
         syncDirContents(dir);
     }
+
+    // 结构变化 + 新目录里的歌都补完了，再让前端重拉整棵树：
+    // 放到最后是为了让新增的目录一出现就带着它的歌（前端重拉的时候一次拿全）。
+    // 不通知的话，用户在外面把已导入的文件夹删掉，前端那棵树要重启才变。
+    if (structureChanged && onFolderStructureChanged) onFolderStructureChanged();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -208,18 +223,25 @@ FolderCheckTimer::applyStructureChanges(const std::unordered_map<std::string, Di
         }
     }
 
-    // 删之前先把这些目录下的 songId 收集起来，删完通知前端
+    // 删之前先把这些目录下的 songId 收集起来，删完通知前端；
+    // albumId 也要一起收：专辑有没有变空只能拿「删之前的所属专辑」去查
     std::vector<int64_t> deletedSongIds;
+    std::vector<int64_t> deletedAlbumIds;
     if (!dirsToDelete.empty()) {
         try {
             for (const auto& [id, dir] : dirsToDelete) {
                 SQLite::Statement stmt{
                     mDbContext.dbManage.readDb(),
-                    "SELECT songId FROM songs WHERE songFolderId=:songFolderId"
+                    "SELECT songId,albumId FROM songs WHERE songFolderId=:songFolderId"
                 };
                 stmt.bind(":songFolderId", id);
                 while (stmt.executeStep()) {
                     deletedSongIds.push_back(stmt.getColumn("songId").getInt64());
+
+                    const auto albumId = DbUtils::getOptCol<int64_t>(stmt, "albumId");
+                    if (albumId.has_value() && albumId.value() > 0) {
+                        deletedAlbumIds.push_back(albumId.value());
+                    }
                 }
             }
         } catch (SQLite::Exception& e) {
@@ -274,6 +296,9 @@ FolderCheckTimer::applyStructureChanges(const std::unordered_map<std::string, Di
         if (mSongImport.onDeleteSong) mSongImport.onDeleteSong(songId);
     }
 
+    // 歌已经删掉了：这些专辑要是一首歌都不剩，把专辑行删掉并通知前端
+    removeEmptyAlbums(deletedAlbumIds);
+
     // 新增的目录要补歌；时间戳变了的目录要重新比对文件
     dirsToSync.insert(dirsToSync.end(), dirsToInsert.begin(), dirsToInsert.end());
     dirsToSync.insert(dirsToSync.end(), dirsToRefresh.begin(), dirsToRefresh.end());
@@ -304,17 +329,25 @@ void FolderCheckTimer::syncDirContents(const std::string& dirPath) {
         return;
     }
 
-    // 库里这个目录下的歌：filePath -> songId
-    std::unordered_map<std::string, int64_t> songsInTable;
+    // 库里这个目录下的歌：filePath -> 这一行
+    struct SongRow {
+        int64_t songId{0};
+        int64_t albumId{0}; // 0 = 这首歌没有专辑
+    };
+    std::unordered_map<std::string, SongRow> songsInTable;
     try {
         SQLite::Statement stmt{
             mDbContext.dbManage.readDb(),
-            "SELECT songId,filePath FROM songs WHERE songFolderId=:songFolderId"
+            "SELECT songId,filePath,albumId FROM songs WHERE songFolderId=:songFolderId"
         };
         stmt.bind(":songFolderId", folderId);
         while (stmt.executeStep()) {
-            songsInTable[stmt.getColumn("filePath").getString()] =
-                stmt.getColumn("songId").getInt64();
+            SongRow row{};
+            row.songId = stmt.getColumn("songId").getInt64();
+            const auto albumId = DbUtils::getOptCol<int64_t>(stmt, "albumId");
+            if (albumId.has_value() && albumId.value() > 0) row.albumId = albumId.value();
+
+            songsInTable[stmt.getColumn("filePath").getString()] = row;
         }
     } catch (SQLite::Exception& e) {
         if (auto logger = spdlog::get(LogDllID))
@@ -339,11 +372,12 @@ void FolderCheckTimer::syncDirContents(const std::string& dirPath) {
     }
 
     // 表里有、盘上没有的：删行并通知前端（文件本来就不在了，不用动磁盘）
-    for (const auto& [filePath, songId] : songsInTable) {
+    std::vector<int64_t> deletedAlbumIds;
+    for (const auto& [filePath, songRow] : songsInTable) {
         if (filesOnDisk.find(filePath) != filesOnDisk.end()) continue;
 
         try {
-            mDbContext.dbManage.write([songId](SQLite::Database& db) {
+            mDbContext.dbManage.write([songId = songRow.songId](SQLite::Database& db) {
                 SQLite::Statement stmt{db, "DELETE FROM songs WHERE songId=:songId"};
                 stmt.bind(":songId", songId);
                 stmt.exec();
@@ -354,7 +388,33 @@ void FolderCheckTimer::syncDirContents(const std::string& dirPath) {
             continue;
         }
 
-        if (mSongImport.onDeleteSong) mSongImport.onDeleteSong(songId);
+        if (mSongImport.onDeleteSong) mSongImport.onDeleteSong(songRow.songId);
+        if (songRow.albumId > 0) deletedAlbumIds.push_back(songRow.albumId);
+    }
+
+    // 删掉的歌所属的专辑，空了就删掉专辑行（会回调前端）
+    removeEmptyAlbums(deletedAlbumIds);
+}
+
+// ════════════════════════════════════════════════════════════════
+// 专辑收尾：没有歌的专辑删掉
+// ════════════════════════════════════════════════════════════════
+
+void FolderCheckTimer::removeEmptyAlbums(const std::vector<int64_t>& albumIds) {
+    if (albumIds.empty()) return;
+
+    // 同一个专辑只查一次（一张专辑的几十首歌一起被删时不要重复查库）
+    const std::unordered_set<int64_t> uniqueIds{albumIds.begin(), albumIds.end()};
+    for (const auto albumId : uniqueIds) {
+        if (threadShouldExit()) return;
+
+        const auto removed = mDbContext.albumsManage.removeAlbumIfEmpty(albumId);
+        if (!removed.has_value()) continue;
+
+        if (auto logger = spdlog::get(LogDllID))
+            logger->debug("专辑里已经没有歌了，删除专辑:{}", removed.value());
+
+        if (mSongImport.onDeleteAlbum) mSongImport.onDeleteAlbum(removed.value());
     }
 }
 

@@ -236,3 +236,29 @@ Yvar AlbumsManage::getDetailInfo(int64_t albumId) {
     info.songsList = getSongsList(albumId);
     return info.toDetailJson();
 }
+
+std::optional<int64_t> AlbumsManage::removeAlbumIfEmpty(int64_t albumId) {
+    if (albumId <= 0) return std::nullopt;
+
+    return dbManage.write([albumId](SQLite::Database& db) -> std::optional<int64_t> {
+        try {
+            // 还有歌用着这张专辑就不动它
+            SQLite::Statement countSql{db, "SELECT COUNT(*) FROM songs WHERE albumId=:albumId"};
+            countSql.bind(":albumId", albumId);
+            if (!countSql.executeStep()) return std::nullopt;
+            if (countSql.getColumn(0).getInt64() > 0) return std::nullopt;
+
+            SQLite::Statement removeSql{db, "DELETE FROM albums WHERE albumId=:albumId"};
+            removeSql.bind(":albumId", albumId);
+            removeSql.exec();
+
+            // 一行都没删掉说明这张专辑本来就不在
+            if (removeSql.getChanges() == 0) return std::nullopt;
+
+            return albumId;
+        } catch (SQLite::Exception& e) {
+            spdlog::get(LogDllID)->error("AlbumsManage::removeAlbumIfEmpty 失败:{}", e.what());
+            return std::nullopt;
+        }
+    });
+}

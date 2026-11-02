@@ -351,6 +351,20 @@ class JunkFusionDLLBindings {
       _registerFatalErrorSendCallbackPtr
           .asFunction<void Function(StringFunc)>();
 
+  /// @brief 注册「新建了一张专辑」回调
+  ///
+  /// 参数是这张专辑的 basic json，和 getAllAlbumView 里的一项长得一样。
+  void registerOnAddNewAlbum(StringFunc cb) {
+    return _registerOnAddNewAlbum(cb);
+  }
+
+  late final _registerOnAddNewAlbumPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(StringFunc)>>(
+        'registerOnAddNewAlbum',
+      );
+  late final _registerOnAddNewAlbum = _registerOnAddNewAlbumPtr
+      .asFunction<void Function(StringFunc)>();
+
   void registerOnAddOrUpdateSong(StringFunc cb) {
     return _registerOnAddOrUpdateSong(cb);
   }
@@ -362,6 +376,20 @@ class JunkFusionDLLBindings {
   late final _registerOnAddOrUpdateSong = _registerOnAddOrUpdateSongPtr
       .asFunction<void Function(StringFunc)>();
 
+  /// @brief 注册「专辑被删掉了」回调
+  ///
+  /// 参数是 albumId。专辑里一首歌都不剩时后端会把 albums 那一行删掉再回调。
+  void registerOnDeleteAlbum(Int64Func cb) {
+    return _registerOnDeleteAlbum(cb);
+  }
+
+  late final _registerOnDeleteAlbumPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(Int64Func)>>(
+        'registerOnDeleteAlbum',
+      );
+  late final _registerOnDeleteAlbum = _registerOnDeleteAlbumPtr
+      .asFunction<void Function(Int64Func)>();
+
   void registerOnDeleteSong(Int64Func cb) {
     return _registerOnDeleteSong(cb);
   }
@@ -372,6 +400,23 @@ class JunkFusionDLLBindings {
       );
   late final _registerOnDeleteSong = _registerOnDeleteSongPtr
       .asFunction<void Function(Int64Func)>();
+
+  /// @brief 注册「文件夹结构变了」回调：前端收到后重拉文件夹树
+  ///
+  /// 用户在资源管理器里删掉 / 新增了已经导入过的文件夹时触发（定时检查那一轮，
+  /// 或者 refreshForntend 手动催的那一轮）。只是某个目录里歌曲的增删不会走
+  /// 这里，那个走 registerOnAddOrUpdateSong / registerOnDeleteSong。
+  void registerOnFolderStructureChanged(VoidFunc cb) {
+    return _registerOnFolderStructureChanged(cb);
+  }
+
+  late final _registerOnFolderStructureChangedPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(VoidFunc)>>(
+        'registerOnFolderStructureChanged',
+      );
+  late final _registerOnFolderStructureChanged =
+      _registerOnFolderStructureChangedPtr
+          .asFunction<void Function(VoidFunc)>();
 
   void registerOnPlayNextOrPreviousSong(IntFunc cb) {
     return _registerOnPlayNextOrPreviousSong(cb);

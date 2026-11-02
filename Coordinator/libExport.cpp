@@ -215,5 +215,16 @@ extern "C" {
     void registerOnDeleteSong(Int64Func cb) {
         dllManager::getInstance().getSongImportClass()->onDeleteSong = cb;
     }
+    void registerOnFolderStructureChanged(VoidFunc cb) {
+        auto* folderCheckTimer = dllManager::getInstance().getFolderCheckTimer();
+        if (!folderCheckTimer) return;
+        folderCheckTimer->onFolderStructureChanged = cb;
+    }
+    void registerOnAddNewAlbum(StringFunc cb) {
+        dllManager::getInstance().getSongImportClass()->onAddNewAlbum = cb;
+    }
+    void registerOnDeleteAlbum(Int64Func cb) {
+        dllManager::getInstance().getSongImportClass()->onDeleteAlbum = cb;
+    }
     void refreshForntend() { dllManager::getInstance().getFolderCheckTimer()->checkOnce(); }
 }

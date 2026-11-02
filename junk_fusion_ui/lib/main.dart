@@ -127,6 +127,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
     cppCallbackManager.setupCallbacks(
       widget.songProvider,
       widget.playbackProvider,
+      widget.folderProvider,
+      widget.albumProvider,
     );
     _initSystemTray();
 

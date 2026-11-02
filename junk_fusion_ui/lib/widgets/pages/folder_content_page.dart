@@ -25,9 +25,11 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // 布局（自上而下，最后一排按钮在没选目录时也在，方便一进来就导入）：
 //   第 1 行（60px）：文件夹图标 + 名字 + 「路径 · N 个子文件夹 · M 首」
 //   第 2 行（50px）：播放全部 / 添加到播放列表 …… 导入文件夹 / 单独导入歌曲
-//   第 3 部分：列表（子文件夹行 + EachSong 歌曲行），没选目录时显示提示
+//   第 3 部分：列表（.. 返回上一级 + 子文件夹行 + EachSong 歌曲行），
+//             没选目录时显示提示
 //
 // 交互：
+//   双击「..」       → 回到父目录（列表第一行；根目录 / 单独导入没有这一行）
 //   双击子文件夹     → FolderProvider.openFolder(子目录路径)
 //                      左侧树会自动定位、展开并高亮（由 openToken 驱动）
 //   点歌曲封面       → 把这个文件夹的歌曲当成播放列表开始播
@@ -238,7 +240,13 @@ class FolderContentPageState extends State<FolderContentPage> {
     List<SongBasicInfo> songs,
     bool hasCurrentSong,
   ) {
-    if (subDirs.isEmpty && songs.isEmpty) {
+    // 「.. 回到上一级」：根目录不显示（没有上一级），虚拟节点也没有父目录
+    final parentPath = _parentPathOf(folder);
+
+    final isEmpty = subDirs.isEmpty && songs.isEmpty;
+
+    // 空文件夹又回不去的（根目录 / 单独导入）：还是老样子居中提示
+    if (isEmpty && parentPath == null) {
       return Center(
         child: Text(
           folder.isSingleImportOpen ? '还没有单独导入的歌曲' : '这个文件夹是空的',
@@ -246,6 +254,9 @@ class FolderContentPageState extends State<FolderContentPage> {
         ),
       );
     }
+
+    // 列表开头固定几行：有父目录就 1 行「..」，空文件夹再加 1 行提示
+    final headCount = (parentPath != null ? 1 : 0) + (isEmpty ? 1 : 0);
 
     // key 绑当前目录：换文件夹时整块换掉，滚动位置回到顶部
     // （不换的话会停在上一个文件夹的位置，被 clamp 到新列表末尾）
@@ -256,16 +267,47 @@ class FolderContentPageState extends State<FolderContentPage> {
           return ListView.builder(
             controller: controller_,
             physics: physics_,
-            // 子文件夹在前、歌曲在后，顺序都是后端给的
-            itemCount: subDirs.length + songs.length,
+            // 「..」和空文件夹提示在最前面，子文件夹在前、歌曲在后，
+            // 顺序都是后端给的
+            itemCount: headCount + subDirs.length + songs.length,
             padding: EdgeInsets.only(
               right: 10, // 给滚动条留位置
               bottom: hasCurrentSong ? 90 : 0, // 有歌在播时别被 PlayBar 盖住
             ),
             itemBuilder: (context, index) {
+              var cursor = index;
+
+              // ── 回到上一级 ──
+              if (parentPath != null) {
+                if (cursor == 0) {
+                  return _ParentDirTile(
+                    key: const ValueKey('__parent_dir__'),
+                    path: parentPath,
+                    onOpen: () => folder.openFolder(parentPath),
+                  );
+                }
+                cursor -= 1;
+              }
+
+              // ── 空文件夹的提示行 ──
+              if (isEmpty) {
+                if (cursor == 0) {
+                  return SizedBox(
+                    height: 48,
+                    child: Center(
+                      child: Text(
+                        '这个文件夹是空的',
+                        style: theme.littleTextStyle,
+                      ),
+                    ),
+                  );
+                }
+                cursor -= 1;
+              }
+
               // ── 子文件夹 ──
-              if (index < subDirs.length) {
-                final path = subDirs[index];
+              if (cursor < subDirs.length) {
+                final path = subDirs[cursor];
                 return _SubFolderTile(
                   key: ValueKey(path),
                   path: path,
@@ -274,7 +316,7 @@ class FolderContentPageState extends State<FolderContentPage> {
               }
 
               // ── 歌曲 ──
-              final song = songs[index - subDirs.length];
+              final song = songs[cursor - subDirs.length];
               return EachSong(
                 key: ValueKey(song.songId),
                 song: song,
@@ -290,6 +332,14 @@ class FolderContentPageState extends State<FolderContentPage> {
         },
       ),
     );
+  }
+
+  /// 当前目录的上一级：根目录 / 「单独导入」虚拟节点 / 没有上一级都返回 null
+  String? _parentPathOf(FolderProvider folder) {
+    final path = folder.currentPath;
+    if (path == null || path == FolderProvider.singleImportNodeId) return null;
+    if (folder.isRootPath(path)) return null;
+    return FolderProvider.parentPathOf(path);
   }
 
   /// 一个文件夹都没打开时的提示
@@ -411,6 +461,84 @@ class FolderContentPageState extends State<FolderContentPage> {
     // 正在看「单独导入」的话，重新拉一遍它的 songId 列表，
     // 新导入的歌才会出现在当前列表里
     if (folder.isSingleImportOpen) folder.openSingleImportFolder();
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// _ParentDirTile — 右侧列表第一行的「.. 回到上一级」
+//
+// GitHub 那种写法：列在最前面，点它退回父目录。和子文件夹行一样用双击
+// （这个列表里凡是「会跳走」的行都是双击，免得单击误触）；根目录不显示这一行。
+// ════════════════════════════════════════════════════════════════
+class _ParentDirTile extends StatefulWidget {
+  /// 父目录的完整路径
+  final String path;
+
+  /// 双击返回上一级
+  final VoidCallback onOpen;
+
+  const _ParentDirTile({super.key, required this.path, required this.onOpen});
+
+  @override
+  State<_ParentDirTile> createState() => _ParentDirTileState();
+}
+
+class _ParentDirTileState extends State<_ParentDirTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<AppTheme>();
+    final name = FolderProvider.baseNameOf(widget.path);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: widget.onOpen,
+        child: Tooltip(
+          message: '${widget.path}\n双击回到上一级',
+          waitDuration: const Duration(milliseconds: 500),
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            color: _isHovered ? theme.colorHover : theme.colorCell,
+            child: Row(
+              children: [
+                Icon(
+                  TablerIcons.folderUp,
+                  size: 22,
+                  color: theme.colorTextSecond,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '..',
+                  style: theme.midTextStyle.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorTextSecond,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: theme.littleTextStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '双击返回',
+                  style: theme.littleTextStyle.copyWith(color: theme.colorEdge),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

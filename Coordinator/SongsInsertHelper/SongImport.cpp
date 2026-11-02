@@ -1,5 +1,6 @@
 #include "./SongImport.hpp"
 #include "Coordinator/CatagoryViewManage/songsManage.hpp"
+#include "Model/AlbumInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/convertUtils.hpp"
 #include "Utils/dbUtils.hpp"
@@ -124,12 +125,23 @@ bool SongImport::importSingleSong(
                 albumArtists.value(),
                 songInfo.hash
             );
+
+            // 这次是不是新插了一张专辑：是的话落库完要通知前端加进专辑列表
+            std::optional<AlbumInfo> newAlbum;
             if (!albumId.has_value()) {
                 albumId = mDbContext.albumsManage.insertAlbum(
                     songInfo.album.value(),
                     albumArtists.value(),
                     songInfo.hash
                 );
+
+                if (albumId.has_value()) {
+                    newAlbum = AlbumInfo{};
+                    newAlbum->albumId = albumId.value();
+                    newAlbum->title = songInfo.album.value();
+                    newAlbum->albumArtists = albumArtists;
+                    newAlbum->hash = songInfo.hash;
+                }
             }
 
             mDbContext.dbManage.write([&](SQLite::Database& db) {
@@ -141,6 +153,10 @@ bool SongImport::importSingleSong(
                 updateAlbumId.bind(":songId", songInfo.songId);
                 updateAlbumId.exec();
             });
+
+            if (newAlbum.has_value() && onAddNewAlbum) {
+                onAddNewAlbum(ConvertUtils::object2Uint8t(newAlbum->toBasicJson()));
+            }
         }
 
         // return songInfo;

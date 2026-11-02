@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'dart:io';
+import 'package:junk_fusion_ui/model/album_basic_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
+import 'package:junk_fusion_ui/providers/album_provider.dart';
+import 'package:junk_fusion_ui/providers/folder_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
@@ -32,9 +35,17 @@ class CppCallbackManager {
   ffi.NativeCallable<IntFuncFunction>? _onPlayStateSync;
   ffi.NativeCallable<StringFuncFunction>? _onAddOrUpdateSong;
   ffi.NativeCallable<Int64FuncFunction>? _onDeleteSong;
+  ffi.NativeCallable<VoidFuncFunction>? _onFolderStructureChanged;
+  ffi.NativeCallable<StringFuncFunction>? _onAddNewAlbum;
+  ffi.NativeCallable<Int64FuncFunction>? _onDeleteAlbum;
 
   /// 2. 注册回调到 C++
-  void setupCallbacks(SongProvider songProvider, PlaybackProvider playback) {
+  void setupCallbacks(
+    SongProvider songProvider,
+    PlaybackProvider playback,
+    FolderProvider folderProvider,
+    AlbumProvider albumProvider,
+  ) {
     // 非致命错误：右下角卡片通知，自动消失 / 点击消失
     _errorSendcallable = ffi.NativeCallable<StringFuncFunction>.listener((
       ffi.Pointer<ffi.Char> ptr,
@@ -89,6 +100,28 @@ class CppCallbackManager {
       playback.setPlayPauseIcon(value == 1 ? true : false);
     });
 
+    // 文件夹结构变了（有目录被删掉 / 新增）：前端重拉文件夹树
+    _onFolderStructureChanged = ffi.NativeCallable<VoidFuncFunction>.listener(
+      () {
+        folderProvider.reloadFolderStructure();
+      },
+    );
+    // 新建了一张专辑：塞进专辑列表
+    _onAddNewAlbum = ffi.NativeCallable<StringFuncFunction>.listener((
+      ffi.Pointer<ffi.Char> ptr,
+    ) {
+      final dartStr = UtilFunction.cPtr2String(ptr);
+      albumProvider.addOrUpdateAlbum(
+        AlbumBasicInfo.fromJson(jsonDecode(dartStr)),
+      );
+    });
+    // 专辑里一首歌都不剩、被后端删掉了
+    _onDeleteAlbum = ffi.NativeCallable<Int64FuncFunction>.listener((
+      int albumId,
+    ) {
+      albumProvider.deleteAlbum(albumId);
+    });
+
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerFatalErrorSendCallback(
@@ -100,6 +133,11 @@ class CppCallbackManager {
     );
     bindings.registerOnAddOrUpdateSong(_onAddOrUpdateSong!.nativeFunction);
     bindings.registerOnDeleteSong(_onDeleteSong!.nativeFunction);
+    bindings.registerOnFolderStructureChanged(
+      _onFolderStructureChanged!.nativeFunction,
+    );
+    bindings.registerOnAddNewAlbum(_onAddNewAlbum!.nativeFunction);
+    bindings.registerOnDeleteAlbum(_onDeleteAlbum!.nativeFunction);
     bindings.requestOnPlayStateSync(_onPlayStateSync!.nativeFunction);
   }
 
@@ -111,6 +149,9 @@ class CppCallbackManager {
     bindings.registerOnAddOrUpdateSong(ffi.nullptr);
     bindings.registerOnPlayNextOrPreviousSong(ffi.nullptr);
     bindings.registerOnDeleteSong(ffi.nullptr);
+    bindings.registerOnFolderStructureChanged(ffi.nullptr);
+    bindings.registerOnAddNewAlbum(ffi.nullptr);
+    bindings.registerOnDeleteAlbum(ffi.nullptr);
     bindings.requestOnPlayStateSync(ffi.nullptr);
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
@@ -120,6 +161,9 @@ class CppCallbackManager {
     _onAddOrUpdateSong?.close();
     _onPlayNextOrPreviousSong?.close();
     _onDeleteSong?.close();
+    _onFolderStructureChanged?.close();
+    _onAddNewAlbum?.close();
+    _onDeleteAlbum?.close();
     _onPlayStateSync?.close();
   }
 }

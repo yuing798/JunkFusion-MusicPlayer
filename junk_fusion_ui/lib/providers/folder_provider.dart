@@ -274,6 +274,63 @@ class FolderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 后端说文件夹结构变了（registerOnFolderStructureChanged）：重拉整棵树
+  ///
+  /// 为什么不能只重拉根目录：用户可能删掉的是某个**子**目录，根目录一点没变，
+  /// 但树里那一层还挂着（这就是「删了文件夹，树要重启才变」的那个 bug）。
+  /// 所以这里把拉过的内容全清掉，按「根目录 → 上次展开过的目录（从浅到深）
+  /// → 当前打开的目录」重新问一遍，后端已经不存在的路径自然就消失了。
+  ///
+  /// 每个目录一次 [getChildDirAndSongIdList]，后端会顺便重扫这个目录，所以
+  /// 只在后端真报告了结构变化时才调（一分钟最多一次，见 FolderCheckTimer）。
+  ///
+  /// 当前打开的那个目录如果被删了，退回「没选任何目录」：右侧列表清空，
+  /// 树上的高亮也跟着没了。
+  void reloadFolderStructure() {
+    if (!_inited) return; // 树还没打开过，第一次打开时自己会拉最新的
+
+    final selected = _curPath;
+    // 展开状态先备份：清空 _childDirs/_knownPaths 之后就没法判断某个路径还在不在了
+    final expanded = _expandedPaths.toList()
+      ..sort((a, b) => _depthOf(a).compareTo(_depthOf(b)));
+
+    _childDirs.clear();
+    _songIds.clear();
+    _knownPaths.clear();
+
+    _loadRootDirs();
+
+    // 从浅到深重拉：父目录拉过之后，子目录才认得出自己还在不在
+    final stillExist = <String>{};
+    for (final path in expanded) {
+      if (!_isKnownPath(path)) continue;
+      _fetchChildrenInto(path);
+      stillExist.add(path);
+    }
+    _expandedPaths = stillExist;
+    AppCache.frontCacheRef.setStringList(
+      expandedPathsCacheKey,
+      stillExist.toList(),
+    );
+
+    if (selected == singleImportNodeId) {
+      _fetchSingleImportSongIds();
+    } else if (selected != null) {
+      if (_isKnownPath(selected)) {
+        _fetchChildrenInto(selected);
+      } else {
+        // 正在看的目录被删掉了
+        _curPath = null;
+        AppCache.frontCacheRef.remove(selectedPathCacheKey);
+      }
+    }
+
+    _ensureSongsForCurrentFolder();
+    _refreshCurrentSongs();
+    _structureVersion++;
+    notifyListeners();
+  }
+
   /// 把一个文件夹导入后端，并刷新根目录
   ///
   /// 这里只负责「导入 + 让树认识它」；打开由调用方再调 [openFolder]。
@@ -461,6 +518,17 @@ class FolderProvider extends ChangeNotifier {
     if (index < 0) return normalized;
     final name = normalized.substring(index + 1);
     return name.isEmpty ? normalized : name;
+  }
+
+  /// 上一级目录的完整路径；已经在盘符根（"D:"）时返回 null
+  ///
+  /// 纯字符串处理，不看磁盘：树里的路径都是 juce 规范化过的（不带结尾分隔符、
+  /// 不会出现 ".."），所以按最后一个分隔符切一刀就够。
+  static String? parentPathOf(String path) {
+    final normalized = _trimTrailingSeparator(path);
+    final index = normalized.lastIndexOf(RegExp(r'[\\/]'));
+    if (index <= 0) return null; // "D:" / 空串，没有上一级
+    return normalized.substring(0, index);
   }
 
   /// 去掉路径结尾的分隔符（"D:\Music\" -> "D:\Music"）

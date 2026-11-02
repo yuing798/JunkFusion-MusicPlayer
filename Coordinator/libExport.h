@@ -125,6 +125,29 @@ extern "C" {
     DLL_EXPORT void registerOnAddOrUpdateSong(StringFunc cb);
     DLL_EXPORT void registerOnDeleteSong(Int64Func cb);
 
+    /**
+     * @brief 注册「文件夹结构变了」回调：前端收到后重拉文件夹树
+     *
+     * 用户在资源管理器里删掉 / 新增了已经导入过的文件夹时触发（定时检查那一轮，
+     * 或者 refreshForntend 手动催的那一轮）。只是某个目录里歌曲的增删不会走
+     * 这里，那个走 registerOnAddOrUpdateSong / registerOnDeleteSong。
+     */
+    DLL_EXPORT void registerOnFolderStructureChanged(VoidFunc cb);
+
+    /**
+     * @brief 注册「新建了一张专辑」回调
+     *
+     * 参数是这张专辑的 basic json，和 getAllAlbumView 里的一项长得一样。
+     */
+    DLL_EXPORT void registerOnAddNewAlbum(StringFunc cb);
+
+    /**
+     * @brief 注册「专辑被删掉了」回调
+     *
+     * 参数是 albumId。专辑里一首歌都不剩时后端会把 albums 那一行删掉再回调。
+     */
+    DLL_EXPORT void registerOnDeleteAlbum(Int64Func cb);
+
     DLL_EXPORT void refreshForntend(); // 刷新前端，立刻扫描一次文件夹所有歌曲信息
 
 #ifdef __cplusplus

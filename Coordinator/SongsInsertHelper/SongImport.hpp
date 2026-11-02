@@ -141,5 +141,22 @@ public:
     // 每从库里删掉一首歌回调一次（文件夹里的文件被删掉时会发生）
     std::function<void(int64_t)> onDeleteSong;
 
+    /**
+     * @brief 新建了一张专辑时回调一次
+     *
+     * 参数是这张专辑的 basic json，结构和 getAllAlbumsView 里的一项完全一样，
+     * 前端直接塞进专辑列表就行。已经有同名专辑时（checkAlbumExist 命中）
+     * 不会回调。
+     */
+    std::function<void(const char*)> onAddNewAlbum;
+
+    /**
+     * @brief 专辑里一首歌都不剩、被删掉时回调一次
+     *
+     * 参数是 albumId。删专辑的动作在 FolderCheckTimer::removeEmptyAlbums 里做
+     * （见 AlbumsManage::removeAlbumIfEmpty），这里只负责通知前端。
+     */
+    std::function<void(int64_t)> onDeleteAlbum;
+
     std::function<void(const std::string&)> onDirHasRegister;
 };
