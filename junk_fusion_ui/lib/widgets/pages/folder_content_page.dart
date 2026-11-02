@@ -1,11 +1,14 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
+import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/folder_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
@@ -36,9 +39,18 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 // 左侧的文件夹树在 widgets/nav/folder_tree_sidebar.dart，不在这个文件里。
 // ════════════════════════════════════════════════════════════════
 
-/// 文件夹视图的右侧内容
-class FolderContentPage extends StatelessWidget {
+class FolderContentPage extends StatefulWidget {
   const FolderContentPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() {
+    return FolderContentPageState();
+  }
+}
+
+/// 文件夹视图的右侧内容
+class FolderContentPageState extends State<FolderContentPage> {
+  final importBtnKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -118,9 +130,7 @@ class FolderContentPage extends StatelessWidget {
           SizedBox(
             width: 50,
             height: 50,
-            child: Center(
-              child: Icon(icon, size: 40, color: theme.colorEdge),
-            ),
+            child: Center(child: Icon(icon, size: 40, color: theme.colorEdge)),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -174,15 +184,46 @@ class FolderContentPage extends StatelessWidget {
           const Spacer(),
 
           _FolderActionButton(
-            icon: TablerIcons.folderPlus,
-            label: '导入文件夹',
-            onTap: () => _importFolder(context),
+            icon: TablerIcons.refresh,
+            label: "刷新",
+            onTap: bindings.refreshForntend,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           _FolderActionButton(
-            icon: TablerIcons.musicPlus,
-            label: '单独导入歌曲',
-            onTap: () => _importSongs(context),
+            key: importBtnKey,
+            icon: TablerIcons.fileImport,
+            label: "导入",
+            onTap: () {
+              final importBtnCenter = UtilFunction.getWidgetCenter(
+                importBtnKey,
+              );
+              if (importBtnCenter == null) return;
+
+              return showRootContextMenu(
+                context: context,
+                position: Offset(
+                  importBtnCenter.dx - 140,
+                  importBtnCenter.dy + 30,
+                ),
+                useBarrier: true,
+                items: [
+                  ContextMenuItem.custom(
+                    builder: (_) => _FolderActionButton(
+                      icon: TablerIcons.folderPlus,
+                      label: '导入文件夹',
+                      onTap: () => _importFolder(context),
+                    ),
+                  ),
+                  ContextMenuItem.custom(
+                    builder: (_) => _FolderActionButton(
+                      icon: TablerIcons.musicPlus,
+                      label: '单独导入歌曲',
+                      onTap: () => _importSongs(context),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -228,8 +269,7 @@ class FolderContentPage extends StatelessWidget {
                 return _SubFolderTile(
                   key: ValueKey(path),
                   path: path,
-                  onOpen: () =>
-                      context.read<FolderProvider>().openFolder(path),
+                  onOpen: () => context.read<FolderProvider>().openFolder(path),
                 );
               }
 
@@ -459,6 +499,7 @@ class _FolderActionButton extends StatelessWidget {
   final bool isPrimary;
 
   const _FolderActionButton({
+    super.key,
     required this.icon,
     required this.label,
     this.onTap,

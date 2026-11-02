@@ -125,6 +125,8 @@ extern "C" {
     DLL_EXPORT void registerOnAddOrUpdateSong(StringFunc cb);
     DLL_EXPORT void registerOnDeleteSong(Int64Func cb);
 
+    DLL_EXPORT void refreshForntend(); // 刷新前端，立刻扫描一次文件夹所有歌曲信息
+
 #ifdef __cplusplus
 }
 #endif

@@ -215,4 +215,5 @@ extern "C" {
     void registerOnDeleteSong(Int64Func cb) {
         dllManager::getInstance().getSongImportClass()->onDeleteSong = cb;
     }
+    void refreshForntend() { dllManager::getInstance().getFolderCheckTimer()->checkOnce(); }
 }

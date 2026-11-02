@@ -301,6 +301,15 @@ class JunkFusionDLLBindings {
   late final _play = _playPtr
       .asFunction<void Function(int, double, int, int)>();
 
+  void refreshForntend() {
+    return _refreshForntend();
+  }
+
+  late final _refreshForntendPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('refreshForntend');
+  late final _refreshForntend = _refreshForntendPtr
+      .asFunction<void Function()>();
+
   void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
     return _registerCurrentPTSCallback(doubleFunc);
   }
