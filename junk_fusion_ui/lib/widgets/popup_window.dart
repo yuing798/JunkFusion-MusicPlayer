@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/ordinary_info_window.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/playlist_create_window.dart';
-import 'package:junk_fusion_ui/widgets/popupWindow/song_error_window.dart';
 
 class DialogUtil {
   // 使用原生的 showDialog 弹出自定义内容
@@ -20,20 +19,6 @@ class DialogUtil {
           // 关闭时调用 Navigator.pop，系统会自动执行淡出+缩放动画
           onClose: () => Navigator.of(context).pop(),
         );
-      },
-    );
-  }
-
-  //歌曲错误弹窗
-  static Future<void> showSongErrorDialog({
-    required String msg,
-    required bool hasNextSong,
-  }) {
-    return showDialog(
-      context: navigatorKey.currentContext!,
-      barrierDismissible: false, // 禁止点击外部关闭
-      builder: (BuildContext context) {
-        return SongErrorDialog(msg: msg);
       },
     );
   }

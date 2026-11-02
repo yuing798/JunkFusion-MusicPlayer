@@ -8,7 +8,6 @@ import 'package:junk_fusion_ui/model/album_detail_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 
 import 'package:junk_fusion_ui/providers/song_provider.dart';
-import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 
 // ════════════════════════════════════════════════════════════════

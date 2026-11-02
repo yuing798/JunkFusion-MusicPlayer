@@ -1,12 +1,9 @@
 #pragma once
 
-#include "CenterDbManage/CenterDbmanage.hpp"
 #include "CenterDbManage/dbContext.hpp"
-#include "Model/SongInfo.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
-#include "catagoryViewManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_osc/juce_osc.h"
 #include "processSchedule/AudioProcessCoordinator.h"
@@ -15,10 +12,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <optional>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <string>
-#include <variant>
 
 class FolderCheckTimer;
 

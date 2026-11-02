@@ -141,6 +141,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
       widget.albumProvider.getAllAlbums();
       print("准备从后端拉取所有歌单");
       widget.playlistProvider.getAllPlaylists();
+
+      UtilFunction.showFatalMessage('测试致命错误');
     });
   }
 

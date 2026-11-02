@@ -537,42 +537,6 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
         chromaprint_free(printContext);
     }
 
-    // try {
-    //     dbManage.write([&](SQLite::Database& db) {
-    //         SQLite::Statement sql(
-    //             db,
-    //             "UPDATE songs SET timeDomainSpec = :timeDomainSpec WHERE filePath = :filePath"
-    //         );
-    //         sql.bind(
-    //             ":timeDomainSpec",
-    //             blobBuffer.data(),
-    //             static_cast<int>(blobBuffer.size() * sizeof(double))
-    //         ); // 时域图
-    //         sql.bind(":filePath", task.path);
-
-    //         // std::string spdlogStr{""};
-    //         // spdlog::get(LogDllID)->debug(
-    //         //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
-    //         //     task.path,
-    //         //     blobBuffer.size(),
-    //         //     static_cast<int>(blobBuffer.size() * sizeof(double))
-    //         // );
-    //         // for (size_t i = 0; i < blobBuffer.size(); i++) {
-
-    //         //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
-    //         // }
-    //         // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
-
-    //         sql.exec();
-    //     });
-    // } catch (SQLite::Exception& e) {
-    //     spdlog::get(LogDllID)->error("WaveFormAnaly线程发生数据库错误:{}", e.what());
-    // }
-    // if (task.needGetPrint) {
-    //     return std::move(printStr);
-    // } else {
-    //     return std::nullopt;
-    // }
     WaveFormAnalyRes r;
     if (task.needGetPrint) {
         r.print = std::move(printStr);
