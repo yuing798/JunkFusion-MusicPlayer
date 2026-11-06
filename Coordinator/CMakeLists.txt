@@ -38,6 +38,7 @@ target_sources(JunkFusionCoordinator
     PRIVATE
         libExport.cpp
         dllManager.cpp
+        EqController.cpp
 )
 
 add_subdirectory(SongsInsertHelper)

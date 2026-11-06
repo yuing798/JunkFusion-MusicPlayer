@@ -6,4 +6,5 @@ target_sources(JunkFusionCoordinator
         SongFolderManage.cpp
         PlayListManage.cpp
         SongsManage.cpp
+        EqPresetManage.cpp
 )

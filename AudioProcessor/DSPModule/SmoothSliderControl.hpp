@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../processSchedule/AudioProcessWorker.hpp"
+#include "../processSchedule/OscReceiver.hpp"
 #include "Utils/constants.h"
 #include "Utils/mathUtils.hpp"
-#include "processSchedule/AudioProcessWorker.hpp"
-#include "processSchedule/OscReceiver.hpp"
 
 // 全部平滑滑块的集中存储区域
 struct SmoothSliderControl {

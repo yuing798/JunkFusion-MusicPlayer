@@ -1,0 +1,11 @@
+target_sources(JunkFusionAudioProcess
+    PRIVATE
+        PlayCount.cpp
+        Stretch.cpp
+        BeforeCrossFadeDSPModule.cpp
+        ProgressBarWatch.cpp
+        CrossFadeArea.cpp
+        SmoothSliderControl.cpp
+        PlayPauseControl.cpp
+        Eq.cpp
+)

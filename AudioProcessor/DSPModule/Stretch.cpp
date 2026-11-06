@@ -1,11 +1,12 @@
 #include "./Stretch.hpp"
+#include "../processSchedule/AudioProcessWorker.hpp"
+#include "../processSchedule/OscReceiver.hpp"
 #include "Utils/constants.h"
 #include "Utils/otherUtils.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
-#include "processSchedule/AudioProcessWorker.hpp"
-#include "processSchedule/OscReceiver.hpp"
 #include <spdlog/spdlog.h>
+
 
 Stretch::Stretch(SmoothSliderControl& smooth) : mSmooth(smooth) {
     // auto onPitchShifterChange = [this](float value) {

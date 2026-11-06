@@ -24,6 +24,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app.dart'; // 根组件
 import 'providers/album_provider.dart';
+import 'providers/eq_provider.dart';
 import 'providers/folder_provider.dart';
 import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
@@ -302,6 +303,8 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),
+        // 均衡器：第一次被页面读到时才创建（不在启动时碰 FFI）
+        ChangeNotifierProvider<EqProvider>(create: (_) => EqProvider()),
         ChangeNotifierProvider(create: (_) => AppTheme()),
       ],
 

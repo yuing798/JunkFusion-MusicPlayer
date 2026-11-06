@@ -1,13 +1,14 @@
 #pragma once
 
+#include "../processSchedule/AudioProcessWorker.hpp"
 #include "Utils/constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
-#include "processSchedule/AudioProcessWorker.hpp"
 #include <atomic>
 #include <cstdint>
 #include <string>
+
 class PlayCount : juce::Timer {
 private:
     AudioProcessWorker& mWorker;

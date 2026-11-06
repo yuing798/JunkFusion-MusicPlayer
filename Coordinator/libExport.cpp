@@ -1,4 +1,5 @@
 #include "./libExport.h"
+#include "./EqController.hpp"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
 #include "Macro/audioMacro.hpp"
@@ -227,4 +228,123 @@ extern "C" {
         dllManager::getInstance().getSongImportClass()->onDeleteAlbum = cb;
     }
     void refreshForntend() { dllManager::getInstance().getFolderCheckTimer()->checkOnce(); }
+
+    //===================================================================================
+    // EQ 均衡器
+    void updateEqBandLive(int idx, double freqHz, double gainDb, double q, double shelfSlope) {
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr) return;
+
+        eqController->updateBandLive(
+            idx,
+            static_cast<float>(freqHz),
+            static_cast<float>(gainDb),
+            static_cast<float>(q),
+            static_cast<float>(shelfSlope)
+        );
+    }
+
+    void setEqBand(
+        int idx,
+        int enabled,
+        const char* type,
+        double freqHz,
+        double gainDb,
+        double q,
+        double shelfSlope,
+        int cutSlopeDbPerOct
+    ) {
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr) return;
+
+        EqBandParam band{};
+        band.idx = idx;
+        band.enabled = enabled != 0;
+        if (type != nullptr) {
+            // 认不出来的类型保持默认（bell），不要静默改成别的形状
+            if (auto parsed = EqBandParam::typeFromName(type)) band.type = *parsed;
+        }
+        band.freqHz = static_cast<float>(freqHz);
+        band.gainDb = static_cast<float>(gainDb);
+        band.q = static_cast<float>(q);
+        band.shelfSlope = static_cast<float>(shelfSlope);
+        band.cutSlopeDbPerOct = cutSlopeDbPerOct > 0 ? cutSlopeDbPerOct : 12;
+
+        eqController->setBand(band);
+    }
+
+    void setEqMaster(int enabled, double masterGainDb) {
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr) return;
+
+        eqController->setMaster(enabled != 0, static_cast<float>(masterGainDb));
+    }
+
+    void setEqAll(const char* eqAllJson) {
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr || eqAllJson == nullptr) return;
+
+        const Yvar envelope = Yvar::parse(eqAllJson);
+        Yvar body = envelope.read("eqAll");
+        if (!body.isObject()) body = envelope; // 允许直接传内层的参数体
+
+        eqController->setAll(EqWire::decodeAll(body));
+    }
+
+    const char* getEqAllState() {
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr) return ConvertUtils::object2Uint8t(Yvar::object());
+
+        Yvar envelope = Yvar::object();
+        envelope.set("eqAll", EqWire::encodeAll(eqController->getState()));
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const float* getEqCurve(int numPoints) {
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr) return nullptr;
+        return eqController->getCurve(numPoints);
+    }
+
+    //===================================================================================
+    // EQ 预设
+    const char* getAllEqPresets() {
+        Yvar envelope = Yvar::object();
+        envelope.set(
+            "eqPresets",
+            dllManager::getInstance().getDbContext()->eqPresetManage.getAllPresets()
+        );
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getEqPresetParams(long long id) {
+        Yvar envelope = Yvar::object();
+        envelope.set(
+            "eqAll",
+            dllManager::getInstance().getDbContext()->eqPresetManage.getPresetParams(id)
+        );
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    long long saveEqPreset(const char* title) {
+        if (title == nullptr) return -1;
+
+        auto* eqController = dllManager::getInstance().getEqController();
+        if (eqController == nullptr) return -1;
+
+        const std::string paramsText = EqWire::encodeAll(eqController->getState()).dump();
+        return dllManager::getInstance().getDbContext()->eqPresetManage.createPreset(
+            title,
+            paramsText
+        );
+    }
+
+    void renameEqPreset(long long id, const char* title) {
+        if (title == nullptr) return;
+        dllManager::getInstance().getDbContext()->eqPresetManage.renamePreset(id, title);
+    }
+
+    void deleteEqPreset(long long id) {
+        dllManager::getInstance().getDbContext()->eqPresetManage.deletePreset(id);
+    }
 }

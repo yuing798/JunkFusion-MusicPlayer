@@ -1,8 +1,9 @@
 #pragma once
+#include "../processSchedule/AudioProcessWorker.hpp"
 #include "Utils/constants.h"
 #include "juce_core/juce_core.h"
 #include "juce_events/juce_events.h"
-#include "processSchedule/AudioProcessWorker.hpp"
+
 // 进度条模块
 #include <atomic>
 #include <cstdint>

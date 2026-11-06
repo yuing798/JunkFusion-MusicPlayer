@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../CatagoryViewManage/ArtistsManage.hpp"
+#include "../CatagoryViewManage/EqPresetManage.hpp"
 #include "../CatagoryViewManage/PlayListManage.hpp"
 #include "../CatagoryViewManage/SongFolderManage.hpp"
 #include "Coordinator/CatagoryViewManage/AlbumsManage.hpp"
@@ -15,8 +16,9 @@ struct DbContext {
     PlayListManage playListManage;
     SongFolderManage songFolderManage;
     ArtistsManage artistsManage;
+    EqPresetManage eqPresetManage;
 
     DbContext(std::string dbPath)
         : dbManage(dbPath), songsManage(dbManage), albumsManage(dbManage), playListManage(dbManage),
-          songFolderManage(dbManage), artistsManage(dbManage) {}
+          songFolderManage(dbManage), artistsManage(dbManage), eqPresetManage(dbManage) {}
 };

@@ -6,6 +6,7 @@ target_sources(Models
         PlayInfo.cpp
         AlbumInfo.cpp
         playlistInfo.cpp
+        EqInfo.cpp
 )
 
 

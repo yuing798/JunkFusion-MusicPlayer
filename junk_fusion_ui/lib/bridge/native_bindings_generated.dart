@@ -59,6 +59,17 @@ class JunkFusionDLLBindings {
   late final _createNewPlaylist = _createNewPlaylistPtr
       .asFunction<int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>();
 
+  void deleteEqPreset(int id) {
+    return _deleteEqPreset(id);
+  }
+
+  late final _deleteEqPresetPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
+        'deleteEqPreset',
+      );
+  late final _deleteEqPreset = _deleteEqPresetPtr
+      .asFunction<void Function(int)>();
+
   void deletePlaylist(int playlistId) {
     return _deletePlaylist(playlistId);
   }
@@ -115,6 +126,18 @@ class JunkFusionDLLBindings {
         'getAllAlbumView',
       );
   late final _getAllAlbumView = _getAllAlbumViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 所有预设的列表，返回 {"eqPresets":[{id,title,createTime}]}（不含参数体）
+  ffi.Pointer<ffi.Char> getAllEqPresets() {
+    return _getAllEqPresets();
+  }
+
+  late final _getAllEqPresetsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllEqPresets',
+      );
+  late final _getAllEqPresets = _getAllEqPresetsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   ffi.Pointer<ffi.Char> getAllPlaylistView() {
@@ -215,6 +238,50 @@ class JunkFusionDLLBindings {
         'getDetailSongInfo',
       );
   late final _getDetailSongInfo = _getDetailSongInfoPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  /// @brief 取当前整机参数，返回 {"eqAll":{...}}，可以直接喂回 setEqAll
+  ffi.Pointer<ffi.Char> getEqAllState() {
+    return _getEqAllState();
+  }
+
+  late final _getEqAllStatePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getEqAllState',
+      );
+  late final _getEqAllState = _getEqAllStatePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 取整机频响曲线（dB 值数组）
+  ///
+  /// 频率轴：freq(i) = 20 * (20000/20)^(i / (numPoints-1))，i = 0 .. numPoints-1
+  /// 返回的指针指向内部缓冲，**下一次调用会被覆盖**，请拿到后立刻拷贝。
+  ///
+  /// @param numPoints 采样点数（会被钳到 2~2048）
+  /// @return 长度 numPoints 的 float 数组；未初始化时返回 nullptr
+  ffi.Pointer<ffi.Float> getEqCurve(int numPoints) {
+    return _getEqCurve(numPoints);
+  }
+
+  late final _getEqCurvePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Float> Function(ffi.Int)>>(
+        'getEqCurve',
+      );
+  late final _getEqCurve = _getEqCurvePtr
+      .asFunction<ffi.Pointer<ffi.Float> Function(int)>();
+
+  /// @brief 取某个预设的参数，返回 {"eqAll":{...}}，可以直接喂给 setEqAll()
+  ///
+  /// 找不到这个 id 时内层是空值（"eqAll": null），前端按"预设不存在"处理。
+  ffi.Pointer<ffi.Char> getEqPresetParams(int id) {
+    return _getEqPresetParams(id);
+  }
+
+  late final _getEqPresetParamsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getEqPresetParams',
+      );
+  late final _getEqPresetParams = _getEqPresetParamsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   ffi.Pointer<ffi.Char> getPlaylistBasicInfo(int id) {
@@ -445,6 +512,19 @@ class JunkFusionDLLBindings {
   late final _removeSongsInPlaylist = _removeSongsInPlaylistPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  void renameEqPreset(int id, ffi.Pointer<ffi.Char> title) {
+    return _renameEqPreset(id, title);
+  }
+
+  late final _renameEqPresetPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('renameEqPreset');
+  late final _renameEqPreset = _renameEqPresetPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
   void renamePlaylist(int playlistId, ffi.Pointer<ffi.Char> title) {
     return _renamePlaylist(playlistId, title);
   }
@@ -469,6 +549,20 @@ class JunkFusionDLLBindings {
   late final _requestOnPlayStateSync = _requestOnPlayStateSyncPtr
       .asFunction<void Function(IntFunc)>();
 
+  /// @brief 把「当前 EQ 状态」存成一个新预设
+  ///
+  /// @return 新预设的 id；失败返回 -1
+  int saveEqPreset(ffi.Pointer<ffi.Char> title) {
+    return _saveEqPreset(title);
+  }
+
+  late final _saveEqPresetPtr =
+      _lookup<ffi.NativeFunction<ffi.LongLong Function(ffi.Pointer<ffi.Char>)>>(
+        'saveEqPreset',
+      );
+  late final _saveEqPreset = _saveEqPresetPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+
   void sendSliderValue(
     ffi.Pointer<ffi.Char> identify,
     double value,
@@ -485,6 +579,91 @@ class JunkFusionDLLBindings {
       >('sendSliderValue');
   late final _sendSliderValue = _sendSliderValuePtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, double, int)>();
+
+  /// @brief 整机参数（预设 / 初始化）
+  ///
+  /// @param eqAllJson {"eqAll":{...}}，也可以直接传内层的 {...}
+  void setEqAll(ffi.Pointer<ffi.Char> eqAllJson) {
+    return _setEqAll(eqAllJson);
+  }
+
+  late final _setEqAllPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'setEqAll',
+      );
+  late final _setEqAll = _setEqAllPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  /// @brief 一条 band 的完整参数（换类型、开关、拖拽结束的最终值），走 TCP JSON
+  ///
+  /// @param idx            0 ~ 7
+  /// @param enabled        0/1
+  /// @param type           "bell" / "lowPass" / "highPass" / "notch" / "bandPass"
+  /// / "allPass" / "lowShelf" / "highShelf" / "tile" / "flatTile"
+  /// （认不出来的按 bell 处理）
+  /// @param cutSlopeDbPerOct LowPass/HighPass 用：12 = 一段，24 = 两段级联
+  void setEqBand(
+    int idx,
+    int enabled,
+    ffi.Pointer<ffi.Char> type,
+    double freqHz,
+    double gainDb,
+    double q,
+    double shelfSlope,
+    int cutSlopeDbPerOct,
+  ) {
+    return _setEqBand(
+      idx,
+      enabled,
+      type,
+      freqHz,
+      gainDb,
+      q,
+      shelfSlope,
+      cutSlopeDbPerOct,
+    );
+  }
+
+  late final _setEqBandPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Char>,
+            ffi.Double,
+            ffi.Double,
+            ffi.Double,
+            ffi.Double,
+            ffi.Int,
+          )
+        >
+      >('setEqBand');
+  late final _setEqBand = _setEqBandPtr
+      .asFunction<
+        void Function(
+          int,
+          int,
+          ffi.Pointer<ffi.Char>,
+          double,
+          double,
+          double,
+          double,
+          int,
+        )
+      >();
+
+  /// @brief 整机开关 + 输出增益
+  void setEqMaster(int enabled, double masterGainDb) {
+    return _setEqMaster(enabled, masterGainDb);
+  }
+
+  late final _setEqMasterPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int, ffi.Double)>>(
+        'setEqMaster',
+      );
+  late final _setEqMaster = _setEqMasterPtr
+      .asFunction<void Function(int, double)>();
 
   void toggleMyLike(int songId) {
     return _toggleMyLike(songId);
@@ -519,6 +698,34 @@ class JunkFusionDLLBindings {
       >('updateCoverBySongId');
   late final _updateCoverBySongId = _updateCoverBySongIdPtr
       .asFunction<void Function(int, int)>();
+
+  /// @brief 拖拽中的连续参数（高频，走 OSC/UDP）
+  ///
+  /// 只改 freqHz / gainDb / q / shelfSlope 四个连续量，类型和开关不变。
+  void updateEqBandLive(
+    int idx,
+    double freqHz,
+    double gainDb,
+    double q,
+    double shelfSlope,
+  ) {
+    return _updateEqBandLive(idx, freqHz, gainDb, q, shelfSlope);
+  }
+
+  late final _updateEqBandLivePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Int,
+            ffi.Double,
+            ffi.Double,
+            ffi.Double,
+            ffi.Double,
+          )
+        >
+      >('updateEqBandLive');
+  late final _updateEqBandLive = _updateEqBandLivePtr
+      .asFunction<void Function(int, double, double, double, double)>();
 }
 
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;

@@ -3,6 +3,7 @@ import 'package:junk_fusion_ui/model/album_basic_info.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/eq_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/folder_content_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
@@ -69,6 +70,9 @@ abstract class PagesRouteTable {
   /// 左侧导航栏「文件夹」的 id
   static const int folderViewId = 5;
 
+  /// 左侧导航栏「均衡器」的 id
+  static const int eqViewId = 9;
+
   /// 专辑（网格视图）
   static const PagesRouteEntry albumView = PagesRouteEntry(
     navId: albumViewId,
@@ -94,6 +98,13 @@ abstract class PagesRouteTable {
     navId: folderViewId,
     title: '文件夹',
     builder: _buildFolderContent,
+  );
+
+  /// 均衡器（曲线 + 底部 inspector；中间栏是预设列表）
+  static const PagesRouteEntry eqView = PagesRouteEntry(
+    navId: eqViewId,
+    title: '均衡器',
+    builder: _buildEqView,
   );
 
   /// 单张专辑：要在路由表里现造一个（标题用专辑名）
@@ -149,6 +160,7 @@ abstract class PagesRouteTable {
     if (navId == albumViewId) return albumView;
     if (navId == playlistViewId) return playlistView;
     if (navId == folderViewId) return folderView;
+    if (navId == eqViewId) return eqView;
     return null;
   }
 }
@@ -158,6 +170,8 @@ Widget _buildAlbumView(BuildContext context) => const AlbumViewPage();
 Widget _buildPlaylistView(BuildContext context) => const PlaylistViewPage();
 
 Widget _buildFolderContent(BuildContext context) => const FolderContentPage();
+
+Widget _buildEqView(BuildContext context) => const EqViewPage();
 
 // ════════════════════════════════════════════════════════════════
 // 页面栈

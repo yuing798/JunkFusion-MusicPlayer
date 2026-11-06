@@ -17,6 +17,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "10.2.0"
+  animated_reorderable_list:
+    dependency: "direct main"
+    description:
+      name: animated_reorderable_list
+      sha256: "5de5cca556a8c9c8f7b65234ae4b683593dc6e167db498744a5e389302f24d13"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.3.0"
   archive:
     dependency: transitive
     description:

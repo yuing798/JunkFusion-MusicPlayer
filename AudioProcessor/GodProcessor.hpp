@@ -1,13 +1,14 @@
 #pragma once
 
-#include "./BeforeCrossFadeDSPModule.hpp"
-#include "CrossFadeArea.hpp"
+#include "./DSPModule/BeforeCrossFadeDSPModule.hpp"
+#include "./DSPModule/CrossFadeArea.hpp"
+#include "./DSPModule/PlayCount.hpp"
+#include "./DSPModule/PlayPauseControl.hpp"
+#include "./DSPModule/ProgressBarWatch.hpp"
+#include "./DSPModule/SmoothSliderControl.hpp"
+#include "DSPModule/Eq.hpp"
 #include "DeviceManager.hpp"
 #include "Model/PlayInfo.hpp"
-#include "PlayCount.hpp"
-#include "PlayPauseControl.hpp"
-#include "ProgressBarWatch.hpp"
-#include "SmoothSliderControl.hpp"
 #include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -40,6 +41,7 @@ private:
     PlayPauseControl mPlayPauseControl;
     CrossFadeArea mCrossFade;
     SmoothSliderControl mSmooth;
+    Eq mEq; // 均衡器
 
     struct BeforeCrossFadeDSPModuleAndBuffer {
         juce::AudioBuffer<float> buffer;
@@ -69,6 +71,9 @@ private:
     void continuePlay(double targetSeconds);
     void pausePlay();
     void play(PlayInfo info, double targetSeconds, bool isSeek, bool isNewSong);
+
+    /** @brief 把一条 EQ 报文分派给 DSP（band / master / all） */
+    void applyEqMessage(const EqWire::Message& message);
 
 public:
     GodProcessor(

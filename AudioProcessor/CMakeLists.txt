@@ -9,15 +9,8 @@ target_sources(JunkFusionAudioProcess
         DeviceManager.cpp 
         ffmpegDecoder.cpp
         GodProcessor.cpp
-        PlayCount.cpp
-        Stretch.cpp
-        BeforeCrossFadeDSPModule.cpp
-        ProgressBarWatch.cpp
-        CrossFadeArea.cpp
-        SmoothSliderControl.cpp
-        PlayPauseControl.cpp
 )
-
+add_subdirectory(DSPModule)
 add_subdirectory(processSchedule)
 add_subdirectory(SystemAudioControl)
 
