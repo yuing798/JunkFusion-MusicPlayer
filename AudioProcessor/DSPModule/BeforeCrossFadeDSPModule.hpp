@@ -1,11 +1,11 @@
 #pragma once
-#include "AudioRingBuffer.hpp"
-#include "SmoothSliderControl.hpp"
-#include "Stretch.hpp"
+#include "../AudioRingBuffer.hpp"
+#include "../ffmpegDecoder.hpp"
+#include "../processSchedule/AudioProcessWorker.hpp"
+#include "./SmoothSliderControl.hpp"
+#include "./Stretch.hpp"
 #include "Utils/constants.h"
-#include "ffmpegDecoder.hpp"
 #include "juce_audio_basics/juce_audio_basics.h"
-#include "processSchedule/AudioProcessWorker.hpp"
 #include <atomic>
 #include <functional>
 #include <string>

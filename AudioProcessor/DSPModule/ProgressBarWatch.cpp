@@ -1,9 +1,10 @@
 #include "./ProgressBarWatch.hpp"
+#include "../processSchedule/AudioProcessWorker.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/mathUtils.hpp"
 #include "juce_core/juce_core.h"
-#include "processSchedule/AudioProcessWorker.hpp"
+
 
 ProgressBarWatch::ProgressBarWatch(AudioProcessWorker& worker) : mWorker(worker) {}
 

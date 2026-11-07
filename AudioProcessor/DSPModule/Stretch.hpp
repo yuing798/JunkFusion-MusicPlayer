@@ -1,12 +1,13 @@
 #pragma once
 
-#include "AudioRingBuffer.hpp"
-#include "SmoothSliderControl.hpp"
+#include "../AudioRingBuffer.hpp"
+#include "../processSchedule/AudioProcessWorker.hpp"
+#include "../processSchedule/OscReceiver.hpp"
+#include "./SmoothSliderControl.hpp"
 #include "Utils/constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
-#include "processSchedule/AudioProcessWorker.hpp"
-#include "processSchedule/OscReceiver.hpp"
 #include "signalsmith-stretch/signalsmith-stretch.h"
+
 
 // 倍速，音高偏移
 class Stretch {

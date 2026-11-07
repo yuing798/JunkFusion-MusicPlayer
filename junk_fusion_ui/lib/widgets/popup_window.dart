@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/ordinary_info_window.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/playlist_create_window.dart';
-import 'package:junk_fusion_ui/widgets/popupWindow/song_error_window.dart';
 
 class DialogUtil {
   // 使用原生的 showDialog 弹出自定义内容
@@ -24,16 +23,28 @@ class DialogUtil {
     );
   }
 
-  //歌曲错误弹窗
-  static Future<void> showSongErrorDialog({
-    required String msg,
-    required bool hasNextSong,
-  }) {
-    return showDialog(
-      context: navigatorKey.currentContext!,
-      barrierDismissible: false, // 禁止点击外部关闭
-      builder: (BuildContext context) {
-        return SongErrorDialog(msg: msg);
+  /// 致命错误弹窗（非致命错误不走这里，走 widgets/popupWindow/error_toast.dart）
+  ///
+  /// 和 showInfoDialog 的区别只有两点：顶上有「致命错误」的红色标题，
+  /// 而且不能点蒙版关掉 —— 必须点右上角的 × 表示自己看见了。
+  /// UtilFunction.showFatalMessage() 就是调的这里，C++ 的致命错误回调也走这儿。
+  static Future<void> showFatalDialog(String message) async {
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      // 界面还没挂起来（正常不会：回调注册在 initState 里，首帧后才会有错误）
+      print('[DialogUtil] 界面还没准备好，这条致命错误只留在控制台：$message');
+      return;
+    }
+    await showDialog(
+      context: context,
+      barrierDismissible: false, // 不能点外面关，必须点 ×
+      builder: (BuildContext dialogContext) {
+        return OrdinaryInfoWindow(
+          message: message,
+          title: '致命错误',
+          isError: true,
+          onClose: () => Navigator.of(dialogContext).pop(),
+        );
       },
     );
   }

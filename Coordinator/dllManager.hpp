@@ -1,12 +1,9 @@
 #pragma once
 
-#include "CenterDbManage/CenterDbmanage.hpp"
 #include "CenterDbManage/dbContext.hpp"
-#include "Model/SongInfo.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
-#include "catagoryViewManage/songsManage.hpp"
 #include "juce_core/juce_core.h"
 #include "juce_osc/juce_osc.h"
 #include "processSchedule/AudioProcessCoordinator.h"
@@ -15,12 +12,11 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <optional>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <string>
-#include <variant>
 
 class FolderCheckTimer;
+class EqController;
 
 class dllManager {
 private:
@@ -37,10 +33,13 @@ private:
     std::unique_ptr<DbContext> mDbContext;
     std::unique_ptr<SongImport> mSongImport;
     std::unique_ptr<FolderCheckTimer> mFolderCheckTimer; // 文件夹定时监控（独立线程）
+    std::unique_ptr<EqController> mEqController;         // EQ 参数下发与状态
 
 public:
-    std::function<void(const char*)> onErrorSendCallback; // cpp主动向前端发送错误数据
-    std::function<void(double)> onCurrentPTSCallback;     // 获取当前的播放进度条的callback
+    // cpp主动向前端发送错误数据：非致命 -> 前端弹右下角卡片；致命 -> 前端弹模态窗
+    std::function<void(const char*)> onErrorSendCallback;
+    std::function<void(const char*)> onFatalErrorSendCallback;
+    std::function<void(double)> onCurrentPTSCallback; // 获取当前的播放进度条的callback
     std::function<void(int)> onPlayNextOrPreviousSong;
     std::function<void(int)> onPlayStateSync; // 请求同步播放状态
 
@@ -61,6 +60,7 @@ public:
     DbContext* getDbContext() noexcept { return mDbContext.get(); }
     SongImport* getSongImportClass() noexcept { return mSongImport.get(); }
     FolderCheckTimer* getFolderCheckTimer() noexcept { return mFolderCheckTimer.get(); }
+    EqController* getEqController() noexcept { return mEqController.get(); }
 
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);

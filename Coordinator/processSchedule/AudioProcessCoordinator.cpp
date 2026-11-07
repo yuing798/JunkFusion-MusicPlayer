@@ -1,4 +1,5 @@
 #include "AudioProcessCoordinator.h"
+#include "../EqController.hpp"
 #include "../dllManager.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Utils/Yvar.hpp"
@@ -163,6 +164,13 @@ void AudioProcessSuber::run() {
                 spdlog::get(LogDllID)->error("AudioProcessSuber接收到未知格式:{}", obj.toString());
                 continue;
             };
+            // 音频进程上报采样率（UI 画频响曲线要用同一个 fs），处理完就走
+            if (auto sampleRate = EqWire::decodeSampleRate(obj)) {
+                if (auto* eqController = dllManager::getInstance().getEqController()) {
+                    eqController->setSampleRate(*sampleRate);
+                }
+                continue;
+            }
             if (obj.has(AudioMacro::errorPopupWindowMsg)) {
                 auto receiverMsg = obj.read(AudioMacro::errorPopupWindowMsg).toString();
                 spdlog::get(LogDllID)->debug("sub接收到发送错误弹窗消息:{}", receiverMsg);
@@ -171,6 +179,16 @@ void AudioProcessSuber::run() {
 
                 if (dllManager::getInstance().onErrorSendCallback)
                     dllManager::getInstance().onErrorSendCallback(cString);
+                continue;
+            }
+            if (obj.has(AudioMacro::fatalErrorPopupWindowMsg)) {
+                auto receiverMsg =
+                    obj.read(AudioMacro::fatalErrorPopupWindowMsg).toString();
+                spdlog::get(LogDllID)->error("sub接收到发送致命错误弹窗消息:{}", receiverMsg);
+                auto cString{ConvertUtils::copyStringOnHeap(receiverMsg)};
+
+                if (dllManager::getInstance().onFatalErrorSendCallback)
+                    dllManager::getInstance().onFatalErrorSendCallback(cString);
                 continue;
             }
             if (obj.has(AudioMacro::currentPTS)) {

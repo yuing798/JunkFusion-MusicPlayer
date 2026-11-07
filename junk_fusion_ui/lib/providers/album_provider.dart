@@ -8,7 +8,6 @@ import 'package:junk_fusion_ui/model/album_detail_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 
 import 'package:junk_fusion_ui/providers/song_provider.dart';
-import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 
 // ════════════════════════════════════════════════════════════════
@@ -24,8 +23,9 @@ import 'package:junk_fusion_ui/utils/util_function.dart';
 //   3. 取歌的时候再回 SongProvider 拿最新的 SongInfo —— 歌曲元数据、
 //      「我喜欢」这些状态只有一份，不会因为这里缓存了一份就变旧。
 //
-// 什么时候重新拉：SongProvider.revision 变了（导入新歌、后端改完元数据）。
-// 仅仅切换「我喜欢」不会改 revision，所以不会白跑查库。
+// 什么时候重新拉：启动时整体拉一次；之后靠后端回调保持同步，不用整表重拉 ——
+//   新建了一张专辑          → addOrUpdateAlbum()（registerOnAddNewAlbum）
+//   专辑里一首歌都不剩被删掉 → deleteAlbum()      （registerOnDeleteAlbum）
 // ════════════════════════════════════════════════════════════════
 class AlbumProvider extends ChangeNotifier {
   final SongProvider songProvider;
@@ -91,5 +91,42 @@ class AlbumProvider extends ChangeNotifier {
             .toList();
 
     notifyListeners();
+  }
+
+  /// 后端新建了一张专辑（registerOnAddNewAlbum）
+  ///
+  /// 参数就是 getAllAlbumView 里的一项，所以直接塞进列表即可。
+  /// 列表本身不排序（排序在专辑页里按用户选的方式做），所以追加到末尾没问题。
+  void addOrUpdateAlbum(AlbumBasicInfo album) {
+    final index = _albums.indexWhere((each) => each.albumId == album.albumId);
+    if (index >= 0) {
+      // 理论上不会重复，兜底：同一个 albumId 就原地换掉
+      _albums[index] = album;
+    } else {
+      _albums = [..._albums, album];
+    }
+
+    // 正在看的就是这张：标题/艺术家也跟着换成新的
+    if (_curBasicInfo?.albumId == album.albumId) {
+      _curBasicInfo = album;
+    }
+
+    notifyListeners();
+  }
+
+  /// 后端把一张专辑删掉了（registerOnDeleteAlbum，专辑里已经一首歌都不剩）
+  void deleteAlbum(int albumId) {
+    final before = _albums.length;
+    _albums = _albums.where((each) => each.albumId != albumId).toList();
+
+    final isCurrent = _curBasicInfo?.albumId == albumId;
+    if (isCurrent) {
+      // 正在看这张：详情一起清掉（单张专辑页发现 curBasicInfo 为空会自己让位）
+      _curBasicInfo = null;
+      _curDetailInfo = null;
+      _songsInAlbums = [];
+    }
+
+    if (_albums.length != before || isCurrent) notifyListeners();
   }
 }

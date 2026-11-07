@@ -1,4 +1,5 @@
 #include "./dllManager.hpp"
+#include "./EqController.hpp"
 #include "CenterDbManage/dbContext.hpp"
 #include "SongsInsertHelper/FolderCheckTimer.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
@@ -71,6 +72,28 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         logger->critical("音频进程启动或握手失败");
     }
     logger->debug("已通知音频进程启动");
+
+    // ── EQ 的下发通道 ──
+    // 拖拽中的连续量走 OSC/UDP（高频、允许丢帧），结构变更/最终值走 ZMQ JSON（必达）。
+    // 两条通道都通过 ParamLink 统一节流并自动补 rev，音频进程据此丢弃迟到的旧帧。
+    mEqController = std::make_unique<EqController>();
+    mEqController->init(
+        [this](const char* address, const float* args, int numArgs, uint32_t rev) {
+            if (mOscSender == nullptr) return;
+            try {
+                juce::OSCMessage message{juce::String(address)};
+                for (int i = 0; i < numArgs; ++i)
+                    message.addFloat32(args[i]);
+                message.addInt32(static_cast<juce::int32>(rev));
+                mOscSender->sendMsg(message);
+            } catch (const std::exception& e) {
+                // 地址写错时 OSCAddress 会抛异常，这里兜住，不要让 UI 线程崩掉
+                if (auto logger = spdlog::get(LogDllID))
+                    logger->error("EQ 的 OSC 地址无效:{} ({})", address, e.what());
+            }
+        },
+        [this](const Yvar& envelope) { sendMessage2AudioProcess(envelope.dump()); }
+    );
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
 

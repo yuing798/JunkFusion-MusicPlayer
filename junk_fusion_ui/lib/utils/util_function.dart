@@ -3,6 +3,8 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
+import 'package:junk_fusion_ui/widgets/popupWindow/error_toast.dart';
+import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 class UtilFunction {
   // 将秒数格式化为 分:秒 或 时:分:秒 的可读字符串
@@ -69,5 +71,21 @@ class UtilFunction {
 
   static String buildArtistsText(List<String>? l) {
     return l != null ? l.join(" / ") : "未知艺术家";
+  }
+
+  /// 非致命错误：右下角卡片通知（见 widgets/popupWindow/error_toast.dart）
+  ///
+  /// 会自动消失、点一下就消失、鼠标悬停暂停计时，不打断用户正在做的事。
+  /// 用在「这首歌解码失败」「这个文件导入失败」这种可以继续操作的情况。
+  static void showErrorMessage(String message) {
+    ErrorToast.show(message);
+  }
+
+  /// 致命错误：屏幕中央的模态窗，必须手动关掉才能继续操作
+  ///
+  /// 用在「数据库打不开」「音频进程没了」这种继续下去也没意义的情况。
+  /// 不能点蒙版关掉（barrierDismissible = false），只有右上角的 × 能关。
+  static Future<void> showFatalMessage(String message) {
+    return DialogUtil.showFatalDialog(message);
   }
 }

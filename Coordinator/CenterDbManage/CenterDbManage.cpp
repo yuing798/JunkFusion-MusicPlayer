@@ -170,6 +170,24 @@ static const std::string createPlaylistSongsTableSQL = std::format(
 static const char* createPlaylistsSongsOrderByUserIndex =
     "CREATE INDEX IF NOT EXISTS orderByUserIndex ON playlistSongs(playlistId,orderByUser,songId)";
 
+/**
+ * @brief EQ 预设表
+ * @param title 预设名（用户可改名）
+ * @param params EQ 参数体 JSON，形状就是 EqWire::encodeAll 的输出（不含信封、不含 rev）。
+ *               和"当前 EQ 状态"完全同构，所以读出来可以直接喂给 setEqAll 下发。
+ * @param createTime 创建时间
+ *
+ * 本表只存用户显式保存过的预设；"当前 EQ 状态"由 EqController 持有，不入库。
+ */
+static const char* createEqPresetTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS eqPresets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        createTime TEXT NOT NULL DEFAULT (date('now', 'localtime')),
+        params TEXT NOT NULL
+    )
+)";
+
 CenterDbManage::CenterDbManage(const std::string& path)
     : db(path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
 
@@ -187,6 +205,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createPlaylistTableSQL);
         db.exec(createPlaylistSongsTableSQL);
         db.exec(createSongFolderTableSQL);
+        db.exec(createEqPresetTableSQL);
 
         db.exec(createPlaylistsSongsOrderByUserIndex);
         db.exec(createAlbumDiscTrackIndexSQL);

@@ -1,5 +1,6 @@
 #include "./SongImport.hpp"
 #include "Coordinator/CatagoryViewManage/songsManage.hpp"
+#include "Model/AlbumInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/convertUtils.hpp"
 #include "Utils/dbUtils.hpp"
@@ -124,12 +125,23 @@ bool SongImport::importSingleSong(
                 albumArtists.value(),
                 songInfo.hash
             );
+
+            // 这次是不是新插了一张专辑：是的话落库完要通知前端加进专辑列表
+            std::optional<AlbumInfo> newAlbum;
             if (!albumId.has_value()) {
                 albumId = mDbContext.albumsManage.insertAlbum(
                     songInfo.album.value(),
                     albumArtists.value(),
                     songInfo.hash
                 );
+
+                if (albumId.has_value()) {
+                    newAlbum = AlbumInfo{};
+                    newAlbum->albumId = albumId.value();
+                    newAlbum->title = songInfo.album.value();
+                    newAlbum->albumArtists = albumArtists;
+                    newAlbum->hash = songInfo.hash;
+                }
             }
 
             mDbContext.dbManage.write([&](SQLite::Database& db) {
@@ -141,6 +153,10 @@ bool SongImport::importSingleSong(
                 updateAlbumId.bind(":songId", songInfo.songId);
                 updateAlbumId.exec();
             });
+
+            if (newAlbum.has_value() && onAddNewAlbum) {
+                onAddNewAlbum(ConvertUtils::object2Uint8t(newAlbum->toBasicJson()));
+            }
         }
 
         // return songInfo;
@@ -537,42 +553,6 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
         chromaprint_free(printContext);
     }
 
-    // try {
-    //     dbManage.write([&](SQLite::Database& db) {
-    //         SQLite::Statement sql(
-    //             db,
-    //             "UPDATE songs SET timeDomainSpec = :timeDomainSpec WHERE filePath = :filePath"
-    //         );
-    //         sql.bind(
-    //             ":timeDomainSpec",
-    //             blobBuffer.data(),
-    //             static_cast<int>(blobBuffer.size() * sizeof(double))
-    //         ); // 时域图
-    //         sql.bind(":filePath", task.path);
-
-    //         // std::string spdlogStr{""};
-    //         // spdlog::get(LogDllID)->debug(
-    //         //     "文件路径:{},波形图数组元素个数为:{},数组占用字节大小为{}",
-    //         //     task.path,
-    //         //     blobBuffer.size(),
-    //         //     static_cast<int>(blobBuffer.size() * sizeof(double))
-    //         // );
-    //         // for (size_t i = 0; i < blobBuffer.size(); i++) {
-
-    //         //     spdlogStr += std::to_string(blobBuffer[i]) + " ";
-    //         // }
-    //         // spdlog::get(LogDllID)->debug("波形图内容:{}", spdlogStr);
-
-    //         sql.exec();
-    //     });
-    // } catch (SQLite::Exception& e) {
-    //     spdlog::get(LogDllID)->error("WaveFormAnaly线程发生数据库错误:{}", e.what());
-    // }
-    // if (task.needGetPrint) {
-    //     return std::move(printStr);
-    // } else {
-    //     return std::nullopt;
-    // }
     WaveFormAnalyRes r;
     if (task.needGetPrint) {
         r.print = std::move(printStr);

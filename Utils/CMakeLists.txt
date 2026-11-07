@@ -5,6 +5,7 @@ target_sources(Utils
         convertUtils.cpp #用来变量之间转换类型
         mathUtils.cpp #数学函数工具，通常只用在音频相关代码中
         Yvar.cpp #用来安全读取json的juce::var组合类
+        paramLink.cpp #参数下发通道(OSC/UDP + JSON/ZMQ 双通道策略层)
         otherUtils.cpp #其他乱七八糟的工具
         dbUtils.cpp #数据库工具
         stringUtils.cpp #字符串工具
