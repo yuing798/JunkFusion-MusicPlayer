@@ -116,7 +116,7 @@ class PlaylistProvider extends ChangeNotifier {
     return id;
   }
 
-  void createPlaylist(List<int>? songsList) async {
+  Future<void> createPlaylist(List<int>? songsList) async {
     final playlistId = await _createEmptyPlaylist();
     if (playlistId == null) return;
     if (songsList != null) {
@@ -146,6 +146,26 @@ class PlaylistProvider extends ChangeNotifier {
       _playlists.removeAt(index);
     }
     notifyListeners();
+  }
+
+  /// 把一批歌加进若干个歌单（「收藏到歌单」弹窗用）
+  ///
+  /// 后端接口是 addNewSongsToPlaylist(playlistId, songIdsJson)，
+  /// 多选歌单就循环调；songIdsJson 只分配一次，循环里复用。
+  void addSongsTo(List<int> playlistIds, List<int> songIds) {
+    if (playlistIds.isEmpty || songIds.isEmpty) return;
+
+    final ptr = UtilFunction.string2cPtr(jsonEncode(songIds));
+    try {
+      for (final playlistId in playlistIds) {
+        bindings.addNewSongsToPlaylist(playlistId, ptr);
+      }
+    } finally {
+      malloc.free(ptr);
+    }
+
+    // 歌单卡片的封面/数量可能变了，整表刷一遍最省事（歌单数量不大）
+    getAllPlaylists();
   }
 
   // ────────────────────────────────────────────────────────────
