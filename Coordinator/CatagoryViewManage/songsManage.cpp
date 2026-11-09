@@ -306,6 +306,25 @@ void SongsManage::updatePlayCount(std::string path) {
     // 通知放到写事务外面：它内部还要读一次库拿最新信息
     if (updatedSongId > 0) dllManager::getInstance().notifySongUpdated(updatedSongId);
 }
+
+void SongsManage::updateLastPlayTime(int64_t songId) {
+    if (songId <= 0) return;
+
+    dbManage.write([&](SQLite::Database& db) {
+        try {
+            SQLite::Statement sql{
+                db,
+                "UPDATE songs SET lastPlayTime = datetime('now','localtime') WHERE "
+                "songId = :songId"
+            };
+            sql.bind(":songId", songId);
+            sql.exec();
+        } catch (SQLite::Exception& e) {
+            spdlog::get(LogDllID)->debug("SongsManage::updateLastPlayTime 发生错误:{}", e.what());
+        }
+    });
+}
+
 Yvar SongsManage::getSingleImportSongs() {
     auto songIdList = Yvar::array();
     try {

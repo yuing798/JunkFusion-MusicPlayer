@@ -50,8 +50,14 @@ extern "C" {
         dllManager::getInstance().onFatalErrorSendCallback = cb;
     }
     void play(long long songId, double targetSeconds, int isSeek, int isNewSong) {
-        auto info =
-            dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();
+        auto* dbContext = dllManager::getInstance().getDbContext();
+
+        // 收到「播放新歌」信号就记一下最近播放时间（暂停后继续播、拖动进度条都不算）
+        if (isNewSong != 0 && dbContext != nullptr) {
+            dbContext->songsManage.updateLastPlayTime(songId);
+        }
+
+        auto info = dbContext->songsManage.getPlayInfo(songId).toJson();
         Yvar playObj = Yvar::object();
         {
             playObj.set(AudioMacro::playInfo, info);
