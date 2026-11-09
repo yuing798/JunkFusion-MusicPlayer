@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget/hover_play_button.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/song_menu.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import '../providers/playback_provider.dart';
@@ -40,107 +41,116 @@ class EachSong extends StatelessWidget {
     final isCurrentSong = playback.curBasicInfo?.songId == song.songId;
     final theme = context.watch<AppTheme>();
 
-    return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
-      color: isCurrentSong ? theme.colorHover : theme.colorCell,
-      child: Row(
-        children: [
-          // ── 第 1 列：封面/播放状态 (50px) ──
-          SizedBox(
-            width: 50,
-            height: 50,
-            child: GestureDetector(
-              onTap: () {
-                //箭头函数后面只能接上一句表达式
-                if (isCurrentSong) {
-                  context.read<PlaybackProvider>().togglePlayPause();
-                } else {
-                  context.read<PlaybackProvider>().setNewSong(song.songId);
+    return GestureDetector(
+      // 右键：播放 / 添加到播放列表 / 收藏到歌单 / 喜欢
+      onSecondaryTapDown: (details) => showSongActionMenu(
+        context: context,
+        song: song,
+        position: details.globalPosition,
+        onBeforePlay: onSongPlay,
+      ),
+      child: Container(
+        height: 80,
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+        color: isCurrentSong ? theme.colorHover : theme.colorCell,
+        child: Row(
+          children: [
+            // ── 第 1 列：封面/播放状态 (50px) ──
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: GestureDetector(
+                onTap: () {
+                  //箭头函数后面只能接上一句表达式
+                  if (isCurrentSong) {
+                    context.read<PlaybackProvider>().togglePlayPause();
+                  } else {
+                    context.read<PlaybackProvider>().setNewSong(song.songId);
 
-                  onSongPlay?.call();
-                }
-              },
-              child: Stack(
-                alignment: Alignment.center,
+                    onSongPlay?.call();
+                  }
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 封面图（非当前歌曲时显示）
+                    (!isCurrentSong)
+                        ? HoverPlayButton(hash: song.hash)
+                        : (playback.isPlaying)
+                        ? Icon(TablerIcons.playerPauseFilled, size: 32)
+                        : Icon(TablerIcons.playerPlayFilled, size: 32),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 4),
+
+            // ── 第 2 列：歌名 + 艺术家 (flex: 1) ──
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 封面图（非当前歌曲时显示）
-                  (!isCurrentSong)
-                      ? HoverPlayButton(hash: song.hash)
-                      : (playback.isPlaying)
-                      ? Icon(TablerIcons.playerPauseFilled, size: 32)
-                      : Icon(TablerIcons.playerPlayFilled, size: 32),
+                  // 歌名（单行省略）
+                  Tooltip(
+                    message: song.title,
+                    child: Text(
+                      song.title,
+                      style: theme.midTextStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis, // 溢出显示省略号
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // 艺术家（单行省略）
+                  Tooltip(
+                    message: song.artists == null
+                        ? "未知"
+                        : song.artists!.join(" / "),
+                    child: Text(
+                      song.artists == null ? "未知" : song.artists!.join(" / "),
+                      style: theme.littleTextStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
 
-          const SizedBox(width: 4),
-
-          // ── 第 2 列：歌名 + 艺术家 (flex: 1) ──
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 歌名（单行省略）
-                Tooltip(
-                  message: song.title,
-                  child: Text(
-                    song.title,
-                    style: theme.midTextStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis, // 溢出显示省略号
-                  ),
-                ),
-                const SizedBox(height: 2),
-                // 艺术家（单行省略）
-                Tooltip(
-                  message: song.artists == null
-                      ? "未知"
-                      : song.artists!.join(" / "),
-                  child: Text(
-                    song.artists == null ? "未知" : song.artists!.join(" / "),
-                    style: theme.littleTextStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            // ── 第 3 列：专辑 (150px) ──
+            SizedBox(
+              width: 300,
+              child: _buildEllipsisText(song.album ?? '未知', theme),
             ),
-          ),
 
-          // ── 第 3 列：专辑 (150px) ──
-          SizedBox(
-            width: 300,
-            child: _buildEllipsisText(song.album ?? '未知', theme),
-          ),
+            SizedBox(width: 100),
 
-          SizedBox(width: 100),
-
-          // ── 第 5 列：播放次数 (80px) ──
-          SizedBox(
-            width: 80,
-            child: Center(
-              child: Text(
-                '${song.playNum}', // `$` 字符串插值
-                style: theme.littleTextStyle,
+            // ── 第 5 列：播放次数 (80px) ──
+            SizedBox(
+              width: 80,
+              child: Center(
+                child: Text(
+                  '${song.playNum}', // `$` 字符串插值
+                  style: theme.littleTextStyle,
+                ),
               ),
             ),
-          ),
 
-          // ── 第 6 列：喜欢按钮 (40px) ──
-          SizedBox(
-            width: 40,
-            child: IconButton(
-              icon: (song.isMyLike)
-                  ? Icon(TablerIcons.heartFilled, color: Colors.red)
-                  : Icon(TablerIcons.heart),
-              onPressed: () =>
-                  context.read<SongProvider>().toggleMyLike(song.songId),
+            // ── 第 6 列：喜欢按钮 (40px) ──
+            SizedBox(
+              width: 40,
+              child: IconButton(
+                icon: (song.isMyLike)
+                    ? Icon(TablerIcons.heartFilled, color: Colors.red)
+                    : Icon(TablerIcons.heart),
+                onPressed: () =>
+                    context.read<SongProvider>().toggleMyLike(song.songId),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

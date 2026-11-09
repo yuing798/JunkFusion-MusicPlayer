@@ -80,17 +80,16 @@ class _FavoritePlaylistWindowState extends State<FavoritePlaylistWindow> {
 
   void _confirm() {
     if (_selectedIds.isEmpty) return;
-    Navigator.of(context).pop(
-      FavoritePlaylistResult(playlistIds: _selectedIds.toList()),
-    );
+    Navigator.of(
+      context,
+    ).pop(FavoritePlaylistResult(playlistIds: _selectedIds.toList()));
   }
 
   void _createNew() {
     // 关掉自己，让调用方去弹「新建歌单」窗口
-    Navigator.of(context).pop(const FavoritePlaylistResult(
-      playlistIds: <int>[],
-      createNew: true,
-    ));
+    Navigator.of(
+      context,
+    ).pop(const FavoritePlaylistResult(playlistIds: <int>[], createNew: true));
   }
 
   void _cancel() {
@@ -103,9 +102,7 @@ class _FavoritePlaylistWindowState extends State<FavoritePlaylistWindow> {
     final playlists = context.watch<PlaylistProvider>().playlists;
 
     return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): _cancel,
-      },
+      bindings: {const SingleActivator(LogicalKeyboardKey.escape): _cancel},
       child: Focus(
         autofocus: true,
         child: Dialog(

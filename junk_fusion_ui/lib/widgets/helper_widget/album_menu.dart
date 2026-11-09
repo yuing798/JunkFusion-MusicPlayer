@@ -82,7 +82,11 @@ void showAlbumActionMenu({
       // ── 播放全部 ──
       ContextMenuItem(
         label: '播放全部',
-        icon: Icon(TablerIcons.playerPlayFilled, size: 18, color: colorScheme.primary),
+        icon: Icon(
+          TablerIcons.playerPlayFilled,
+          size: 18,
+          color: colorScheme.primary,
+        ),
         onTap: () {
           final songs = albumSongs();
           if (songs.isEmpty) {
@@ -129,10 +133,8 @@ void showAlbumActionMenu({
       ContextMenuItem(
         label: '联网搜索专辑封面',
         icon: Icon(TablerIcons.photoSearch, size: 18),
-        onTap: () => _searchAlbumCover(
-          album: album,
-          albumProvider: albumProvider,
-        ),
+        onTap: () =>
+            _searchAlbumCover(album: album, albumProvider: albumProvider),
       ),
     ],
   );
