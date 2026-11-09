@@ -35,47 +35,16 @@ private:
     juce::File& mImageDir; // 封面缓存目录：<缓存目录>/image/<hash>/original.jpg
     juce::File& mSongsDir; // 单独导入的歌曲拷贝目录：<缓存目录>/songs
 
-    juce::ThreadPool waveFormAnalyPool{3}; // 用来做波形分析和联网搜索的线程池
-    std::string mSystemCountry = juce::SystemStats::getUserRegion().toUpperCase().toStdString();
+    juce::ThreadPool waveFormAnalyPool{3}; // 只用来做波形分析（导入阶段已经不联网了）
 
     struct WaveFormAnalyTask {
         std::string path;
-        bool needGetPrint{false}; // 是否需要指纹进行联网搜索
     };
 
     struct WaveFormAnalyRes {
-        std::optional<std::string> print;
         std::array<double, 128> blobBuffer; // 波形图，只需要128根柱子
     };
     WaveFormAnalyRes waveFormAnaly(WaveFormAnalyTask task);
-
-    struct OnlineSearchTask {
-
-        int64_t songId{0};
-        double duration{0.0};
-        std::string print; // 指纹
-
-        // 以下三个如果有的话发送过来，进行查找打分
-        std::optional<std::string> title;
-        std::optional<std::vector<std::string>> artists;
-        std::optional<std::string> album;
-        bool needCover{false};
-    };
-
-    static constexpr const char* AcoustIdKey = "lp1ajcs0Bd"; // 用来指纹搜索的AcoustId的密钥
-
-    // 搜索专辑图片，因为可能需要分为多次搜索
-    static std::optional<std::string> searchCoverURL(std::string term, std::string entity);
-
-    struct OnlineSearchRes {
-        std::optional<std::string> finalTitle;
-        std::optional<std::vector<std::string>> finalArtists;
-        std::optional<std::string> finalAlbum;
-        std::optional<std::string> finalHash;
-        std::optional<std::vector<std::string>> finalAlbumArtists;
-    };
-
-    OnlineSearchRes onlineSearch(OnlineSearchTask task);
 
     // SongsManage::insertSong的返回结果
     struct InsertLightSongInfoResult {

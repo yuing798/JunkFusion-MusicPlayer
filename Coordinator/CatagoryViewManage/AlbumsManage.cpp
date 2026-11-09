@@ -12,9 +12,11 @@
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
 #include <algorithm>
+#include <cpr/cpr.h>
 #include <cstdint>
 #include <fmt/format.h>
 #include <optional>
+#include <sha1.h>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
@@ -261,4 +263,134 @@ std::optional<int64_t> AlbumsManage::removeAlbumIfEmpty(int64_t albumId) {
             return std::nullopt;
         }
     });
+}
+
+// ── 联网搜索专辑封面 ────────────────────────────────────────────────────
+std::optional<std::string>
+    AlbumsManage::searchCoverURL(const std::string& term, const std::string& entity) {
+    if (auto logger = spdlog::get(LogDllID))
+        logger->debug("iTunes 搜索 term: {}, entity: {}", term, entity);
+
+    cpr::Response coverSearch = cpr::Get(
+        cpr::Url{"https://itunes.apple.com/search"},
+        cpr::Parameters{{"term", term}, {"media", "music"}, {"entity", entity}, {"limit", "1"}},
+        cpr::Timeout{15000}
+    );
+
+    if (coverSearch.status_code == 200) {
+        const Yvar coverSearchRes = Yvar::parse(coverSearch.text);
+        if (coverSearchRes.read("resultCount").toInt() > 0) {
+            const auto firstResult = coverSearchRes.read("results").read(0);
+            return firstResult.read("artworkUrl100").toOptStr();
+        }
+    } else if (auto logger = spdlog::get(LogDllID)) {
+        logger->warn(
+            "iTunes 搜索失败 status={} error={}",
+            coverSearch.status_code,
+            coverSearch.error.message
+        );
+    }
+    return std::nullopt;
+}
+
+std::optional<std::string> AlbumsManage::searchAndSaveCover(
+    int64_t albumId,
+    const juce::File& imageDir
+) {
+    auto logger = spdlog::get(LogDllID);
+
+    // 1. 取专辑名 + 专辑艺术家
+    std::string title;
+    std::vector<std::string> artists;
+    try {
+        SQLite::Statement sql{
+            dbManage.readDb(),
+            "SELECT title, albumArtists FROM albums WHERE albumId=:albumId"
+        };
+        sql.bind(":albumId", albumId);
+        if (!sql.executeStep()) return std::nullopt;
+
+        title = sql.getColumn("title").getString();
+        artists = DbUtils::getOptCol<std::vector<std::string>>(sql, "albumArtists")
+                      .value_or(std::vector<std::string>{});
+    } catch (const SQLite::Exception& e) {
+        if (logger) logger->error("AlbumsManage::searchAndSaveCover 读专辑失败:{}", e.what());
+        return std::nullopt;
+    }
+
+    if (title.empty()) return std::nullopt;
+
+    // 2. 主艺术家：群星这类名字发给 Apple 会极大降低命中率，跳过
+    std::string primaryArtist;
+    for (const auto& artist : artists) {
+        if (!StringUtils::isVariousArtists(artist)) {
+            primaryArtist = artist;
+            break;
+        }
+    }
+
+    // 3. 先「艺术家 + 专辑名」，搜不到再用纯专辑名兜底
+    std::optional<std::string> coverURL;
+    if (!primaryArtist.empty()) coverURL = searchCoverURL(primaryArtist + " " + title, "album");
+    if (!coverURL.has_value()) coverURL = searchCoverURL(title, "album");
+    if (!coverURL.has_value()) {
+        if (logger)
+            logger->info("搜不到专辑封面:albumId={}, title={}", albumId, title);
+        return std::nullopt;
+    }
+
+    // 4. 把 100x100 缩略图换成 1000x1000 大图
+    const auto pos = coverURL->find("100x100bb.jpg");
+    if (pos != std::string::npos) coverURL->replace(pos, 13, "1000x1000bb.jpg");
+
+    // 5. 下载
+    cpr::Response imgRes = cpr::Get(cpr::Url{*coverURL}, cpr::Timeout{15000});
+    if (imgRes.status_code != 200 || imgRes.text.empty()) {
+        if (logger)
+            logger->warn(
+                "封面下载失败:albumId={}, status={}, error={}",
+                albumId,
+                imgRes.status_code,
+                imgRes.error.message
+            );
+        return std::nullopt;
+    }
+
+    // 6. SHA1 命名落盘：<image>/<hash>/original.jpg
+    SHA1 sha1;
+    const std::string hash = sha1(imgRes.text.data(), imgRes.text.size());
+
+    juce::File hashImageDir{imageDir.getChildFile(hash)};
+    if (!hashImageDir.exists()) hashImageDir.createDirectory();
+
+    juce::File originalFile{hashImageDir.getChildFile("original.jpg")};
+    if (!originalFile.existsAsFile()) {
+        juce::FileOutputStream outputStream(originalFile);
+        if (!outputStream.openedOk()) {
+            if (logger)
+                logger->error(
+                    "封面写文件失败:{}",
+                    originalFile.getFullPathName().toStdString()
+                );
+            return std::nullopt;
+        }
+        outputStream.write(imgRes.text.data(), imgRes.text.size());
+        outputStream.flush();
+    }
+
+    // 7. 更新 albums.hash
+    try {
+        dbManage.write([&](SQLite::Database& db) {
+            SQLite::Statement update{db, "UPDATE albums SET hash=:hash WHERE albumId=:albumId"};
+            update.bind(":hash", hash);
+            update.bind(":albumId", albumId);
+            update.exec();
+        });
+    } catch (const SQLite::Exception& e) {
+        if (logger) logger->error("AlbumsManage::searchAndSaveCover 写库失败:{}", e.what());
+        return std::nullopt;
+    }
+
+    if (logger) logger->info("封面搜索完成:albumId={}, hash={}", albumId, hash);
+    return hash;
 }

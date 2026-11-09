@@ -58,9 +58,15 @@ extern "C" {
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
     DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb); // 请求播放下一首或上一首歌曲
 
-    DLL_EXPORT const char* getAllSongs();
     DLL_EXPORT const char* getDetailSongInfo(long long songId);
     DLL_EXPORT const char* getBasicSongInfo(long long songId);
+
+    /**
+     * @brief 得到详细的专辑信息，现在详细专辑信息里面只有歌曲列表，以后可能加上用户标签之类的
+     *
+     * @param albumId
+     * @return DLL_EXPORT const*
+     */
     DLL_EXPORT const char* getDetailAlbumInfo(long long albumId);
     DLL_EXPORT void requestOnPlayStateSync(IntFunc cb);
 
@@ -70,6 +76,16 @@ extern "C" {
      * @return DLL_EXPORT const* 所有专辑视图的json字符串
      */
     DLL_EXPORT const char* getAllAlbumView();
+
+    /**
+     * @brief 联网搜索某张专辑的封面并写进 albums.hash
+     *
+     * 导入阶段不再联网，封面靠这个按需补（前端右键「联网搜索专辑封面」）。
+     * 搜索词是「主艺术家 + 专辑名」，群星这类名字会被跳过，搜不到再用纯专辑名兜底。
+     *
+     * @return {"hash":"..."} 成功（前端拿它刷新这一张专辑）；{"hash":null} 失败
+     */
+    DLL_EXPORT const char* searchAlbumCover(long long albumId);
 
     // 歌单管理函数
     DLL_EXPORT const char* getDetailPlaylistInfo(long long id);
@@ -164,7 +180,7 @@ extern "C" {
      * 只改 freqHz / gainDb / q / shelfSlope 四个连续量，类型和开关不变。
      */
     DLL_EXPORT void
-        updateEqBandLive(int idx, double freqHz, double gainDb, double q, double shelfSlope);
+    updateEqBandLive(int idx, double freqHz, double gainDb, double q, double shelfSlope);
 
     /**
      * @brief 一条 band 的完整参数（换类型、开关、拖拽结束的最终值），走 TCP JSON

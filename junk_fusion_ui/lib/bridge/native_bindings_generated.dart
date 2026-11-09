@@ -165,17 +165,6 @@ class JunkFusionDLLBindings {
   late final _getAllRootDirView = _getAllRootDirViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
-  ffi.Pointer<ffi.Char> getAllSongs() {
-    return _getAllSongs();
-  }
-
-  late final _getAllSongsPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-        'getAllSongs',
-      );
-  late final _getAllSongs = _getAllSongsPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function()>();
-
   ffi.Pointer<ffi.Char> getBasicSongInfo(int songId) {
     return _getBasicSongInfo(songId);
   }
@@ -206,6 +195,10 @@ class JunkFusionDLLBindings {
   late final _getChildDirAndSongIdList = _getChildDirAndSongIdListPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief 得到详细的专辑信息，现在详细专辑信息里面只有歌曲列表，以后可能加上用户标签之类的
+  ///
+  /// @param albumId
+  /// @return DLL_EXPORT const*
   ffi.Pointer<ffi.Char> getDetailAlbumInfo(int albumId) {
     return _getDetailAlbumInfo(albumId);
   }
@@ -562,6 +555,23 @@ class JunkFusionDLLBindings {
       );
   late final _saveEqPreset = _saveEqPresetPtr
       .asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+
+  /// @brief 联网搜索某张专辑的封面并写进 albums.hash
+  ///
+  /// 导入阶段不再联网，封面靠这个按需补（前端右键「联网搜索专辑封面」）。
+  /// 搜索词是「主艺术家 + 专辑名」，群星这类名字会被跳过，搜不到再用纯专辑名兜底。
+  ///
+  /// @return {"hash":"..."} 成功（前端拿它刷新这一张专辑）；{"hash":null} 失败
+  ffi.Pointer<ffi.Char> searchAlbumCover(int albumId) {
+    return _searchAlbumCover(albumId);
+  }
+
+  late final _searchAlbumCoverPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'searchAlbumCover',
+      );
+  late final _searchAlbumCover = _searchAlbumCoverPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   void sendSliderValue(
     ffi.Pointer<ffi.Char> identify,

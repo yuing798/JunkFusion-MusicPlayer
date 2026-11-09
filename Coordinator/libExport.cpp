@@ -94,14 +94,6 @@ extern "C" {
         dllManager::getInstance().onPlayNextOrPreviousSong = cb;
     }
 
-    const char* getAllSongs() {
-        auto songsList =
-            dllManager::getInstance().getDbContext()->songsManage.getAllSongsBasicInfo();
-        Yvar obj = Yvar::object();
-        obj.set(CoordinatorMacro::songsList, std::move(songsList));
-
-        return ConvertUtils::object2Uint8t(obj);
-    }
     const char* getBasicSongInfo(long long songId) {
         return ConvertUtils::object2Uint8t(
             dllManager::getInstance()
@@ -130,6 +122,21 @@ extern "C" {
         return ConvertUtils::object2Uint8t(
             dllManager::getInstance().getDbContext()->albumsManage.getDetailInfo(albumId)
         );
+    }
+
+    const char* searchAlbumCover(long long albumId) {
+        auto& manager = dllManager::getInstance();
+        Yvar result = Yvar::object();
+
+        auto* dbContext = manager.getDbContext();
+        if (dbContext == nullptr) {
+            result.set("hash", Yvar{});
+            return ConvertUtils::object2Uint8t(result);
+        }
+
+        auto hash = dbContext->albumsManage.searchAndSaveCover(albumId, manager.getImageDir());
+        result.set("hash", Yvar::fromOptional(hash));
+        return ConvertUtils::object2Uint8t(result);
     }
 
     const char* getAllPlaylistView() {
