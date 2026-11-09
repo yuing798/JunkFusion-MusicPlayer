@@ -6,6 +6,7 @@ import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/album_menu.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
@@ -317,6 +318,12 @@ class _AlbumCardState extends State<_AlbumCard> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
+        // 右键：播放全部 / 添加到播放列表 / 联网搜索专辑封面
+        onSecondaryTapDown: (details) => showAlbumActionMenu(
+          context: context,
+          album: widget.album,
+          position: details.globalPosition,
+        ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(8),

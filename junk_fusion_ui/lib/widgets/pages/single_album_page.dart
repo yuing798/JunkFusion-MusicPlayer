@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/model/album_basic_info.dart';
 import 'package:junk_fusion_ui/model/album_detail_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/album_provider.dart';
@@ -9,6 +10,7 @@ import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/album_menu.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget/combo_box.dart';
 import 'package:junk_fusion_ui/widgets/each_song.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
@@ -45,6 +47,22 @@ class SingleAlbumPage extends StatefulWidget {
 }
 
 class _SingleAlbumPageState extends State<SingleAlbumPage> {
+  /// 「...」按钮的位置要靠它算
+  final GlobalKey _moreButtonKey = GlobalKey();
+
+  /// 「...」按钮：和专辑网格里右键弹出的是同一份菜单
+  void _showMoreMenu(AlbumBasicInfo album) {
+    final box = _moreButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+
+    final offset = box.localToGlobal(Offset.zero);
+    showAlbumActionMenu(
+      context: context,
+      album: album,
+      position: Offset(offset.dx, offset.dy + box.size.height),
+    );
+  }
+
   /// 播放全部：按当前列表顺序整张专辑塞进播放列表，从第一首开始放
   void _playAll() {
     final playback = context.read<PlaybackProvider>();
@@ -198,6 +216,19 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
 
               // 弹性空间（把右侧的排序控件推到最右边）
               const Spacer(),
+
+              // ── 更多操作「...」 ──
+              IconButton(
+                key: _moreButtonKey,
+                icon: const Icon(TablerIcons.dots, size: 26),
+                color: theme.colorTextMain,
+                tooltip: '更多操作',
+                onPressed: () {
+                  final album = albumProvider.curBasicInfo;
+                  if (album == null) return;
+                  _showMoreMenu(album);
+                },
+              ),
 
               const SizedBox(width: 10),
             ],

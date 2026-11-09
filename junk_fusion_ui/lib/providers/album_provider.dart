@@ -80,6 +80,24 @@ class AlbumProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 取某张专辑的歌曲（**不改动**「当前专辑」状态）
+  ///
+  /// 右键菜单里的「播放全部 / 添加到播放列表」只需要一份歌单，不该顺手把
+  /// 详情页切到别的专辑上去，所以这里单独读一次 getDetailAlbumInfo
+  /// （它带着 songsLists），而不是 setNewAlbum。
+  List<SongBasicInfo> songsOfAlbum(int albumId) {
+    final detail = AlbumDetailInfo.fromJson(
+      jsonDecode(UtilFunction.cPtr2String(bindings.getDetailAlbumInfo(albumId))),
+    );
+
+    final songIds = detail.songsLists;
+    songProvider.ensureSongsLoaded(songIds);
+    return songIds
+        .map((each) => songProvider.idToInfoMap[each])
+        .whereType<SongBasicInfo>()
+        .toList();
+  }
+
   /// 拉一遍专辑列表(初始化的时候调用)
   void getAllAlbums() {
     _albums =
