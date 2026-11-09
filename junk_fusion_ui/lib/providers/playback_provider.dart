@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
@@ -234,8 +235,10 @@ class PlaybackProvider extends ChangeNotifier {
 
   // 切换播放模式（循环 0 → 1 → 2 → 3 → 0 → ...）
   //0 = 顺序播放，1 = 列表循环，2 = 单曲循环，3 = 随机播放
-  void cyclePlayMode() async {
+  void cyclePlayMode() {
     _playMode = (_playMode + 1) % 4;
+    // 立刻落盘，不用等 saveState（用户点一下就该记住）
+    AppCache.frontCacheRef.setInt("cycleMode", _playMode);
     notifyListeners();
   }
 
@@ -255,35 +258,105 @@ class PlaybackProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 重播当前这首（单曲循环用）
+  ///
+  /// 不能直接调 setNewSong：它发现 songId 没变会直接 return。所以这里
+  /// 自己把播放位置打回 0 再发一次 play。
+  void _replayCurrentSong() {
+    final song = _curBasicInfo;
+    if (song == null) return;
+
+    _currentTimeStamp = 0.0;
+    _isPlaying = true;
+    bindings.play(song.songId, 0.0, 0, 1);
+    notifyListeners();
+  }
+
+  /// 随机挑一首（播放列表只有一首时就是它自己）
+  int _pickRandomSongId() {
+    if (_playList.isEmpty) return 0;
+    if (_playList.length == 1) return _playList.first.songId;
+
+    final currentSongIndex = _playList.indexWhere(
+      (song) => song.songId == _curBasicInfo?.songId,
+    );
+
+    final random = math.Random();
+    int index;
+    do {
+      index = random.nextInt(_playList.length);
+    } while (index == currentSongIndex); // 别随机到正在放的这首
+    return _playList[index].songId;
+  }
+
   void playNextSong() {
-    if (_curBasicInfo == null) return;
+    if (_curBasicInfo == null || _playList.isEmpty) return;
+
+    // 单曲循环：重头再放一次
+    if (_playMode == 2) {
+      _replayCurrentSong();
+      return;
+    }
+
+    // 随机播放：随便挑一首
+    if (_playMode == 3) {
+      setNewSong(_pickRandomSongId());
+      return;
+    }
+
     final currentSongIndex = _playList.indexWhere(
       (i) => i.songId == _curBasicInfo!.songId,
     );
+
     if (currentSongIndex < _playList.length - 1) {
       final targetSongId = _playList[currentSongIndex + 1].songId;
       setNewSong(targetSongId);
-    } else {
-      _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
-      _isPlaying = false;
+      return;
     }
 
+    // 到底了：列表循环回到第一首，顺序播放就停下来
+    if (_playMode == 1) {
+      setNewSong(_playList.first.songId);
+      return;
+    }
+
+    _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+    _isPlaying = false;
     notifyListeners();
   }
 
   //播放播放列表的上一首歌曲
   void playPreviousSong() {
+    if (_curBasicInfo == null || _playList.isEmpty) return;
+
+    // 单曲循环 / 随机播放：和「下一首」同一种处理
+    if (_playMode == 2) {
+      _replayCurrentSong();
+      return;
+    }
+    if (_playMode == 3) {
+      setNewSong(_pickRandomSongId());
+      return;
+    }
+
     final currentSongIndex = _playList.indexWhere(
       (i) => i.songId == _curBasicInfo!.songId,
     );
+
     if (currentSongIndex > 0) {
       final targetSongId = _playList[currentSongIndex - 1].songId;
       setNewSong(targetSongId);
-    } else {
-      _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
-      _isPlaying = false;
+      return;
     }
 
+    // 在第一首：列表循环跳到最后一首，顺序播放就停下来
+    if (_playMode == 1) {
+      setNewSong(_playList.last.songId);
+      return;
+    }
+
+    _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+    _isPlaying = false;
     notifyListeners();
   }
 }
