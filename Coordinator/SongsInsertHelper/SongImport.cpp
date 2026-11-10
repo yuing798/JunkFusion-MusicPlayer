@@ -128,10 +128,63 @@ bool SongImport::importSingleSong(
             }
         }
 
+        // 歌词：找同目录同名 .lrc（顺手带翻译），纯文件操作，很快
+        linkLyrics(songInfo.songId, path);
+
         return true;
     }
     return false;
     // });
+}
+
+void SongImport::linkLyrics(int64_t songId, const juce::File& audioPath) {
+    if (songId <= 0) return;
+
+    const auto directory = audioPath.getParentDirectory();
+    const auto baseName = audioPath.getFileNameWithoutExtension();
+
+    const auto originalFile = directory.getChildFile(baseName + ".lrc");
+    if (!originalFile.existsAsFile()) return;
+
+    const auto originalText = originalFile.loadFileAsString();
+    if (originalText.isEmpty()) return;
+
+    const auto originalMtime = originalFile.getLastModificationTime().toMilliseconds();
+
+    mDbContext.lyricsManage.upsert(
+        songId,
+        LyricsManage::kKindOriginal,
+        "lrc",
+        originalText.toStdString(),
+        originalFile.getFullPathName().toStdString(),
+        originalMtime
+    );
+
+    // 翻译：常见后缀都试一遍，命中就存
+    for (const auto* suffix : {".zh", ".cn", ".trans", ".translation"}) {
+        const auto translationFile = directory.getChildFile(baseName + suffix + ".lrc");
+        if (!translationFile.existsAsFile()) continue;
+
+        const auto translationText = translationFile.loadFileAsString();
+        if (translationText.isEmpty()) continue;
+
+        mDbContext.lyricsManage.upsert(
+            songId,
+            LyricsManage::kKindTranslation,
+            "lrc",
+            translationText.toStdString(),
+            translationFile.getFullPathName().toStdString(),
+            translationFile.getLastModificationTime().toMilliseconds()
+        );
+        break;
+    }
+
+    if (auto logger = spdlog::get(LogDllID))
+        logger->debug(
+            "已关联歌词:songId={}, file={}",
+            songId,
+            originalFile.getFileName().toStdString()
+        );
 }
 
 // ⚠️ 僵尸函数：目前**没有任何地方调用**它。

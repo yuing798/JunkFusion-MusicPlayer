@@ -192,8 +192,31 @@ static const char* createEqPresetTableSQL = R"(
     )
 )";
 
-CenterDbManage::CenterDbManage(const std::string& path)
-    : db(path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
+/**
+ * @brief 歌词表
+ *
+ * 一首歌最多两条：kind = 'original' / 'translation'。
+ * 存的是**原始文本**（LRC 全文），解析在读取时做，格式升级不用迁移数据。
+ * sourcePath/mtime 记的是来源文件和它的修改时间，以后做"文件变了就重读"用。
+ */
+static const char* createLyricsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS lyrics(
+        lyricId INTEGER PRIMARY KEY AUTOINCREMENT,
+        songId INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        format TEXT NOT NULL,
+        content TEXT NOT NULL,
+        sourcePath TEXT,
+        mtime INTEGER DEFAULT 0,
+        UNIQUE(songId, kind),
+        FOREIGN KEY (songId) REFERENCES songs(songId) ON DELETE CASCADE
+    )
+)";
+
+static const char* createLyricsSongIdIndexSQL =
+    "CREATE INDEX IF NOT EXISTS lyricsSongIdIndex ON lyrics(songId)";
+
+CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
 
     try {
 
@@ -210,6 +233,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createPlaylistSongsTableSQL);
         db.exec(createSongFolderTableSQL);
         db.exec(createEqPresetTableSQL);
+        db.exec(createLyricsTableSQL);
 
         db.exec(createPlaylistsSongsOrderByUserIndex);
         db.exec(createAlbumDiscTrackIndexSQL);
@@ -218,6 +242,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createPlayNumIndexSQL);
         db.exec(createLastPlayTimeIndexSQL);
         db.exec(createSongFolderIdIndexSQL);
+        db.exec(createLyricsSongIdIndexSQL);
 
         if (auto logger{spdlog::get(LogDllID)}) {
             logger->debug("数据库初始化完成:{}", path);

@@ -110,6 +110,20 @@ extern "C" {
         );
     }
 
+    const char* getSongLyrics(long long songId) {
+        auto* dbContext = dllManager::getInstance().getDbContext();
+        Yvar envelope = Yvar::object();
+
+        if (dbContext == nullptr) {
+            envelope.set("lyric", Yvar{});
+            return ConvertUtils::object2Uint8t(envelope);
+        }
+
+        auto document = dbContext->lyricsManage.get(songId);
+        envelope.set("lyric", document.has_value() ? document->toJson() : Yvar{});
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
     const char* getDetailSongInfo(long long songId) {
         auto info{dllManager::getInstance().getDbContext()->songsManage.getDetailSongInfo(songId)};
         return ConvertUtils::object2Uint8t(info.toDetailJson());

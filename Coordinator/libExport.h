@@ -62,6 +62,14 @@ extern "C" {
     DLL_EXPORT const char* getBasicSongInfo(long long songId);
 
     /**
+     * @brief 取某首歌的歌词（已解析并合并翻译）
+     *
+     * @return {"lyric":{"hasTranslation":bool,"lines":[{"startMs","text","translation","words"}]}}
+     *         没有歌词时 {"lyric":null}
+     */
+    DLL_EXPORT const char* getSongLyrics(long long songId);
+
+    /**
      * @brief 得到详细的专辑信息，现在详细专辑信息里面只有歌曲列表，以后可能加上用户标签之类的
      *
      * @param albumId

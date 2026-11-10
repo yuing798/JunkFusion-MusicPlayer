@@ -45,6 +45,19 @@ private:
     };
     void waveFormAnaly(WaveFormAnalyTask task);
 
+    /**
+     * @brief 找同名歌词文件并入库（导入时调，不联网、不解码）
+     *
+     * 规则：
+     *   · 同目录 `<歌曲名>.lrc`              → 原文
+     *   · 同目录 `<歌曲名>.zh / .cn / .trans / .translation .lrc` → 翻译
+     *   · 找不到就什么都不做（以后可以右键手动关联）
+     *
+     * Windows/macOS 的文件系统大小写不敏感，`existsAsFile()` 直接就能命中
+     * `.LRC`；Linux 上要求小写扩展名（绝大多数歌词文件都是小写）。
+     */
+    void linkLyrics(int64_t songId, const juce::File& audioPath);
+
     // SongsManage::insertSong的返回结果
     struct InsertLightSongInfoResult {
 
