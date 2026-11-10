@@ -111,16 +111,25 @@ extern "C" {
     }
 
     const char* getSongLyrics(long long songId) {
-        auto* dbContext = dllManager::getInstance().getDbContext();
         Yvar envelope = Yvar::object();
 
-        if (dbContext == nullptr) {
+        // FFI 边界不能让任何异常逃出去：C++ 异常穿过 FFI 会直接终止进程
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext != nullptr) {
+                auto document = dbContext->lyricsManage.get(songId);
+                envelope.set("lyric", document.has_value() ? document->toJson() : Yvar{});
+            } else {
+                envelope.set("lyric", Yvar{});
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getSongLyrics 异常 songId={}:{}", songId, e.what());
             envelope.set("lyric", Yvar{});
-            return ConvertUtils::object2Uint8t(envelope);
+        } catch (...) {
+            envelope.set("lyric", Yvar{});
         }
 
-        auto document = dbContext->lyricsManage.get(songId);
-        envelope.set("lyric", document.has_value() ? document->toJson() : Yvar{});
         return ConvertUtils::object2Uint8t(envelope);
     }
 

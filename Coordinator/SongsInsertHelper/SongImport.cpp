@@ -140,14 +140,16 @@ bool SongImport::importSingleSong(
 void SongImport::linkLyrics(int64_t songId, const juce::File& audioPath) {
     if (songId <= 0) return;
 
-    const auto directory = audioPath.getParentDirectory();
-    const auto baseName = audioPath.getFileNameWithoutExtension();
+    // 歌词关联失败绝不能影响导入（更不能让异常穿过 FFI 边界）
+    try {
+        const auto directory = audioPath.getParentDirectory();
+        const auto baseName = audioPath.getFileNameWithoutExtension();
 
-    const auto originalFile = directory.getChildFile(baseName + ".lrc");
-    if (!originalFile.existsAsFile()) return;
+        const auto originalFile = directory.getChildFile(baseName + ".lrc");
+        if (!originalFile.existsAsFile()) return;
 
-    const auto originalText = originalFile.loadFileAsString();
-    if (originalText.isEmpty()) return;
+        const auto originalText = originalFile.loadFileAsString();
+        if (originalText.isEmpty()) return;
 
     const auto originalMtime = originalFile.getLastModificationTime().toMilliseconds();
 
@@ -179,12 +181,19 @@ void SongImport::linkLyrics(int64_t songId, const juce::File& audioPath) {
         break;
     }
 
-    if (auto logger = spdlog::get(LogDllID))
-        logger->debug(
-            "已关联歌词:songId={}, file={}",
-            songId,
-            originalFile.getFileName().toStdString()
-        );
+        if (auto logger = spdlog::get(LogDllID))
+            logger->debug(
+                "已关联歌词:songId={}, file={}",
+                songId,
+                originalFile.getFileName().toStdString()
+            );
+    } catch (const std::exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn("关联歌词失败(songId={}):{}", songId, e.what());
+    } catch (...) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn("关联歌词失败(songId={}):未知异常", songId);
+    }
 }
 
 // ⚠️ 僵尸函数：目前**没有任何地方调用**它。

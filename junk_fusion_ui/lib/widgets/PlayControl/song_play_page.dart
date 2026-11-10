@@ -38,8 +38,6 @@ import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/spectrum_source.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/lyric_view.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/spectrum_ring.dart';
-// TODO: AlbumCoverImage 现在住在 single_album_page.dart 里，等有空挪到
-//       helper_widget/ 下，这里就不用整页 import 了。
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -150,12 +148,10 @@ class _SongPlayPageState extends State<SongPlayPage>
         }
 
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: _slide, curve: Curves.easeOutCubic),
-          ),
+          position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: _slide, curve: Curves.easeOutCubic),
+              ),
           child: _buildPage(context, song),
         );
       },
