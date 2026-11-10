@@ -143,7 +143,7 @@ class EachSong extends StatelessWidget {
               width: 40,
               child: IconButton(
                 icon: (song.isMyLike)
-                    ? Icon(TablerIcons.heartFilled, color: Colors.red)
+                    ? Icon(TablerIcons.heartFilled, color: theme.colorLike)
                     : Icon(TablerIcons.heart),
                 onPressed: () =>
                     context.read<SongProvider>().toggleMyLike(song.songId),

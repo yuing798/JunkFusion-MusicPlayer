@@ -28,6 +28,7 @@ import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
+import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/favorite_playlist.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
@@ -108,7 +109,7 @@ void showSongActionMenu({
         icon: Icon(
           song.isMyLike ? TablerIcons.heartFilled : TablerIcons.heart,
           size: 18,
-          color: song.isMyLike ? Colors.red : null,
+          color: song.isMyLike ? AppTheme.likeColor : null,
         ),
         onTap: () => songProvider.toggleMyLike(song.songId),
       ),

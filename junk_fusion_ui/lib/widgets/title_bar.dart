@@ -101,7 +101,7 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
           ),
           IconButton(
             icon: Icon(TablerIcons.x, size: 32),
-            hoverColor: Colors.red, // 鼠标悬浮关闭按钮时变红
+            hoverColor: Theme.of(context).colorScheme.error, // 鼠标悬浮关闭按钮时变红
             onPressed: () {
               // print("用户点击了右上角的关闭按钮");
               windowManager.close();

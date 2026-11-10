@@ -308,21 +308,27 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider(create: (_) => AppTheme()),
       ],
 
-      child: ToastificationWrapper(
-        // 错误卡片通知的全局配置（位置/宽度/同时显示几条），
-        // 具体样式和去重逻辑在 widgets/popupWindow/error_toast.dart
-        config: ErrorToast.config,
-        //有画布,且overlay就在这里面
-        child: MaterialApp(
-          title: 'JunkFusion',
-          navigatorKey: navigatorKey,
+      child: Consumer<AppTheme>(
+        builder: (context, appTheme, _) => ToastificationWrapper(
+          // 错误卡片通知的全局配置（位置/宽度/同时显示几条），
+          // 具体样式和去重逻辑在 widgets/popupWindow/error_toast.dart
+          config: ErrorToast.config,
+          //有画布,且overlay就在这里面
+          child: MaterialApp(
+            title: 'JunkFusion',
+            navigatorKey: navigatorKey,
 
-          debugShowCheckedModeBanner: false, //关闭右上角 DEBUG 标签
-          theme: ThemeData(
-            fontFamily: "OpenSans",
-            fontFamilyFallback: ["NotoSansSC"],
+            debugShowCheckedModeBanner: false, //关闭右上角 DEBUG 标签
+
+            // 两套主题都来自 flex_color_scheme（见 theme/app_theme.dart）：
+            //   明亮 = 蓝白，暗黑 = 黑金
+            // 现在固定蓝白；以后设置页调 AppTheme.setThemeMode() 就能切换
+            theme: AppTheme.lightThemeData,
+            darkTheme: AppTheme.darkThemeData,
+            themeMode: appTheme.themeMode,
+
+            home: const App(),
           ),
-          home: const App(),
         ),
       ),
     );

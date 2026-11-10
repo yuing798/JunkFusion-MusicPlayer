@@ -119,7 +119,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           (playback.curBasicInfo != null)
               ? IconButton(
                   icon: (playback.curBasicInfo!.isMyLike)
-                      ? Icon(TablerIcons.heartFilled, color: Colors.red)
+                      ? Icon(TablerIcons.heartFilled, color: theme.colorLike)
                       : Icon(TablerIcons.heart),
                   onPressed: () => context.read<SongProvider>().toggleMyLike(
                     playback.curBasicInfo!.songId,
