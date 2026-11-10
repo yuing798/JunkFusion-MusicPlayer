@@ -289,6 +289,40 @@ class PlaybackProvider extends ChangeNotifier {
     return _playList[index].songId;
   }
 
+  void clickPlayNextSongBtn() {
+    if (_curBasicInfo == null || _playList.isEmpty) return;
+    if (_playMode != 2) {
+      playNextSong();
+    } else {
+      final currentSongIndex = _playList.indexWhere(
+        (i) => i.songId == _curBasicInfo!.songId,
+      );
+
+      if (currentSongIndex < _playList.length - 1) {
+        final targetSongId = _playList[currentSongIndex + 1].songId;
+        setNewSong(targetSongId);
+        return;
+      }
+    }
+  }
+
+  void clickPlatPreviousSongBtn() {
+    if (_curBasicInfo == null || _playList.isEmpty) return;
+    if (_playMode != 2) {
+      playNextSong();
+    } else {
+      final currentSongIndex = _playList.indexWhere(
+        (i) => i.songId == _curBasicInfo!.songId,
+      );
+
+      if (currentSongIndex > 0) {
+        final targetSongId = _playList[currentSongIndex - 1].songId;
+        setNewSong(targetSongId);
+        return;
+      }
+    }
+  }
+
   void playNextSong() {
     if (_curBasicInfo == null || _playList.isEmpty) return;
 
@@ -321,6 +355,8 @@ class PlaybackProvider extends ChangeNotifier {
     }
 
     _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+    bindings.play(_curBasicInfo!.songId, 0.0, 0, 0);
+    bindings.pausePlay();
     _isPlaying = false;
     notifyListeners();
   }
@@ -356,6 +392,8 @@ class PlaybackProvider extends ChangeNotifier {
     }
 
     _currentTimeStamp = 0.0; //播完且之后没有任何歌曲直接把pts重置回0.0其他不动
+    bindings.play(_curBasicInfo!.songId, 0.0, 0, 0);
+    bindings.pausePlay();
     _isPlaying = false;
     notifyListeners();
   }

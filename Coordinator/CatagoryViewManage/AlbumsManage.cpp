@@ -267,7 +267,7 @@ std::optional<int64_t> AlbumsManage::removeAlbumIfEmpty(int64_t albumId) {
 
 // ── 联网搜索专辑封面 ────────────────────────────────────────────────────
 std::optional<std::string>
-    AlbumsManage::searchCoverURL(const std::string& term, const std::string& entity) {
+AlbumsManage::searchCoverURL(const std::string& term, const std::string& entity) {
     if (auto logger = spdlog::get(LogDllID))
         logger->debug("iTunes 搜索 term: {}, entity: {}", term, entity);
 
@@ -293,10 +293,8 @@ std::optional<std::string>
     return std::nullopt;
 }
 
-std::optional<std::string> AlbumsManage::searchAndSaveCover(
-    int64_t albumId,
-    const juce::File& imageDir
-) {
+std::optional<std::string>
+AlbumsManage::searchAndSaveCover(int64_t albumId, const juce::File& imageDir) {
     auto logger = spdlog::get(LogDllID);
 
     // 1. 取专辑名 + 专辑艺术家
@@ -332,10 +330,12 @@ std::optional<std::string> AlbumsManage::searchAndSaveCover(
     // 3. 先「艺术家 + 专辑名」，搜不到再用纯专辑名兜底
     std::optional<std::string> coverURL;
     if (!primaryArtist.empty()) coverURL = searchCoverURL(primaryArtist + " " + title, "album");
-    if (!coverURL.has_value()) coverURL = searchCoverURL(title, "album");
+
+    // 只搜索一次就好，单独搜索专辑名很容易出错
+    //  if (!coverURL.has_value()) coverURL = searchCoverURL(title, "album");
+
     if (!coverURL.has_value()) {
-        if (logger)
-            logger->info("搜不到专辑封面:albumId={}, title={}", albumId, title);
+        if (logger) logger->info("搜不到专辑封面:albumId={}, title={}", albumId, title);
         return std::nullopt;
     }
 
@@ -368,10 +368,7 @@ std::optional<std::string> AlbumsManage::searchAndSaveCover(
         juce::FileOutputStream outputStream(originalFile);
         if (!outputStream.openedOk()) {
             if (logger)
-                logger->error(
-                    "封面写文件失败:{}",
-                    originalFile.getFullPathName().toStdString()
-                );
+                logger->error("封面写文件失败:{}", originalFile.getFullPathName().toStdString());
             return std::nullopt;
         }
         outputStream.write(imgRes.text.data(), imgRes.text.size());

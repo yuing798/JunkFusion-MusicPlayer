@@ -16,11 +16,6 @@ import 'package:junk_fusion_ui/widgets/popup_window.dart';
 // ════════════════════════════════════════════════════════════════
 // playlist_provider.dart — 歌单视图的数据源
 //
-// TODO(后端): 后端现在**一个歌单接口都没有**
-//   （Coordinator/CatagoryViewManage/PlayListManage 只有个空构造函数，
-//     dbTable.hpp 里也没有 playlists 表），
-//   所以这个 Provider 现在只把「要什么数据」写清楚，查询一律返回空列表。
-//   等 bindings 里注册了下面这些函数，把 TODO 处换成注释里那几行即可。
 //
 // ── 需要的后端接口（详细约定见我给的那份清单）──────────────────
 //   getAllPlaylistView()
@@ -124,11 +119,11 @@ class PlaylistProvider extends ChangeNotifier {
       bindings.addNewSongsToPlaylist(playlistId, ptr);
       malloc.free(ptr);
     }
-    print(
-      jsonDecode(
-        UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
-      ),
-    );
+    // print(
+    //   jsonDecode(
+    //     UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
+    //   ),
+    // );
     _playlists.add(
       PlaylistBasicInfo.fromJson(
         jsonDecode(
@@ -167,15 +162,4 @@ class PlaylistProvider extends ChangeNotifier {
     // 歌单卡片的封面/数量可能变了，整表刷一遍最省事（歌单数量不大）
     getAllPlaylists();
   }
-
-  // ────────────────────────────────────────────────────────────
-  // 歌单管理（新建 / 改名 / 删除 / 增删歌曲）
-  //
-  // TODO(后端): 上面列的 5 个管理函数注册好之后再在这里实现，
-  //             每个方法结束后调一次 getAllPlaylists()（或局部更新）
-  //             再 notifyListeners()。
-  //             UI 那边现在是禁用按钮占位，见
-  //             widgets/pages/playlist_view_page.dart 和
-  //             widgets/pages/single_playlist_page.dart 里的 TODO。
-  // ────────────────────────────────────────────────────────────
 }

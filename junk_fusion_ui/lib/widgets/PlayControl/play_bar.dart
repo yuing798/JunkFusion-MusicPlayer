@@ -37,11 +37,7 @@ class PlayBar extends StatefulWidget {
 }
 
 class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _slideAnimation;
   late final PlayList _playList;
-
-  SongBasicInfo? _previousSong; //缓存上一次的歌曲，防止重复触发动画
 
   double _height = 100;
 
@@ -50,29 +46,10 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     super.initState();
 
     _playList = PlayList(this);
-
-    // 初始化控制器
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350), // 动画时长
-    );
-
-    // 滑动动画：从向下偏移100%（完全隐藏）到偏移0%（完全显示）
-    _slideAnimation =
-        Tween<Offset>(
-          begin: const Offset(0, 1), // 向下移动自身高度的100%
-          end: const Offset(0, 0), // 原位
-        ).animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: Curves.easeInOut, // 缓动曲线，更自然
-          ),
-        );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
     _playList.dispose();
     super.dispose();
   }
@@ -88,24 +65,13 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final playback = context.watch<PlaybackProvider>();
 
-    final shouldShow = playback.curBasicInfo != null;
-    if (playback.curBasicInfo != _previousSong) {
-      _previousSong = playback.curBasicInfo;
-      if (shouldShow) {
-        _controller.forward(); //滑入
-      } else {
-        _controller.reverse(); //滑出
-      }
-    }
-    if (playback.curBasicInfo == null) return const SizedBox.shrink();
-
     final theme = context.watch<AppTheme>();
 
     // 构建左区：封面 + 歌名/艺术家 + 喜欢 + 详情弹窗
     Widget buildLeftArea() {
       return Row(
         children: [
-          (playback.curBasicInfo!.hash != null)
+          (playback.curBasicInfo?.hash != null)
               ? Image.file(
                   File(
                     '${AppCache.cacheDirString}/image/${playback.curBasicInfo!.hash}/original.jpg',
@@ -131,13 +97,13 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                playback.curBasicInfo!.title,
+                playback.curBasicInfo?.title ?? "",
                 style: theme.midTextStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                playback.curBasicInfo!.artists == null
+                playback.curBasicInfo?.artists == null
                     ? "未知"
                     : playback.curBasicInfo!.artists!.join(" / "),
                 style: theme.littleTextStyle,
@@ -150,14 +116,16 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           const SizedBox(width: 10),
 
           // ── 喜欢按钮
-          IconButton(
-            icon: (playback.curBasicInfo!.isMyLike)
-                ? Icon(TablerIcons.heartFilled, color: Colors.red)
-                : Icon(TablerIcons.heart),
-            onPressed: () => context.read<SongProvider>().toggleMyLike(
-              playback.curBasicInfo!.songId,
-            ),
-          ),
+          (playback.curBasicInfo != null)
+              ? IconButton(
+                  icon: (playback.curBasicInfo!.isMyLike)
+                      ? Icon(TablerIcons.heartFilled, color: Colors.red)
+                      : Icon(TablerIcons.heart),
+                  onPressed: () => context.read<SongProvider>().toggleMyLike(
+                    playback.curBasicInfo!.songId,
+                  ),
+                )
+              : SizedBox.shrink(),
         ],
       );
     }
@@ -182,7 +150,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.squareArrowLeftFilled, size: 32),
             onPressed: () {
-              context.read<PlaybackProvider>().playPreviousSong();
+              context.read<PlaybackProvider>().clickPlatPreviousSongBtn();
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -206,7 +174,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.squareArrowRightFilled, size: 32),
             onPressed: () {
-              context.read<PlaybackProvider>().playNextSong();
+              context.read<PlaybackProvider>().clickPlayNextSongBtn();
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -227,57 +195,51 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
       );
     }
 
-    return SlideTransition(
-      position: _slideAnimation,
-      child: SizedBox(
-        height: _height,
-        child: Stack(
-          // mainAxisSize: MainAxisSize.min,
-          // height: 90,
-          children: [
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 90,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 10,
-                ),
-                color: theme.colorHover,
+    return SizedBox(
+      height: _height,
+      child: Stack(
+        // mainAxisSize: MainAxisSize.min,
+        // height: 90,
+        children: [
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 90,
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+              color: theme.colorHover,
 
-                // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
-                // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
-                child: Row(
-                  children: [
-                    // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
-                    Expanded(flex: 5, child: buildLeftArea()),
+              // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
+              // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
+              child: Row(
+                children: [
+                  // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
+                  Expanded(flex: 5, child: buildLeftArea()),
 
-                    // ── 中区（播放控制） ──
-                    Expanded(flex: 4, child: buildMidArea()),
+                  // ── 中区（播放控制） ──
+                  Expanded(flex: 4, child: buildMidArea()),
 
-                    // ── 右区（预留） ──
-                    // 和左区对称占位，后续放置音量/进度条等控件
-                    Expanded(flex: 5, child: _buildRightArea(context)),
-                  ],
-                ),
+                  // ── 右区（预留） ──
+                  // 和左区对称占位，后续放置音量/进度条等控件
+                  Expanded(flex: 5, child: _buildRightArea(context)),
+                ],
               ),
             ),
-            Positioned(
-              bottom: 80,
-              left: 5,
-              right: 5,
-              child: SongProgressArea(
-                onHeightChange: (double value) {
-                  setState(() {
-                    _height = 80 + value;
-                  });
-                },
-              ),
+          ),
+          Positioned(
+            bottom: 80,
+            left: 5,
+            right: 5,
+            child: SongProgressArea(
+              onHeightChange: (double value) {
+                setState(() {
+                  _height = 80 + value;
+                });
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
