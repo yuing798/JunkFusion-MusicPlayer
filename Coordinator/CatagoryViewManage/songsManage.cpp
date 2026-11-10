@@ -152,10 +152,11 @@ SongInfo SongsManage::getBasicSongInfo(int64_t songId) {
         SQLite::Statement query{
             dbManage.readDb(),
             R"(
-                SELECT songId, 
+                SELECT songs.songId, 
                 duration, title, artists, album, 
-                isMyLike, playNum, hash
-                FROM songs WHERE songId = :songId
+                isMyLike, playNum, COALESCE(songs.hash, albums.hash) AS hash
+                FROM songs LEFT JOIN albums ON albums.albumId = songs.albumId
+                WHERE songs.songId = :songId
             )"
         };
         query.bind(":songId", songId);
@@ -214,10 +215,11 @@ Yvar SongsManage::getAllSongsBasicInfo() {
     try {
 
         SQLite::Statement query(dbManage.readDb(), R"(
-            SELECT songId, 
+            SELECT songs.songId, 
             duration, title, artists, album, 
-            isMyLike, playNum, hash
-            FROM songs ORDER BY songId
+            isMyLike, playNum, COALESCE(songs.hash, albums.hash) AS hash
+            FROM songs LEFT JOIN albums ON albums.albumId = songs.albumId
+            ORDER BY songs.songId
         )");
 
         while (query.executeStep()) {
