@@ -16,7 +16,6 @@ abstract class SongDetailInfo with _$SongDetailInfo {
     int? bpm,
     String? key,
 
-    required List<double> timeDomainSpec,
     int? trackNumber,
     int? discNumber,
   }) = _SongDetailInfo;

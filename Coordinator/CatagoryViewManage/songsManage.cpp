@@ -144,7 +144,6 @@ SongInfo SongsManage::getDetailInfoCol(SQLite::Statement& query) {
     info.bpm = DbUtils::getOptCol<int>(query, "bpm");
     info.key = DbUtils::getOptCol<std::string>(query, "key");
 
-    info.timeDomainSpec = DbUtils::getBlob<double>(query, "timeDomainSpec");
     return info;
 }
 SongInfo SongsManage::getBasicSongInfo(int64_t songId) {
@@ -186,8 +185,7 @@ SongInfo SongsManage::getDetailSongInfo(int64_t songId) {
                 SELECT 
                 trackNumber,discNumber,
                 bitRate, bitDepth, sampleRate, channelLayoutMask,  codecName,
-                bpm, key, 
-                timeDomainSpec 
+                bpm, key 
                 FROM songs WHERE songId = :songId
             )"
         };

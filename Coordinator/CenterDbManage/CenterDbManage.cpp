@@ -62,7 +62,6 @@ static const std::string createSongsTableSQL = std::format(
             playNum       INTEGER DEFAULT 0,
             lastPlayTime DATETIME,
             hash TEXT,
-            timeDomainSpec BLOB,
             albumId INTEGER,
             songFolderId INTEGER,
             isSingleFile    INTEGER DEFAULT 0,

@@ -41,7 +41,6 @@ struct SongInfo {
     int playNum{0};   // 已经播放了多少次
 
     std::optional<std::string> hash;
-    std::vector<double> timeDomainSpec;
 
     // 将songInfo转化为Yvar，才能推送给前端
     Yvar toDetailJson() const;

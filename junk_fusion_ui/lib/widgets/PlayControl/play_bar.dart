@@ -39,8 +39,8 @@ class PlayBar extends StatefulWidget {
 class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final PlayList _playList;
 
-  double _height = 100;
-
+  /// 播放栏高度（不再随时域图展开而变化）
+  static const double _height = 100;
   @override
   void initState() {
     super.initState();
@@ -231,13 +231,8 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             bottom: 80,
             left: 5,
             right: 5,
-            child: SongProgressArea(
-              onHeightChange: (double value) {
-                setState(() {
-                  _height = 80 + value;
-                });
-              },
-            ),
+            // 进度条只显示进度 + 时间标签，不再有可展开的时域波形
+            child: const SongProgressArea(),
           ),
         ],
       ),
