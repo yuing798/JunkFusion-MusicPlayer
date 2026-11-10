@@ -40,6 +40,14 @@ public:
     PlayInfo getPlayInfo(int64_t songId); // 根据ID获得路径和歌曲时长
 
     void updatePlayCount(std::string path);
+
+    /**
+     * @brief 记一下这首最后一次播放的时间
+     *
+     * 收到「播放新歌」信号时由 libExport::play 调（暂停后继续播不记）。
+     * 时间格式直接用 SQLite 的 datetime('now','localtime')，方便以后按最近播放排序。
+     */
+    void updateLastPlayTime(int64_t songId);
     /**
      * @brief  检查一首歌是否在歌曲表里面,返回代表的songId
      *

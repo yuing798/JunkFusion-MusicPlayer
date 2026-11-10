@@ -1,6 +1,7 @@
 import 'dart:async'; // Timer 类在此库中
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
+import 'package:junk_fusion_ui/widgets/popupWindow/favorite_playlist.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/ordinary_info_window.dart';
 import 'package:junk_fusion_ui/widgets/popupWindow/playlist_create_window.dart';
 
@@ -60,6 +61,22 @@ class DialogUtil {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return const PlaylistCreateWindow();
+      },
+    );
+  }
+
+  /// 「收藏到歌单」弹窗
+  ///
+  /// 返回用户勾选的歌单；点「新建歌单」时 createNew = true（调用方接着弹
+  /// 新建歌单窗口）；取消 / × / Esc 返回 null。
+  static Future<FavoritePlaylistResult?> showFavoritePlaylistDialog({
+    required List<int> songIds,
+  }) {
+    return showDialog<FavoritePlaylistResult>(
+      context: navigatorKey.currentContext!,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return FavoritePlaylistWindow(songIds: songIds);
       },
     );
   }

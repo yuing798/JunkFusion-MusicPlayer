@@ -152,10 +152,11 @@ SongInfo SongsManage::getBasicSongInfo(int64_t songId) {
         SQLite::Statement query{
             dbManage.readDb(),
             R"(
-                SELECT songId, 
+                SELECT songs.songId, 
                 duration, title, artists, album, 
-                isMyLike, playNum, hash
-                FROM songs WHERE songId = :songId
+                isMyLike, playNum, COALESCE(songs.hash, albums.hash) AS hash
+                FROM songs LEFT JOIN albums ON albums.albumId = songs.albumId
+                WHERE songs.songId = :songId
             )"
         };
         query.bind(":songId", songId);
@@ -214,10 +215,11 @@ Yvar SongsManage::getAllSongsBasicInfo() {
     try {
 
         SQLite::Statement query(dbManage.readDb(), R"(
-            SELECT songId, 
+            SELECT songs.songId, 
             duration, title, artists, album, 
-            isMyLike, playNum, hash
-            FROM songs ORDER BY songId
+            isMyLike, playNum, COALESCE(songs.hash, albums.hash) AS hash
+            FROM songs LEFT JOIN albums ON albums.albumId = songs.albumId
+            ORDER BY songs.songId
         )");
 
         while (query.executeStep()) {
@@ -306,6 +308,25 @@ void SongsManage::updatePlayCount(std::string path) {
     // 通知放到写事务外面：它内部还要读一次库拿最新信息
     if (updatedSongId > 0) dllManager::getInstance().notifySongUpdated(updatedSongId);
 }
+
+void SongsManage::updateLastPlayTime(int64_t songId) {
+    if (songId <= 0) return;
+
+    dbManage.write([&](SQLite::Database& db) {
+        try {
+            SQLite::Statement sql{
+                db,
+                "UPDATE songs SET lastPlayTime = datetime('now','localtime') WHERE "
+                "songId = :songId"
+            };
+            sql.bind(":songId", songId);
+            sql.exec();
+        } catch (SQLite::Exception& e) {
+            spdlog::get(LogDllID)->debug("SongsManage::updateLastPlayTime 发生错误:{}", e.what());
+        }
+    });
+}
+
 Yvar SongsManage::getSingleImportSongs() {
     auto songIdList = Yvar::array();
     try {

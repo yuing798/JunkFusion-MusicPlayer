@@ -50,8 +50,14 @@ extern "C" {
         dllManager::getInstance().onFatalErrorSendCallback = cb;
     }
     void play(long long songId, double targetSeconds, int isSeek, int isNewSong) {
-        auto info =
-            dllManager::getInstance().getDbContext()->songsManage.getPlayInfo(songId).toJson();
+        auto* dbContext = dllManager::getInstance().getDbContext();
+
+        // 收到「播放新歌」信号就记一下最近播放时间（暂停后继续播、拖动进度条都不算）
+        if (isNewSong != 0 && dbContext != nullptr) {
+            dbContext->songsManage.updateLastPlayTime(songId);
+        }
+
+        auto info = dbContext->songsManage.getPlayInfo(songId).toJson();
         Yvar playObj = Yvar::object();
         {
             playObj.set(AudioMacro::playInfo, info);
@@ -94,14 +100,6 @@ extern "C" {
         dllManager::getInstance().onPlayNextOrPreviousSong = cb;
     }
 
-    const char* getAllSongs() {
-        auto songsList =
-            dllManager::getInstance().getDbContext()->songsManage.getAllSongsBasicInfo();
-        Yvar obj = Yvar::object();
-        obj.set(CoordinatorMacro::songsList, std::move(songsList));
-
-        return ConvertUtils::object2Uint8t(obj);
-    }
     const char* getBasicSongInfo(long long songId) {
         return ConvertUtils::object2Uint8t(
             dllManager::getInstance()
@@ -130,6 +128,21 @@ extern "C" {
         return ConvertUtils::object2Uint8t(
             dllManager::getInstance().getDbContext()->albumsManage.getDetailInfo(albumId)
         );
+    }
+
+    const char* searchAlbumCover(long long albumId) {
+        auto& manager = dllManager::getInstance();
+        Yvar result = Yvar::object();
+
+        auto* dbContext = manager.getDbContext();
+        if (dbContext == nullptr) {
+            result.set("hash", Yvar{});
+            return ConvertUtils::object2Uint8t(result);
+        }
+
+        auto hash = dbContext->albumsManage.searchAndSaveCover(albumId, manager.getImageDir());
+        result.set("hash", Yvar::fromOptional(hash));
+        return ConvertUtils::object2Uint8t(result);
     }
 
     const char* getAllPlaylistView() {

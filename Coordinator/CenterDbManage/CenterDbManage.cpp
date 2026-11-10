@@ -60,6 +60,7 @@ static const std::string createSongsTableSQL = std::format(
             key                TEXT,
             isMyLike           INTEGER DEFAULT 0,
             playNum       INTEGER DEFAULT 0,
+            lastPlayTime DATETIME,
             hash TEXT,
             timeDomainSpec BLOB,
             albumId INTEGER,
@@ -82,6 +83,10 @@ static const char* createDurationIndexSQL =
 
 static const char* createPlayNumIndexSQL =
     "CREATE INDEX IF NOT EXISTS playNumIndex ON songs(playNum)";
+
+// 最近播放排序要靠它，值的格式就是 SQLite 的 datetime('now','localtime')
+static const char* createLastPlayTimeIndexSQL =
+    "CREATE INDEX IF NOT EXISTS lastPlayTimeIndex ON songs(lastPlayTime)";
 
 static const char* createAlbumDiscTrackIndexSQL =
     "CREATE INDEX IF NOT EXISTS albumDiscTrackIndex ON songs(albumId,discNumber,trackNumber)";
@@ -212,6 +217,7 @@ CenterDbManage::CenterDbManage(const std::string& path)
         db.exec(createAlbumIdIndexSQL);
         db.exec(createDurationIndexSQL);
         db.exec(createPlayNumIndexSQL);
+        db.exec(createLastPlayTimeIndexSQL);
         db.exec(createSongFolderIdIndexSQL);
 
         if (auto logger{spdlog::get(LogDllID)}) {

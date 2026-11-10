@@ -16,11 +16,6 @@ import 'package:junk_fusion_ui/widgets/popup_window.dart';
 // ════════════════════════════════════════════════════════════════
 // playlist_provider.dart — 歌单视图的数据源
 //
-// TODO(后端): 后端现在**一个歌单接口都没有**
-//   （Coordinator/CatagoryViewManage/PlayListManage 只有个空构造函数，
-//     dbTable.hpp 里也没有 playlists 表），
-//   所以这个 Provider 现在只把「要什么数据」写清楚，查询一律返回空列表。
-//   等 bindings 里注册了下面这些函数，把 TODO 处换成注释里那几行即可。
 //
 // ── 需要的后端接口（详细约定见我给的那份清单）──────────────────
 //   getAllPlaylistView()
@@ -116,7 +111,7 @@ class PlaylistProvider extends ChangeNotifier {
     return id;
   }
 
-  void createPlaylist(List<int>? songsList) async {
+  Future<void> createPlaylist(List<int>? songsList) async {
     final playlistId = await _createEmptyPlaylist();
     if (playlistId == null) return;
     if (songsList != null) {
@@ -124,11 +119,11 @@ class PlaylistProvider extends ChangeNotifier {
       bindings.addNewSongsToPlaylist(playlistId, ptr);
       malloc.free(ptr);
     }
-    print(
-      jsonDecode(
-        UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
-      ),
-    );
+    // print(
+    //   jsonDecode(
+    //     UtilFunction.cPtr2String(bindings.getPlaylistBasicInfo(playlistId)),
+    //   ),
+    // );
     _playlists.add(
       PlaylistBasicInfo.fromJson(
         jsonDecode(
@@ -148,14 +143,23 @@ class PlaylistProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ────────────────────────────────────────────────────────────
-  // 歌单管理（新建 / 改名 / 删除 / 增删歌曲）
-  //
-  // TODO(后端): 上面列的 5 个管理函数注册好之后再在这里实现，
-  //             每个方法结束后调一次 getAllPlaylists()（或局部更新）
-  //             再 notifyListeners()。
-  //             UI 那边现在是禁用按钮占位，见
-  //             widgets/pages/playlist_view_page.dart 和
-  //             widgets/pages/single_playlist_page.dart 里的 TODO。
-  // ────────────────────────────────────────────────────────────
+  /// 把一批歌加进若干个歌单（「收藏到歌单」弹窗用）
+  ///
+  /// 后端接口是 addNewSongsToPlaylist(playlistId, songIdsJson)，
+  /// 多选歌单就循环调；songIdsJson 只分配一次，循环里复用。
+  void addSongsTo(List<int> playlistIds, List<int> songIds) {
+    if (playlistIds.isEmpty || songIds.isEmpty) return;
+
+    final ptr = UtilFunction.string2cPtr(jsonEncode(songIds));
+    try {
+      for (final playlistId in playlistIds) {
+        bindings.addNewSongsToPlaylist(playlistId, ptr);
+      }
+    } finally {
+      malloc.free(ptr);
+    }
+
+    // 歌单卡片的封面/数量可能变了，整表刷一遍最省事（歌单数量不大）
+    getAllPlaylists();
+  }
 }

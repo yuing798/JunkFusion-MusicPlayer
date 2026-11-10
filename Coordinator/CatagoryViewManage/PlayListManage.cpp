@@ -140,8 +140,11 @@ void PlayListManage::addNewSongs(int64_t id, std::vector<int64_t> songIds) {
             checkHashStmt.bind(":id", id);
             checkHashStmt.exec();
             if (checkHashStmt.getColumn("hash").isNull()) {
-                // 如果这张歌单没有封面，直接把第一首歌的封面交给他
-                std::string selectHashStr = "SELECT hash FROM songs WHERE songId IN ( ";
+                // 如果这张歌单没有封面，直接把第一首有封面的歌的封面交给他
+                // （歌曲自己没有内嵌封面时，用所属专辑的封面兜底）
+                std::string selectHashStr =
+                    "SELECT COALESCE(songs.hash, albums.hash) AS hash FROM songs "
+                    "LEFT JOIN albums ON albums.albumId = songs.albumId WHERE songs.songId IN ( ";
                 selectHashStr += StringUtils::vectorToString(songIds, ",");
                 selectHashStr += " ) ";
                 SQLite::Statement selectHashStmt{db, selectHashStr};
@@ -236,7 +239,12 @@ void PlayListManage::updateCover(int64_t id, int64_t songId) {
     try {
         dbManage.write([&](SQLite::Database& db) {
             SQLite::Transaction t{db};
-            SQLite::Statement searchStmt{db, "SELECT hash FROM songs WHERE songId=:songId"};
+            SQLite::Statement searchStmt{
+                db,
+                "SELECT COALESCE(songs.hash, albums.hash) AS hash FROM songs "
+                "LEFT JOIN albums ON albums.albumId = songs.albumId "
+                "WHERE songs.songId=:songId"
+            };
             searchStmt.bind(":songId", songId);
             std::string hash;
             if (searchStmt.executeStep()) {

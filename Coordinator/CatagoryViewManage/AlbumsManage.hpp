@@ -44,4 +44,21 @@ public:
      * @return 真的删掉了返回 albumId；还有歌/专辑不存在/出错都返回 nullopt
      */
     std::optional<int64_t> removeAlbumIfEmpty(int64_t albumId);
+
+    /**
+     * @brief 联网搜索某张专辑的封面，下载并存进 albums.hash
+     *
+     * 导入阶段已经不再联网了，封面统一走这里按需补（前端右键「联网搜索专辑封面」）。
+     * 搜索词是「主艺术家 + 专辑名」，群星这类名字会被跳过；搜不到再用纯专辑名兜底。
+     *
+     * @param albumId 专辑 id
+     * @param imageDir 封面缓存目录（<缓存目录>/image）
+     * @return 新的封面 hash；搜不到或下载失败返回 nullopt
+     */
+    std::optional<std::string> searchAndSaveCover(int64_t albumId, const juce::File& imageDir);
+
+private:
+    /** @brief 向 iTunes 搜一条结果，返回 artworkUrl100；失败 nullopt */
+    static std::optional<std::string>
+        searchCoverURL(const std::string& term, const std::string& entity);
 }; // namespace AlbumsManage
