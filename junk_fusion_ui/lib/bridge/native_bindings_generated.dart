@@ -302,6 +302,21 @@ class JunkFusionDLLBindings {
   late final _getSingleImportSongs = _getSingleImportSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  /// @brief 取某首歌的歌词（已解析并合并翻译）
+  ///
+  /// @return {"lyric":{"hasTranslation":bool,"lines":[{"startMs","text","translation","words"}]}}
+  /// 没有歌词时 {"lyric":null}
+  ffi.Pointer<ffi.Char> getSongLyrics(int songId) {
+    return _getSongLyrics(songId);
+  }
+
+  late final _getSongLyricsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getSongLyrics',
+      );
+  late final _getSongLyrics = _getSongLyricsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
   /// @brief 频段数量（固定 96），前端按它分配数组
   int getSpectrumBandCount() {
     return _getSpectrumBandCount();

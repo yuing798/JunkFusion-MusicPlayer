@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/model/song_detail_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
+import 'package:junk_fusion_ui/providers/play_page_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
@@ -71,23 +72,30 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     Widget buildLeftArea() {
       return Row(
         children: [
-          (playback.curBasicInfo?.hash != null)
-              ? Image.file(
-                  File(
-                    '${AppCache.cacheDirString}/image/${playback.curBasicInfo!.hash}/original.jpg',
-                  ),
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                )
-              : Image.asset(
-                  "assets/image/JunkFusion.png",
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  // cacheHeight: 50,
-                  // cacheWidth: 50,
-                ),
+          // 点封面打开全屏播放页（歌曲仍在播，页面是浮层）
+          GestureDetector(
+            onTap: () => context.read<PlayPageProvider>().open(),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: (playback.curBasicInfo?.hash != null)
+                  ? Image.file(
+                      File(
+                        '${AppCache.cacheDirString}/image/${playback.curBasicInfo!.hash}/original.jpg',
+                      ),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.asset(
+                      "assets/image/JunkFusion.png",
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      // cacheHeight: 50,
+                      // cacheWidth: 50,
+                    ),
+            ),
+          ),
 
           const SizedBox(width: 10),
 

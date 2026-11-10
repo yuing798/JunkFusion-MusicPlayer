@@ -82,11 +82,11 @@ class _AppState extends State<App> {
               child: const PlayBar(),
             ),
 
-            // ── 全屏播放页（现在还是个空的 SlideTransition 占位） ──
+            // ── 全屏播放页（浮层，避开 50px 的标题栏，方便拖窗口/关闭） ──
             Positioned(
               left: 0,
               right: 0,
-              top: 0,
+              top: 50,
               bottom: 0,
               child: const SongPlayPage(),
             ),
