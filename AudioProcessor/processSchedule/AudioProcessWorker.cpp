@@ -43,6 +43,21 @@ void AudioProcessorPuller::run() {
                     if (onEqMessage) onEqMessage(*eqMessage);
                     continue;
                 }
+                // 频谱共享内存：Coordinator 把名字和大小发过来
+                if (jsonObj.has(AudioMacro::spectrumShm)) {
+                    const Yvar shmObj = jsonObj.read(AudioMacro::spectrumShm);
+                    const auto name = shmObj.read(AudioMacro::spectrumName).toString();
+                    const auto bytes =
+                        static_cast<size_t>(shmObj.read(AudioMacro::spectrumBytes).toInt64());
+                    if (onSpectrumAttach) onSpectrumAttach(name, bytes);
+                    continue;
+                }
+                // 频谱开/关：播放页打开时才让分析线程工作
+                if (jsonObj.has(AudioMacro::spectrumEnable)) {
+                    const bool enabled = jsonObj.read(AudioMacro::spectrumEnable).toBool();
+                    if (onSpectrumEnabled) onSpectrumEnabled(enabled);
+                    continue;
+                }
                 if (jsonObj.has(AudioMacro::killAudioProcess)) {
                     juce::MessageManager::callAsync([]() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();

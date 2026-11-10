@@ -1,5 +1,6 @@
 #include "./libExport.h"
 #include "./EqController.hpp"
+#include "./SpectrumController.hpp"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
 #include "Macro/audioMacro.hpp"
@@ -317,6 +318,28 @@ extern "C" {
         auto* eqController = dllManager::getInstance().getEqController();
         if (eqController == nullptr) return nullptr;
         return eqController->getCurve(numPoints);
+    }
+
+    //===================================================================================
+    // 实时频谱
+    int getSpectrumBandCount() { return SpectrumController::bandCount(); }
+
+    const float* getSpectrumFrame() {
+        auto* spectrumController = dllManager::getInstance().getSpectrumController();
+        if (spectrumController == nullptr) return nullptr;
+        return spectrumController->getBands();
+    }
+
+    const float* getSpectrumPeaks() {
+        auto* spectrumController = dllManager::getInstance().getSpectrumController();
+        if (spectrumController == nullptr) return nullptr;
+        return spectrumController->getPeaks();
+    }
+
+    void setSpectrumEnabled(int enabled) {
+        auto* spectrumController = dllManager::getInstance().getSpectrumController();
+        if (spectrumController == nullptr) return;
+        spectrumController->setEnabled(enabled != 0);
     }
 
     //===================================================================================

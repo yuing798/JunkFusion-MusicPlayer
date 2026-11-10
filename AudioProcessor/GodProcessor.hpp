@@ -7,6 +7,7 @@
 #include "./DSPModule/ProgressBarWatch.hpp"
 #include "./DSPModule/SmoothSliderControl.hpp"
 #include "DSPModule/Eq.hpp"
+#include "DSPModule/SpectrumAnalyzer.hpp"
 #include "DeviceManager.hpp"
 #include "Model/PlayInfo.hpp"
 #include "SystemAudioControl.hpp"
@@ -42,6 +43,7 @@ private:
     CrossFadeArea mCrossFade;
     SmoothSliderControl mSmooth;
     Eq mEq; // 均衡器
+    SpectrumAnalyzer mSpectrum; // 实时频谱（写共享内存，前端读）
 
     struct BeforeCrossFadeDSPModuleAndBuffer {
         juce::AudioBuffer<float> buffer;

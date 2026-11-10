@@ -1,5 +1,6 @@
 #include "./dllManager.hpp"
 #include "./EqController.hpp"
+#include "./SpectrumController.hpp"
 #include "CenterDbManage/dbContext.hpp"
 #include "SongsInsertHelper/FolderCheckTimer.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
@@ -93,6 +94,13 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
             }
         },
         [this](const Yvar& envelope) { sendMessage2AudioProcess(envelope.dump()); }
+    );
+
+    // ── 频谱：共享内存在这里创建，然后把名字下发给音频进程 ──
+    // 数据面是两端直连共享内存；Coordinator 只负责递名片 + 给前端读快照。
+    mSpectrumController = std::make_unique<SpectrumController>();
+    mSpectrumController->init(
+        [this](const std::string& message) { sendMessage2AudioProcess(message); }
     );
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};

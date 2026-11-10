@@ -114,6 +114,14 @@ GodProcessor::GodProcessor(
         applyEqMessage(message);
     };
 
+    // ── 频谱：共享内存由 Coordinator 创建，这里只负责接上并开关 ──
+    mWorker.receiver->onSpectrumAttach = [this](const std::string& name, size_t bytes) {
+        mSpectrum.attachSharedMemory(name, bytes);
+    };
+    mWorker.receiver->onSpectrumEnabled = [this](bool enabled) {
+        mSpectrum.setEnabled(enabled);
+    };
+
     // 完全静音的切换态
     mPlayPauseControl.onPauseOver = [this]() {
         mPlayCount.pauseCount();
@@ -164,6 +172,7 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
     mNumChannels = outputLayout.size();
     mEq.prepare(sampleRate, maximumExpectedSamplesPerBlock, mNumChannels); // 均衡器
+    mSpectrum.prepare(sampleRate);                                          // 频谱分析
 
     // 把当前采样率告诉协调者：UI 画频响曲线要和 DSP 用同一个 fs
     mWorker.sender->sendMessage(EqWire::encodeSampleRate(sampleRate).dump());
@@ -206,6 +215,9 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     mPlayPauseControl.processBlock(buffer, buffer.getNumSamples()); // 播放暂停
     mPlayCount.processBlock(buffer.getNumSamples());                // 播放计数
     mProgressBar.processBlock(buffer.getNumSamples());              // 进度条
+
+    // 频谱放在最后：取的是"用户实际听到的"信号（EQ + 主音量之后）
+    mSpectrum.pushSamples(buffer);
 }
 
 void GodProcessor::continuePlay(double targetSeconds) {

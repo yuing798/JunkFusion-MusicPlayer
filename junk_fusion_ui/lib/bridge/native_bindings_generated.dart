@@ -302,6 +302,45 @@ class JunkFusionDLLBindings {
   late final _getSingleImportSongs = _getSingleImportSongsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  /// @brief 频段数量（固定 96），前端按它分配数组
+  int getSpectrumBandCount() {
+    return _getSpectrumBandCount();
+  }
+
+  late final _getSpectrumBandCountPtr =
+      _lookup<ffi.NativeFunction<ffi.Int Function()>>('getSpectrumBandCount');
+  late final _getSpectrumBandCount = _getSpectrumBandCountPtr
+      .asFunction<int Function()>();
+
+  /// @brief 取当前频谱一帧（0~1 归一化的 96 个对数频段）
+  ///
+  /// 数据来自音频进程写的共享内存，按 seqlock 读快照。
+  /// 返回的指针指向内部缓冲，**下一次调用会被覆盖**，请立刻拷走。
+  ///
+  /// @return 96 个 float；当前没有数据（未初始化 / 没在播放 / 已关闭）时返回 nullptr
+  ffi.Pointer<ffi.Float> getSpectrumFrame() {
+    return _getSpectrumFrame();
+  }
+
+  late final _getSpectrumFramePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Float> Function()>>(
+        'getSpectrumFrame',
+      );
+  late final _getSpectrumFrame = _getSpectrumFramePtr
+      .asFunction<ffi.Pointer<ffi.Float> Function()>();
+
+  /// @brief 取峰值保持值（同样 96 个 float，生命周期同上）
+  ffi.Pointer<ffi.Float> getSpectrumPeaks() {
+    return _getSpectrumPeaks();
+  }
+
+  late final _getSpectrumPeaksPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Float> Function()>>(
+        'getSpectrumPeaks',
+      );
+  late final _getSpectrumPeaks = _getSpectrumPeaksPtr
+      .asFunction<ffi.Pointer<ffi.Float> Function()>();
+
   /// @brief 导入整个文件夹
   ///
   /// @param dir
@@ -674,6 +713,20 @@ class JunkFusionDLLBindings {
       );
   late final _setEqMaster = _setEqMasterPtr
       .asFunction<void Function(int, double)>();
+
+  /// @brief 打开/关闭音频进程的频谱分析
+  ///
+  /// 播放页打开时传 1，离开时传 0；关掉能省掉 FFT 开销。
+  void setSpectrumEnabled(int enabled) {
+    return _setSpectrumEnabled(enabled);
+  }
+
+  late final _setSpectrumEnabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>(
+        'setSpectrumEnabled',
+      );
+  late final _setSpectrumEnabled = _setSpectrumEnabledPtr
+      .asFunction<void Function(int)>();
 
   void toggleMyLike(int songId) {
     return _toggleMyLike(songId);

@@ -31,4 +31,12 @@ namespace AudioMacro {
     static constexpr const char* playStateSync = "playStateSync";
     static constexpr const char* isSeek = "isSeek";       // 是否进度条跳转
     static constexpr const char* isNewSong = "isNewSong"; // 是否为新歌
+
+    // ── 频谱（共享内存）──
+    // Coordinator → 音频进程：{"spectrumShm":{"name":"...","bytes":1234}}
+    static constexpr const char* spectrumShm = "spectrumShm";
+    static constexpr const char* spectrumName = "name";
+    static constexpr const char* spectrumBytes = "bytes";
+    // Coordinator → 音频进程：{"spectrumEnable":true}  开/关分析
+    static constexpr const char* spectrumEnable = "spectrumEnable";
 } // namespace AudioMacro
