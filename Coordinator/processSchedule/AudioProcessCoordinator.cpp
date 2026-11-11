@@ -46,7 +46,6 @@ bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce
             logger->critical("启动后端进程失败: {}", exeFile.getFullPathName().toStdString());
         return false;
     }
-    OtherUtils::writeEmergencyLog("能够走到这一步");
     if (logger) logger->info("后端进程已启动: {}", exeFile.getFullPathName().toStdString());
 
     mRunning = true;
@@ -160,7 +159,6 @@ void AudioProcessSuber::run() {
             Yvar obj = Yvar::parse(data);
             // spdlog::get(LogDllID)->debug("suber收到消息:{}", obj.toString());
             if (!obj.isObject()) {
-                OtherUtils::writeEmergencyLog("AudioProcessSuber接收到未知格式:" + obj.toString());
                 spdlog::get(LogDllID)->error("AudioProcessSuber接收到未知格式:{}", obj.toString());
                 continue;
             };
@@ -182,8 +180,7 @@ void AudioProcessSuber::run() {
                 continue;
             }
             if (obj.has(AudioMacro::fatalErrorPopupWindowMsg)) {
-                auto receiverMsg =
-                    obj.read(AudioMacro::fatalErrorPopupWindowMsg).toString();
+                auto receiverMsg = obj.read(AudioMacro::fatalErrorPopupWindowMsg).toString();
                 spdlog::get(LogDllID)->error("sub接收到发送致命错误弹窗消息:{}", receiverMsg);
                 auto cString{ConvertUtils::copyStringOnHeap(receiverMsg)};
 

@@ -13,7 +13,6 @@
 #include <utility>
 
 int main(int argc, char* argv[]) {
-    OtherUtils::writeEmergencyLog("开始初始化音频进程1");
     // ── 1. 从命令行解析协调者传来的 zmq 地址 ──
     juce::StringArray args{argv, argc};
 

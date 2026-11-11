@@ -22,6 +22,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_smooth_wheel_scroll/flutter_smooth_wheel_scroll.dart';
 import 'package:junk_fusion_ui/model/lyric_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -45,7 +46,7 @@ class LyricView extends StatefulWidget {
 }
 
 class _LyricViewState extends State<LyricView> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
 
   /// 每行占的高度（有翻译时也是一行原文 + 一行翻译，塞进同一个高度里）
   static const double _lineExtent = 72;
@@ -95,8 +96,7 @@ class _LyricViewState extends State<LyricView> {
     if (!_scrollController.hasClients || _currentIndex < 0) return;
 
     final viewport = _scrollController.position.viewportDimension;
-    final target =
-        _currentIndex * _lineExtent - viewport / 2 + _lineExtent / 2;
+    final target = _currentIndex * _lineExtent - viewport / 2 + _lineExtent / 2;
     final clamped = target.clamp(
       _scrollController.position.minScrollExtent,
       _scrollController.position.maxScrollExtent,
@@ -119,18 +119,11 @@ class _LyricViewState extends State<LyricView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.lyrics_outlined,
-              size: 46,
-              color: theme.colorEdge,
-            ),
+            Icon(Icons.lyrics_outlined, size: 46, color: theme.colorEdge),
             const SizedBox(height: 12),
             Text('没有找到歌词', style: theme.midTextStyle),
             const SizedBox(height: 6),
-            Text(
-              '把同名的 .lrc 文件放在歌曲旁边，重新导入即可',
-              style: theme.littleTextStyle,
-            ),
+            Text('把同名的 .lrc 文件放在歌曲旁边，重新导入即可', style: theme.littleTextStyle),
           ],
         ),
       );
@@ -142,7 +135,12 @@ class _LyricViewState extends State<LyricView> {
         return const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
+          colors: [
+            Colors.transparent,
+            Colors.black,
+            Colors.black,
+            Colors.transparent,
+          ],
           stops: [0.0, 0.12, 0.88, 1.0],
         ).createShader(rect);
       },

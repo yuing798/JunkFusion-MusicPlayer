@@ -18,7 +18,8 @@ dependencies:
   shared_preferences: ^2.5.0 #和localStorage一样，做轻量数据存储
   ffi: ^2.2.0
   file_picker: ^11.0.3
-  smooth_scroll_multiplatform: ^ 1.0.8 #他妈的这个逼玩意才是唯一能够实现平滑滚动的，,虽然说不能实现键盘操作
+  smooth_scroll_multiplatform: ^ 1.0.8
+  flutter_smooth_wheel_scroll: 0.1.7 #这两个都能使用平滑滚动，区别在于前面那种是旧版本写法，以后统一使用这个新版本，旧版本不需要改掉
   package_rename_plus: ^1.11.0
   provider: ^6.1.2
   window_manager: ^0.5.2

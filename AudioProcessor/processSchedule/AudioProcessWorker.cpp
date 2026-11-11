@@ -35,7 +35,6 @@ void AudioProcessorPuller::run() {
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
             Yvar jsonObj = Yvar::parse(command);
             if (!jsonObj.isObject()) {
-                OtherUtils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
                 // EQ 报文自己走一条分支，处理完就结束，不要落到下面播放指令的判断里
@@ -147,7 +146,6 @@ void AudioProcessorPuber::run() {
 void AudioProcessorPuber::timerCallback() {}
 
 AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pubSubPort) {
-    OtherUtils::writeEmergencyLog("开始执行worker的构造函数");
     // 将 context 引用传递给线程
     receiver = std::make_unique<AudioProcessorPuller>(zmqContext, pushPullPort);
     sender = std::make_unique<AudioProcessorPuber>(zmqContext, pubSubPort);

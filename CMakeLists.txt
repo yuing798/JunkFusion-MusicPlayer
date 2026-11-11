@@ -27,6 +27,17 @@ find_package(nlohmann_json CONFIG REQUIRED)
 if (MSVC)
     # 强制编译器以 UTF-8 编码读取源文件，并以 UTF-8 导出执行文件
     add_compile_options(/utf-8)
+
+    # ── 修复头文件依赖追踪（否则改头文件不会重编，会出 ABI 不一致的怪崩溃）──
+    #
+    # CMake 探测 cl 的 /showIncludes 前缀时，是直接调用 cl.exe（不带 vcvars），
+    # 这台机器上 cl 会输出中文「注意: 包含文件:」；而实际编译总是经过 vcvars64，
+    # 它把 VSLANG 设成英文，cl 输出的是「Note: including file:」。
+    # 两边前缀对不上 → ninja 一条依赖都记不下来 → 整个项目等于没有增量依赖，
+    # 改结构体/加成员后只有部分 TU 重编，main 里按旧 sizeof 分配对象就会写穿栈。
+    #
+    # 这里强制写成构建时实际看到的前缀（vcvars64 环境下 cl 输出英文）。
+    set(CMAKE_CL_SHOWINCLUDES_PREFIX "Note: including file: ")
 endif()
 
 add_subdirectory(Coordinator)

@@ -118,9 +118,7 @@ GodProcessor::GodProcessor(
     mWorker.receiver->onSpectrumAttach = [this](const std::string& name, size_t bytes) {
         mSpectrum.attachSharedMemory(name, bytes);
     };
-    mWorker.receiver->onSpectrumEnabled = [this](bool enabled) {
-        mSpectrum.setEnabled(enabled);
-    };
+    mWorker.receiver->onSpectrumEnabled = [this](bool enabled) { mSpectrum.setEnabled(enabled); };
 
     // 完全静音的切换态
     mPlayPauseControl.onPauseOver = [this]() {
@@ -156,8 +154,6 @@ GodProcessor::GodProcessor(
         mDeviceManager = std::make_unique<DeviceManager>(configFile);
         mDeviceManager->connectProcessor(this);
     }
-
-    OtherUtils::writeEmergencyLog("godProcessor构造函数完成");
 }
 
 void GodProcessor::playNextOrPreviousSong(bool nextOrPrevious) {
@@ -172,7 +168,7 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
     mNumChannels = outputLayout.size();
     mEq.prepare(sampleRate, maximumExpectedSamplesPerBlock, mNumChannels); // 均衡器
-    mSpectrum.prepare(sampleRate);                                          // 频谱分析
+    mSpectrum.prepare(sampleRate);                                         // 频谱分析
 
     // 把当前采样率告诉协调者：UI 画频响曲线要和 DSP 用同一个 fs
     mWorker.sender->sendMessage(EqWire::encodeSampleRate(sampleRate).dump());

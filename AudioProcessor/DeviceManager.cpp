@@ -17,7 +17,6 @@ DeviceManager::DeviceManager(juce::File configFile) : mConfigFile(configFile) {
     mManager.addChangeListener(this);
 
     setupXml = juce::parseXML(configFile);
-    OtherUtils::writeEmergencyLog("准备初始化声卡配置");
 
     juce::String error = mManager.initialise(0, 256, setupXml.get(), true);
     currentSetup = mManager.getAudioDeviceSetup();

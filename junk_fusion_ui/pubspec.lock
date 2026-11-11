@@ -358,6 +358,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.11.0"
+  flutter_smooth_wheel_scroll:
+    dependency: "direct main"
+    description:
+      name: flutter_smooth_wheel_scroll
+      sha256: "64ed8b4242b97bd56c8836d4ce453e5cdd4987537bd4e6e39dfc0da6f0653dfd"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.7"
   flutter_test:
     dependency: "direct dev"
     description: flutter

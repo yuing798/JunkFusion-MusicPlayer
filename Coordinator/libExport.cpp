@@ -28,7 +28,6 @@
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
-        OtherUtils::writeEmergencyLog("准备初始化dll单例");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
     void toggleMyLike(long long songId) {
