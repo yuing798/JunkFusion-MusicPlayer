@@ -1,0 +1,20 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "cmake build",
+    "command": "call \"D:\\VS\\VC\\Auxiliary\\Build\\vcvars64.bat\" >nul 2>&1 && cmake --build D:\\audio_develop\\Junk-Fusion\\build\\debug",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "reveal_target": "dock",
+    "hide": "never",
+    "shell": {
+      "program": "cmd.exe",
+    },
+    "show_summary": true,
+    "show_command": true,
+    "save": "current",
+  },
+]

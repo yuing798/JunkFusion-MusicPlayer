@@ -9,8 +9,7 @@
 ///   │      │ 旋转封面  │         │                                  │
 ///   │      └──────────┘         │                                  │
 ///   ├───────────────────────────┴──────────────────────────────────┤
-///   │  00:42 ───────●────────────────────────── 04:05              │
-///   │              ◀◀    ▶    ▶▶                                   │
+///   │ 完整 PlayBar：进度、播放模式、音量、列表、更多功能             │
 ///   └──────────────────────────────────────────────────────────────┘
 ///
 /// ── 三个数据源 ───────────────────────────────────────────────────────
@@ -25,25 +24,37 @@
 ///   · 关闭页面会 dispose 频谱数据源，后端随之停掉 FFT
 library;
 
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
-import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/lyric_provider.dart';
 import 'package:junk_fusion_ui/providers/play_page_provider.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/spectrum_source.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/lyric_view.dart';
+import 'package:junk_fusion_ui/widgets/PlayControl/play_bar.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/spectrum_ring.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
+import 'package:junk_fusion_ui/widgets/title_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 class SongPlayPage extends StatefulWidget {
-  const SongPlayPage({super.key});
+  const SongPlayPage({
+    super.key,
+    this.lyricNormalColor,
+    this.lyricHighlightColor,
+  });
+
+  /// 设置页接入点：普通歌词（含未唱部分）和已唱部分的颜色。
+  /// null 时使用封面生成的局部主题。
+  final Color? lyricNormalColor;
+  final Color? lyricHighlightColor;
 
   @override
   State<SongPlayPage> createState() => _SongPlayPageState();
@@ -61,6 +72,14 @@ class _SongPlayPageState extends State<SongPlayPage>
   int? _loadedSongId;
   bool _wasOpen = false;
   bool _wasPlaying = false;
+  final AppTheme _pageTheme = AppTheme.fromColorScheme(_fallbackScheme);
+  String? _paletteHash;
+  bool _paletteRequested = false;
+
+  static final ColorScheme _fallbackScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF52677B),
+    brightness: Brightness.dark,
+  );
 
   @override
   void initState() {
@@ -82,6 +101,7 @@ class _SongPlayPageState extends State<SongPlayPage>
     _spectrum?.dispose();
     _slide.dispose();
     _rotate.dispose();
+    _pageTheme.dispose();
     super.dispose();
   }
 
@@ -90,6 +110,10 @@ class _SongPlayPageState extends State<SongPlayPage>
   /// 必须在**帧后**调用：这里会启停动画、创建/释放频谱源、让 LyricProvider
   /// 发通知，任何一件在 build 期间做都会触发 "markNeedsBuild during build"。
   void _syncSideEffects(bool isOpen, int? songId, bool isPlaying) {
+    final hash = context.read<PlaybackProvider>().curBasicInfo?.hash;
+    if (isOpen && (!_paletteRequested || hash != _paletteHash)) {
+      _loadCoverColors(hash);
+    }
     // 打开/关闭：滑动动画 + 频谱源的创建/销毁
     if (isOpen != _wasOpen) {
       _wasOpen = isOpen;
@@ -120,6 +144,31 @@ class _SongPlayPageState extends State<SongPlayPage>
     }
   }
 
+  /// 只在打开页面或封面变化时取色，播放进度更新不会重复解码。
+  Future<void> _loadCoverColors(String? hash) async {
+    _paletteRequested = true;
+    _paletteHash = hash;
+    _pageTheme.setColorScheme(_fallbackScheme);
+    try {
+      final ImageProvider cover = hash == null || hash.isEmpty
+          ? const AssetImage('assets/image/JunkFusion.png')
+          : FileImage(
+              File('${AppCache.cacheDirString}/image/$hash/original.jpg'),
+            );
+      final scheme = await ColorScheme.fromImageProvider(
+        provider: cover,
+        brightness: Brightness.dark,
+      );
+      // 快速切歌时丢弃旧封面的异步结果。
+      if (!mounted || hash != _paletteHash) return;
+      _pageTheme.setColorScheme(scheme);
+    } catch (error) {
+      // 封面损坏或缓存丢失时使用中性暗色，背景图片自身也有占位图。
+      // ignore: avoid_print — 前端调试按项目约定直接使用 print。
+      print('SongPlayPage: 封面取色失败，使用默认色板：$error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final playPage = context.watch<PlayPageProvider>();
@@ -129,6 +178,8 @@ class _SongPlayPageState extends State<SongPlayPage>
     // 有变化才排一次帧后回调（不每次都排）
     if (playPage.isOpen != _wasOpen ||
         song?.songId != _loadedSongId ||
+        (playPage.isOpen &&
+            (!_paletteRequested || song?.hash != _paletteHash)) ||
         playback.isPlaying != _wasPlaying) {
       final isOpen = playPage.isOpen;
       final songId = song?.songId;
@@ -152,16 +203,28 @@ class _SongPlayPageState extends State<SongPlayPage>
               .animate(
                 CurvedAnimation(parent: _slide, curve: Curves.easeOutCubic),
               ),
-          child: _buildPage(context, song),
+          child: ChangeNotifierProvider<AppTheme>.value(
+            value: _pageTheme,
+            child: Consumer<AppTheme>(
+              builder: (context, theme, _) => Theme(
+                data: ThemeData.from(
+                  colorScheme: theme.colorScheme,
+                  textTheme: AppTheme.darkThemeData.textTheme,
+                  useMaterial3: true,
+                ),
+                child: Builder(
+                  builder: (context) => _buildPage(context, song, theme),
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
   }
 
-  Widget _buildPage(BuildContext context, SongBasicInfo song) {
-    final theme = context.watch<AppTheme>();
-
-    return ColoredBox(
+  Widget _buildPage(BuildContext context, SongBasicInfo song, AppTheme theme) {
+    return Material(
       color: theme.colorMain,
       child: Stack(
         children: [
@@ -172,6 +235,7 @@ class _SongPlayPageState extends State<SongPlayPage>
           SafeArea(
             child: Column(
               children: [
+                const TitleBar(),
                 _buildTopBar(context, song, theme),
                 Expanded(
                   child: Row(
@@ -181,7 +245,7 @@ class _SongPlayPageState extends State<SongPlayPage>
                     ],
                   ),
                 ),
-                _buildBottomBar(context, theme),
+                const PlayBar(backgroundColor: Colors.transparent),
               ],
             ),
           ),
@@ -204,16 +268,16 @@ class _SongPlayPageState extends State<SongPlayPage>
           ),
           child: AlbumCoverImage(hash: hash),
         ),
-        // 上淡下实：保证文字可读
+        // 整页使用暗色半透明蒙版：保持可读，同时保留顶栏和播放栏的封面颜色。
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                theme.colorMain.withValues(alpha: 0.55),
-                theme.colorMain.withValues(alpha: 0.82),
-                theme.colorMain,
+                theme.colorMain.withValues(alpha: 0.60),
+                theme.colorMain.withValues(alpha: 0.66),
+                theme.colorMain.withValues(alpha: 0.72),
               ],
             ),
           ),
@@ -328,6 +392,9 @@ class _SongPlayPageState extends State<SongPlayPage>
       child: LyricView(
         lyrics: lyrics,
         positionSeconds: playback.currentTimeStamp,
+        durationSeconds: playback.curBasicInfo?.duration,
+        normalColor: widget.lyricNormalColor ?? theme.colorTextSecond,
+        highlightColor: widget.lyricHighlightColor ?? theme.colorStress,
         onSeekToLine: (index) {
           if (lyrics == null || index < 0 || index >= lyrics.lines.length) {
             return;
@@ -335,79 +402,6 @@ class _SongPlayPageState extends State<SongPlayPage>
           final target = lyrics.lines[index].startMs / 1000.0;
           context.read<PlaybackProvider>().seekPreferPTS(target);
         },
-      ),
-    );
-  }
-
-  // ── 底部：进度条 + 控制按钮 ─────────────────────────────────────────
-  Widget _buildBottomBar(BuildContext context, AppTheme theme) {
-    final playback = context.watch<PlaybackProvider>();
-    final song = playback.curBasicInfo;
-    if (song == null) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(40, 0, 40, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ProgressBar(
-            progress: Duration(
-              milliseconds: (playback.currentTimeStamp * 1000).toInt(),
-            ),
-            total: Duration(milliseconds: (song.duration * 1000).toInt()),
-            onSeek: (value) {
-              context.read<PlaybackProvider>().seekPreferPTS(
-                value.inMilliseconds.toDouble() / 1000.0,
-              );
-            },
-            timeLabelLocation: TimeLabelLocation.sides,
-            timeLabelTextStyle: theme.littleTextStyle,
-            barHeight: 5,
-            thumbRadius: 6,
-            baseBarColor: theme.colorEdge,
-            bufferedBarColor: theme.colorHover,
-            progressBarColor: theme.colorStress,
-            thumbColor: theme.colorStress,
-            thumbGlowColor: theme.colorStress.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: Icon(
-                  TablerIcons.squareArrowLeftFilled,
-                  size: 34,
-                  color: theme.colorTextMain,
-                ),
-                onPressed: () =>
-                    context.read<PlaybackProvider>().playPreviousSong(),
-              ),
-              const SizedBox(width: 28),
-              IconButton(
-                icon: Icon(
-                  playback.isPlaying
-                      ? TablerIcons.playerPauseFilled
-                      : TablerIcons.playerPlayFilled,
-                  size: 46,
-                  color: theme.colorTextMain,
-                ),
-                onPressed: () =>
-                    context.read<PlaybackProvider>().togglePlayPause(),
-              ),
-              const SizedBox(width: 28),
-              IconButton(
-                icon: Icon(
-                  TablerIcons.squareArrowRightFilled,
-                  size: 34,
-                  color: theme.colorTextMain,
-                ),
-                onPressed: () =>
-                    context.read<PlaybackProvider>().playNextSong(),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

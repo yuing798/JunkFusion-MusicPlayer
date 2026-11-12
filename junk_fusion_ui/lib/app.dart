@@ -21,7 +21,7 @@ class App extends StatefulWidget {
 //     ├─ 顶栏（通栏：拖窗口 + 最小化/最大化/关闭）
 //     └─ 三段式（图标栏 | 中间栏 | 主内容）   ← ThreeColumnLayout
 //     ├─ 底部播放栏（浮层，横跨整个窗口）
-//     └─ 全屏播放页（浮层，现在还是占位）
+//     └─ 全屏播放页（含独立主题、窗口顶栏和完整播放栏）
 //
 // 三段式的宽度、拖拽都在 widgets/layout/ 里，这个文件只管把状态 provide 好。
 
@@ -75,21 +75,10 @@ class _AppState extends State<App> {
             ),
 
             // ── 底部播放栏（浮在最上面，横跨整个窗口） ──
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: const PlayBar(),
-            ),
+            Positioned(left: 0, right: 0, bottom: 0, child: const PlayBar()),
 
-            // ── 全屏播放页（浮层，避开 50px 的标题栏，方便拖窗口/关闭） ──
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 50,
-              bottom: 0,
-              child: const SongPlayPage(),
-            ),
+            // ── 全屏播放页：背景覆盖顶栏，页内复用窗口控制和完整播放栏 ──
+            Positioned.fill(child: const SongPlayPage()),
           ],
         ),
       ),

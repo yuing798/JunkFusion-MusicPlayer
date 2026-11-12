@@ -13,8 +13,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/song_basic_info.dart';
-import 'package:junk_fusion_ui/model/song_detail_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/play_page_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
@@ -29,7 +27,10 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 // PlayBar — 底部播放栏
 class PlayBar extends StatefulWidget {
-  const PlayBar({super.key});
+  const PlayBar({super.key, this.backgroundColor});
+
+  /// 播放页可传透明色，让完整播放栏融入封面背景。
+  final Color? backgroundColor;
 
   @override
   State<StatefulWidget> createState() {
@@ -74,7 +75,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
         children: [
           // 点封面打开全屏播放页（歌曲仍在播，页面是浮层）
           GestureDetector(
-            onTap: () => context.read<PlayPageProvider>().open(),
+            onTap: () => context.read<PlayPageProvider>().toggle(),
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: (playback.curBasicInfo?.hash != null)
@@ -100,25 +101,27 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           const SizedBox(width: 10),
 
           // ── 歌名 + 艺术家 ──
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                playback.curBasicInfo?.title ?? "",
-                style: theme.midTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                playback.curBasicInfo?.artists == null
-                    ? "未知"
-                    : playback.curBasicInfo!.artists!.join(" / "),
-                style: theme.littleTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          Flexible(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  playback.curBasicInfo?.title ?? "",
+                  style: theme.midTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  playback.curBasicInfo?.artists == null
+                      ? "未知"
+                      : playback.curBasicInfo!.artists!.join(" / "),
+                  style: theme.littleTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(width: 10),
@@ -194,7 +197,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.listFilled, size: 32),
             onPressed: () {
-              _playList.showPlayList();
+              _playList.showPlayList(context);
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -216,7 +219,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             child: Container(
               height: 90,
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-              color: theme.colorHover,
+              color: widget.backgroundColor ?? theme.colorHover,
 
               // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
               // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区

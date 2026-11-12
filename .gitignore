@@ -13,3 +13,4 @@ TestAudio/
 *.mp3
 acl-reports/
 *.tmp
+.zed/

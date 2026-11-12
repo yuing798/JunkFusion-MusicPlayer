@@ -143,8 +143,6 @@ void AudioProcessorPuber::run() {
     }
 }
 
-void AudioProcessorPuber::timerCallback() {}
-
 AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pubSubPort) {
     // 将 context 引用传递给线程
     receiver = std::make_unique<AudioProcessorPuller>(zmqContext, pushPullPort);
