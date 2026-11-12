@@ -30,13 +30,19 @@ if (MSVC)
 
     # ── 修复头文件依赖追踪（否则改头文件不会重编，会出 ABI 不一致的怪崩溃）──
     #
-    # CMake 探测 cl 的 /showIncludes 前缀时，是直接调用 cl.exe（不带 vcvars），
-    # 这台机器上 cl 会输出中文「注意: 包含文件:」；而实际编译总是经过 vcvars64，
-    # 它把 VSLANG 设成英文，cl 输出的是「Note: including file:」。
-    # 两边前缀对不上 → ninja 一条依赖都记不下来 → 整个项目等于没有增量依赖，
-    # 改结构体/加成员后只有部分 TU 重编，main 里按旧 sizeof 分配对象就会写穿栈。
+    # 原理：MSVC 用 /showIncludes 汇报头文件，ninja 靠「前缀」把这些行挑出来。
+    # 前缀跟着 cl 的**界面语言**走：中文环境是「注意: 包含文件:」，英文是
+    # 「Note: including file:」。CMake 探测一次就写死进构建目录，探测环境和
+    # 实际编译环境语言不一致时（VS / vcvars / 不同终端都可能不同），
+    # ninja 就一条依赖都记不下来 → 整个工程没有增量依赖 → 改结构体后只有部分
+    # TU 重编，main 里按旧 sizeof 在栈上分配对象，构造函数按新布局写就写穿栈。
     #
-    # 这里强制写成构建时实际看到的前缀（vcvars64 环境下 cl 输出英文）。
+    # 解法：用 CMAKE_*_COMPILER_LAUNCHER 给每次编译套一层
+    #   cmake -E env VSLANG=1033 ...
+    # 把 cl 的输出语言**强制固定成英文**，无论从哪个终端/IDE 构建都一样，
+    # 然后前缀也固定成英文，两边永远一致。
+    set(CMAKE_C_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env;VSLANG=1033")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env;VSLANG=1033")
     set(CMAKE_CL_SHOWINCLUDES_PREFIX "Note: including file: ")
 endif()
 
