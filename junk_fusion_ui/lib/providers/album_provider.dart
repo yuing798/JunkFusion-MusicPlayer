@@ -100,13 +100,19 @@ class AlbumProvider extends ChangeNotifier {
 
   /// 拉一遍专辑列表(初始化的时候调用)
   void getAllAlbums() {
-    _albums =
-        (jsonDecode(
-                  UtilFunction.cPtr2String(bindings.getAllAlbumView()),
-                )?[CoordinatorMacro.albumsList]
-                as List<dynamic>)
-            .map((e) => AlbumBasicInfo.fromJson(e))
-            .toList();
+    try {
+      final decoded = jsonDecode(
+        UtilFunction.cPtr2String(bindings.getAllAlbumView()),
+      );
+      final list = decoded is Map ? decoded[CoordinatorMacro.albumsList] : null;
+
+      _albums = (list is List)
+          ? list.map((e) => AlbumBasicInfo.fromJson(e)).toList()
+          : <AlbumBasicInfo>[];
+    } catch (e) {
+      print('AlbumProvider: 读取专辑失败 $e');
+      _albums = <AlbumBasicInfo>[];
+    }
 
     notifyListeners();
   }

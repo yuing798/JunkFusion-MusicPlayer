@@ -22,7 +22,6 @@ Yvar SongInfo::toDetailJson() const {
     obj.set(SongInfoMacro::codecName, Yvar::fromOptional(codecName));
     obj.set(SongInfoMacro::bpm, Yvar::fromOptional(bpm));
     obj.set(SongInfoMacro::key, Yvar::fromOptional(key));
-    obj.set(SongInfoMacro::timeDomainSpec, timeDomainSpec);
 
     return obj;
 } // 将songInfo转化为Yvar，才能推送给前端

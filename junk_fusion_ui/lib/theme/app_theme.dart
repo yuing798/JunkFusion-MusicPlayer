@@ -95,6 +95,23 @@ class AppTheme extends ChangeNotifier {
       _scheme =
           (mode == ThemeMode.dark ? darkThemeData : lightThemeData).colorScheme;
 
+  /// 局部页面主题：例如播放页用封面色板，仍复用现有组件的语义色接口。
+  AppTheme.fromColorScheme(ColorScheme scheme)
+    : _themeMode = scheme.brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
+      _scheme = scheme;
+
+  /// 更新局部动态色板；调用方持有独立 AppTheme，不影响应用主题。
+  void setColorScheme(ColorScheme scheme) {
+    if (_scheme == scheme) return;
+    _scheme = scheme;
+    _themeMode = scheme.brightness == Brightness.dark
+        ? ThemeMode.dark
+        : ThemeMode.light;
+    notifyListeners();
+  }
+
   // ── 主题模式 ──────────────────────────────────────────────────────
   ThemeMode get themeMode => _themeMode;
 

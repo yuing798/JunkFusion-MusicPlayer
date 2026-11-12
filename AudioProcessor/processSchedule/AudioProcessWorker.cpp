@@ -35,12 +35,26 @@ void AudioProcessorPuller::run() {
             // 在这里解析指令，比如通知 AudioProcessor 加载预设
             Yvar jsonObj = Yvar::parse(command);
             if (!jsonObj.isObject()) {
-                OtherUtils::writeEmergencyLog("puller接收到未知指令");
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
                 // EQ 报文自己走一条分支，处理完就结束，不要落到下面播放指令的判断里
                 if (auto eqMessage = EqWire::parse(jsonObj)) {
                     if (onEqMessage) onEqMessage(*eqMessage);
+                    continue;
+                }
+                // 频谱共享内存：Coordinator 把名字和大小发过来
+                if (jsonObj.has(AudioMacro::spectrumShm)) {
+                    const Yvar shmObj = jsonObj.read(AudioMacro::spectrumShm);
+                    const auto name = shmObj.read(AudioMacro::spectrumName).toString();
+                    const auto bytes =
+                        static_cast<size_t>(shmObj.read(AudioMacro::spectrumBytes).toInt64());
+                    if (onSpectrumAttach) onSpectrumAttach(name, bytes);
+                    continue;
+                }
+                // 频谱开/关：播放页打开时才让分析线程工作
+                if (jsonObj.has(AudioMacro::spectrumEnable)) {
+                    const bool enabled = jsonObj.read(AudioMacro::spectrumEnable).toBool();
+                    if (onSpectrumEnabled) onSpectrumEnabled(enabled);
                     continue;
                 }
                 if (jsonObj.has(AudioMacro::killAudioProcess)) {
@@ -129,10 +143,7 @@ void AudioProcessorPuber::run() {
     }
 }
 
-void AudioProcessorPuber::timerCallback() {}
-
 AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pubSubPort) {
-    OtherUtils::writeEmergencyLog("开始执行worker的构造函数");
     // 将 context 引用传递给线程
     receiver = std::make_unique<AudioProcessorPuller>(zmqContext, pushPullPort);
     sender = std::make_unique<AudioProcessorPuber>(zmqContext, pubSubPort);

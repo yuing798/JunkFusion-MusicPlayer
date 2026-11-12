@@ -56,13 +56,21 @@ class PlaylistProvider extends ChangeNotifier {
 
   /// 拉一遍歌单列表（进歌单页的时候调一次）
   void getAllPlaylists() {
-    _playlists =
-        (jsonDecode(
-                  UtilFunction.cPtr2String(bindings.getAllPlaylistView()),
-                )?[CoordinatorMacro.playlistsList]
-                as List<dynamic>)
-            .map((e) => PlaylistBasicInfo.fromJson(e))
-            .toList();
+    try {
+      final decoded = jsonDecode(
+        UtilFunction.cPtr2String(bindings.getAllPlaylistView()),
+      );
+      // 后端返回 {"playlistsList": [...]}；库异常时会退化成空数组，
+      // 这里再做一层保护，避免 null 把启动流程炸掉
+      final list = decoded is Map ? decoded[CoordinatorMacro.playlistsList] : null;
+
+      _playlists = (list is List)
+          ? list.map((e) => PlaylistBasicInfo.fromJson(e)).toList()
+          : <PlaylistBasicInfo>[];
+    } catch (e) {
+      print('PlaylistProvider: 读取歌单失败 $e');
+      _playlists = <PlaylistBasicInfo>[];
+    }
     notifyListeners();
   }
 

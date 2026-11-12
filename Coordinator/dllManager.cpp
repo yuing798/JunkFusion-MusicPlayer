@@ -1,5 +1,6 @@
 #include "./dllManager.hpp"
 #include "./EqController.hpp"
+#include "./SpectrumController.hpp"
 #include "CenterDbManage/dbContext.hpp"
 #include "SongsInsertHelper/FolderCheckTimer.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
@@ -95,7 +96,31 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         [this](const Yvar& envelope) { sendMessage2AudioProcess(envelope.dump()); }
     );
 
+    // ── 频谱：共享内存在这里创建，然后把名字下发给音频进程 ──
+    // 数据面是两端直连共享内存；Coordinator 只负责递名片 + 给前端读快照。
+    mSpectrumController = std::make_unique<SpectrumController>();
+    mSpectrumController->init(
+        [this](const std::string& message) { sendMessage2AudioProcess(message); }
+    );
+
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
+
+    // 用户有时只删主库、留下 -wal/-shm。WAL 模式下 SQLite 会拿这份旧日志去
+    // 恢复一个**全新建出来的空库**，结果就是"半损坏"状态（表现为
+    // `out of memory` / 找不到歌曲 / 查询返回空）。主库不存在时把残留日志清掉，
+    // 让数据库干干净净地重建。
+    if (!dbFile.existsAsFile()) {
+        for (const char* suffix : {"-wal", "-shm"}) {
+            const juce::File stale{dbFile.getFullPathName() + suffix};
+            if (!stale.existsAsFile()) continue;
+            stale.deleteFile();
+            logger->warn(
+                "检测到残留数据库日志，已清理:{}{}",
+                dbFile.getFileName().toStdString(),
+                suffix
+            );
+        }
+    }
 
     mDbContext = std::make_unique<DbContext>(dbFile.getFullPathName().toStdString());
 

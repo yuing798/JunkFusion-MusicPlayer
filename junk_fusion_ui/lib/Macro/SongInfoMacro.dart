@@ -19,5 +19,4 @@ abstract class SongInfoMacro {
   static const String isMyLike = "isMyLike";
   static const String playNum = "playNum";
   static const String hash = "hash";
-  static const String timeDomainSpec = "timeDomainSpec";
 }

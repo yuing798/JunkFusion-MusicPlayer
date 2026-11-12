@@ -19,5 +19,4 @@ namespace SongInfoMacro{
     static constexpr const char* isMyLike = "isMyLike" ;
     static constexpr const char* playNum = "playNum" ;
     static constexpr const char* hash = "hash" ;
-    static constexpr const char* timeDomainSpec = "timeDomainSpec" ;
 }

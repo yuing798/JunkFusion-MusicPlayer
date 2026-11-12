@@ -35,16 +35,28 @@ private:
     juce::File& mImageDir; // 封面缓存目录：<缓存目录>/image/<hash>/original.jpg
     juce::File& mSongsDir; // 单独导入的歌曲拷贝目录：<缓存目录>/songs
 
-    juce::ThreadPool waveFormAnalyPool{3}; // 只用来做波形分析（导入阶段已经不联网了）
-
+    // TODO(AI): 僵尸函数，目前**没有任何调用点**。
+    //
+    // 时域图已经从产品里删掉了，但这里保留了完整的解码 + 重采样流程
+    // （统一成 11025Hz / 单声道 / S16P），以后接 AI 音频分析时直接把
+    // 分析逻辑插进解码循环即可。
     struct WaveFormAnalyTask {
         std::string path;
     };
+    void waveFormAnaly(WaveFormAnalyTask task);
 
-    struct WaveFormAnalyRes {
-        std::array<double, 128> blobBuffer; // 波形图，只需要128根柱子
-    };
-    WaveFormAnalyRes waveFormAnaly(WaveFormAnalyTask task);
+    /**
+     * @brief 找同名歌词文件并入库（导入时调，不联网、不解码）
+     *
+     * 规则：
+     *   · 同目录 `<歌曲名>.lrc`              → 原文
+     *   · 同目录 `<歌曲名>.zh / .cn / .trans / .translation .lrc` → 翻译
+     *   · 找不到就什么都不做（以后可以右键手动关联）
+     *
+     * Windows/macOS 的文件系统大小写不敏感，`existsAsFile()` 直接就能命中
+     * `.LRC`；Linux 上要求小写扩展名（绝大多数歌词文件都是小写）。
+     */
+    void linkLyrics(int64_t songId, const juce::File& audioPath);
 
     // SongsManage::insertSong的返回结果
     struct InsertLightSongInfoResult {

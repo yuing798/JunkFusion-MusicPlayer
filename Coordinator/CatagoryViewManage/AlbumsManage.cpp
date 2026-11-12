@@ -22,21 +22,31 @@
 #include <vector>
 
 Yvar AlbumsManage::getAllAlbumsView() {
-    SQLite::Statement selectSql{
-        dbManage.readDb(),
-        "SELECT albumId,title,albumArtists,hash FROM albums"
-    };
-    Yvar albums = Yvar::array();
-    while (selectSql.executeStep()) {
-        AlbumInfo info{};
-        info.albumId = selectSql.getColumn("albumId").getInt64();
-        info.title = selectSql.getColumn("title").getString();
-        info.albumArtists =
-            Yvar::parse(selectSql.getColumn("albumArtists").getString()).toStringArray();
-        info.hash = selectSql.getColumn("hash").getString();
-        albums.push(info.toBasicJson());
+    // 这个函数在启动时被 FFI 直接调用。异常一旦穿过 FFI 边界整个进程会直接
+    // 终止（表现为"闪退"），所以这里必须兜住：库坏了就返回空列表。
+    try {
+        SQLite::Statement selectSql{
+            dbManage.readDb(),
+            "SELECT albumId,title,albumArtists,hash FROM albums"
+        };
+        Yvar albums = Yvar::array();
+        while (selectSql.executeStep()) {
+            AlbumInfo info{};
+            info.albumId = selectSql.getColumn("albumId").getInt64();
+            info.title = selectSql.getColumn("title").getString();
+            info.albumArtists =
+                Yvar::parse(selectSql.getColumn("albumArtists").getString()).toStringArray();
+            info.hash = selectSql.getColumn("hash").getString();
+            albums.push(info.toBasicJson());
+        }
+        return albums;
+    } catch (const std::exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("AlbumsManage::getAllAlbumsView 失败:{}", e.what());
+        return Yvar::array();
+    } catch (...) {
+        return Yvar::array();
     }
-    return albums;
 }
 
 AlbumInfo AlbumsManage::getBasicInfoCol(SQLite::Statement& sql) {

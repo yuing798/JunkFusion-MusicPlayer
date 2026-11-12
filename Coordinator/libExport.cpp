@@ -1,5 +1,6 @@
 #include "./libExport.h"
 #include "./EqController.hpp"
+#include "./SpectrumController.hpp"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
 #include "Macro/audioMacro.hpp"
@@ -27,7 +28,6 @@
 
 extern "C" {
     void dllInit(const char* cacheDirId, const char* exeDirPtr) {
-        OtherUtils::writeEmergencyLog("准备初始化dll单例");
         dllManager::getInstance().init(cacheDirId, exeDirPtr);
     }
     void toggleMyLike(long long songId) {
@@ -107,6 +107,29 @@ extern "C" {
                 ->songsManage.getBasicSongInfo(songId)
                 .toBasicJson()
         );
+    }
+
+    const char* getSongLyrics(long long songId) {
+        Yvar envelope = Yvar::object();
+
+        // FFI 边界不能让任何异常逃出去：C++ 异常穿过 FFI 会直接终止进程
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext != nullptr) {
+                auto document = dbContext->lyricsManage.get(songId);
+                envelope.set("lyric", document.has_value() ? document->toJson() : Yvar{});
+            } else {
+                envelope.set("lyric", Yvar{});
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getSongLyrics 异常 songId={}:{}", songId, e.what());
+            envelope.set("lyric", Yvar{});
+        } catch (...) {
+            envelope.set("lyric", Yvar{});
+        }
+
+        return ConvertUtils::object2Uint8t(envelope);
     }
 
     const char* getDetailSongInfo(long long songId) {
@@ -317,6 +340,28 @@ extern "C" {
         auto* eqController = dllManager::getInstance().getEqController();
         if (eqController == nullptr) return nullptr;
         return eqController->getCurve(numPoints);
+    }
+
+    //===================================================================================
+    // 实时频谱
+    int getSpectrumBandCount() { return SpectrumController::bandCount(); }
+
+    const float* getSpectrumFrame() {
+        auto* spectrumController = dllManager::getInstance().getSpectrumController();
+        if (spectrumController == nullptr) return nullptr;
+        return spectrumController->getBands();
+    }
+
+    const float* getSpectrumPeaks() {
+        auto* spectrumController = dllManager::getInstance().getSpectrumController();
+        if (spectrumController == nullptr) return nullptr;
+        return spectrumController->getPeaks();
+    }
+
+    void setSpectrumEnabled(int enabled) {
+        auto* spectrumController = dllManager::getInstance().getSpectrumController();
+        if (spectrumController == nullptr) return;
+        spectrumController->setEnabled(enabled != 0);
     }
 
     //===================================================================================

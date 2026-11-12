@@ -13,9 +13,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/model/song_basic_info.dart';
-import 'package:junk_fusion_ui/model/song_detail_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
+import 'package:junk_fusion_ui/providers/play_page_provider.dart';
 import 'package:junk_fusion_ui/providers/song_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
@@ -28,7 +27,10 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 // PlayBar — 底部播放栏
 class PlayBar extends StatefulWidget {
-  const PlayBar({super.key});
+  const PlayBar({super.key, this.backgroundColor});
+
+  /// 播放页可传透明色，让完整播放栏融入封面背景。
+  final Color? backgroundColor;
 
   @override
   State<StatefulWidget> createState() {
@@ -39,8 +41,8 @@ class PlayBar extends StatefulWidget {
 class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final PlayList _playList;
 
-  double _height = 100;
-
+  /// 播放栏高度（不再随时域图展开而变化）
+  static const double _height = 100;
   @override
   void initState() {
     super.initState();
@@ -71,46 +73,55 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
     Widget buildLeftArea() {
       return Row(
         children: [
-          (playback.curBasicInfo?.hash != null)
-              ? Image.file(
-                  File(
-                    '${AppCache.cacheDirString}/image/${playback.curBasicInfo!.hash}/original.jpg',
-                  ),
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                )
-              : Image.asset(
-                  "assets/image/JunkFusion.png",
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  // cacheHeight: 50,
-                  // cacheWidth: 50,
-                ),
+          // 点封面打开全屏播放页（歌曲仍在播，页面是浮层）
+          GestureDetector(
+            onTap: () => context.read<PlayPageProvider>().toggle(),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: (playback.curBasicInfo?.hash != null)
+                  ? Image.file(
+                      File(
+                        '${AppCache.cacheDirString}/image/${playback.curBasicInfo!.hash}/original.jpg',
+                      ),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.asset(
+                      "assets/image/JunkFusion.png",
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      // cacheHeight: 50,
+                      // cacheWidth: 50,
+                    ),
+            ),
+          ),
 
           const SizedBox(width: 10),
 
           // ── 歌名 + 艺术家 ──
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                playback.curBasicInfo?.title ?? "",
-                style: theme.midTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                playback.curBasicInfo?.artists == null
-                    ? "未知"
-                    : playback.curBasicInfo!.artists!.join(" / "),
-                style: theme.littleTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          Flexible(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  playback.curBasicInfo?.title ?? "",
+                  style: theme.midTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  playback.curBasicInfo?.artists == null
+                      ? "未知"
+                      : playback.curBasicInfo!.artists!.join(" / "),
+                  style: theme.littleTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(width: 10),
@@ -186,7 +197,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           IconButton(
             icon: Icon(TablerIcons.listFilled, size: 32),
             onPressed: () {
-              _playList.showPlayList();
+              _playList.showPlayList(context);
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -208,7 +219,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             child: Container(
               height: 90,
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-              color: theme.colorHover,
+              color: widget.backgroundColor ?? theme.colorHover,
 
               // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
               // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
@@ -231,13 +242,8 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
             bottom: 80,
             left: 5,
             right: 5,
-            child: SongProgressArea(
-              onHeightChange: (double value) {
-                setState(() {
-                  _height = 80 + value;
-                });
-              },
-            ),
+            // 进度条只显示进度 + 时间标签，不再有可展开的时域波形
+            child: const SongProgressArea(),
           ),
         ],
       ),

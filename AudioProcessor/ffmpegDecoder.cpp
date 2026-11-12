@@ -86,7 +86,6 @@ void FFmpegDecoder::run() {
 
     AVFormatContext* inputContext{nullptr};
     if (path.empty()) {
-        OtherUtils::writeEmergencyLog("无法找到歌曲文件");
         std::string errorStr{"无法找到当前文件信息，请检查文件路径:" + path};
         if (sendErrorMsg) sendErrorMsg(errorStr);
         auto log = spdlog::get(LogAudioID);
@@ -103,7 +102,6 @@ void FFmpegDecoder::run() {
     ); // 这个函数会同时进行内存分配
     // OtherUtils::writeEmergencyLog("avformat_open_input完成");
     if (result < 0) {
-        OtherUtils::writeEmergencyLog("无法打开输入流");
         auto log = spdlog::get(LogAudioID);
         std::string errorStr = std::string("打开多媒体文件失败:文件路径:") + path +
                                std::string(" 错误原因:") + OtherUtils::ffmpegErrorOutput(result);
@@ -186,7 +184,6 @@ void FFmpegDecoder::run() {
         }
 
         if (av_read_frame(inputContext, packet) != 0) {
-            OtherUtils::writeEmergencyLog("av_read_frame返回非零数据");
             av_packet_unref(packet);
             break;
         } // 没有剩余的包了，直接退出
@@ -221,7 +218,6 @@ void FFmpegDecoder::run() {
             // 4096 字节，但如果内存对齐强制要求 64 字节对齐，它可能是 4096 或 4096+）。
 
             if (result < 0) {
-                OtherUtils::writeEmergencyLog("av_samples_alloc_array_and_samples返回负值");
                 av_frame_unref(frame);
                 av_freep(&outputDataArray[0]);
                 av_freep(&outputDataArray);

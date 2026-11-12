@@ -39,6 +39,7 @@ target_sources(JunkFusionCoordinator
         libExport.cpp
         dllManager.cpp
         EqController.cpp
+        SpectrumController.cpp
 )
 
 add_subdirectory(SongsInsertHelper)

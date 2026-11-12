@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SongDetailInfo {
 
- int get bitRate; int get sampleRate; String get channelLayout; int get bitDepth; String? get codecName; int? get bpm; String? get key; List<double> get timeDomainSpec; int? get trackNumber; int? get discNumber;
+ int get bitRate; int get sampleRate; String get channelLayout; int get bitDepth; String? get codecName; int? get bpm; String? get key; int? get trackNumber; int? get discNumber;
 /// Create a copy of SongDetailInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $SongDetailInfoCopyWith<SongDetailInfo> get copyWith => _$SongDetailInfoCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SongDetailInfo&&(identical(other.bitRate, bitRate) || other.bitRate == bitRate)&&(identical(other.sampleRate, sampleRate) || other.sampleRate == sampleRate)&&(identical(other.channelLayout, channelLayout) || other.channelLayout == channelLayout)&&(identical(other.bitDepth, bitDepth) || other.bitDepth == bitDepth)&&(identical(other.codecName, codecName) || other.codecName == codecName)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.key, key) || other.key == key)&&const DeepCollectionEquality().equals(other.timeDomainSpec, timeDomainSpec)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.discNumber, discNumber) || other.discNumber == discNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SongDetailInfo&&(identical(other.bitRate, bitRate) || other.bitRate == bitRate)&&(identical(other.sampleRate, sampleRate) || other.sampleRate == sampleRate)&&(identical(other.channelLayout, channelLayout) || other.channelLayout == channelLayout)&&(identical(other.bitDepth, bitDepth) || other.bitDepth == bitDepth)&&(identical(other.codecName, codecName) || other.codecName == codecName)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.key, key) || other.key == key)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.discNumber, discNumber) || other.discNumber == discNumber));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,bitRate,sampleRate,channelLayout,bitDepth,codecName,bpm,key,const DeepCollectionEquality().hash(timeDomainSpec),trackNumber,discNumber);
+int get hashCode => Object.hash(runtimeType,bitRate,sampleRate,channelLayout,bitDepth,codecName,bpm,key,trackNumber,discNumber);
 
 @override
 String toString() {
-  return 'SongDetailInfo(bitRate: $bitRate, sampleRate: $sampleRate, channelLayout: $channelLayout, bitDepth: $bitDepth, codecName: $codecName, bpm: $bpm, key: $key, timeDomainSpec: $timeDomainSpec, trackNumber: $trackNumber, discNumber: $discNumber)';
+  return 'SongDetailInfo(bitRate: $bitRate, sampleRate: $sampleRate, channelLayout: $channelLayout, bitDepth: $bitDepth, codecName: $codecName, bpm: $bpm, key: $key, trackNumber: $trackNumber, discNumber: $discNumber)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $SongDetailInfoCopyWith<$Res>  {
   factory $SongDetailInfoCopyWith(SongDetailInfo value, $Res Function(SongDetailInfo) _then) = _$SongDetailInfoCopyWithImpl;
 @useResult
 $Res call({
- int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, int? bpm, String? key, List<double> timeDomainSpec, int? trackNumber, int? discNumber
+ int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, int? bpm, String? key, int? trackNumber, int? discNumber
 });
 
 
@@ -65,7 +65,7 @@ class _$SongDetailInfoCopyWithImpl<$Res>
 
 /// Create a copy of SongDetailInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? bitRate = null,Object? sampleRate = null,Object? channelLayout = null,Object? bitDepth = null,Object? codecName = freezed,Object? bpm = freezed,Object? key = freezed,Object? timeDomainSpec = null,Object? trackNumber = freezed,Object? discNumber = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? bitRate = null,Object? sampleRate = null,Object? channelLayout = null,Object? bitDepth = null,Object? codecName = freezed,Object? bpm = freezed,Object? key = freezed,Object? trackNumber = freezed,Object? discNumber = freezed,}) {
   return _then(_self.copyWith(
 bitRate: null == bitRate ? _self.bitRate : bitRate // ignore: cast_nullable_to_non_nullable
 as int,sampleRate: null == sampleRate ? _self.sampleRate : sampleRate // ignore: cast_nullable_to_non_nullable
@@ -74,8 +74,7 @@ as String,bitDepth: null == bitDepth ? _self.bitDepth : bitDepth // ignore: cast
 as int,codecName: freezed == codecName ? _self.codecName : codecName // ignore: cast_nullable_to_non_nullable
 as String?,bpm: freezed == bpm ? _self.bpm : bpm // ignore: cast_nullable_to_non_nullable
 as int?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
-as String?,timeDomainSpec: null == timeDomainSpec ? _self.timeDomainSpec : timeDomainSpec // ignore: cast_nullable_to_non_nullable
-as List<double>,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
+as String?,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
 as int?,discNumber: freezed == discNumber ? _self.discNumber : discNumber // ignore: cast_nullable_to_non_nullable
 as int?,
   ));
@@ -162,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  int? bpm,  String? key,  List<double> timeDomainSpec,  int? trackNumber,  int? discNumber)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  int? bpm,  String? key,  int? trackNumber,  int? discNumber)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SongDetailInfo() when $default != null:
-return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.bpm,_that.key,_that.timeDomainSpec,_that.trackNumber,_that.discNumber);case _:
+return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.bpm,_that.key,_that.trackNumber,_that.discNumber);case _:
   return orElse();
 
 }
@@ -183,10 +182,10 @@ return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDept
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  int? bpm,  String? key,  List<double> timeDomainSpec,  int? trackNumber,  int? discNumber)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  int? bpm,  String? key,  int? trackNumber,  int? discNumber)  $default,) {final _that = this;
 switch (_that) {
 case _SongDetailInfo():
-return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.bpm,_that.key,_that.timeDomainSpec,_that.trackNumber,_that.discNumber);case _:
+return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.bpm,_that.key,_that.trackNumber,_that.discNumber);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +202,10 @@ return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDept
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  int? bpm,  String? key,  List<double> timeDomainSpec,  int? trackNumber,  int? discNumber)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int bitRate,  int sampleRate,  String channelLayout,  int bitDepth,  String? codecName,  int? bpm,  String? key,  int? trackNumber,  int? discNumber)?  $default,) {final _that = this;
 switch (_that) {
 case _SongDetailInfo() when $default != null:
-return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.bpm,_that.key,_that.timeDomainSpec,_that.trackNumber,_that.discNumber);case _:
+return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDepth,_that.codecName,_that.bpm,_that.key,_that.trackNumber,_that.discNumber);case _:
   return null;
 
 }
@@ -218,7 +217,7 @@ return $default(_that.bitRate,_that.sampleRate,_that.channelLayout,_that.bitDept
 @JsonSerializable()
 
 class _SongDetailInfo implements SongDetailInfo {
-  const _SongDetailInfo({required this.bitRate, required this.sampleRate, required this.channelLayout, required this.bitDepth, this.codecName, this.bpm, this.key, required final  List<double> timeDomainSpec, this.trackNumber, this.discNumber}): _timeDomainSpec = timeDomainSpec;
+  const _SongDetailInfo({required this.bitRate, required this.sampleRate, required this.channelLayout, required this.bitDepth, this.codecName, this.bpm, this.key, this.trackNumber, this.discNumber});
   factory _SongDetailInfo.fromJson(Map<String, dynamic> json) => _$SongDetailInfoFromJson(json);
 
 @override final  int bitRate;
@@ -228,13 +227,6 @@ class _SongDetailInfo implements SongDetailInfo {
 @override final  String? codecName;
 @override final  int? bpm;
 @override final  String? key;
- final  List<double> _timeDomainSpec;
-@override List<double> get timeDomainSpec {
-  if (_timeDomainSpec is EqualUnmodifiableListView) return _timeDomainSpec;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_timeDomainSpec);
-}
-
 @override final  int? trackNumber;
 @override final  int? discNumber;
 
@@ -251,16 +243,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SongDetailInfo&&(identical(other.bitRate, bitRate) || other.bitRate == bitRate)&&(identical(other.sampleRate, sampleRate) || other.sampleRate == sampleRate)&&(identical(other.channelLayout, channelLayout) || other.channelLayout == channelLayout)&&(identical(other.bitDepth, bitDepth) || other.bitDepth == bitDepth)&&(identical(other.codecName, codecName) || other.codecName == codecName)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.key, key) || other.key == key)&&const DeepCollectionEquality().equals(other._timeDomainSpec, _timeDomainSpec)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.discNumber, discNumber) || other.discNumber == discNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SongDetailInfo&&(identical(other.bitRate, bitRate) || other.bitRate == bitRate)&&(identical(other.sampleRate, sampleRate) || other.sampleRate == sampleRate)&&(identical(other.channelLayout, channelLayout) || other.channelLayout == channelLayout)&&(identical(other.bitDepth, bitDepth) || other.bitDepth == bitDepth)&&(identical(other.codecName, codecName) || other.codecName == codecName)&&(identical(other.bpm, bpm) || other.bpm == bpm)&&(identical(other.key, key) || other.key == key)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.discNumber, discNumber) || other.discNumber == discNumber));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,bitRate,sampleRate,channelLayout,bitDepth,codecName,bpm,key,const DeepCollectionEquality().hash(_timeDomainSpec),trackNumber,discNumber);
+int get hashCode => Object.hash(runtimeType,bitRate,sampleRate,channelLayout,bitDepth,codecName,bpm,key,trackNumber,discNumber);
 
 @override
 String toString() {
-  return 'SongDetailInfo(bitRate: $bitRate, sampleRate: $sampleRate, channelLayout: $channelLayout, bitDepth: $bitDepth, codecName: $codecName, bpm: $bpm, key: $key, timeDomainSpec: $timeDomainSpec, trackNumber: $trackNumber, discNumber: $discNumber)';
+  return 'SongDetailInfo(bitRate: $bitRate, sampleRate: $sampleRate, channelLayout: $channelLayout, bitDepth: $bitDepth, codecName: $codecName, bpm: $bpm, key: $key, trackNumber: $trackNumber, discNumber: $discNumber)';
 }
 
 
@@ -271,7 +263,7 @@ abstract mixin class _$SongDetailInfoCopyWith<$Res> implements $SongDetailInfoCo
   factory _$SongDetailInfoCopyWith(_SongDetailInfo value, $Res Function(_SongDetailInfo) _then) = __$SongDetailInfoCopyWithImpl;
 @override @useResult
 $Res call({
- int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, int? bpm, String? key, List<double> timeDomainSpec, int? trackNumber, int? discNumber
+ int bitRate, int sampleRate, String channelLayout, int bitDepth, String? codecName, int? bpm, String? key, int? trackNumber, int? discNumber
 });
 
 
@@ -288,7 +280,7 @@ class __$SongDetailInfoCopyWithImpl<$Res>
 
 /// Create a copy of SongDetailInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? bitRate = null,Object? sampleRate = null,Object? channelLayout = null,Object? bitDepth = null,Object? codecName = freezed,Object? bpm = freezed,Object? key = freezed,Object? timeDomainSpec = null,Object? trackNumber = freezed,Object? discNumber = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? bitRate = null,Object? sampleRate = null,Object? channelLayout = null,Object? bitDepth = null,Object? codecName = freezed,Object? bpm = freezed,Object? key = freezed,Object? trackNumber = freezed,Object? discNumber = freezed,}) {
   return _then(_SongDetailInfo(
 bitRate: null == bitRate ? _self.bitRate : bitRate // ignore: cast_nullable_to_non_nullable
 as int,sampleRate: null == sampleRate ? _self.sampleRate : sampleRate // ignore: cast_nullable_to_non_nullable
@@ -297,8 +289,7 @@ as String,bitDepth: null == bitDepth ? _self.bitDepth : bitDepth // ignore: cast
 as int,codecName: freezed == codecName ? _self.codecName : codecName // ignore: cast_nullable_to_non_nullable
 as String?,bpm: freezed == bpm ? _self.bpm : bpm // ignore: cast_nullable_to_non_nullable
 as int?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
-as String?,timeDomainSpec: null == timeDomainSpec ? _self._timeDomainSpec : timeDomainSpec // ignore: cast_nullable_to_non_nullable
-as List<double>,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
+as String?,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
 as int?,discNumber: freezed == discNumber ? _self.discNumber : discNumber // ignore: cast_nullable_to_non_nullable
 as int?,
   ));

@@ -62,6 +62,14 @@ extern "C" {
     DLL_EXPORT const char* getBasicSongInfo(long long songId);
 
     /**
+     * @brief 取某首歌的歌词（已解析并合并翻译）
+     *
+     * @return {"lyric":{"hasTranslation":bool,"lines":[{"startMs","text","translation","words"}]}}
+     *         没有歌词时 {"lyric":null}
+     */
+    DLL_EXPORT const char* getSongLyrics(long long songId);
+
+    /**
      * @brief 得到详细的专辑信息，现在详细专辑信息里面只有歌曲列表，以后可能加上用户标签之类的
      *
      * @param albumId
@@ -226,6 +234,32 @@ extern "C" {
      * @return 长度 numPoints 的 float 数组；未初始化时返回 nullptr
      */
     DLL_EXPORT const float* getEqCurve(int numPoints);
+
+    //===================================================================================
+    // 实时频谱（共享内存，音频进程写 / 这里读）
+
+    /** @brief 频段数量（固定 96），前端按它分配数组 */
+    DLL_EXPORT int getSpectrumBandCount();
+
+    /**
+     * @brief 取当前频谱一帧（0~1 归一化的 96 个对数频段）
+     *
+     * 数据来自音频进程写的共享内存，按 seqlock 读快照。
+     * 返回的指针指向内部缓冲，**下一次调用会被覆盖**，请立刻拷走。
+     *
+     * @return 96 个 float；当前没有数据（未初始化 / 没在播放 / 已关闭）时返回 nullptr
+     */
+    DLL_EXPORT const float* getSpectrumFrame();
+
+    /** @brief 取峰值保持值（同样 96 个 float，生命周期同上） */
+    DLL_EXPORT const float* getSpectrumPeaks();
+
+    /**
+     * @brief 打开/关闭音频进程的频谱分析
+     *
+     * 播放页打开时传 1，离开时传 0；关掉能省掉 FFT 开销。
+     */
+    DLL_EXPORT void setSpectrumEnabled(int enabled);
 
     //===================================================================================
     // EQ 预设（存在 eqPresets 表里）

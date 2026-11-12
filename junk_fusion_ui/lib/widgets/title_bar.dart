@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -30,6 +27,10 @@ class _TitleBarState extends State<TitleBar> with WindowListener {
   void initState() {
     super.initState();
     windowManager.addListener(this); // 监听窗口状态变化
+    // 播放页的顶栏可能在窗口已最大化时才创建，先读取当前状态。
+    windowManager.isMaximized().then((isMaximized) {
+      if (mounted) setState(() => _isMaximized = isMaximized);
+    });
   }
 
   @override

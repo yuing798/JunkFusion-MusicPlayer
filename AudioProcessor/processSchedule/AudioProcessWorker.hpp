@@ -30,13 +30,19 @@ public:
     /** @brief EQ 的 JSON 报文（结构变更 / 拖拽结束的最终值 / 预设），非 EQ 报文不会走到这里 */
     std::function<void(const EqWire::Message& message)> onEqMessage;
 
+    /** @brief Coordinator 要求接上频谱共享内存（参数是完整名字和字节数） */
+    std::function<void(const std::string& name, size_t bytes)> onSpectrumAttach;
+
+    /** @brief 打开/关闭频谱分析 */
+    std::function<void(bool enabled)> onSpectrumEnabled;
+
     void run() override;
 };
 
 // ==========================================
 // 线程 2：专职向 UI 发送状态/异常 (PUB)
 // ==========================================
-class AudioProcessorPuber : public juce::Thread, public juce::Timer {
+class AudioProcessorPuber : public juce::Thread {
 private:
     zmq::context_t& context;
     std::mutex queueMutex;
@@ -51,7 +57,6 @@ public:
     void sendMessage(const std::string& msg);
 
     void run() override;
-    void timerCallback() override;
 };
 
 // ==========================================

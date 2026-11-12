@@ -1,11 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/Macro/sliderParam.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
-import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -83,6 +80,11 @@ class VolumeControllerButtonState extends State<VolumeControllerButton>
     double top = position.dy - sliderHeight - 10;
 
     final overlay = navigatorKey.currentState!.overlay;
+    final appTheme = context.read<AppTheme>();
+    final materialThemes = InheritedTheme.capture(
+      from: context,
+      to: overlay!.context,
+    );
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         left: left,
@@ -90,12 +92,17 @@ class VolumeControllerButtonState extends State<VolumeControllerButton>
         // 4. 将 FadeTransition 移到这里，由父组件控制透明度
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: _VolumeSlider(onEnter: _onSliderEnter, onExit: _onSliderExit),
+          child: ChangeNotifierProvider<AppTheme>.value(
+            value: appTheme,
+            child: materialThemes.wrap(
+              _VolumeSlider(onEnter: _onSliderEnter, onExit: _onSliderExit),
+            ),
+          ),
         ),
       ),
     );
 
-    overlay!.insert(_overlayEntry!);
+    overlay.insert(_overlayEntry!);
     _fadeController.forward(); // 启动淡入动画
   }
 

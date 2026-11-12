@@ -26,6 +26,8 @@ import 'app.dart'; // 根组件
 import 'providers/album_provider.dart';
 import 'providers/eq_provider.dart';
 import 'providers/folder_provider.dart';
+import 'providers/lyric_provider.dart';
+import 'providers/play_page_provider.dart';
 import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
@@ -143,7 +145,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
       print("准备从后端拉取所有专辑");
       widget.albumProvider.getAllAlbums();
       print("准备从后端拉取所有歌单");
-      widget.playlistProvider.getAllPlaylists();
+      // widget.playlistProvider.getAllPlaylists();
 
       // UtilFunction.showFatalMessage('测试致命错误');
     });
@@ -305,6 +307,12 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ),
         // 均衡器：第一次被页面读到时才创建（不在启动时碰 FFI）
         ChangeNotifierProvider<EqProvider>(create: (_) => EqProvider()),
+        // 全屏播放页的开关（播放栏点封面打开，页面里点 ⌄ 关闭）
+        ChangeNotifierProvider<PlayPageProvider>(
+          create: (_) => PlayPageProvider(),
+        ),
+        // 当前歌曲的歌词（切歌时按 songId 拉一次）
+        ChangeNotifierProvider<LyricProvider>(create: (_) => LyricProvider()),
         ChangeNotifierProvider(create: (_) => AppTheme()),
       ],
 
@@ -319,7 +327,6 @@ class JunkFusionAppState extends State<JunkFusionApp>
             navigatorKey: navigatorKey,
 
             debugShowCheckedModeBanner: false, //关闭右上角 DEBUG 标签
-
             // 两套主题都来自 flex_color_scheme（见 theme/app_theme.dart）：
             //   明亮 = 蓝白，暗黑 = 黑金
             // 现在固定蓝白；以后设置页调 AppTheme.setThemeMode() 就能切换

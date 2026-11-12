@@ -15,9 +15,6 @@ _SongDetailInfo _$SongDetailInfoFromJson(Map<String, dynamic> json) =>
       codecName: json['codecName'] as String?,
       bpm: (json['bpm'] as num?)?.toInt(),
       key: json['key'] as String?,
-      timeDomainSpec: (json['timeDomainSpec'] as List<dynamic>)
-          .map((e) => (e as num).toDouble())
-          .toList(),
       trackNumber: (json['trackNumber'] as num?)?.toInt(),
       discNumber: (json['discNumber'] as num?)?.toInt(),
     );
@@ -31,7 +28,6 @@ Map<String, dynamic> _$SongDetailInfoToJson(_SongDetailInfo instance) =>
       'codecName': instance.codecName,
       'bpm': instance.bpm,
       'key': instance.key,
-      'timeDomainSpec': instance.timeDomainSpec,
       'trackNumber': instance.trackNumber,
       'discNumber': instance.discNumber,
     };

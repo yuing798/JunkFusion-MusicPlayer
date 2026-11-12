@@ -128,32 +128,8 @@ bool SongImport::importSingleSong(
             }
         }
 
-        // 波形获取：只解码出 128 根柱子写进 songs.timeDomainSpec，不联网、不取指纹
-        waveFormAnalyPool.addJob([this, songId = songInfo.songId, finalPath = successRst.finalPath] {
-            auto waveFormAnalyResult =
-                waveFormAnaly({finalPath.getFullPathName().toStdString()});
-
-            try {
-                mDbContext.dbManage.write([&](SQLite::Database& db) {
-                    SQLite::Statement sql{
-                        db,
-                        "UPDATE songs SET timeDomainSpec=:timeDomainSpec WHERE songId=:songId"
-                    };
-                    sql.bind(
-                        ":timeDomainSpec",
-                        waveFormAnalyResult.blobBuffer.data(),
-                        static_cast<int>(
-                            waveFormAnalyResult.blobBuffer.size() * sizeof(double)
-                        )
-                    );
-                    sql.bind(":songId", songId);
-                    sql.exec();
-                });
-            } catch (SQLite::Exception& e) {
-                spdlog::get(LogDllID)
-                    ->error("SongImport::waveFormAnaly 写库失败(songId={}):{}", songId, e.what());
-            }
-        });
+        // 歌词：找同目录同名 .lrc（顺手带翻译），纯文件操作，很快
+        linkLyrics(songInfo.songId, path);
 
         return true;
     }
@@ -161,7 +137,76 @@ bool SongImport::importSingleSong(
     // });
 }
 
-SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
+void SongImport::linkLyrics(int64_t songId, const juce::File& audioPath) {
+    if (songId <= 0) return;
+
+    // 歌词关联失败绝不能影响导入（更不能让异常穿过 FFI 边界）
+    try {
+        const auto directory = audioPath.getParentDirectory();
+        const auto baseName = audioPath.getFileNameWithoutExtension();
+
+        const auto originalFile = directory.getChildFile(baseName + ".lrc");
+        if (!originalFile.existsAsFile()) return;
+
+        const auto originalText = originalFile.loadFileAsString();
+        if (originalText.isEmpty()) return;
+
+    const auto originalMtime = originalFile.getLastModificationTime().toMilliseconds();
+
+    mDbContext.lyricsManage.upsert(
+        songId,
+        LyricsManage::kKindOriginal,
+        "lrc",
+        originalText.toStdString(),
+        originalFile.getFullPathName().toStdString(),
+        originalMtime
+    );
+
+    // 翻译：常见后缀都试一遍，命中就存
+    for (const auto* suffix : {".zh", ".cn", ".trans", ".translation"}) {
+        const auto translationFile = directory.getChildFile(baseName + suffix + ".lrc");
+        if (!translationFile.existsAsFile()) continue;
+
+        const auto translationText = translationFile.loadFileAsString();
+        if (translationText.isEmpty()) continue;
+
+        mDbContext.lyricsManage.upsert(
+            songId,
+            LyricsManage::kKindTranslation,
+            "lrc",
+            translationText.toStdString(),
+            translationFile.getFullPathName().toStdString(),
+            translationFile.getLastModificationTime().toMilliseconds()
+        );
+        break;
+    }
+
+        if (auto logger = spdlog::get(LogDllID))
+            logger->debug(
+                "已关联歌词:songId={}, file={}",
+                songId,
+                originalFile.getFileName().toStdString()
+            );
+    } catch (const std::exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn("关联歌词失败(songId={}):{}", songId, e.what());
+    } catch (...) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn("关联歌词失败(songId={}):未知异常", songId);
+    }
+}
+
+// ⚠️ 僵尸函数：目前**没有任何地方调用**它。
+//
+// 时域图（128 根柱子的波形）已经从产品里删掉了，但这里保留了完整的
+// 解码 + 重采样流程（统一成 11025Hz / 单声道 / S16P），方便以后接
+// AI 音频分析时直接把分析逻辑插进解码循环。
+//
+// 以后要用的时候：
+//   1. 在 pushData 的位置（拿到 outputArray + 样本数）插入分析逻辑；
+//   2. 外部接口单独抽一个任务结构体，不要复用这个只有 path 的；
+//   3. 记得把开销放到非实时线程里。
+void SongImport::waveFormAnaly(WaveFormAnalyTask task) {
 
     int result{0}; // 解码层结果，一般成功返回零
     av_log_set_level(AV_LOG_ERROR);
@@ -173,13 +218,6 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
 
     auto* pAudioStream = inputContext->streams[currentIndex];
 
-    // 时长（秒）
-    double duration{0.0f};
-    if (pAudioStream->duration != AV_NOPTS_VALUE) {
-        duration = pAudioStream->duration * av_q2d(pAudioStream->time_base);
-    } else if (inputContext->duration != AV_NOPTS_VALUE) {
-        duration = inputContext->duration / (double)AV_TIME_BASE;
-    }
     auto* decoderPar = pAudioStream->codecpar;
 
     auto codec = avcodec_find_decoder(decoderPar->codec_id);   // 根据ID寻找解码器
@@ -202,51 +240,6 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
             nullptr
         );
     swr_init(swrContext);
-
-    std::array<double, 128> blobBuffer{}; // 存入数据库的波形图数组,前端显示128根柱子
-
-    int64_t totalSamples{static_cast<int64_t>(duration * (double)targetSampleRate)};
-
-    auto samplePerLeftBin{static_cast<int64_t>(totalSamples / 128)}; // 每根柱子容纳多少个采样点
-    auto samplePerRightBin{
-        samplePerLeftBin + 1
-    }; // 靠右的格子为靠左的加一，因为总数可能不会被128整除
-    auto num4LeftBin{samplePerRightBin * 128 - totalSamples}; // 左边柱子的数目
-
-    int binCount{0};         // 帧循环中使用了多少根柱子
-    int sampleCount{0};      // 每个柱子中已经存储了多少个样本点
-    double squarePlus{0.0f}; // 平方和
-
-    auto pushDataIntoAudioGraph = [&](uint8_t* outputArray, int swrResult) {
-        const int16_t* src = reinterpret_cast<const int16_t*>(outputArray);
-        for (int i = 0; i < swrResult; i++) {
-            if (binCount >= 128) return;
-            double value{(double)src[i] / 32767.0};
-            auto square = value * value;
-            squarePlus += square;
-            sampleCount++;
-            if (binCount < num4LeftBin) {
-                if (sampleCount >= samplePerLeftBin) {
-
-                    sampleCount = 0;
-
-                    auto rms{std::sqrt(squarePlus / samplePerLeftBin)};
-                    blobBuffer[binCount] = rms;
-                    binCount++;
-                    squarePlus = 0.0f;
-                }
-            } else {
-                if (sampleCount >= samplePerRightBin) {
-                    sampleCount = 0;
-
-                    auto rms{std::sqrt(squarePlus / samplePerRightBin)};
-                    blobBuffer[binCount] = rms;
-                    binCount++;
-                    squarePlus = 0.0f;
-                }
-            }
-        }
-    };
 
     auto* packet = av_packet_alloc();
     auto* frame = av_frame_alloc();
@@ -302,7 +295,7 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
                 continue;
             }
 
-            pushDataIntoAudioGraph(outputArray, num4SwrSamples);
+            // TODO(AI): 以后的分析逻辑插在这里，outputArray 里是 11025Hz/单声道/S16P
 
             av_frame_unref(frame);
 
@@ -352,7 +345,7 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
             continue;
         }
 
-        pushDataIntoAudioGraph(outputArray, result);
+        // TODO(AI): 解码器 flush 出来的尾部样本，同上
         av_frame_unref(frame);
 
         av_freep(&outputArray);
@@ -369,7 +362,7 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
         while (true) {
             int ret = swr_convert(swrContext, &outputArray, maxFlushSamples, nullptr, 0);
             if (ret <= 0) break;
-            pushDataIntoAudioGraph(outputArray, ret);
+            // TODO(AI): 重采样器 flush 的残余样本，同上
         }
         // 释放 Flush 临时缓冲区
         if (outputArray != nullptr) {
@@ -377,20 +370,10 @@ SongImport::WaveFormAnalyRes SongImport::waveFormAnaly(WaveFormAnalyTask task) {
         }
     }
 
-    if (binCount < 128 && sampleCount > 0) {
-        // 此时 squarePlus 里面装的就是最后剩下的那些样本的平方和
-        blobBuffer[binCount] = std::sqrt(squarePlus / sampleCount);
-        binCount++;
-    }
-
     av_frame_free(&frame);
     av_packet_free(&packet);
     swr_free(&swrContext);
     avcodec_free_context(&decoderContext);
-
-    WaveFormAnalyRes r;
-    r.blobBuffer = std::move(blobBuffer);
-    return r;
 }
 
 std::optional<SongImport::InsertLightSongInfoResult> SongImport::insertLightSongInfo(

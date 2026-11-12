@@ -11,6 +11,4 @@ namespace OtherUtils {
     // 输出错误码
     std::string ffmpegErrorOutput(int result);
 
-    void writeEmergencyLog(std::string message);
-
 } // namespace OtherUtils

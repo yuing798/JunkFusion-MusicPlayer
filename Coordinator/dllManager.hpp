@@ -17,6 +17,7 @@
 
 class FolderCheckTimer;
 class EqController;
+class SpectrumController;
 
 class dllManager {
 private:
@@ -34,6 +35,7 @@ private:
     std::unique_ptr<SongImport> mSongImport;
     std::unique_ptr<FolderCheckTimer> mFolderCheckTimer; // 文件夹定时监控（独立线程）
     std::unique_ptr<EqController> mEqController;         // EQ 参数下发与状态
+    std::unique_ptr<SpectrumController> mSpectrumController; // 频谱共享内存（创建者 + 前端读取入口）
 
 public:
     // cpp主动向前端发送错误数据：非致命 -> 前端弹右下角卡片；致命 -> 前端弹模态窗
@@ -61,6 +63,7 @@ public:
     SongImport* getSongImportClass() noexcept { return mSongImport.get(); }
     FolderCheckTimer* getFolderCheckTimer() noexcept { return mFolderCheckTimer.get(); }
     EqController* getEqController() noexcept { return mEqController.get(); }
+    SpectrumController* getSpectrumController() noexcept { return mSpectrumController.get(); }
 
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);

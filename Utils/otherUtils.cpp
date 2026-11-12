@@ -63,21 +63,3 @@ std::string OtherUtils::ffmpegErrorOutput(int result) {
     av_strerror(result, errbuf, sizeof(errbuf));
     return std::string(errbuf);
 }
-
-/**
- * @brief 紧急降级日志函数(绝不抛出异常，写完立刻刷盘）
- * @param message 待写入的日志消息字符串
- */
-void OtherUtils::writeEmergencyLog(std::string message) {
-#ifdef JF_DEBUG
-    std::ofstream testFile(
-        "D:/audio_develop/Junk-Fusion/text.txt",
-        std::ios::out | std::ios::app
-    ); // 追加模式
-    if (testFile.is_open()) {
-        testFile << message.c_str() << std::endl;
-        testFile.flush();
-        testFile.close();
-    }
-#endif
-}
