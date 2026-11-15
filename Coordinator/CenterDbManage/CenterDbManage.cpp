@@ -216,6 +216,64 @@ static const char* createLyricsTableSQL = R"(
 static const char* createLyricsSongIdIndexSQL =
     "CREATE INDEX IF NOT EXISTS lyricsSongIdIndex ON lyrics(songId)";
 
+/**
+ * @brief 插件表（扫描结果）
+ *
+ * **主键是 (filePath, ordinal) 而不是 filePath**：VST3 通常一个模块一个插件，
+ * 但 VST3 shell（`PluginDescription::hasSharedContainer`）一个 DLL 里会导出多个
+ * 类型。用 filePath 单主键的话第二种会被 upsert 覆盖掉，而加一个"类型序号"
+ * 就能把它们都存下来——顺便也让扫描失败的行（ordinal=0）有地方落。
+ *
+ * 几个字段的分工（规格 §4 + 建议补充）：
+ *   type       ★用户可改★ 重扫**不覆盖**（upsert 里故意不写它）。
+ *             元数据整条错掉的插件（OB-Xd 报 0/0）会落进 other，
+ *             用户看得到、能改，这就是默认不走实例化扫描的兜底手段。
+ *   name/vendor/category/numInputs/numOutputs
+ *             元数据说了算，每次扫描刷新。
+ *   identifier  PluginDescription::createIdentifierString()。
+ *             将来做插件状态/预设时用它当键，换路径也不会丢；
+ *             失败的扫描没有它，留空。
+ *   scanStatus / scanError
+ *             'ok' / 'failed'。没有这两列，扫描失败的插件在表里和正常插件
+ *             长得一模一样，UI 根本没法提示"这个坏了"。
+ *   lastSeen   这次扫描见到它的时间（毫秒）。以后做"这次没看到它 → 标灰"用。
+ */
+static const char* createPluginsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS plugins(
+        filePath TEXT NOT NULL,
+        ordinal INTEGER NOT NULL DEFAULT 0,
+        identifier TEXT,
+        name TEXT NOT NULL,
+        vendor TEXT,
+        category TEXT,
+        type TEXT NOT NULL DEFAULT 'other',
+        numInputs INTEGER DEFAULT 0,
+        numOutputs INTEGER DEFAULT 0,
+        scanStatus TEXT NOT NULL DEFAULT 'ok',
+        scanError TEXT,
+        lastSeen INTEGER DEFAULT 0,
+        PRIMARY KEY (filePath, ordinal)
+    )
+)";
+
+static const char* createPluginIdentifierIndexSQL =
+    "CREATE INDEX IF NOT EXISTS pluginIdentifierIndex ON plugins(identifier)";
+
+/**
+ * @brief 插件扫描目录
+ *
+ * @param isBuiltin 系统默认目录（`C:\Program Files\Common Files\VST3` 之类）。
+ *                  默认目录在启动时无条件写入，且**不允许删除**——用户只能
+ *                  增删自己的目录。目录被移除后 plugins 里的行**保留**
+ *                  （不级联删除），UI 汇总时按目录过滤即可。
+ */
+static const char* createPluginDirsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginDirs(
+        path TEXT PRIMARY KEY,
+        isBuiltin INTEGER NOT NULL DEFAULT 0
+    )
+)";
+
 CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
 
     try {
@@ -234,6 +292,8 @@ CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OP
         db.exec(createSongFolderTableSQL);
         db.exec(createEqPresetTableSQL);
         db.exec(createLyricsTableSQL);
+        db.exec(createPluginsTableSQL);
+        db.exec(createPluginDirsTableSQL);
 
         db.exec(createPlaylistsSongsOrderByUserIndex);
         db.exec(createAlbumDiscTrackIndexSQL);
@@ -243,6 +303,7 @@ CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OP
         db.exec(createLastPlayTimeIndexSQL);
         db.exec(createSongFolderIdIndexSQL);
         db.exec(createLyricsSongIdIndexSQL);
+        db.exec(createPluginIdentifierIndexSQL);
 
         if (auto logger{spdlog::get(LogDllID)}) {
             logger->debug("数据库初始化完成:{}", path);

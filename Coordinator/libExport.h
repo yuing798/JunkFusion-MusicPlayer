@@ -284,6 +284,56 @@ extern "C" {
     DLL_EXPORT void renameEqPreset(long long id, const char* title);
     DLL_EXPORT void deleteEqPreset(long long id);
 
+    //===================================================================================
+    // 插件库（VST3 扫描）
+    //
+    // 扫描 = 遍历 pluginDirs 里的 .vst3 → 在**临时子进程**里枚举元数据 → 写 plugins 表。
+    // 子进程是为了隔离坏插件：坏插件在枚举阶段就能把进程带走，绝不能让它带走音频进程。
+    // 扫描是后台跑的，前端调 startPluginScan() 之后轮询 getPluginScanState()。
+
+    /**
+     * @brief 开始一次扫描（后台线程，立即返回）
+     *
+     * @return {"started":true|false, "error":"..."}
+     *         started=false 只有两种情况：已经在扫 / 插件模块没初始化。
+     */
+    DLL_EXPORT const char* startPluginScan();
+
+    /**
+     * @brief 扫描状态（前端用来画"扫描中 5/12"）
+     *
+     * @return {"scan":{"state":"idle"|"running"|"done"|"failed",
+     *                  "total":int,"processed":int,"failed":int,"message":"..."}}
+     */
+    DLL_EXPORT const char* getPluginScanState();
+
+    /**
+     * @brief 插件列表
+     *
+     * @return {"plugins":[{"filePath","identifier","name","vendor","category","type",
+     *                      "numInputs","numOutputs","scanStatus","scanError"}]}
+     *         type 只有 "instrument" / "effect" / "other" 三种；
+     *         scanStatus=="failed" 的行 name 是文件名，scanError 里是原因。
+     */
+    DLL_EXPORT const char* getAllPluginsView();
+
+    /** @brief 扫描目录列表 → {"dirs":[{"path":"...","isBuiltin":bool}]} */
+    DLL_EXPORT const char* getPluginDirs();
+
+    /** @brief 加一个扫描目录 → {"ok":bool,"error":"..."} */
+    DLL_EXPORT const char* addPluginDir(const char* path);
+
+    /** @brief 删一个扫描目录 → {"ok":bool,"error":"..."}（系统默认目录会被拒绝） */
+    DLL_EXPORT const char* removePluginDir(const char* path);
+
+    /**
+     * @brief 手动改插件类型（前端唯一允许改的字段）
+     *
+     * 重扫**不会**覆盖这里改的值——元数据整条错掉的插件（OB-Xd 报 0/0）
+     * 就靠这个纠正。失败时返回 {"ok":false}（identifier 不存在 / type 非法）。
+     */
+    DLL_EXPORT const char* setPluginType(const char* identifier, const char* type);
+
 #ifdef __cplusplus
 }
 #endif

@@ -50,6 +50,9 @@ add_subdirectory(Coordinator)
 add_subdirectory(AudioProcessor)
 add_subdirectory(Utils)
 add_subdirectory(Model)
+# 插件（VST3）相关：扫描子进程 target + Coordinator 侧的插件源码。
+# 必须放在 Coordinator 之后——它直接往那个 target 上加源码。
+add_subdirectory(PluginHost)
 
 target_compile_definitions(JunkFusionCoordinator PRIVATE
     $<$<CONFIG:Debug>:JF_DEBUG>
@@ -108,7 +111,7 @@ target_link_libraries(JunkFusionAudioProcess
         Utils
 )
 add_custom_target(DeployRuntime ALL
-    DEPENDS JunkFusionCoordinator JunkFusionAudioProcess  # 依赖两个核心目标
+    DEPENDS JunkFusionCoordinator JunkFusionAudioProcess JunkFusionPluginScan  # 依赖核心目标
     COMMENT "准备部署运行时库到 Flutter 目录..."
 )
 add_custom_command(TARGET DeployRuntime POST_BUILD

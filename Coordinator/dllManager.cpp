@@ -126,6 +126,20 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 
     mSongImport = std::make_unique<SongImport>(*(mDbContext.get()), imageDir, songsDir);
 
+    // ── 插件库（扫描结果）和扫描任务 ──
+    // 扫描任务必须在 dbContext 之后创建、在它之前销毁（析构里显式 stopAndWait）
+    mPluginCatalog = std::make_unique<PluginHost::PluginCatalogManage>(mDbContext->dbManage);
+    mPluginCatalog->ensureDefaultDirs();
+    mPluginScanJob = std::make_unique<PluginHost::PluginScanJob>(
+        *mPluginCatalog,
+        juce::File{exeDirPtr}.getChildFile("JunkFusionPluginScan.exe"),
+        cacheDir.getChildFile("pluginScan")
+    );
+    logger->debug(
+        "插件库已就绪，扫描进程:{}",
+        juce::File{exeDirPtr}.getChildFile("JunkFusionPluginScan.exe").getFullPathName().toStdString()
+    );
+
     // 文件夹定时监控（独立线程，一分钟一轮）。必须在 mSongImport / mDbContext
     // 之后创建、在它们之前销毁（见析构函数）
     mFolderCheckTimer =
@@ -156,6 +170,13 @@ dllManager::~dllManager() {
         mFolderCheckTimer->stop();
         mFolderCheckTimer.reset();
     }
+
+    // 扫描线程持有 PluginCatalogManage→CenterDbManage 的引用，同理先停
+    if (mPluginScanJob) {
+        mPluginScanJob->stopAndWait();
+        mPluginScanJob.reset();
+    }
+    mPluginCatalog.reset();
 
     spdlog::get(LogDllID)->debug("---------------------------------------");
     spdlog::shutdown();

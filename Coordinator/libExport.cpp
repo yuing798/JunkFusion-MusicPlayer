@@ -405,4 +405,189 @@ extern "C" {
     void deleteEqPreset(long long id) {
         dllManager::getInstance().getDbContext()->eqPresetManage.deletePreset(id);
     }
+
+    //===================================================================================
+    // 插件库（VST3 扫描）
+    //
+    // 这一层只做三件事：拿指针、调 PluginHost、把结果包成 JSON。
+    // 所有可能抛异常的地方都兜住——C++ 异常穿过 FFI 会直接把 Flutter 带走。
+    //
+    // 注意这里没有抽"插件模块未初始化"的公共小函数：AGENTS.md 禁止在 cpp 顶层
+    // 放散装工具函数，而这点重复（三行）不值得为它单开一个类。
+
+    const char* startPluginScan() {
+        Yvar envelope = Yvar::object();
+
+        try {
+            auto* job = dllManager::getInstance().getPluginScanJob();
+            if (job == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("started", false);
+                envelope.set("error", "插件模块未初始化");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+
+            const bool started = job->startScan();
+            envelope.set("ok", started);
+            envelope.set("started", started);
+            envelope.set("error", started ? "" : "扫描已在进行中");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("startPluginScan 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("started", false);
+            envelope.set("error", "启动扫描失败");
+        } catch (...) {
+            envelope.set("ok", false);
+            envelope.set("started", false);
+            envelope.set("error", "启动扫描失败");
+        }
+
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getPluginScanState() {
+        Yvar envelope = Yvar::object();
+
+        try {
+            auto* job = dllManager::getInstance().getPluginScanJob();
+            envelope.set("scan", job != nullptr ? Yvar::parse(job->toJson()) : Yvar{});
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginScanState 异常:{}", e.what());
+            envelope.set("scan", Yvar{});
+        } catch (...) {
+            envelope.set("scan", Yvar{});
+        }
+
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getAllPluginsView() {
+        Yvar envelope = Yvar::object();
+        Yvar plugins = Yvar::array();
+
+        try {
+            auto* catalog = dllManager::getInstance().getPluginCatalog();
+            if (catalog != nullptr) {
+                for (const auto& row : catalog->getAll()) {
+                    Yvar item = Yvar::object();
+                    item.set("filePath", row.filePath);
+                    item.set("identifier", row.identifier);
+                    item.set("name", row.name);
+                    item.set("vendor", row.vendor);
+                    item.set("category", row.category);
+                    item.set("type", row.type);
+                    item.set("numInputs", row.numInputs);
+                    item.set("numOutputs", row.numOutputs);
+                    item.set("scanStatus", row.scanStatus);
+                    item.set("scanError", row.scanError);
+                    plugins.push(item);
+                }
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getAllPluginsView 异常:{}", e.what());
+        } catch (...) {
+        }
+
+        envelope.set("plugins", plugins);
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getPluginDirs() {
+        Yvar envelope = Yvar::object();
+        Yvar dirs = Yvar::array();
+
+        try {
+            auto* catalog = dllManager::getInstance().getPluginCatalog();
+            if (catalog != nullptr) {
+                for (const auto& row : catalog->getDirs()) {
+                    Yvar item = Yvar::object();
+                    item.set("path", row.path);
+                    item.set("isBuiltin", row.isBuiltin);
+                    dirs.push(item);
+                }
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginDirs 异常:{}", e.what());
+        } catch (...) {
+        }
+
+        envelope.set("dirs", dirs);
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* addPluginDir(const char* path) {
+        Yvar envelope = Yvar::object();
+
+        try {
+            auto* catalog = dllManager::getInstance().getPluginCatalog();
+            if (catalog == nullptr || path == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "插件模块未初始化");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+
+            const auto error = catalog->addDir(path);
+            envelope.set("ok", error.empty());
+            envelope.set("error", error);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("addPluginDir 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "添加失败");
+        }
+
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* removePluginDir(const char* path) {
+        Yvar envelope = Yvar::object();
+
+        try {
+            auto* catalog = dllManager::getInstance().getPluginCatalog();
+            if (catalog == nullptr || path == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "插件模块未初始化");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+
+            const auto error = catalog->removeDir(path);
+            envelope.set("ok", error.empty());
+            envelope.set("error", error);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("removePluginDir 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "删除失败");
+        }
+
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* setPluginType(const char* identifier, const char* type) {
+        Yvar envelope = Yvar::object();
+
+        try {
+            auto* catalog = dllManager::getInstance().getPluginCatalog();
+            if (catalog == nullptr || identifier == nullptr || type == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "插件模块未初始化");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+
+            const bool ok = catalog->setType(identifier, type);
+            envelope.set("ok", ok);
+            envelope.set("error", ok ? "" : "identifier 不存在或 type 非法");
+        } catch (const std::exception& e) {
+            if (auto log = spdlog::get(LogDllID))
+                log->error("setPluginType 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "修改失败");
+        }
+
+        return ConvertUtils::object2Uint8t(envelope);
+    }
 }
