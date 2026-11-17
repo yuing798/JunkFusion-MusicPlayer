@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/widgets/nav/eq_preset_sidebar.dart';
 import 'package:junk_fusion_ui/widgets/nav/folder_tree_sidebar.dart';
+import 'package:junk_fusion_ui/widgets/nav/settings_sidebar.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 // ════════════════════════════════════════════════════════════════
@@ -17,20 +18,22 @@ import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 //
 // navId 和 pages_route.dart 的路由表一一对应，两边改 id 要一起改：
 //   1 我喜欢     2 最近播放
-//   3 专辑       4 歌单     5 文件夹    6 风格
+//   3 专辑       4 歌单     5 文件夹
 //   7 AI助手     8 效果器   9 均衡器    10 音箱阵列   11 设置
 //
 // （0「所有音乐」已经删掉了：歌曲列表现在只在文件夹视图里呈现）
+// （6「风格」已删：这个维度不做成独立导航段）
+// （1/2 之后会挪进「歌单」页，等歌单页改造时再一起搬，现在先留着）
 //
 // 用法：
 //     PagesNavTable.groups          // 分组（图标栏分组之间画分隔线）
 //     PagesNavTable.all             // 拍平后的全部段
 //     PagesNavTable.byId(navId)     // navId → 段；null = 没有这一段
 //
-// 表里的 sidebar：写了的走真实组件（目前只有「文件夹」= 文件夹树），
-// 还写 null 的段由 SidebarHost 画占位。某一页想好了就在对应段上补
-// sidebar: (context) => 组件()。要让这张表保持 const，sidebar 请指向
-// 顶层的构建函数（跟下面的 _buildFolderTreeSidebar 一样）。
+// 表里的 sidebar：写了的走真实组件（文件夹 = 文件夹树，均衡器 = 预设列表，
+// 设置 = 分节目录），还写 null 的段由 SidebarHost 画占位。
+// 某一页想好了就在对应段上补 sidebar: (context) => 组件()。要让这张表保持
+// const，sidebar 请指向顶层的构建函数（跟下面的 _buildFolderTreeSidebar 一样）。
 // ════════════════════════════════════════════════════════════════
 
 /// 一个导航段 = 左侧图标栏的一个图标 + 中间栏的一屏内容
@@ -78,7 +81,6 @@ abstract class PagesNavTable {
         // 文件夹这一段的中间栏是文件夹树
         sidebar: _buildFolderTreeSidebar,
       ),
-      PagesNavSection(id: 6, icon: TablerIcons.tag, title: '风格'),
     ],
 
     // ── 功能板块 ──
@@ -93,7 +95,13 @@ abstract class PagesNavTable {
         sidebar: _buildEqPresetSidebar,
       ),
       PagesNavSection(id: 10, icon: TablerIcons.deviceSpeaker, title: '音箱阵列'),
-      PagesNavSection(id: 11, icon: TablerIcons.settings, title: '设置'),
+      PagesNavSection(
+        id: 11,
+        icon: TablerIcons.settings,
+        title: '设置',
+        // 设置这一段的中间栏是分节目录（点哪跳哪）
+        sidebar: _buildSettingsSidebar,
+      ),
     ],
   ];
 
@@ -127,3 +135,6 @@ Widget _buildFolderTreeSidebar(BuildContext context) =>
 
 /// 「均衡器」段的中间栏：EQ 预设列表
 Widget _buildEqPresetSidebar(BuildContext context) => const EqPresetSidebar();
+
+/// 「设置」段的中间栏：分节目录
+Widget _buildSettingsSidebar(BuildContext context) => const SettingsSidebar();

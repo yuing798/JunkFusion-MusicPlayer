@@ -35,6 +35,20 @@ class JunkFusionDLLBindings {
   late final _addNewSongsToPlaylist = _addNewSongsToPlaylistPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  /// @brief 加一个扫描目录 → {"ok":bool,"error":"..."}
+  ffi.Pointer<ffi.Char> addPluginDir(ffi.Pointer<ffi.Char> path) {
+    return _addPluginDir(path);
+  }
+
+  late final _addPluginDirPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('addPluginDir');
+  late final _addPluginDir = _addPluginDirPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   void closeBackend() {
     return _closeBackend();
   }
@@ -149,6 +163,23 @@ class JunkFusionDLLBindings {
         'getAllPlaylistView',
       );
   late final _getAllPlaylistView = _getAllPlaylistViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 插件列表
+  ///
+  /// @return {"plugins":[{"filePath","identifier","name","vendor","category","type",
+  ///                      "numInputs","numOutputs","scanStatus","scanError"}]}
+  ///         type 只有 "instrument" / "effect" / "other" 三种；
+  ///         scanStatus=="failed" 的行 name 是文件名，scanError 里是原因。
+  ffi.Pointer<ffi.Char> getAllPluginsView() {
+    return _getAllPluginsView();
+  }
+
+  late final _getAllPluginsViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllPluginsView',
+      );
+  late final _getAllPluginsView = _getAllPluginsViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief Get the Root Dir object获得在应用中注册过的所有文件夹根目录
@@ -287,6 +318,33 @@ class JunkFusionDLLBindings {
       );
   late final _getPlaylistBasicInfo = _getPlaylistBasicInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  /// @brief 扫描目录列表 → {"dirs":[{"path":"...","isBuiltin":bool}]}
+  ffi.Pointer<ffi.Char> getPluginDirs() {
+    return _getPluginDirs();
+  }
+
+  late final _getPluginDirsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getPluginDirs',
+      );
+  late final _getPluginDirs = _getPluginDirsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 扫描状态（前端用来画"扫描中 5/12"）
+  ///
+  /// @return {"scan":{"state":"idle"|"running"|"done"|"failed",
+  ///                  "total":int,"processed":int,"failed":int,"message":"..."}}
+  ffi.Pointer<ffi.Char> getPluginScanState() {
+    return _getPluginScanState();
+  }
+
+  late final _getPluginScanStatePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getPluginScanState',
+      );
+  late final _getPluginScanState = _getPluginScanStatePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief 获得单独导入的文件的songIdList，作为独立虚拟文件夹节点渲染在前端
   ///
@@ -543,6 +601,20 @@ class JunkFusionDLLBindings {
   late final _registerOnPlayNextOrPreviousSong =
       _registerOnPlayNextOrPreviousSongPtr.asFunction<void Function(IntFunc)>();
 
+  /// @brief 删一个扫描目录 → {"ok":bool,"error":"..."}（系统默认目录会被拒绝）
+  ffi.Pointer<ffi.Char> removePluginDir(ffi.Pointer<ffi.Char> path) {
+    return _removePluginDir(path);
+  }
+
+  late final _removePluginDirPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('removePluginDir');
+  late final _removePluginDir = _removePluginDirPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   void removeSongsInPlaylist(
     int playlistId,
     ffi.Pointer<ffi.Char> songIdsJson,
@@ -729,6 +801,34 @@ class JunkFusionDLLBindings {
   late final _setEqMaster = _setEqMasterPtr
       .asFunction<void Function(int, double)>();
 
+  /// @brief 手动改插件类型（前端唯一允许改的字段）
+  ///
+  /// 重扫**不会**覆盖这里改的值——元数据整条错掉的插件（OB-Xd 报 0/0）
+  /// 就靠这个纠正。失败时返回 {"ok":false}（identifier 不存在 / type 非法）。
+  ffi.Pointer<ffi.Char> setPluginType(
+    ffi.Pointer<ffi.Char> identifier,
+    ffi.Pointer<ffi.Char> type,
+  ) {
+    return _setPluginType(identifier, type);
+  }
+
+  late final _setPluginTypePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+          )
+        >
+      >('setPluginType');
+  late final _setPluginType = _setPluginTypePtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+        )
+      >();
+
   /// @brief 打开/关闭音频进程的频谱分析
   ///
   /// 播放页打开时传 1，离开时传 0；关掉能省掉 FFT 开销。
@@ -742,6 +842,21 @@ class JunkFusionDLLBindings {
       );
   late final _setSpectrumEnabled = _setSpectrumEnabledPtr
       .asFunction<void Function(int)>();
+
+  /// @brief 开始一次扫描（后台线程，立即返回）
+  ///
+  /// @return {"started":true|false, "error":"..."}
+  ///         started=false 只有两种情况：已经在扫 / 插件模块没初始化。
+  ffi.Pointer<ffi.Char> startPluginScan() {
+    return _startPluginScan();
+  }
+
+  late final _startPluginScanPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'startPluginScan',
+      );
+  late final _startPluginScan = _startPluginScanPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   void toggleMyLike(int songId) {
     return _toggleMyLike(songId);

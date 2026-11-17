@@ -315,17 +315,22 @@ namespace PluginHost {
         Category category;
         if (!categoryFromString(type, category)) return false;
 
+        // identifier 为空时必须拒绝：扫描失败留下的占位行 identifier 就是空串，
+        // 一条 `WHERE identifier = ''` 的 UPDATE 会把**所有**失败行一起改掉。
+        if (identifier.empty()) return false;
+
         try {
-            mDbManage.write([&](SQLite::Database& db) {
+            // exec() 返回受影响的行数；0 = 这个 identifier 不存在
+            const int changed = mDbManage.write([&](SQLite::Database& db) -> int {
                 SQLite::Statement sql{
                     db,
                     "UPDATE plugins SET type = :type WHERE identifier = :identifier"
                 };
                 sql.bind(":type", categoryToString(category));
                 sql.bind(":identifier", identifier);
-                sql.exec();
+                return sql.exec();
             });
-            return true;
+            return changed > 0;
         } catch (const SQLite::Exception& e) {
             if (auto logger = spdlog::get(LogDllID))
                 logger->error("PluginCatalogManage::setType 失败:{}", e.what());

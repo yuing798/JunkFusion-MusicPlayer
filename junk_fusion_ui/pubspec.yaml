@@ -18,7 +18,7 @@ dependencies:
   shared_preferences: ^2.5.0 #和localStorage一样，做轻量数据存储
   ffi: ^2.2.0
   file_picker: ^11.0.3
-  smooth_scroll_multiplatform: ^ 1.0.8
+  smooth_scroll_multiplatform: ^1.0.8
   flutter_smooth_wheel_scroll: 0.1.7 #这两个都能使用平滑滚动，区别在于前面那种是旧版本写法，以后统一使用这个新版本，旧版本不需要改掉
   package_rename_plus: ^1.11.0
   provider: ^6.1.2
@@ -29,9 +29,7 @@ dependencies:
   audio_video_progress_bar: ^2.0.3 #进度条,
   collection: ^1.19.1 #提供firstWhereOrNull
   windows_taskbar: ^1.1.2 #windows平台鼠标悬停在任务栏图标上的播放控制功能
-  win32: ^5.9.0
   flutter_root_context_menu: ^0.11.0 #右键菜单
-  dropdown_button2: ^3.1.0 #comboBox
   intl4x: ^1.0.1 #字符串排序
   flutter_alone: ^4.1.0 #单应用模式应用锁
   desktop_drop: ^0.8.4 #文件拖拽

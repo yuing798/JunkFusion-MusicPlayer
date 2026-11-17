@@ -14,7 +14,7 @@
 #   PluginCategory.hpp/.cpp   §2 分类规则（纯 std，同上）
 #   PluginScanProtocol.*      扫描子进程的行协议（纯 std，同上）
 #   PluginPathScanner.*       递归找 .vst3（juce_core）
-#   PluginEnumerate.*         用 JUCE headless 枚举元数据（juce_audio_processors_headless）
+#   PluginEnumerate.*      用 JUCE headless 枚举元数据（juce_audio_processors_headless）
 #   ScanMain.cpp              ★扫描子进程入口★ → JunkFusionPluginScan.exe
 #   PluginCatalogManage.*     plugins / pluginDirs 表的读写（Coordinator）
 #   PluginScannerProcess.*    拉起/监管扫描子进程，断点续扫（Coordinator）
@@ -89,7 +89,7 @@ target_link_libraries(JunkFusionPluginScan
 )
 
 if(MSVC)
-    target_compile_options(JunkFusionPluginScan
+  target_compile_options(JunkFusionPluginScan
         PRIVATE
             # 和主工程其它 target 保持一致：源码里有中文，不按 UTF-8 读会报
             # "newline in string literal"
@@ -98,11 +98,11 @@ if(MSVC)
             /wd4267
     )
 
-    # 入口改成 wmain：中文用户名下的缓存路径是 `C:\Users\张三\...`，
-    # 而 main(argc, argv) 拿到的是系统 ANSI 代码页(GBK)的字节，跨不过
-    # "非中文系统 + 中文路径"这个组合。wmain 能拿到 UTF-16 的原始命令行。
-    # （ScanMain.cpp 里同时保留了 #if JUCE_WINDOWS / wmain 和 POSIX main 两个入口）
-    set_target_properties(JunkFusionPluginScan PROPERTIES
+  # 入口改成 wmain：中文用户名下的缓存路径是 `C:\Users\张三\...`，
+  # 而 main(argc, argv) 拿到的是系统 ANSI 代码页(GBK)的字节，跨不过
+  # "非中文系统 + 中文路径"这个组合。wmain 能拿到 UTF-16 的原始命令行。
+  # （ScanMain.cpp 里同时保留了 #if JUCE_WINDOWS / wmain 和 POSIX main 两个入口）
+  set_target_properties(JunkFusionPluginScan PROPERTIES
         LINK_FLAGS "/ENTRY:wmainCRTStartup"
     )
 endif()
