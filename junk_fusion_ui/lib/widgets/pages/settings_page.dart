@@ -32,6 +32,7 @@ import 'package:junk_fusion_ui/providers/plugin_provider.dart';
 import 'package:junk_fusion_ui/providers/settings_nav_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/settings_plugin_table.dart';
+import 'package:junk_fusion_ui/widgets/pages/settings_scan_dirs.dart';
 import 'package:provider/provider.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -187,6 +188,9 @@ class _PluginLibrarySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // 目录在前：先定扫描范围，再扫描，再看结果
+        const SettingsScanDirs(),
+        const SizedBox(height: 16),
         _buildToolbar(context, theme, provider),
         const SizedBox(height: 8),
         const SettingsPluginTable(),

@@ -11,7 +11,7 @@
 4. 你在写代码的时候，遇到不确定的内容请使用TODO，FIXME标识先待定，之后我会亲自补充
 5. 当你完成一个全新的文件的时候，请在文件的开头写明这个文件的内容概述，API调用方法，文件的意义，如
 
-``` text
+```text
 /**
  * @brief 可选链(optional chaining)风格的安全 JSON 读写
  *
@@ -46,7 +46,7 @@ class Yvar {
 9. 新写的模块需要带上最小测试示例(老代码不需要),后端统一放在Test/文件夹中，前端flutter放在junk_fusion_ui/test中，需要注意，一些小功能不需要加测试，只有你觉得可能出问题的模块和大型模块需要测试，其次flutter的测试基本不需要，因为flutter基本只是UI布局，不怎么涉及业务和安全逻辑
 10. 改动头文件后如果要验证，先确认构建依赖跟踪是好的
 11. 测试文件要求:在文件顶部写明:这个测试文件是针对什么内容的，测试标准是什么，为什么要进行测试,测试通过后把测试文件保留，生成的二进制文件可以删除也可以保留
-
+12. 一般来说，agent运行命令一直超时有两个原因:一、我一直把应用开着；二、dart/flutter 要写 Flutter SDK 自带的缓存目录，那个路径在会话沙箱外，被挡住就会静默挂起。你以后命令超时优先排查这两个原因，不要多次重试
 
 ## 音频开发规范
 
@@ -62,25 +62,25 @@ class Yvar {
 ## 代码架构
 
 Utils/:
-    Yvar:放置json安全读写类，其他文件读写json时请使用Yvar,不要使用nlohmann::json
-    DbUtils:数据库工具类
-    ConvertUtils:类型转换工具
-    MathUtils:数学工具(通常只在音频DSP中会使用到)
-    StringUtils:字符串工具
-    OtherUtils:其他乱七八糟不好分类的工具都放到这里面
-    paramLink:进行滑块参数(osc和tcp json两种)同步分发的安全通信类
+Yvar:放置json安全读写类，其他文件读写json时请使用Yvar,不要使用nlohmann::json
+DbUtils:数据库工具类
+ConvertUtils:类型转换工具
+MathUtils:数学工具(通常只在音频DSP中会使用到)
+StringUtils:字符串工具
+OtherUtils:其他乱七八糟不好分类的工具都放到这里面
+paramLink:进行滑块参数(osc和tcp json两种)同步分发的安全通信类
 Models/:CPP模型类
 Macro/:CPP使用的宏
 junk_fusion_ui/:flutter前端
-    lib/:
-        utils/:前端工具类
-        widgets/:前端UI组件
-            helper_widget/:辅助组件
-            pages/:页面
-            playControl:/播放控制组件
-            popupWindow/:弹窗组件
-        bridge/:和后端桥接的工具类
-        model/:模型类，统一使用freezed生成
+lib/:
+utils/:前端工具类
+widgets/:前端UI组件
+helper_widget/:辅助组件
+pages/:页面
+playControl:/播放控制组件
+popupWindow/:弹窗组件
+bridge/:和后端桥接的工具类
+model/:模型类，统一使用freezed生成
 DevScripts/:开发者工具
 Coordinator:协调者，用来数据库读写和协调多模块
 AudioProcessor:音频进程：只能由协调者通信，前端不可直接与其通信

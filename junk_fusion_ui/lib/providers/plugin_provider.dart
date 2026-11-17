@@ -106,6 +106,53 @@ class PluginProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── 扫描目录 ──────────────────────────────────────────────────────
+  /// 加一个自定义扫描目录；失败时把原因留在 [lastError]
+  ///
+  /// 系统默认目录（`C:\Program Files\Common Files\VST3`）是后端启动时自己插的，
+  /// 用户只能增删自己的目录。
+  bool addDir(String path) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty) return false;
+
+    final result = _withCString(
+      trimmed,
+      (ptr) => _readJsonObject(bindings.addPluginDir(ptr)),
+    );
+
+    if (result?['ok'] == true) {
+      refreshDirs();
+      return true;
+    }
+
+    _lastError = result?['error'] is String
+        ? result!['error'] as String
+        : '添加扫描目录失败';
+    notifyListeners();
+    return false;
+  }
+
+  /// 删一个扫描目录；系统默认目录会被后端拒绝（原因在 [lastError]）
+  bool removeDir(String path) {
+    if (path.isEmpty) return false;
+
+    final result = _withCString(
+      path,
+      (ptr) => _readJsonObject(bindings.removePluginDir(ptr)),
+    );
+
+    if (result?['ok'] == true) {
+      refreshDirs();
+      return true;
+    }
+
+    _lastError = result?['error'] is String
+        ? result!['error'] as String
+        : '删除扫描目录失败';
+    notifyListeners();
+    return false;
+  }
+
   // ── 扫描 ──────────────────────────────────────────────────────────
   /// 开始扫描；返回 false 表示没启动（已经在扫 / 后端没初始化）
   bool startScan() {

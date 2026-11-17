@@ -1,39 +1,34 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
+import 'package:junk_fusion_ui/model/fixed_playlist.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/playlist_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
-import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget/hash_image_or_default.dart';
-import 'package:junk_fusion_ui/widgets/helper_widget/hover_play_button.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
-// AlbumCoverImage（哈希 → image/<hash>/original.jpg）目前住在
-// single_album_page.dart 里，先复用；以后抽到 widgets/ 下面更合适
-import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
-import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_scroll_multiplatform/smooth_scroll_multiplatform.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
 // ════════════════════════════════════════════════════════════════
-// playlist_view_page.dart — 歌单视图（网格）
+// playlist_view_page.dart — 歌单视图（列表）
 //
 // 布局（自上而下）：
 //   第 1 行（50px）：标题「歌单」+「共 N 个」
-//   第 2 行（80px）：工具栏（新建歌单 [占位] + 排序方式下拉框 + 升降序按钮）
-//   第 3 部分：歌单网格（GridView，鼠标滚轮平滑滚动）
+//   第 2 行（80px）：工具栏（新建歌单）
+//   第 3 部分：歌单列表（鼠标滚轮平滑滚动），分两段：
 //
-// 单张卡片自上而下：封面 → 歌单名 →「共 N 首」。
+//       ── 固定歌单 ──     我喜欢 / 最近播放 / 最多播放
+//       ── 我的歌单 ──     用户自己建的（可右键删除）
+//
+// 固定歌单不是 playlists 表里的行，是对 songs 表的三种固定查询
+// （见 model/fixed_playlist.dart）。所以：
+//   · 它们**没有**右键菜单——一个只有「删除」且被禁用的菜单比不弹更糟；
+//   · 卡片封面位置画图标，不画封面图；
+//   · 打开时走 PlaylistProvider.openFixedPlaylist()，单歌单页照常复用。
+//
 // 点卡片走路由进 SinglePlaylistPage（见 pages_route.dart）。
-//
-// TODO(后端): 后端现在没有任何歌单接口，数据是空的（PlaylistProvider 里
-//             全是 TODO），所以这一页现在只会显示空状态。
-//             新建 / 改名 / 删除 / 增删歌曲这些「管理」操作，
-//             等 bindings 里注册了对应函数再接（按钮先禁用占位）。
 // ════════════════════════════════════════════════════════════════
 
 class PlaylistViewPage extends StatefulWidget {
@@ -52,19 +47,42 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
     );
   }
 
-  /// 没有歌单时的提示
-  Widget _buildEmptyHint(AppTheme theme) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(TablerIcons.playlist, size: 64, color: theme.colorEdge),
-          const SizedBox(height: 15),
-          Text('还没有任何歌单', style: theme.midTextStyle),
-          // const SizedBox(height: 5),
-          // Text('歌单后端接口还没做，做完就能新建歌单了', style: theme.littleTextStyle),
-        ],
+  /// 打开固定歌单：数据由 Provider 现查，路由只用来压栈
+  void _openFixedPlaylist(FixedPlaylistKind kind) {
+    final provider = context.read<PlaylistProvider>();
+
+    // 先让 provider 把歌准备好，再压路由（SinglePlaylistPage 不接参数）
+    provider.openFixedPlaylist(kind);
+
+    context.read<PagesRouteController>().push(
+      PagesRouteTable.singlePlaylist(
+        PlaylistBasicInfo(
+          id: kind.syntheticId,
+          title: kind.title,
+          createTime: '',
+          hash: null,
+        ),
       ),
+    );
+  }
+
+  /// 右键菜单（只有「我的歌单」有）
+  void _showPlaylistMenu(
+    BuildContext context,
+    Offset position,
+    int playlistId,
+  ) {
+    showRootContextMenu(
+      context: context,
+      position: position,
+      useBarrier: true,
+      items: [
+        ContextMenuItem(
+          label: '删除歌单',
+          onTap: () =>
+              context.read<PlaylistProvider>().deletePlaylist(playlistId),
+        ),
+      ],
     );
   }
 
@@ -78,6 +96,17 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
     final hasCurrentSong = context.select<PlaybackProvider, bool>(
       (provider) => provider.curBasicInfo != null,
     );
+
+    // 一段一段拼成列表项：段标题 / 固定歌单 / 用户歌单 / 空提示
+    final entries = <_PlaylistListEntry>[
+      const _SectionHeaderEntry('固定歌单'),
+      for (final kind in FixedPlaylistKind.values) _FixedEntry(kind),
+      const _SectionHeaderEntry('我的歌单'),
+      if (playlists.isEmpty)
+        const _EmptyHintEntry()
+      else
+        for (final playlist in playlists) _CustomEntry(playlist),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,67 +145,177 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
                 ),
               ),
 
-              // 弹性空间（把排序控件推到最右边）
+              // 弹性空间（以后排序控件放右边）
               const Spacer(),
             ],
           ),
         ),
 
-        // ── 第 3 部分：歌单网格（虚拟滚动，填充剩余空间） ──
+        // ── 第 3 部分：歌单列表（虚拟滚动，填充剩余空间） ──
         Expanded(
-          child: playlists.isEmpty
-              ? _buildEmptyHint(theme)
-              : DynMouseScroll(
-                  builder: (context_, controler_, physics_) {
-                    return ListView.builder(
-                      controller: controler_,
-                      physics: physics_,
-                      itemCount: playlists.length,
-                      padding: EdgeInsets.only(
-                        right: 10, // 给滚动条留点位置
-                        bottom: hasCurrentSong ? 90 : 0, // 有歌在播时别被 PlayBar 遮住
-                      ),
-                      itemBuilder: (context, index) {
-                        final playlist = playlists[index];
-
-                        return GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _openPlaylist(playlist),
-                          onSecondaryTapDown: (details) => showRootContextMenu(
-                            context: context,
-                            position: details.globalPosition,
-                            useBarrier: true,
-                            items: [
-                              ContextMenuItem(
-                                label: "删除歌单",
-                                onTap: () => context
-                                    .read<PlaylistProvider>()
-                                    .deletePlaylist(playlist.id),
-                              ),
-                            ],
-                          ),
-                          child: _PlaylistCard(
-                            key: ValueKey(playlist.id),
-                            playlist: playlist,
-                          ),
-                        );
-                      },
-                    );
-                  },
+          child: DynMouseScroll(
+            builder: (context_, controler_, physics_) {
+              return ListView.builder(
+                controller: controler_,
+                physics: physics_,
+                itemCount: entries.length,
+                padding: EdgeInsets.only(
+                  right: 10, // 给滚动条留点位置
+                  bottom: hasCurrentSong ? 90 : 0, // 有歌在播时别被 PlayBar 遮住
                 ),
+                itemBuilder: (context, index) => _buildEntry(entries[index]),
+              );
+            },
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildEntry(_PlaylistListEntry entry) {
+    return switch (entry) {
+      _SectionHeaderEntry(:final title) => _SectionHeader(title: title),
+      _FixedEntry(:final kind) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _openFixedPlaylist(kind),
+        // 固定歌单刻意不挂右键菜单（删不掉的东西不该有删除菜单）
+        child: _FixedPlaylistCard(key: ValueKey(kind), kind: kind),
+      ),
+      _CustomEntry(:final playlist) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _openPlaylist(playlist),
+        onSecondaryTapDown: (details) =>
+            _showPlaylistMenu(context, details.globalPosition, playlist.id),
+        child: _PlaylistCard(key: ValueKey(playlist.id), playlist: playlist),
+      ),
+      _EmptyHintEntry() => const _EmptyHint(),
+    };
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 列表项类型（sealed：加一种新的行，下面的 switch 会强制你处理）
+// ════════════════════════════════════════════════════════════════
+sealed class _PlaylistListEntry {
+  const _PlaylistListEntry();
+}
+
+class _SectionHeaderEntry extends _PlaylistListEntry {
+  final String title;
+  const _SectionHeaderEntry(this.title);
+}
+
+class _FixedEntry extends _PlaylistListEntry {
+  final FixedPlaylistKind kind;
+  const _FixedEntry(this.kind);
+}
+
+class _CustomEntry extends _PlaylistListEntry {
+  final PlaylistBasicInfo playlist;
+  const _CustomEntry(this.playlist);
+}
+
+class _EmptyHintEntry extends _PlaylistListEntry {
+  const _EmptyHintEntry();
+}
+
+// ════════════════════════════════════════════════════════════════
+// 段标题：固定歌单 / 我的歌单
+// ════════════════════════════════════════════════════════════════
+class _SectionHeader extends StatelessWidget {
+  final String title;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<AppTheme>();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 2, left: 2),
+      child: Text(
+        title,
+        style: theme.littleTextStyle.copyWith(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// _FixedPlaylistCard — 固定歌单卡片
+//
+// 和用户歌单卡片同样高（50px 封面 + 一行字），只是封面位置画图标，
+// 右边那列换成"最多 200 首"，让人一眼看出这不是自己建的。
+// ════════════════════════════════════════════════════════════════
+class _FixedPlaylistCard extends StatelessWidget {
+  final FixedPlaylistKind kind;
+
+  const _FixedPlaylistCard({super.key, required this.kind});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<AppTheme>();
+
+    return Row(
+      children: [
+        // 图标代替封面
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: theme.colorHover,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Icon(kind.icon, size: 24, color: theme.colorStress),
+        ),
+        const VerticalDivider(width: 10),
+        Expanded(
+          child: Text(
+            kind.title,
+            style: theme.midTextStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(kind.subtitle, style: theme.littleTextStyle),
+        const SizedBox(width: 20),
+        Text('最多 200 首', style: theme.littleTextStyle),
       ],
     );
   }
 }
 
 // ════════════════════════════════════════════════════════════════
-// _PlaylistCard — 单个歌单卡片
+// _EmptyHint — 「我的歌单」为空时的提示
 //
-// TODO(后端): 卡片还没有右键菜单（重命名 / 删除歌单 / 播放）。
-//             等歌单管理接口注册好之后，和专辑卡片一起接
-//             flutter_root_context_menu（用法参考
-//             widgets/PlayControl/more_play_info.dart）。
+// 固定歌单永远有三个，所以页面不会再出现"整页空白"，
+// 空状态只针对用户歌单那一段。
+// ════════════════════════════════════════════════════════════════
+class _EmptyHint extends StatelessWidget {
+  const _EmptyHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<AppTheme>();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(TablerIcons.playlist, size: 40, color: theme.colorEdge),
+            const SizedBox(height: 10),
+            Text('还没有自己建的歌单', style: theme.midTextStyle),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// _PlaylistCard — 用户自己建的歌单卡片
 // ════════════════════════════════════════════════════════════════
 class _PlaylistCard extends StatefulWidget {
   final PlaylistBasicInfo playlist;

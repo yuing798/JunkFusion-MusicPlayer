@@ -407,6 +407,32 @@ extern "C" {
     }
 
     //===================================================================================
+    // 固定歌单（我喜欢 / 最近播放 / 最多播放）
+    //
+    // 它们不是 playlists 表里的行，是三种固定查询，所以歌单页把三者当虚拟歌单渲染。
+    // 返回完整的歌曲基本信息（不是 songId 列表），前端可以直接拿去播/显示，
+    // 不用再按 id 逐个回查。
+    const char* getFixedPlaylistSongs(const char* kind) {
+        Yvar envelope = Yvar::object();
+        Yvar songs = Yvar::array();
+
+        // FFI 边界不能让异常逃出去
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext != nullptr && kind != nullptr) {
+                songs = dbContext->songsManage.getFixedPlaylistSongs(kind);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getFixedPlaylistSongs 异常:{}", e.what());
+        } catch (...) {
+        }
+
+        envelope.set("songs", songs);
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    //===================================================================================
     // 插件库（VST3 扫描）
     //
     // 这一层只做三件事：拿指针、调 PluginHost、把结果包成 JSON。

@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:ffi';
 
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/Macro/coordinatorMacro.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
+import 'package:junk_fusion_ui/model/fixed_playlist.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/model/playlist_detail_info.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
@@ -49,6 +49,13 @@ class PlaylistProvider extends ChangeNotifier {
   PlaylistDetailInfo? _curDetailInfo;
   PlaylistDetailInfo? get curDetailInfo => _curDetailInfo;
 
+  /// 当前打开的是不是固定歌单（我喜欢/最近播放/最多播放）；null = 普通歌单
+  ///
+  /// 单歌单页靠它决定：封面位置画图标还是封面图、空状态文案、以及
+  /// "移出歌单"这类只有真歌单才有的操作要不要出现。
+  FixedPlaylistKind? _curFixedKind;
+  FixedPlaylistKind? get curFixedKind => _curFixedKind;
+
   /// 当前歌单里的歌（SongProvider 里的实时数据）
   List<SongBasicInfo> _songsInPlaylist = [];
   List<SongBasicInfo> get songsInPlaylist => _songsInPlaylist;
@@ -62,7 +69,9 @@ class PlaylistProvider extends ChangeNotifier {
       );
       // 后端返回 {"playlistsList": [...]}；库异常时会退化成空数组，
       // 这里再做一层保护，避免 null 把启动流程炸掉
-      final list = decoded is Map ? decoded[CoordinatorMacro.playlistsList] : null;
+      final list = decoded is Map
+          ? decoded[CoordinatorMacro.playlistsList]
+          : null;
 
       _playlists = (list is List)
           ? list.map((e) => PlaylistBasicInfo.fromJson(e)).toList()
@@ -77,6 +86,7 @@ class PlaylistProvider extends ChangeNotifier {
   /// 进某个歌单：把歌单详情和里面的歌准备好
   /// （和 AlbumProvider.setNewAlbum() 一个套路，SinglePlaylistPage 从这里读）
   void setNewPlaylist(int playlistId) {
+    _curFixedKind = null;
     _curBasicInfo = _playlists
         .where((each) => each.id == playlistId)
         .firstOrNull;
@@ -96,6 +106,55 @@ class PlaylistProvider extends ChangeNotifier {
           .toList();
     }
     notifyListeners();
+  }
+
+  /// 打开一个固定歌单（我喜欢 / 最近播放 / 最多播放）
+  ///
+  /// 和 [setNewPlaylist] 的区别：普通歌单里后端只给 songId 列表，歌的信息要回
+  /// SongProvider 补；固定歌单本身就是对 songs 表的查询，后端直接把完整基本信息
+  /// 一次给全，所以这里不需要 ensureSongsLoaded。
+  void openFixedPlaylist(FixedPlaylistKind kind) {
+    _curFixedKind = kind;
+    _curDetailInfo = null;
+
+    // 固定歌单没有真实 id，用负数合成一个（见 FixedPlaylistKind.syntheticId）；
+    // createTime 留空——单歌单页只在普通歌单的卡片列表里显示它
+    _curBasicInfo = PlaylistBasicInfo(
+      id: kind.syntheticId,
+      title: kind.title,
+      createTime: '',
+      hash: null,
+    );
+
+    _songsInPlaylist = _requestFixedSongs(kind);
+    notifyListeners();
+  }
+
+  /// 问后端要某个固定歌单的歌（最多 200 首，上限在后端写死）
+  List<SongBasicInfo> _requestFixedSongs(FixedPlaylistKind kind) {
+    final ptr = UtilFunction.string2cPtr(kind.wireName);
+    try {
+      final raw = UtilFunction.cPtr2String(bindings.getFixedPlaylistSongs(ptr));
+      if (raw.isEmpty) return <SongBasicInfo>[];
+
+      final decoded = jsonDecode(raw);
+      final list = decoded is Map ? decoded['songs'] : null;
+      if (list is! List) return <SongBasicInfo>[];
+
+      final songs = <SongBasicInfo>[
+        for (final item in list)
+          if (item is Map) SongBasicInfo.fromJson(item.cast<String, dynamic>()),
+      ];
+
+      // 顺手刷新一次缓存：喜欢状态、播放次数都在这批数据里
+      songProvider.addOrUpdateSongs(songs);
+      return songs;
+    } catch (e) {
+      print('[PlaylistProvider] 读取固定歌单失败 $e');
+      return <SongBasicInfo>[];
+    } finally {
+      malloc.free(ptr);
+    }
   }
 
   /// 打开「新建歌单」弹窗（标题输入 + 点选/拖拽封面图片）

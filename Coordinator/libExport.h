@@ -107,6 +107,20 @@ extern "C" {
     DLL_EXPORT void updateCoverByPath(long long playlistId, const char* coverPath);
     DLL_EXPORT void updateCoverBySongId(long long playlistId, long long songId);
 
+    /**
+     * @brief 固定歌单的歌曲（我喜欢 / 最近播放 / 最多播放）
+     *
+     * 这三个**不是** playlists 表里的行，而是对 songs 表的三种固定查询：
+     *   liked       → isMyLike=1，按最近播放时间倒序
+     *   recent      → 有 lastPlayTime，按时间倒序
+     *   mostPlayed  → playNum>0，按次数倒序
+     * 所以歌单页把它们当"虚拟歌单"渲染，右键没有删除菜单。
+     *
+     * @param kind "liked" / "recent" / "mostPlayed"；其它值返回空数组
+     * @return {"songs":[...]}，元素结构和 getBasicSongInfo 完全一致，最多 200 首
+     */
+    DLL_EXPORT const char* getFixedPlaylistSongs(const char* kind);
+
     //===================================================================================
     // 文件夹管理函数
 

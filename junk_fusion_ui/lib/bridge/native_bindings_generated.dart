@@ -308,6 +308,29 @@ class JunkFusionDLLBindings {
   late final _getEqPresetParams = _getEqPresetParamsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// @brief 固定歌单的歌曲（我喜欢 / 最近播放 / 最多播放）
+  ///
+  /// 这三个**不是** playlists 表里的行，而是对 songs 表的三种固定查询：
+  /// liked       → isMyLike=1，按最近播放时间倒序
+  /// recent      → 有 lastPlayTime，按时间倒序
+  /// mostPlayed  → playNum>0，按次数倒序
+  /// 所以歌单页把它们当"虚拟歌单"渲染，右键没有删除菜单。
+  ///
+  /// @param kind "liked" / "recent" / "mostPlayed"；其它值返回空数组
+  /// @return {"songs":[...]}，元素结构和 getBasicSongInfo 完全一致，最多 200 首
+  ffi.Pointer<ffi.Char> getFixedPlaylistSongs(ffi.Pointer<ffi.Char> kind) {
+    return _getFixedPlaylistSongs(kind);
+  }
+
+  late final _getFixedPlaylistSongsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('getFixedPlaylistSongs');
+  late final _getFixedPlaylistSongs = _getFixedPlaylistSongsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   ffi.Pointer<ffi.Char> getPlaylistBasicInfo(int id) {
     return _getPlaylistBasicInfo(id);
   }
