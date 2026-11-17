@@ -168,9 +168,9 @@ class JunkFusionDLLBindings {
   /// @brief 插件列表
   ///
   /// @return {"plugins":[{"filePath","identifier","name","vendor","category","type",
-  ///                      "numInputs","numOutputs","scanStatus","scanError"}]}
-  ///         type 只有 "instrument" / "effect" / "other" 三种；
-  ///         scanStatus=="failed" 的行 name 是文件名，scanError 里是原因。
+  /// "numInputs","numOutputs","scanStatus","scanError"}]}
+  /// type 只有 "instrument" / "effect" / "other" 三种；
+  /// scanStatus=="failed" 的行 name 是文件名，scanError 里是原因。
   ffi.Pointer<ffi.Char> getAllPluginsView() {
     return _getAllPluginsView();
   }
@@ -334,7 +334,7 @@ class JunkFusionDLLBindings {
   /// @brief 扫描状态（前端用来画"扫描中 5/12"）
   ///
   /// @return {"scan":{"state":"idle"|"running"|"done"|"failed",
-  ///                  "total":int,"processed":int,"failed":int,"message":"..."}}
+  /// "total":int,"processed":int,"failed":int,"message":"..."}}
   ffi.Pointer<ffi.Char> getPluginScanState() {
     return _getPluginScanState();
   }
@@ -846,7 +846,7 @@ class JunkFusionDLLBindings {
   /// @brief 开始一次扫描（后台线程，立即返回）
   ///
   /// @return {"started":true|false, "error":"..."}
-  ///         started=false 只有两种情况：已经在扫 / 插件模块没初始化。
+  /// started=false 只有两种情况：已经在扫 / 插件模块没初始化。
   ffi.Pointer<ffi.Char> startPluginScan() {
     return _startPluginScan();
   }
