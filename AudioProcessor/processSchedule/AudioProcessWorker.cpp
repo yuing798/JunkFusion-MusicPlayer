@@ -176,6 +176,10 @@ AudioProcessWorker::AudioProcessWorker(std::string pushPullPort, std::string pub
     receiver = std::make_unique<AudioProcessorPuller>(zmqContext, pushPullPort);
     sender = std::make_unique<AudioProcessorPuber>(zmqContext, pubSubPort);
 
+    // 这里**不** startThread()：回调还没接好，见 start() 的注释
+}
+
+void AudioProcessWorker::start() {
     receiver->startThread();
     sender->startThread();
 }

@@ -154,6 +154,14 @@ GodProcessor::GodProcessor(
         mDeviceManager = std::make_unique<DeviceManager>(configFile);
         mDeviceManager->connectProcessor(this);
     }
+
+    // ── 最后一步：启动 IPC 线程 ──
+    //
+    // 必须放在构造函数**最后**：此时上面所有回调都赋值完了、mSpectrum 等成员
+    // 也都构造完了。提前启动的话，Coordinator 在进程一起来就发的 `spectrumShm`
+    // 可能落进"线程在收消息、回调还是 null"的窗口里被静默丢掉（实测 19 次丢 5 次），
+    // 那整场都没有频谱数据。详见 AudioProcessWorker::start() 的注释。
+    mWorker.start();
 }
 
 void GodProcessor::playNextOrPreviousSong(bool nextOrPrevious) {

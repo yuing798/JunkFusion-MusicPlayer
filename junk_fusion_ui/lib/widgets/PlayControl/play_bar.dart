@@ -47,7 +47,7 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final PlayList _playList;
 
   /// 播放栏高度：进度条那一行（约 32）+ 三区主体（约 84）
-  static const double _height = 116;
+  static const double _height = 100;
   @override
   void initState() {
     super.initState();
@@ -229,9 +229,9 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
           // 没有歌在播时 SongProgressArea 返回 SizedBox.shrink()，
           // 不给最小高度的话播放栏会突然变矮，整个界面跟着跳一下。
           Padding(
-            padding: const EdgeInsets.fromLTRB(30, 6, 30, 0),
+            padding: const EdgeInsets.fromLTRB(30, 5, 30, 0),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 26),
+              constraints: const BoxConstraints(minHeight: 20),
               child: const SongProgressArea(),
             ),
           ),
