@@ -122,9 +122,31 @@ void AudioProcessorPuber::run() {
     // 稍微等待 100ms，防止“慢连接综合征”导致启动第一条消息丢失
     juce::Thread::sleep(100);
 
+    // ── 心跳 ──
+    //
+    // 只在这条 IPC 线程上发，**绝不能放到音频线程**：dump() 会分配内存、
+    // 这里还要拿锁，音频回调里做这些就是自找爆音。
+    // 代价是它只能证明"进程还活着"，证明不了"音频线程没卡死"——
+    // 想测后者要另加一个"每块自增的计数器"，等真遇到再补。
+    int64_t nextHeartbeatAt = juce::Time::currentTimeMillis();
+    int heartbeatSeq = 0;
+
+    auto sendHeartbeat = [&]() {
+        Yvar inner = Yvar::object();
+        inner.set(AudioMacro::heartbeatSeq, heartbeatSeq++);
+        inner.set(AudioMacro::heartbeatTs, juce::Time::currentTimeMillis());
+
+        Yvar envelope = Yvar::object();
+        envelope.set(AudioMacro::heartbeat, inner);
+
+        const std::string text = envelope.dump();
+        zmq::message_t zmsg(text.data(), text.size());
+        pubSocket.send(zmsg, zmq::send_flags::none);
+    };
+
     while (!threadShouldExit()) {
-        // 线程睡眠在此，等待被 sendMessage 唤醒。超时设为 500ms 方便退出检查
-        wakeUpEvent.wait(500);
+        // 线程睡眠在此，等待被 sendMessage 唤醒；100ms 醒来一次看看该不该发心跳
+        wakeUpEvent.wait(100);
 
         std::queue<std::string> localQueue;
         {
@@ -139,6 +161,12 @@ void AudioProcessorPuber::run() {
 
             zmq::message_t zmsg(msg.data(), msg.size());
             pubSocket.send(zmsg, zmq::send_flags::none);
+        }
+
+        const auto now = juce::Time::currentTimeMillis();
+        if (now >= nextHeartbeatAt) {
+            sendHeartbeat();
+            nextHeartbeatAt = now + kHeartbeatIntervalMs;
         }
     }
 }

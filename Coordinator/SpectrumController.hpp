@@ -41,6 +41,15 @@ public:
     /// 开/关音频进程的频谱分析（播放页进出时调）
     void setEnabled(bool enabled);
 
+    /**
+     * @brief 重新把共享内存的名字发给音频进程
+     *
+     * 音频进程被看门狗重启后，新进程并不知道这块内存存在，必须由
+     * Coordinator 再"递一次名片"，否则频谱会一直是空的。
+     * 由 dllManager 在 `onAudioProcessRestarted` 里调用。
+     */
+    void reannounce();
+
     /// 当前频段值（0~1），没有数据时返回 nullptr
     const float* getBands();
 
@@ -54,6 +63,9 @@ private:
     /// 用 seqlock 读一帧到内部缓冲；成功返回 true
     bool refresh();
 
+    /// 把"名字 + 字节数"发给音频进程（init 和 reannounce 共用）
+    void sendAttach();
+
     /// 当前进程号（拼进共享内存名字，避免多开时撞车）
     static uint32_t currentProcessId() noexcept;
 
@@ -62,6 +74,10 @@ private:
 
     /// 发给音频进程的通道（init 时注入）
     std::function<void(const std::string&)> mSend;
+
+    /// 上一次 setEnabled 的值：音频进程重启后要按这个值重新开一次分析，
+    /// 否则用户明明还在播放页，频谱却一直是空的
+    bool mEnabled{false};
 
     std::array<float, SpectrumShm::kBandCount> mBands{};
     std::array<float, SpectrumShm::kBandCount> mPeaks{};

@@ -7,8 +7,9 @@
 /// 用枚举最贴切（freezed 是给有字段的数据类用的，枚举用不上）。
 ///
 /// ── 200 首从哪来 ──────────────────────────────────────────────────────
-/// 后端 `SongsManage::kFixedPlaylistLimit = 200` 写死的，前端不再传数字，
-/// 只在副标题里说明"最多 200 首"。两边要改一起改。
+/// 「最近播放」「最多播放」的上限写在后端
+/// `SongsManage::kFixedPlaylistLimit = 200`，前端不传数字，只在卡片上标一句
+/// 「最多 200 首」；「我喜欢」**没有上限**，标「全部」。
 ///
 /// ── 用法 ──────────────────────────────────────────────────────────────
 ///     for (final kind in FixedPlaylistKind.values) { kind.title / kind.icon ... }
@@ -46,10 +47,19 @@ extension FixedPlaylistKindX on FixedPlaylistKind {
 
   /// 一句话说明这一份是怎么来的（卡片副标题）
   String get subtitle => switch (this) {
-    FixedPlaylistKind.liked => '点过喜欢的歌，按最近听过排序',
+    FixedPlaylistKind.liked => '你点过喜欢的全部歌曲',
     FixedPlaylistKind.recent => '按最后一次播放的时间排序',
     FixedPlaylistKind.mostPlayed => '按播放次数排序',
   };
+
+  /// 有没有条数上限
+  ///
+  /// 「我喜欢」是用户一首首点出来的，**不截断**；「最近播放」「最多播放」是
+  /// 榜单，后端各取前 200 首（`SongsManage::kFixedPlaylistLimit`）。
+  bool get hasLimit => this != FixedPlaylistKind.liked;
+
+  /// 卡片右侧那行字
+  String get limitText => hasLimit ? '最多 200 首' : '全部';
 
   /// 卡片封面位置的图标（固定歌单没有封面图，用图标代替）
   IconData get icon => switch (this) {

@@ -26,7 +26,7 @@ private:
     SongInfo getBasicInfoCol(SQLite::Statement& query);
     SongInfo getDetailInfoCol(SQLite::Statement& query);
 
-    /// 「固定歌单」最多返回多少首（我喜欢 / 最近播放 / 最多播放共用）
+    /// 「最近播放 / 最多播放」两个榜单最多返回多少首（「我喜欢」不设上限）
     static constexpr int kFixedPlaylistLimit = 200;
 
 public:
@@ -45,9 +45,11 @@ public:
      * 这三个不是 `playlists` 表里的行，而是对 songs 表的三种固定查询，
      * 所以歌单页把它们当"虚拟歌单"渲染，右键也没有删除。
      *
+     * **「我喜欢」不设上限**（用户一首首点出来的，截断会丢东西）；
+     * 另外两个是榜单，最多 kFixedPlaylistLimit 首。
+     *
      * @param kind "liked" / "recent" / "mostPlayed"，认不出来返回空数组
-     * @return 歌曲基本信息数组（元素结构和 getAllSongsBasicInfo 完全一样），
-     *         最多 kFixedPlaylistLimit 首
+     * @return 歌曲基本信息数组（元素结构和 getAllSongsBasicInfo 完全一样）
      */
     Yvar getFixedPlaylistSongs(const std::string& kind);
 

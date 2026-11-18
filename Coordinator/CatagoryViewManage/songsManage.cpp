@@ -246,10 +246,10 @@ Yvar SongsManage::getFixedPlaylistSongs(const std::string& kind) {
 
     std::string tail;
     if (kind == "liked") {
-        // 喜欢的歌按"最近听过"排，从没听过的排最后（SQLite 里 IS NULL 是 0/1，升序把非空放前面）
+        // 「我喜欢」不设上限：喜欢的歌是用户自己一首首点出来的，截断反而丢东西。
+        // 另外两个是"最近/最多"的榜单，天然只关心前面几名。
         tail = " WHERE songs.isMyLike = 1"
-               " ORDER BY songs.lastPlayTime IS NULL, songs.lastPlayTime DESC, songs.songId DESC"
-               " LIMIT :limit";
+               " ORDER BY songs.lastPlayTime IS NULL, songs.lastPlayTime DESC, songs.songId DESC";
     } else if (kind == "recent") {
         tail = " WHERE songs.lastPlayTime IS NOT NULL"
                " ORDER BY songs.lastPlayTime DESC, songs.songId DESC"
@@ -268,7 +268,8 @@ Yvar SongsManage::getFixedPlaylistSongs(const std::string& kind) {
 
     try {
         SQLite::Statement query(dbManage.readDb(), columns + tail);
-        query.bind(":limit", kFixedPlaylistLimit);
+        // 「我喜欢」的 SQL 里没有 :limit，绑一个不存在的参数 SQLiteCpp 会抛异常
+        if (kind != "liked") query.bind(":limit", kFixedPlaylistLimit);
 
         while (query.executeStep()) {
             results.push(getBasicInfoCol(query).toBasicJson());

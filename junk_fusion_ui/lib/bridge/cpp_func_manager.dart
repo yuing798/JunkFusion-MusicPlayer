@@ -38,6 +38,7 @@ class CppCallbackManager {
   ffi.NativeCallable<VoidFuncFunction>? _onFolderStructureChanged;
   ffi.NativeCallable<StringFuncFunction>? _onAddNewAlbum;
   ffi.NativeCallable<Int64FuncFunction>? _onDeleteAlbum;
+  ffi.NativeCallable<IntFuncFunction>? _onAudioProcessRestarted;
 
   /// 2. 注册回调到 C++
   void setupCallbacks(
@@ -122,6 +123,22 @@ class CppCallbackManager {
       albumProvider.deleteAlbum(albumId);
     });
 
+    // 音频进程被看门狗重启了（插件崩溃/挂死会把它带走，见 host-integration.md）
+    //
+    // attempt < 0 = 后端放弃了自动重启，必须让用户手动处理；
+    // 否则只需要把播放状态切回停止 + 提示一句。
+    _onAudioProcessRestarted = ffi.NativeCallable<IntFuncFunction>.listener((
+      int attempt,
+    ) {
+      playback.onAudioProcessRestarted(attempt);
+
+      UtilFunction.showErrorMessage(
+        attempt < 0
+            ? '音频进程反复崩溃，已停止自动重启。请检查最近用过的插件'
+            : '音频进程异常，已自动重启（第 $attempt 次），播放已停止',
+      );
+    });
+
     // 将生成的函数指针传给 C++
     bindings.registerErrorSendCallback(_errorSendcallable!.nativeFunction);
     bindings.registerFatalErrorSendCallback(
@@ -138,6 +155,9 @@ class CppCallbackManager {
     );
     bindings.registerOnAddNewAlbum(_onAddNewAlbum!.nativeFunction);
     bindings.registerOnDeleteAlbum(_onDeleteAlbum!.nativeFunction);
+    bindings.registerOnAudioProcessRestarted(
+      _onAudioProcessRestarted!.nativeFunction,
+    );
     bindings.requestOnPlayStateSync(_onPlayStateSync!.nativeFunction);
   }
 
@@ -152,6 +172,7 @@ class CppCallbackManager {
     bindings.registerOnFolderStructureChanged(ffi.nullptr);
     bindings.registerOnAddNewAlbum(ffi.nullptr);
     bindings.registerOnDeleteAlbum(ffi.nullptr);
+    bindings.registerOnAudioProcessRestarted(ffi.nullptr);
     bindings.requestOnPlayStateSync(ffi.nullptr);
 
     // 当不再需要回调时，必须 close 掉，否则会造成内存泄漏
@@ -164,6 +185,7 @@ class CppCallbackManager {
     _onFolderStructureChanged?.close();
     _onAddNewAlbum?.close();
     _onDeleteAlbum?.close();
+    _onAudioProcessRestarted?.close();
     _onPlayStateSync?.close();
   }
 }

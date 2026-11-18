@@ -52,6 +52,14 @@ public:
     std::function<void(int)> onPlayStateSync; // 请求同步播放状态
 
     /**
+     * @brief 音频进程被看门狗重启了（attempt = 第几次；-1 = 放弃自动重启）
+     *
+     * 重启后音频进程里什么都没有了（当前歌曲、播放进度全丢），前端收到这个
+     * 回调必须把播放状态切回"停止"，并提示用户。
+     */
+    std::function<void(int)> onAudioProcessRestarted;
+
+    /**
      * @brief 库里某首歌的元数据变了（我喜欢 / 播放次数）
      *
      * 查一次这首歌最新的 basic 信息，转成 SongImport::onAddOrUpdateSong 推给前端

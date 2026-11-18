@@ -50,6 +50,9 @@ private:
     juce::WaitableEvent wakeUpEvent;
     std::string mPubSubPort;
 
+    /// 心跳间隔：Coordinator 那边 3 秒收不到就判进程挂死（见 audioMacro::heartbeat）
+    static constexpr int kHeartbeatIntervalMs = 500;
+
 public:
     AudioProcessorPuber(zmq::context_t& ctx, std::string pubSubPort);
 

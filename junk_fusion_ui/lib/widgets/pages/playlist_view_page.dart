@@ -279,7 +279,7 @@ class _FixedPlaylistCard extends StatelessWidget {
         ),
         Text(kind.subtitle, style: theme.littleTextStyle),
         const SizedBox(width: 20),
-        Text('最多 200 首', style: theme.littleTextStyle),
+        Text(kind.limitText, style: theme.littleTextStyle),
       ],
     );
   }

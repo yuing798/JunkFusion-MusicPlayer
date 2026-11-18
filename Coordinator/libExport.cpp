@@ -77,6 +77,9 @@ extern "C" {
     void registerCurrentPTSCallback(DoubleFunc doubleFunc) {
         dllManager::getInstance().onCurrentPTSCallback = doubleFunc;
     }
+    void registerOnAudioProcessRestarted(IntFunc cb) {
+        dllManager::getInstance().onAudioProcessRestarted = cb;
+    }
     void sendSliderValue(const char* identify, double value, int isOSC) {
         auto identifyParam = identify;
         if (isOSC) {

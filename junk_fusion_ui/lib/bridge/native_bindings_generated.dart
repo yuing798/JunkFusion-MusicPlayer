@@ -311,13 +311,13 @@ class JunkFusionDLLBindings {
   /// @brief 固定歌单的歌曲（我喜欢 / 最近播放 / 最多播放）
   ///
   /// 这三个**不是** playlists 表里的行，而是对 songs 表的三种固定查询：
-  /// liked       → isMyLike=1，按最近播放时间倒序
-  /// recent      → 有 lastPlayTime，按时间倒序
-  /// mostPlayed  → playNum>0，按次数倒序
+  /// liked       → isMyLike=1，按最近播放时间倒序，**不限条数**
+  /// recent      → 有 lastPlayTime，按时间倒序，最多 200 首
+  /// mostPlayed  → playNum>0，按次数倒序，最多 200 首
   /// 所以歌单页把它们当"虚拟歌单"渲染，右键没有删除菜单。
   ///
   /// @param kind "liked" / "recent" / "mostPlayed"；其它值返回空数组
-  /// @return {"songs":[...]}，元素结构和 getBasicSongInfo 完全一致，最多 200 首
+  /// @return {"songs":[...]}，元素结构和 getBasicSongInfo 完全一致
   ffi.Pointer<ffi.Char> getFixedPlaylistSongs(ffi.Pointer<ffi.Char> kind) {
     return _getFixedPlaylistSongs(kind);
   }
@@ -570,6 +570,29 @@ class JunkFusionDLLBindings {
       );
   late final _registerOnAddOrUpdateSong = _registerOnAddOrUpdateSongPtr
       .asFunction<void Function(StringFunc)>();
+
+  /// @brief 注册「音频进程被自动重启了」回调
+  ///
+  /// 插件崩溃/挂死会把音频进程带走，Coordinator 的看门狗发现后会重新拉起它。
+  /// 重启后音频进程里什么都没有（当前歌曲、进度全丢），前端收到必须：
+  /// · 把播放状态切回"停止"；
+  /// · 提示用户"音频进程异常，已自动重启（第 N 次）"。
+  ///
+  /// @param cb 参数是第几次重启（从 1 开始）；**-1 = 反复崩溃，看门狗已放弃**，
+  /// 这时要让用户手动处理（别再自动点了）。
+  ///
+  /// TODO(契约): 真正的插件加载还没做，所以现在重启后不会自动恢复任何插件
+  /// （host-integration.md §6.2：绝不能自动恢复上次崩溃的插件）。
+  void registerOnAudioProcessRestarted(IntFunc cb) {
+    return _registerOnAudioProcessRestarted(cb);
+  }
+
+  late final _registerOnAudioProcessRestartedPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(IntFunc)>>(
+        'registerOnAudioProcessRestarted',
+      );
+  late final _registerOnAudioProcessRestarted =
+      _registerOnAudioProcessRestartedPtr.asFunction<void Function(IntFunc)>();
 
   /// @brief 注册「专辑被删掉了」回调
   ///

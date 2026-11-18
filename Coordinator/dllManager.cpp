@@ -65,6 +65,30 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
 
     mAudioProcessCoordinator = std::make_unique<AudioProcessCoordinator>();
     mOscSender = std::make_unique<OscSender>();
+
+    // ── 崩溃自愈：看门狗把音频进程重新拉起来之后要做的收尾 ──
+    //
+    // 插件能把音频进程直接带走（见 junk_fusion_plugin_lab/docs/host-integration.md），
+    // 进程内救不了，只能由 AudioProcessCoordinator 的看门狗发现并重启。
+    // 重启后有两件事必须做：
+    //   1. 把频谱共享内存的名字重新下发一遍（新进程不知道这块内存存在）；
+    //   2. 通知前端：播放已经中断，别让 UI 还显示在播。
+    mAudioProcessCoordinator->onAudioProcessRestarted = [this](int attempt) {
+        auto restartLogger{spdlog::get(LogDllID)};
+
+        if (attempt < 0) {
+            // 看门狗放弃了（重启太频繁）：交给前端弹致命提示，这里只记日志
+            if (restartLogger) restartLogger->critical("音频进程反复崩溃，已停止自动重启");
+            if (onAudioProcessRestarted) onAudioProcessRestarted(-1);
+            return;
+        }
+
+        if (restartLogger) restartLogger->warn("音频进程已重启（第 {} 次）", attempt);
+
+        if (mSpectrumController != nullptr) mSpectrumController->reannounce();
+        if (onAudioProcessRestarted) onAudioProcessRestarted(attempt);
+    };
+
     if (!mAudioProcessCoordinator->start(
             juce::File{exeDirPtr}.getChildFile("JunkFusionAudioProcess.exe"),
             mOscSender->getPort(),
@@ -177,6 +201,11 @@ dllManager::~dllManager() {
         mPluginScanJob.reset();
     }
     mPluginCatalog.reset();
+
+    // 音频进程的看门狗 / 收发线程都会打日志，必须在 spdlog::shutdown() **之前**
+    // 全部停掉。顺序反了的话，线程会在 registry 销毁的同时调 spdlog，
+    // 表现为"只在进程退出时崩在 spdlogd.dll（0xC0000005）"，实测踩过。
+    mAudioProcessCoordinator.reset();
 
     spdlog::get(LogDllID)->debug("---------------------------------------");
     spdlog::shutdown();
