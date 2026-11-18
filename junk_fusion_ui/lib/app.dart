@@ -18,10 +18,14 @@ class App extends StatefulWidget {
 //
 // 窗口结构（自外向内）：
 //   Stack
-//     ├─ 顶栏（通栏：拖窗口 + 最小化/最大化/关闭）
-//     └─ 三段式（图标栏 | 中间栏 | 主内容）   ← ThreeColumnLayout
-//     ├─ 底部播放栏（浮层，横跨整个窗口）
-//     └─ 全屏播放页（含独立主题、窗口顶栏和完整播放栏）
+//     ├─ Column
+//     │    ├─ 顶栏（通栏：拖窗口 + 最小化/最大化/关闭）
+//     │    ├─ 三段式（图标栏 | 中间栏 | 主内容）   ← ThreeColumnLayout（Expanded）
+//     │    └─ 底部播放栏                            ← 常驻，占布局空间
+//     └─ 全屏播放页（浮层，含独立主题、窗口顶栏和完整播放栏）
+//
+// 播放栏不在浮层里，所以各页面不需要为它留底部空白；
+// 唯一的浮层是全屏播放页。
 //
 // 三段式的宽度、拖拽都在 widgets/layout/ 里，这个文件只管把状态 provide 好。
 
@@ -50,7 +54,12 @@ class _AppState extends State<App> {
             // 同步播放状态到 Windows 任务栏（无可见 UI）
             // const WindowsTaskbarController(),
 
-            // ── 顶栏 + 三段式（图标栏 | 中间栏 | 主内容） ──
+            // ── 顶栏 + 三段式 + 常驻播放栏 ──
+            //
+            // 播放栏现在是 Column 的一部分（不再是浮层）：
+            //   · 内容区永远不会被它盖住，所以各页面不用再算"底部留白"；
+            //   · 窗口缩放时它跟着一起缩，不会出现"栏浮在内容上"的错觉。
+            // 真正的浮层只剩全屏播放页（它要盖住顶栏，仍然留在 Stack 里）。
             Positioned.fill(
               child: ColoredBox(
                 // 整个窗口的底色；图标栏和中间栏自己再涂 colorNav
@@ -69,13 +78,13 @@ class _AppState extends State<App> {
                         ),
                       ),
                     ),
+
+                    // 底部播放栏：常驻，属于布局而不是浮层
+                    const PlayBar(),
                   ],
                 ),
               ),
             ),
-
-            // ── 底部播放栏（浮在最上面，横跨整个窗口） ──
-            Positioned(left: 0, right: 0, bottom: 0, child: const PlayBar()),
 
             // ── 全屏播放页：背景覆盖顶栏，页内复用窗口控制和完整播放栏 ──
             Positioned.fill(child: const SongPlayPage()),

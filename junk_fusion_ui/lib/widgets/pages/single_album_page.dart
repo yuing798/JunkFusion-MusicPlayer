@@ -132,10 +132,6 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
       return const SizedBox.shrink();
     }
 
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,7 +243,7 @@ class _SingleAlbumPageState extends State<SingleAlbumPage> {
                       itemCount: albumSongs.length,
                       // 固定行高（和 EachSong 的 80 对齐，性能优化）
                       itemExtent: 80,
-                      padding: EdgeInsets.only(bottom: hasCurrentSong ? 90 : 0),
+                      // 播放栏在布局里，不用再留底部空白
                       itemBuilder: (context, index) {
                         final song = albumSongs[index];
 

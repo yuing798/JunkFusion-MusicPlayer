@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/layout_controller.dart';
 import 'package:junk_fusion_ui/widgets/nav/pages_nav_table.dart';
@@ -35,12 +34,6 @@ class IconRail extends StatelessWidget {
     final theme = context.watch<AppTheme>();
     final selectedId = context.watch<PagesRouteController>().currentNavId;
 
-    // 有歌在播的时候底部 PlayBar 会盖住最下面 90px，最后几个图标得能滚上来；
-    // 没歌的时候不留这块空白（不然图标栏明明放得下却能滚，很怪）
-    final hasPlayBar = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
-
     return Container(
       width: LayoutController.railWidth,
       color: theme.colorNav,
@@ -52,7 +45,8 @@ class IconRail extends StatelessWidget {
         ),
       ),
       child: SingleChildScrollView(
-        padding: EdgeInsets.only(top: 8, bottom: hasPlayBar ? 100 : 8),
+        // 播放栏现在在布局里（不浮在上面），所以这里不用再留 100px 空白
+        padding: const EdgeInsets.only(top: 8, bottom: 8),
         child: Column(
           children: [
             // 按分组画：组和组之间一条细分隔线

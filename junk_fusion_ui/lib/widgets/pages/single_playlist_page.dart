@@ -90,10 +90,6 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
     // null = 普通歌单；非空 = 固定歌单（我喜欢/最近播放/最多播放）
     final fixedKind = playlistProvider.curFixedKind;
 
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,7 +190,7 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
                       itemCount: songs.length,
                       // 固定行高（和 EachSong 的 80 对齐，性能优化）
                       itemExtent: 80,
-                      padding: EdgeInsets.only(bottom: hasCurrentSong ? 90 : 0),
+                      // 播放栏在布局里，不用再留底部空白
                       itemBuilder: (context, index) {
                         final song = songs[index];
 

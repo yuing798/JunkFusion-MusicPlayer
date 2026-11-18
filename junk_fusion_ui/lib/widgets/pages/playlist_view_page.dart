@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_root_context_menu/flutter_root_context_menu.dart';
 import 'package:junk_fusion_ui/model/fixed_playlist.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
-import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/playlist_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/helper_widget/hash_image_or_default.dart';
@@ -93,10 +92,6 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
     final playlists = context.watch<PlaylistProvider>().playlists.toList()
       ..sort((a, b) => a.id.compareTo(b.id));
 
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
-
     // 一段一段拼成列表项：段标题 / 固定歌单 / 用户歌单 / 空提示
     final entries = <_PlaylistListEntry>[
       const _SectionHeaderEntry('固定歌单'),
@@ -159,10 +154,8 @@ class _PlaylistViewPageState extends State<PlaylistViewPage> {
                 controller: controler_,
                 physics: physics_,
                 itemCount: entries.length,
-                padding: EdgeInsets.only(
-                  right: 10, // 给滚动条留点位置
-                  bottom: hasCurrentSong ? 90 : 0, // 有歌在播时别被 PlayBar 遮住
-                ),
+                // 播放栏在布局里，不用再留底部空白
+                padding: const EdgeInsets.only(right: 10),
                 itemBuilder: (context, index) => _buildEntry(entries[index]),
               );
             },
