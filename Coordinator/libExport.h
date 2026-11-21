@@ -56,7 +56,23 @@ extern "C" {
     DLL_EXPORT void pausePlay(); // 暂停播放
     DLL_EXPORT void registerCurrentPTSCallback(DoubleFunc doubleFunc);
     DLL_EXPORT void sendSliderValue(const char* identify, double value, int isOSC);
-    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb); // 请求播放下一首或上一首歌曲
+    DLL_EXPORT void registerOnPlayNextOrPreviousSong(IntFunc cb); // 请求播放下一首或上一首歌
+
+    /**
+     * @brief 注册「音频进程被自动重启了」回调
+     *
+     * 插件崩溃/挂死会把音频进程带走，Coordinator 的看门狗发现后会重新拉起它。
+     * 重启后音频进程里什么都没有（当前歌曲、进度全丢），前端收到必须：
+     *   · 把播放状态切回"停止"；
+     *   · 提示用户"音频进程异常，已自动重启（第 N 次）"。
+     *
+     * @param cb 参数是第几次重启（从 1 开始）；**-1 = 反复崩溃，看门狗已放弃**，
+     *           这时要让用户手动处理（别再自动点了）。
+     *
+     * TODO(契约): 真正的插件加载还没做，所以现在重启后不会自动恢复任何插件
+     *            （host-integration.md §6.2：绝不能自动恢复上次崩溃的插件）。
+     */
+    DLL_EXPORT void registerOnAudioProcessRestarted(IntFunc cb);
 
     DLL_EXPORT const char* getDetailSongInfo(long long songId);
     DLL_EXPORT const char* getBasicSongInfo(long long songId);
@@ -106,6 +122,20 @@ extern "C" {
     DLL_EXPORT void renamePlaylist(long long playlistId, const char* title);
     DLL_EXPORT void updateCoverByPath(long long playlistId, const char* coverPath);
     DLL_EXPORT void updateCoverBySongId(long long playlistId, long long songId);
+
+    /**
+     * @brief 固定歌单的歌曲（我喜欢 / 最近播放 / 最多播放）
+     *
+     * 这三个**不是** playlists 表里的行，而是对 songs 表的三种固定查询：
+     *   liked       → isMyLike=1，按最近播放时间倒序，**不限条数**
+     *   recent      → 有 lastPlayTime，按时间倒序，最多 200 首
+     *   mostPlayed  → playNum>0，按次数倒序，最多 200 首
+     * 所以歌单页把它们当"虚拟歌单"渲染，右键没有删除菜单。
+     *
+     * @param kind "liked" / "recent" / "mostPlayed"；其它值返回空数组
+     * @return {"songs":[...]}，元素结构和 getBasicSongInfo 完全一致
+     */
+    DLL_EXPORT const char* getFixedPlaylistSongs(const char* kind);
 
     //===================================================================================
     // 文件夹管理函数
@@ -283,6 +313,56 @@ extern "C" {
 
     DLL_EXPORT void renameEqPreset(long long id, const char* title);
     DLL_EXPORT void deleteEqPreset(long long id);
+
+    //===================================================================================
+    // 插件库（VST3 扫描）
+    //
+    // 扫描 = 遍历 pluginDirs 里的 .vst3 → 在**临时子进程**里枚举元数据 → 写 plugins 表。
+    // 子进程是为了隔离坏插件：坏插件在枚举阶段就能把进程带走，绝不能让它带走音频进程。
+    // 扫描是后台跑的，前端调 startPluginScan() 之后轮询 getPluginScanState()。
+
+    /**
+     * @brief 开始一次扫描（后台线程，立即返回）
+     *
+     * @return {"started":true|false, "error":"..."}
+     *         started=false 只有两种情况：已经在扫 / 插件模块没初始化。
+     */
+    DLL_EXPORT const char* startPluginScan();
+
+    /**
+     * @brief 扫描状态（前端用来画"扫描中 5/12"）
+     *
+     * @return {"scan":{"state":"idle"|"running"|"done"|"failed",
+     *                  "total":int,"processed":int,"failed":int,"message":"..."}}
+     */
+    DLL_EXPORT const char* getPluginScanState();
+
+    /**
+     * @brief 插件列表
+     *
+     * @return {"plugins":[{"filePath","identifier","name","vendor","category","type",
+     *                      "numInputs","numOutputs","scanStatus","scanError"}]}
+     *         type 只有 "instrument" / "effect" / "other" 三种；
+     *         scanStatus=="failed" 的行 name 是文件名，scanError 里是原因。
+     */
+    DLL_EXPORT const char* getAllPluginsView();
+
+    /** @brief 扫描目录列表 → {"dirs":[{"path":"...","isBuiltin":bool}]} */
+    DLL_EXPORT const char* getPluginDirs();
+
+    /** @brief 加一个扫描目录 → {"ok":bool,"error":"..."} */
+    DLL_EXPORT const char* addPluginDir(const char* path);
+
+    /** @brief 删一个扫描目录 → {"ok":bool,"error":"..."}（系统默认目录会被拒绝） */
+    DLL_EXPORT const char* removePluginDir(const char* path);
+
+    /**
+     * @brief 手动改插件类型（前端唯一允许改的字段）
+     *
+     * 重扫**不会**覆盖这里改的值——元数据整条错掉的插件（OB-Xd 报 0/0）
+     * 就靠这个纠正。失败时返回 {"ok":false}（identifier 不存在 / type 非法）。
+     */
+    DLL_EXPORT const char* setPluginType(const char* identifier, const char* type);
 
 #ifdef __cplusplus
 }

@@ -14,15 +14,17 @@
 #include <memory>
 #include <string>
 #include <zmq.hpp>
-AudioProcessCoordinator::AudioProcessCoordinator() {
+AudioProcessCoordinator::AudioProcessCoordinator() : juce::Thread("AudioProcessSupervisor") {
     mAudioProcessPusher = std::make_unique<AudioProcessPusher>(mContext, pushInitOK);
     mAudioProcessSuber = std::make_unique<AudioProcessSuber>(mContext, subInitOK);
+
+    // 心跳回调必须轻：只写一个原子变量，别在 SUB 线程上做别的事
+    mAudioProcessSuber->onHeartbeat = [this]() { noteHeartbeat(); };
 }
 
 bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce::File cacheDir) {
     auto logger{spdlog::get(LogDllID)};
 
-    // ── 2. 构造子进程命令行──
     juce::StringArray args;
     args.add(exeFile.getFullPathName());
 
@@ -41,7 +43,11 @@ bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce
     args.add(AudioMacro::oscPort);
     args.add(juce::String(oscPort));
 
-    if (!mChildProcess.start(args)) {
+    // 命令行留着给看门狗重启时复用：端口是 Coordinator 持有的 socket，
+    // 重启后不用变，新进程直接连回同样的端口
+    mArgs = args;
+
+    if (!spawnChild()) {
         if (logger)
             logger->critical("启动后端进程失败: {}", exeFile.getFullPathName().toStdString());
         return false;
@@ -49,31 +55,109 @@ bool AudioProcessCoordinator::start(const juce::File& exeFile, int oscPort, juce
     if (logger) logger->info("后端进程已启动: {}", exeFile.getFullPathName().toStdString());
 
     mRunning = true;
+    startThread(); // 看门狗
     return true;
 }
 
+bool AudioProcessCoordinator::spawnChild() {
+    if (mArgs.isEmpty()) return false;
+
+    // 心跳从"刚拉起来"开始计时：给新进程一个完整的超时窗口做初始化，
+    // 否则第一轮轮询就会判它挂死
+    mLastHeartbeatMs.store(juce::Time::currentTimeMillis());
+
+    mChildProcess = std::make_unique<juce::ChildProcess>();
+    return mChildProcess->start(mArgs);
+}
+
+void AudioProcessCoordinator::noteHeartbeat() noexcept {
+    mLastHeartbeatMs.store(juce::Time::currentTimeMillis());
+}
+
+void AudioProcessCoordinator::run() {
+    while (!threadShouldExit()) {
+        juce::Thread::sleep(kPollIntervalMs);
+        if (threadShouldExit() || !mRunning) continue;
+
+        if (mChildProcess == nullptr || !mChildProcess->isRunning()) {
+            handleChildLost("音频进程已退出");
+            continue;
+        }
+
+        const auto last = mLastHeartbeatMs.load();
+        if (last > 0 && juce::Time::currentTimeMillis() - last > kHeartbeatTimeoutMs) {
+            handleChildLost("音频进程心跳超时（疑似挂死）");
+        }
+    }
+}
+
+void AudioProcessCoordinator::handleChildLost(const char* reason) {
+    auto logger{spdlog::get(LogDllID)};
+    if (logger) logger->critical("[Supervisor] {}，准备重启", reason);
+
+    // 挂死的进程 kill 掉才能拿到干净的现场；正常退出的这里是个空操作
+    if (mChildProcess != nullptr && mChildProcess->isRunning()) {
+        mChildProcess->kill();
+        juce::Thread::sleep(200);
+    }
+    mChildProcess.reset();
+
+    const auto now = juce::Time::currentTimeMillis();
+    if (mRestartWindowStart == 0 || now - mRestartWindowStart > kRestartWindowMs) {
+        mRestartWindowStart = now;
+        mRestartCount = 0;
+    }
+    ++mRestartCount;
+
+    if (mRestartCount > kMaxRestartsInWindow) {
+        // 一加载就崩的插件会把这里打满。设上限是为了防「崩溃→重启→再崩」的
+        // 死循环；上层收到 -1 必须停下来让用户处理，不要自己再拉起。
+        mRunning = false;
+        if (logger)
+            logger->critical(
+                "[Supervisor] {} 秒内已重启 {} 次，放弃自动重启",
+                static_cast<int>(kRestartWindowMs / 1000),
+                kMaxRestartsInWindow
+            );
+        if (onAudioProcessRestarted) onAudioProcessRestarted(-1);
+        return;
+    }
+
+    if (!spawnChild()) {
+        // 拉不起来也走"丢了"这条路：下一轮轮询会再试，次数用完就放弃
+        if (logger) logger->error("[Supervisor] 重启失败，下一轮重试");
+        return;
+    }
+
+    if (logger) logger->info("[Supervisor] 已重启（第 {} 次）", mRestartCount);
+    if (onAudioProcessRestarted) onAudioProcessRestarted(mRestartCount);
+}
+
 void AudioProcessCoordinator::stop() {
+    // 先停看门狗：否则下面杀进程时它会立刻重新拉一个
+    mRunning = false;
+    if (isThreadRunning()) {
+        signalThreadShouldExit();
+        stopThread(2000);
+    }
+
+    if (mArgs.isEmpty() || mChildProcess == nullptr) return;
 
     Yvar obj = Yvar::object();
     obj.set(AudioMacro::killAudioProcess, "");
-    // Utils::writeEmergencyLog("在AudioProcessCoordinator::stop()中通知音频进程自杀");
     mAudioProcessPusher->sendMessage(obj.dump());
-    mRunning = false;
-    for (int time = 0; time < 300; time++) {
 
-        if (!mChildProcess.isRunning()) {
-            return;
-        }
+    for (int time = 0; time < 300; time++) {
+        if (!mChildProcess->isRunning()) return;
 
         if (time == 299) {
-            mChildProcess.kill();
+            mChildProcess->kill();
         } // 3秒没反应直接强杀
         juce::Thread::sleep(10);
     }
 }
 
 AudioProcessCoordinator::~AudioProcessCoordinator() {
-    // Utils::writeEmergencyLog("准备执行AudioProcessCoordinator的析构函数");
     stop();
     juce::Thread::sleep(100);
     if (mAudioProcessPusher) {
@@ -83,6 +167,7 @@ AudioProcessCoordinator::~AudioProcessCoordinator() {
         mAudioProcessSuber->stopThread(2000);
     }
 }
+
 
 AudioProcessPusher::AudioProcessPusher(zmq::context_t& context, juce::WaitableEvent& e)
     : juce::Thread("AudioProcessPusher"), mContext(context), portInitOK(e) {
@@ -162,6 +247,11 @@ void AudioProcessSuber::run() {
                 spdlog::get(LogDllID)->error("AudioProcessSuber接收到未知格式:{}", obj.toString());
                 continue;
             };
+            // 心跳：最先处理，因为它每 500ms 就来一条，必须最省
+            if (obj.has(AudioMacro::heartbeat)) {
+                if (onHeartbeat) onHeartbeat();
+                continue;
+            }
             // 音频进程上报采样率（UI 画频响曲线要用同一个 fs），处理完就走
             if (auto sampleRate = EqWire::decodeSampleRate(obj)) {
                 if (auto* eqController = dllManager::getInstance().getEqController()) {

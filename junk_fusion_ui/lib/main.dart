@@ -31,6 +31,8 @@ import 'providers/play_page_provider.dart';
 import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
+import 'providers/plugin_provider.dart';
+import 'providers/settings_nav_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); //确保flutter绑定初始化
@@ -313,6 +315,12 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ),
         // 当前歌曲的歌词（切歌时按 songId 拉一次）
         ChangeNotifierProvider<LyricProvider>(create: (_) => LyricProvider()),
+        // 插件库（设置页用）：同样懒创建，不在启动时碰 FFI
+        ChangeNotifierProvider<PluginProvider>(create: (_) => PluginProvider()),
+        // 设置页的目录 → 内容区跳转（中间栏和主内容区是两棵子树，靠它传话）
+        ChangeNotifierProvider<SettingsNavProvider>(
+          create: (_) => SettingsNavProvider(),
+        ),
         ChangeNotifierProvider(create: (_) => AppTheme()),
       ],
 

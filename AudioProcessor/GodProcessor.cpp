@@ -128,9 +128,12 @@ GodProcessor::GodProcessor(
     };
 
     mCrossFade.onCrossFadeEnd = [this] {
-        // 这里等下要把出水口堵住并且重置前面的DSP模块
+        // ⚠️ 这个回调在**音频线程**上（CrossFadeArea::processBlock 里），
+        // 所以只能做原子操作：暂停出水就够了，真正的停解码线程 + 清缓冲
+        // 留给这个 deck 下次被复用时的 beginNewDecoderThread()。
+        // 以前这里直接调 module.reset()，会在音频线程里等解码线程退出（最多 200ms）
+        // 并且并发改 fifo —— 每次切歌结束都埋一次卡顿/崩溃的雷。
         mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.pauseThread();
-        mDoubleDecks[!mCrossFade.getMainDeckIndex()].module.reset();
     };
 
     // 播放
@@ -154,6 +157,14 @@ GodProcessor::GodProcessor(
         mDeviceManager = std::make_unique<DeviceManager>(configFile);
         mDeviceManager->connectProcessor(this);
     }
+
+    // ── 最后一步：启动 IPC 线程 ──
+    //
+    // 必须放在构造函数**最后**：此时上面所有回调都赋值完了、mSpectrum 等成员
+    // 也都构造完了。提前启动的话，Coordinator 在进程一起来就发的 `spectrumShm`
+    // 可能落进"线程在收消息、回调还是 null"的窗口里被静默丢掉（实测 19 次丢 5 次），
+    // 那整场都没有频谱数据。详见 AudioProcessWorker::start() 的注释。
+    mWorker.start();
 }
 
 void GodProcessor::playNextOrPreviousSong(bool nextOrPrevious) {

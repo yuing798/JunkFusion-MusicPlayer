@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CenterDbManage/dbContext.hpp"
+#include "PluginHost/PluginCatalogManage.hpp"
+#include "PluginHost/PluginScanJob.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
 #include "Utils/Yvar.hpp"
 #include "Utils/constants.h"
@@ -37,6 +39,10 @@ private:
     std::unique_ptr<EqController> mEqController;         // EQ 参数下发与状态
     std::unique_ptr<SpectrumController> mSpectrumController; // 频谱共享内存（创建者 + 前端读取入口）
 
+    // ── 插件（VST3）──
+    std::unique_ptr<PluginHost::PluginCatalogManage> mPluginCatalog; // plugins / pluginDirs 表
+    std::unique_ptr<PluginHost::PluginScanJob> mPluginScanJob;       // 后台扫描任务
+
 public:
     // cpp主动向前端发送错误数据：非致命 -> 前端弹右下角卡片；致命 -> 前端弹模态窗
     std::function<void(const char*)> onErrorSendCallback;
@@ -44,6 +50,14 @@ public:
     std::function<void(double)> onCurrentPTSCallback; // 获取当前的播放进度条的callback
     std::function<void(int)> onPlayNextOrPreviousSong;
     std::function<void(int)> onPlayStateSync; // 请求同步播放状态
+
+    /**
+     * @brief 音频进程被看门狗重启了（attempt = 第几次；-1 = 放弃自动重启）
+     *
+     * 重启后音频进程里什么都没有了（当前歌曲、播放进度全丢），前端收到这个
+     * 回调必须把播放状态切回"停止"，并提示用户。
+     */
+    std::function<void(int)> onAudioProcessRestarted;
 
     /**
      * @brief 库里某首歌的元数据变了（我喜欢 / 播放次数）
@@ -64,6 +78,8 @@ public:
     FolderCheckTimer* getFolderCheckTimer() noexcept { return mFolderCheckTimer.get(); }
     EqController* getEqController() noexcept { return mEqController.get(); }
     SpectrumController* getSpectrumController() noexcept { return mSpectrumController.get(); }
+    PluginHost::PluginCatalogManage* getPluginCatalog() noexcept { return mPluginCatalog.get(); }
+    PluginHost::PluginScanJob* getPluginScanJob() noexcept { return mPluginScanJob.get(); }
 
     explicit dllManager();
     void init(const char* cacheDirId, const char* exeDirPtr);

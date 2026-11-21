@@ -31,6 +31,18 @@ class SongProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 批量写入（固定歌单一次就是 200 首，逐条 addOrUpdateSong 会 notify 200 次）
+  ///
+  /// 只有真的写进去了才 notify，空列表直接返回。
+  void addOrUpdateSongs(Iterable<SongBasicInfo> infos) {
+    var changed = false;
+    for (final info in infos) {
+      _idToInfoMap[info.songId] = info;
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
   /// 后端通知某首歌从库里删掉了（比如文件夹里的文件被删了）
   void deleteSong(int songId) {
     if (_idToInfoMap.remove(songId) == null) return;

@@ -26,6 +26,9 @@ private:
     juce::AudioBuffer<float> mSpeedShifterBuffer;
     std::atomic_bool isFullMute{false};
 
+    /// 非音频线程请求的重置，等音频线程在块首落地（见 reset()）
+    std::atomic_bool mResetPending{false};
+
     const float kMaxSpeedShiftValue{2.0f};
 
     /**
@@ -55,7 +58,27 @@ public:
     void beginNewDecoderThread(std::string songPath, double targetSeconds);
     void continueThread(); // 继续出水
     void pauseThread();    // 暂停出水
-    void reset();          // 重置线程
+
+    /**
+     * @brief 重置（**只能在非音频线程调用**）
+     *
+     * 会停掉解码线程，然后**请求音频线程**在下一块开头真正清空环形缓冲和
+     * 变速器的状态，并等它落地（最多 100ms）。
+     *
+     * ⚠️ 不能在这里直接 `mRingBuffer1.reset()` / `mStretch.reset()`：
+     *    fifo 的重置和音频线程里的 `popAudioData` / `processBlock` 并发执行时，
+     *    `prepareToRead` 可能返回越界的 start 下标，`copyFrom` 直接读飞。
+     *    实测表现：歌曲自然播完、在**当前正在出声的 deck** 上换下一首时进程崩溃。
+     */
+    void reset();
+
+    /**
+     * @brief 重置（**只能在音频线程调用**）
+     *
+     * 交叉淡化结束这类音频线程回调里用。不等待、不碰解码线程，
+     * 只清本块之后要用的状态。
+     */
+    void resetOnAudioThread();
 
     DONT_COPY_AND_MOVE(BeforeCrossFadeDSPModule)
 };

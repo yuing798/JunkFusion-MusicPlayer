@@ -6,6 +6,7 @@ import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/eq_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/folder_content_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/settings_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_album_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/single_playlist_page.dart';
 import 'package:provider/provider.dart';
@@ -54,11 +55,11 @@ class PagesRouteEntry {
 //
 // navId 和 widgets/nav/pages_nav_table.dart 里 PagesNavSection 的 id
 // 一一对应（图标、名字也在那张表里，两边改 id 要一起改）：
-//   1 我喜欢     2 最近播放
-//   3 专辑       4 歌单       5 文件夹    6 风格
+//   3 专辑       4 歌单       5 文件夹
 //   7 AI助手     8 效果器     9 均衡器    10 音箱阵列   11 设置
-// 目前 3 / 4 / 5 有页面了，其它的先走占位页。
+// 目前 3 / 4 / 5 / 9 / 11 有页面了，其它的先走占位页。
 // （0「所有音乐」已经删掉了：歌曲列表现在只在文件夹视图里呈现）
+// （1「我喜欢」/2「最近播放」已经并进歌单页的固定歌单，不再是导航段）
 // ════════════════════════════════════════════════════════════════
 abstract class PagesRouteTable {
   /// 左侧导航栏「专辑」的 id
@@ -72,6 +73,9 @@ abstract class PagesRouteTable {
 
   /// 左侧导航栏「均衡器」的 id
   static const int eqViewId = 9;
+
+  /// 左侧导航栏「设置」的 id
+  static const int settingsViewId = 11;
 
   /// 专辑（网格视图）
   static const PagesRouteEntry albumView = PagesRouteEntry(
@@ -105,6 +109,13 @@ abstract class PagesRouteTable {
     navId: eqViewId,
     title: '均衡器',
     builder: _buildEqView,
+  );
+
+  /// 设置（分节内容；中间栏是分节目录，点哪跳哪）
+  static const PagesRouteEntry settingsView = PagesRouteEntry(
+    navId: settingsViewId,
+    title: '设置',
+    builder: _buildSettingsView,
   );
 
   /// 单张专辑：要在路由表里现造一个（标题用专辑名）
@@ -161,6 +172,7 @@ abstract class PagesRouteTable {
     if (navId == playlistViewId) return playlistView;
     if (navId == folderViewId) return folderView;
     if (navId == eqViewId) return eqView;
+    if (navId == settingsViewId) return settingsView;
     return null;
   }
 }
@@ -172,6 +184,8 @@ Widget _buildPlaylistView(BuildContext context) => const PlaylistViewPage();
 Widget _buildFolderContent(BuildContext context) => const FolderContentPage();
 
 Widget _buildEqView(BuildContext context) => const EqViewPage();
+
+Widget _buildSettingsView(BuildContext context) => const SettingsPage();
 
 // ════════════════════════════════════════════════════════════════
 // 页面栈

@@ -37,7 +37,14 @@ void SpectrumController::init(const std::function<void(const std::string&)>& sen
     mFrame = static_cast<SpectrumShm::Frame*>(mShm->data());
     SpectrumShm::initialise(*mFrame);
 
-    if (!mSend) return;
+    sendAttach();
+
+    if (auto logger = spdlog::get(LogDllID))
+        logger->debug("频谱共享内存已创建并通知音频进程:{}", mShm->fullName());
+}
+
+void SpectrumController::sendAttach() {
+    if (!mSend || mShm == nullptr) return;
 
     Yvar inner = Yvar::object();
     inner.set(AudioMacro::spectrumName, mShm->fullName());
@@ -47,12 +54,21 @@ void SpectrumController::init(const std::function<void(const std::string&)>& sen
     envelope.set(AudioMacro::spectrumShm, inner);
 
     mSend(envelope.dump());
+}
+
+void SpectrumController::reannounce() {
+    if (mShm == nullptr || mFrame == nullptr) return;
+
+    sendAttach();
+    // 音频进程重启后分析开关也是关的：用户要是还在播放页，得替他重新打开
+    if (mEnabled) setEnabled(true);
 
     if (auto logger = spdlog::get(LogDllID))
-        logger->debug("频谱共享内存已创建并通知音频进程:{}", mShm->fullName());
+        logger->debug("音频进程重启，已重新下发频谱共享内存:{}", mShm->fullName());
 }
 
 void SpectrumController::setEnabled(bool enabled) {
+    mEnabled = enabled;
     if (!mSend) return;
 
     Yvar obj = Yvar::object();

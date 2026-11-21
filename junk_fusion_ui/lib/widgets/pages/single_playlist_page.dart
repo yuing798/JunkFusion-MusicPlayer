@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/model/fixed_playlist.dart';
 import 'package:junk_fusion_ui/model/song_basic_info.dart';
 import 'package:junk_fusion_ui/providers/playback_provider.dart';
 import 'package:junk_fusion_ui/providers/playlist_provider.dart';
@@ -86,9 +87,8 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
       return const SizedBox.shrink();
     }
 
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
+    // null = 普通歌单；非空 = 固定歌单（我喜欢/最近播放/最多播放）
+    final fixedKind = playlistProvider.curFixedKind;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,11 +98,24 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
           height: 60,
           child: Row(
             children: [
-              // 封面（小图，和大图共用 AlbumCoverImage）
+              // 封面（小图，和大图共用 AlbumCoverImage）；
+              // 固定歌单没有封面，用图标占同一个位置
               SizedBox(
                 width: 50,
                 height: 50,
-                child: AlbumCoverImage(hash: basicInfo.hash),
+                child: fixedKind == null
+                    ? AlbumCoverImage(hash: basicInfo.hash)
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: theme.colorHover,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Icon(
+                          fixedKind.icon,
+                          size: 26,
+                          color: theme.colorStress,
+                        ),
+                      ),
               ),
 
               const SizedBox(width: 10),
@@ -163,7 +176,12 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
         // ── 第 3 部分：歌曲列表 ──
         Expanded(
           child: songs.isEmpty
-              ? Center(child: Text('这个歌单里还没有歌曲', style: theme.littleTextStyle))
+              ? Center(
+                  child: Text(
+                    fixedKind == null ? '这个歌单里还没有歌曲' : '还没有符合条件的歌',
+                    style: theme.littleTextStyle,
+                  ),
+                )
               : DynMouseScroll(
                   builder: (context_, controler_, physics_) {
                     return ListView.builder(
@@ -172,7 +190,7 @@ class _SinglePlaylistPageState extends State<SinglePlaylistPage> {
                       itemCount: songs.length,
                       // 固定行高（和 EachSong 的 80 对齐，性能优化）
                       itemExtent: 80,
-                      padding: EdgeInsets.only(bottom: hasCurrentSong ? 90 : 0),
+                      // 播放栏在布局里，不用再留底部空白
                       itemBuilder: (context, index) {
                         final song = songs[index];
 

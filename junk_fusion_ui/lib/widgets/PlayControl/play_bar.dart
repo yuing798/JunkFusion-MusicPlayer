@@ -1,13 +1,18 @@
 // ════════════════════════════════════════════════════════════════
-// play_bar.dart — 底部播放栏
+// play_bar.dart — 底部播放栏（常驻，属于布局而不是浮层）
 //
-// 布局（固定底部 90px）：
-//   Grid 三区: left-area (500px) | spacer | mid-area (330px) | spacer | right-area (550px)
-//   简化为 Row: left | Expanded | center | Expanded | right
+// 布局（固定 116px，自上而下两行）：
+//   第 1 行：进度条 + 左右时间标签（左右各留 30，和下面三区对齐）
+//   第 2 行：三区 Row —— left(flex 5) | mid(flex 4) | right(flex 5)
+//
+// 为什么进度条在栏里面、而且偏上：
+//   它以前浮在播放栏顶沿（离窗口底边只有十几像素），鼠标甩到屏幕底部
+//   想点列表时很容易先点到它，一点就跳转。现在下面压着整行控制区，
+//   误触不到；代价是栏比原来高了一点，但不再有"浮层盖内容"的问题。
 //
 // 左区：封面 50×50 + 歌名/艺术家 + 喜欢按钮 + 歌曲详情弹窗
 // 中区：播放模式切换 + 上一首 + 播放/暂停 + 下一首 + 播放列表
-// 右区：（预留，当前为空）
+// 右区：音量 + 更多播放信息
 // ════════════════════════════════════════════════════════════════
 
 import 'dart:io';
@@ -41,7 +46,7 @@ class PlayBar extends StatefulWidget {
 class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
   late final PlayList _playList;
 
-  /// 播放栏高度（不再随时域图展开而变化）
+  /// 播放栏高度：进度条那一行（约 32）+ 三区主体（约 84）
   static const double _height = 100;
   @override
   void initState() {
@@ -206,23 +211,36 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
       );
     }
 
-    return SizedBox(
+    return Container(
       height: _height,
-      child: Stack(
-        // mainAxisSize: MainAxisSize.min,
-        // height: 90,
+      // 常驻播放栏：自己就是一块实心背景，不再需要外层 Stack 托着
+      color: widget.backgroundColor ?? theme.colorHover,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 90,
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-              color: widget.backgroundColor ?? theme.colorHover,
+          // ── 进度条（偏上，不贴窗口底边）──
+          //
+          // 以前它用 Positioned(bottom: 80) 浮在播放栏顶沿，离窗口底边只有
+          // 十几像素：鼠标甩到屏幕底部想点列表/歌单时很容易先撞上它，
+          // 一点就把歌跳走了。现在把它放进播放栏内部，下面还压着整行控制区，
+          // 手再抖也够不到。
+          //
+          // 左右 30 的边距和下面三区对齐；ConstrainedBox 只给最小高度——
+          // 没有歌在播时 SongProgressArea 返回 SizedBox.shrink()，
+          // 不给最小高度的话播放栏会突然变矮，整个界面跟着跳一下。
+          Padding(
+            padding: const EdgeInsets.fromLTRB(30, 5, 30, 0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 20),
+              child: const SongProgressArea(),
+            ),
+          ),
 
-              // Row 布局（三区按比例瓜分空间，自适应窗口宽度）
-              // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
+          // ── 主体三区（按比例瓜分空间，自适应窗口宽度）──
+          // flex=5 : 4 : 5 ≈ 左区 / 中区 / 右区
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(30, 0, 30, 6),
               child: Row(
                 children: [
                   // ── 左区（封面 + 歌名/艺术家 + 喜欢 + 详情） ──
@@ -231,19 +249,11 @@ class PlayBarState extends State<PlayBar> with TickerProviderStateMixin {
                   // ── 中区（播放控制） ──
                   Expanded(flex: 4, child: buildMidArea()),
 
-                  // ── 右区（预留） ──
-                  // 和左区对称占位，后续放置音量/进度条等控件
+                  // ── 右区（音量 / 更多） ──
                   Expanded(flex: 5, child: _buildRightArea(context)),
                 ],
               ),
             ),
-          ),
-          Positioned(
-            bottom: 80,
-            left: 5,
-            right: 5,
-            // 进度条只显示进度 + 时间标签，不再有可展开的时域波形
-            child: const SongProgressArea(),
           ),
         ],
       ),

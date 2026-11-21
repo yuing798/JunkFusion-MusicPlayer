@@ -232,6 +232,56 @@ Yvar SongsManage::getAllSongsBasicInfo() {
     return results;
 }
 
+Yvar SongsManage::getFixedPlaylistSongs(const std::string& kind) {
+    Yvar results = Yvar::array();
+
+    // 三种固定歌单只有 WHERE / ORDER BY 不同，列必须和 getAllSongsBasicInfo
+    // 保持完全一致——否则 getBasicInfoCol 取不到列，前端 SongBasicInfo.fromJson 会缺字段
+    const std::string columns = R"(
+            SELECT songs.songId,
+            songs.duration, songs.title, songs.artists, songs.album,
+            songs.isMyLike, songs.playNum, COALESCE(songs.hash, albums.hash) AS hash
+            FROM songs LEFT JOIN albums ON albums.albumId = songs.albumId
+        )";
+
+    std::string tail;
+    if (kind == "liked") {
+        // 「我喜欢」不设上限：喜欢的歌是用户自己一首首点出来的，截断反而丢东西。
+        // 另外两个是"最近/最多"的榜单，天然只关心前面几名。
+        tail = " WHERE songs.isMyLike = 1"
+               " ORDER BY songs.lastPlayTime IS NULL, songs.lastPlayTime DESC, songs.songId DESC";
+    } else if (kind == "recent") {
+        tail = " WHERE songs.lastPlayTime IS NOT NULL"
+               " ORDER BY songs.lastPlayTime DESC, songs.songId DESC"
+               " LIMIT :limit";
+    } else if (kind == "mostPlayed") {
+        // 次数相同的按最近播放时间排，比按 songId 排更像"我最近最爱听的"
+        tail = " WHERE songs.playNum > 0"
+               " ORDER BY songs.playNum DESC, songs.lastPlayTime IS NULL,"
+               " songs.lastPlayTime DESC, songs.songId DESC"
+               " LIMIT :limit";
+    } else {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn("getFixedPlaylistSongs: 未知的固定歌单类型 {}", kind);
+        return results;
+    }
+
+    try {
+        SQLite::Statement query(dbManage.readDb(), columns + tail);
+        // 「我喜欢」的 SQL 里没有 :limit，绑一个不存在的参数 SQLiteCpp 会抛异常
+        if (kind != "liked") query.bind(":limit", kFixedPlaylistLimit);
+
+        while (query.executeStep()) {
+            results.push(getBasicInfoCol(query).toBasicJson());
+        }
+    } catch (const SQLite::Exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("getFixedPlaylistSongs({})发生失败:{}", kind, e.what());
+    }
+
+    return results;
+}
+
 PlayInfo SongsManage::getPlayInfo(int64_t songId) {
     spdlog::get(LogDllID)->debug("开始根据id搜索歌曲信息");
     PlayInfo info{};

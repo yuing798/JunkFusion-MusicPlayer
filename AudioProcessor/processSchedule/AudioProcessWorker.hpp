@@ -50,6 +50,9 @@ private:
     juce::WaitableEvent wakeUpEvent;
     std::string mPubSubPort;
 
+    /// 心跳间隔：Coordinator 那边 3 秒收不到就判进程挂死（见 audioMacro::heartbeat）
+    static constexpr int kHeartbeatIntervalMs = 500;
+
 public:
     AudioProcessorPuber(zmq::context_t& ctx, std::string pubSubPort);
 
@@ -70,6 +73,22 @@ public:
     AudioProcessWorker(std::string pushPullPort, std::string pubSubPort);
 
     ~AudioProcessWorker();
+
+    /**
+     * @brief 启动收发两个线程（**必须等所有回调接好之后再调**）
+     *
+     * 为什么不在构造函数里直接 startThread()：
+     *   构造时线程就绪，而回调是在 GodProcessor 构造函数体里才赋值的。
+     *   Coordinator 拉起进程后立刻发 `spectrumShm`（建共享内存那条），
+     *   一旦落进"线程已在收消息、回调还是 nullptr"这个窗口，puller 里的
+     *   `if (onSpectrumAttach)` 就把它**静默丢掉**了。attach 是一次性的，
+     *   丢了整场都没有频谱。实测 19 次启动丢了 5 次。
+     *   （启动时的 `play` 自动续播走的是同一条路，同样会丢。）
+     *
+     * 现在由 GodProcessor 在构造函数末尾调用，此时 mSpectrum 等成员都已构造完、
+     * 所有回调都已赋值；在此之前 sendMessage 只是入队，不会丢。
+     */
+    void start();
 
     // 这两个本来就是完全供给外界调用的，放在这里只不过是用来集中管理,所以直接public就行
     std::unique_ptr<AudioProcessorPuller> receiver;

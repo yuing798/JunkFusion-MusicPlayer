@@ -39,4 +39,14 @@ namespace AudioMacro {
     static constexpr const char* spectrumBytes = "bytes";
     // Coordinator → 音频进程：{"spectrumEnable":true}  开/关分析
     static constexpr const char* spectrumEnable = "spectrumEnable";
+
+    // ── 心跳（音频进程 → Coordinator）──
+    // {"heartbeat":{"seq":12,"ts":1700000000000}}
+    //
+    // 音频进程每 500ms 发一条，Coordinator 的看门狗超过 3s 收不到就当它挂了：
+    // 插件能把音频进程直接带走（实测 ACCESS_VIOLATION 连异常都没有），
+    // 进程内没法救，只能靠外面发现 + 重启。
+    static constexpr const char* heartbeat = "heartbeat";
+    static constexpr const char* heartbeatSeq = "seq";
+    static constexpr const char* heartbeatTs = "ts";
 } // namespace AudioMacro

@@ -214,6 +214,19 @@ class PlaybackProvider extends ChangeNotifier {
     _setWindowTaskbarBtn();
   }
 
+  /// 音频进程被看门狗重启了（attempt < 0 = 后端放弃自动重启）
+  ///
+  /// 重启后音频进程里什么都没有了：当前歌曲、播放进度、DSP 状态全丢。
+  /// 所以这里只做一件事——把 UI 切回"没在播"，别让进度条停在旧位置假装还在响。
+  ///
+  /// 注意**不清 [_currentTimeStamp]**：用户再点播放时还会用它当起点去 seek，
+  /// 这样能回到原来的位置（这正是我们想要的）。
+  void onAudioProcessRestarted(int attempt) {
+    _isPlaying = false;
+    notifyListeners();
+    _setWindowTaskbarBtn();
+  }
+
   // 切换播放/暂停状态(前端直接调用)
   void togglePlayPause() {
     _isPlaying = !_isPlaying;

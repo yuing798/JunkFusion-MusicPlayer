@@ -59,11 +59,6 @@ class FolderContentPageState extends State<FolderContentPage> {
     final theme = context.watch<AppTheme>();
     final folder = context.watch<FolderProvider>();
 
-    // 有歌在播时底部 PlayBar 会浮上来，列表要留出位置
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
-
     final hasSelection = folder.hasSelection;
     final subDirs = hasSelection ? folder.subDirsInFolder : const <String>[];
     final songs = hasSelection ? folder.songsInFolder : const <SongBasicInfo>[];
@@ -80,14 +75,7 @@ class FolderContentPageState extends State<FolderContentPage> {
         // ── 第 3 部分：子文件夹 + 歌曲 / 空状态 ──
         Expanded(
           child: hasSelection
-              ? _buildList(
-                  context,
-                  theme,
-                  folder,
-                  subDirs,
-                  songs,
-                  hasCurrentSong,
-                )
+              ? _buildList(context, theme, folder, subDirs, songs)
               : _buildNothingSelected(theme, folder),
         ),
       ],
@@ -238,7 +226,6 @@ class FolderContentPageState extends State<FolderContentPage> {
     FolderProvider folder,
     List<String> subDirs,
     List<SongBasicInfo> songs,
-    bool hasCurrentSong,
   ) {
     // 「.. 回到上一级」：根目录不显示（没有上一级），虚拟节点也没有父目录
     final parentPath = _parentPathOf(folder);
@@ -270,10 +257,8 @@ class FolderContentPageState extends State<FolderContentPage> {
             // 「..」和空文件夹提示在最前面，子文件夹在前、歌曲在后，
             // 顺序都是后端给的
             itemCount: headCount + subDirs.length + songs.length,
-            padding: EdgeInsets.only(
-              right: 10, // 给滚动条留位置
-              bottom: hasCurrentSong ? 90 : 0, // 有歌在播时别被 PlayBar 盖住
-            ),
+            // 播放栏在布局里，不用再留底部空白
+            padding: const EdgeInsets.only(right: 10),
             itemBuilder: (context, index) {
               var cursor = index;
 
@@ -295,10 +280,7 @@ class FolderContentPageState extends State<FolderContentPage> {
                   return SizedBox(
                     height: 48,
                     child: Center(
-                      child: Text(
-                        '这个文件夹是空的',
-                        style: theme.littleTextStyle,
-                      ),
+                      child: Text('这个文件夹是空的', style: theme.littleTextStyle),
                     ),
                   );
                 }

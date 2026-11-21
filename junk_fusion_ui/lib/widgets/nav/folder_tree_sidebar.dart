@@ -396,7 +396,9 @@ class _FolderTreeSidebarState extends State<FolderTreeSidebar> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '文件夹',
-                  style: theme.midTextStyle.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.midTextStyle.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -422,10 +424,10 @@ class _FolderTreeSidebarState extends State<FolderTreeSidebar> {
                     child: DirectoryTreeView(
                       controller: controller,
                       scrollController: _treeScrollController,
-                      // 底部留出播放条的高度，最后一个节点别被盖住。
-                      // 顶部不留 padding：revealAndScroll 是按 index * 行高
-                      // 算位置的，加了顶部 padding 会差几个像素
-                      padding: const EdgeInsets.only(bottom: 100),
+                      // 播放栏现在在布局里（不浮在上面），最后一行不会被盖住，
+                      // 只留一点呼吸空间。顶部不留 padding：revealAndScroll 是
+                      // 按 index * 行高算位置的，加了顶部 padding 会差几个像素
+                      padding: const EdgeInsets.only(bottom: 8),
                       expanderSize: 20,
                       expanderGap: 4,
                       showScrollbar: true,
@@ -464,7 +466,9 @@ class _FolderTreeSidebarState extends State<FolderTreeSidebar> {
         child: Icon(
           isVirtual
               ? TablerIcons.fileMusic
-              : (state.isExpanded ? TablerIcons.folderOpen : TablerIcons.folder),
+              : (state.isExpanded
+                    ? TablerIcons.folderOpen
+                    : TablerIcons.folder),
           size: 18,
           color: isVirtual ? theme.colorTextSecond : theme.colorTextMain,
         ),

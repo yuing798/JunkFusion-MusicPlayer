@@ -162,10 +162,6 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
 
     final albums = _getSortedAlbums(allAlbums);
 
-    final hasCurrentSong = context.select<PlaybackProvider, bool>(
-      (provider) => provider.curBasicInfo != null,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -248,10 +244,8 @@ class _AlbumViewPageState extends State<AlbumViewPage> {
                             childAspectRatio: 0.72,
                           ),
                       itemCount: albums.length,
-                      padding: EdgeInsets.only(
-                        right: 10, // 给滚动条留点位置
-                        bottom: hasCurrentSong ? 90 : 0, // 有歌在播时别被 PlayBar 遮住
-                      ),
+                      // 播放栏在布局里，不用再留底部空白
+                      padding: const EdgeInsets.only(right: 10),
                       itemBuilder: (context, index) {
                         final album = albums[index];
 
