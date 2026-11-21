@@ -454,6 +454,10 @@ void FFmpegDecoder::run() {
 }
 
 void FFmpegDecoder::play(std::string songPath, double targetPTS) {
+    // 兜底：万一上一次的线程还没退干净（stopThread 超时），
+    // 直接 startThread() 会在 Debug 下撞 jassert(!isThreadRunning())，进程当场死。
+    if (isThreadRunning()) stopThread(2000);
+
     isNatureComplete = true;
     targetSeconds = targetPTS;
     isRequestSeek = true;
