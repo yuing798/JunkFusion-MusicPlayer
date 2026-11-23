@@ -10,6 +10,7 @@
 #include "DSPModule/SpectrumAnalyzer.hpp"
 #include "DeviceManager.hpp"
 #include "Model/PlayInfo.hpp"
+#include "PluginHost/PluginChain.hpp"
 #include "SystemAudioControl.hpp"
 #include "Utils/constants.h"
 #include "juce_audio_basics/juce_audio_basics.h"
@@ -44,6 +45,18 @@ private:
     SmoothSliderControl mSmooth;
     Eq mEq; // 均衡器
     SpectrumAnalyzer mSpectrum; // 实时频谱（写共享内存，前端读）
+
+    // ── 全局效果器链（交叉淡化之后、EQ 之前）──
+    // 实例化插件会 LoadLibrary，只能在 puller 线程做；音频线程只读 mActiveChain
+    PluginHost::PluginInstanceFactory mPluginFactory;
+    std::unique_ptr<PluginHost::PluginChain> mPluginChain; // 拥有者
+    std::atomic<PluginHost::PluginChain*> mActiveChain{nullptr}; // 音频线程读这个
+
+    /** @brief 重建整链（puller 线程）：建新链 → 换指针 → 等两块 → 销毁旧链 */
+    void applyPluginChain(const Yvar& config);
+
+    /** @brief 把当前链状态回传给 Coordinator（前端据此显示每个槽加载成功没有） */
+    void sendPluginChainState();
 
     struct BeforeCrossFadeDSPModuleAndBuffer {
         juce::AudioBuffer<float> buffer;

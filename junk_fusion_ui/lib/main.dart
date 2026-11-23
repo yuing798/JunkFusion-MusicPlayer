@@ -31,6 +31,7 @@ import 'providers/play_page_provider.dart';
 import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
+import 'providers/plugin_chain_provider.dart';
 import 'providers/plugin_provider.dart';
 import 'providers/settings_nav_provider.dart';
 
@@ -317,6 +318,10 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider<LyricProvider>(create: (_) => LyricProvider()),
         // 插件库（设置页用）：同样懒创建，不在启动时碰 FFI
         ChangeNotifierProvider<PluginProvider>(create: (_) => PluginProvider()),
+        // 全局效果器链（效果器页用）
+        ChangeNotifierProvider<PluginChainProvider>(
+          create: (_) => PluginChainProvider(),
+        ),
         // 设置页的目录 → 内容区跳转（中间栏和主内容区是两棵子树，靠它传话）
         ChangeNotifierProvider<SettingsNavProvider>(
           create: (_) => SettingsNavProvider(),

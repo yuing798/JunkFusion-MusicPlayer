@@ -57,6 +57,24 @@ void AudioProcessorPuller::run() {
                     if (onSpectrumEnabled) onSpectrumEnabled(enabled);
                     continue;
                 }
+                // 全局效果器链：整链重建（实例化插件，会比较慢，但这是在 puller 线程）
+                if (jsonObj.has(AudioMacro::pluginChain)) {
+                    if (onPluginChainConfig) onPluginChainConfig(jsonObj.read(AudioMacro::pluginChain));
+                    continue;
+                }
+                if (jsonObj.has(AudioMacro::pluginChainBypassAll)) {
+                    const bool bypassAll =
+                        jsonObj.read(AudioMacro::pluginChainBypassAll).toBool();
+                    if (onPluginChainBypassAll) onPluginChainBypassAll(bypassAll);
+                    continue;
+                }
+                if (jsonObj.has(AudioMacro::pluginChainSlotBypass)) {
+                    const auto inner = jsonObj.read(AudioMacro::pluginChainSlotBypass);
+                    const int slot = inner.read(AudioMacro::pluginChainSlot).toInt();
+                    const bool bypass = inner.read(AudioMacro::pluginChainBypass).toBool();
+                    if (onPluginChainSlotBypass) onPluginChainSlotBypass(slot, bypass);
+                    continue;
+                }
                 if (jsonObj.has(AudioMacro::killAudioProcess)) {
                     juce::MessageManager::callAsync([]() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();

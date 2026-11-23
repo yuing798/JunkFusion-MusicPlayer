@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CenterDbManage/dbContext.hpp"
+#include "PluginChainController.hpp"
 #include "PluginHost/PluginCatalogManage.hpp"
 #include "PluginHost/PluginScanJob.hpp"
 #include "SongsInsertHelper/SongImport.hpp"
@@ -38,6 +39,7 @@ private:
     std::unique_ptr<FolderCheckTimer> mFolderCheckTimer; // 文件夹定时监控（独立线程）
     std::unique_ptr<EqController> mEqController;         // EQ 参数下发与状态
     std::unique_ptr<SpectrumController> mSpectrumController; // 频谱共享内存（创建者 + 前端读取入口）
+    std::unique_ptr<PluginChainController> mPluginChainController; // 全局效果器链（8 槽）
 
     // ── 插件（VST3）──
     std::unique_ptr<PluginHost::PluginCatalogManage> mPluginCatalog; // plugins / pluginDirs 表
@@ -78,6 +80,9 @@ public:
     FolderCheckTimer* getFolderCheckTimer() noexcept { return mFolderCheckTimer.get(); }
     EqController* getEqController() noexcept { return mEqController.get(); }
     SpectrumController* getSpectrumController() noexcept { return mSpectrumController.get(); }
+    PluginChainController* getPluginChainController() noexcept {
+        return mPluginChainController.get();
+    }
     PluginHost::PluginCatalogManage* getPluginCatalog() noexcept { return mPluginCatalog.get(); }
     PluginHost::PluginScanJob* getPluginScanJob() noexcept { return mPluginScanJob.get(); }
 

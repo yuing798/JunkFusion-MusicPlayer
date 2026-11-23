@@ -274,6 +274,62 @@ static const char* createPluginDirsTableSQL = R"(
     )
 )";
 
+/**
+ * @brief 全局效果器链的预设
+ *
+ * @param slots 8 个插槽的配置体 JSON：
+ *        {"bypassAll":false,"slots":[{"index":0,"filePath":"...","identifier":"...",
+ *                                    "bypass":false,"state":"<base64>"}]}
+ *        `state` 是插件自己的 getStateInformation，用 base64 存——不存它这个
+ *        预设就只是"用了哪些插件"，恢复不出声音。
+ *
+ * 和 eqPresets 一个套路：只存用户显式保存的东西，"当前链"由
+ * PluginChainController 持有，不入库。
+ */
+static const char* createPluginChainPresetsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginChainPresets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        createTime TEXT NOT NULL DEFAULT (date('now', 'localtime')),
+        slots TEXT NOT NULL
+    )
+)";
+
+/**
+ * @brief 插件黑名单（系统观测，见 host-integration.md §6）
+ *
+ * @param reason 'scan-crash' | 'scan-hung' | 'runtime-crash' | 'runtime-hang'
+ * @param failureCount 失败次数：单次可能只是偶发，用计数而不是一次就拉黑
+ *
+ * 只由程序写（扫描子进程崩溃 / 音频进程因它崩溃），用户只能"解除"。
+ * 和 pluginWhitelist 分开是刻意的：一个是系统观测，一个是用户意图。
+ */
+static const char* createPluginBlacklistTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginBlacklist(
+        identifier TEXT PRIMARY KEY,
+        filePath TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        failureCount INTEGER NOT NULL DEFAULT 1,
+        lastFailedAt TEXT NOT NULL
+    )
+)";
+
+/**
+ * @brief 插件白名单（**用户意图，优先级最高**）
+ *
+ * 语义（host-integration.md §6.2）：
+ *   · 只解除"自动禁止"，不放弃隔离；
+ *   · 不自动撤销：它又崩了也只加 failureCount，不静默改回黑名单。
+ */
+static const char* createPluginWhitelistTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginWhitelist(
+        identifier TEXT PRIMARY KEY,
+        filePath TEXT NOT NULL,
+        note TEXT,
+        createdAt TEXT NOT NULL
+    )
+)";
+
 CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
 
     try {
@@ -294,6 +350,9 @@ CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OP
         db.exec(createLyricsTableSQL);
         db.exec(createPluginsTableSQL);
         db.exec(createPluginDirsTableSQL);
+        db.exec(createPluginChainPresetsTableSQL);
+        db.exec(createPluginBlacklistTableSQL);
+        db.exec(createPluginWhitelistTableSQL);
 
         db.exec(createPlaylistsSongsOrderByUserIndex);
         db.exec(createAlbumDiscTrackIndexSQL);

@@ -40,6 +40,7 @@ target_sources(JunkFusionCoordinator
         dllManager.cpp
         EqController.cpp
         SpectrumController.cpp
+        PluginChainController.cpp
 )
 
 add_subdirectory(SongsInsertHelper)

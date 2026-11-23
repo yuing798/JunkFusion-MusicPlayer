@@ -252,6 +252,15 @@ void AudioProcessSuber::run() {
                 if (onHeartbeat) onHeartbeat();
                 continue;
             }
+            // 全局效果器链的状态回报（每个槽加载成功没有 / 延迟）
+            if (obj.has(AudioMacro::pluginChainState)) {
+                if (auto* chainController = dllManager::getInstance().getPluginChainController()) {
+                    chainController->onStateFromAudio(
+                        obj.read(AudioMacro::pluginChainState)
+                    );
+                }
+                continue;
+            }
             // 音频进程上报采样率（UI 画频响曲线要用同一个 fs），处理完就走
             if (auto sampleRate = EqWire::decodeSampleRate(obj)) {
                 if (auto* eqController = dllManager::getInstance().getEqController()) {

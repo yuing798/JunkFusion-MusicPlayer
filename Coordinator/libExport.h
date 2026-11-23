@@ -364,6 +364,66 @@ extern "C" {
      */
     DLL_EXPORT const char* setPluginType(const char* identifier, const char* type);
 
+    //===================================================================================
+    // 全局效果器链（8 个插槽：交叉淡化之后、EQ 之前，见 docs/audio-routing.md）
+    //
+    // "当前链"的权威副本在 Coordinator；音频进程负责实例化 + 处理 + 回报状态。
+
+    /**
+     * @brief 当前链的加载状态（音频进程回传）
+     *
+     * @return {"chain":{"bypassAll":bool,"anyLoaded":bool,"latency":int,
+     *                  "slots":[{"index","loaded","bypass","name","identifier",
+     *                            "filePath","latency","error"}]}}
+     *         还没收到过状态时 chain 为 null
+     */
+    DLL_EXPORT const char* getPluginChainState();
+
+    /**
+     * @brief 下发整链配置（前端编辑完点"应用"）
+     *
+     * @param slotsJson {"bypassAll":bool,"slots":[{"index":0,"filePath":"...",
+     *                  "identifier":"...","bypass":false,"state":"<base64>"}]}
+     * @return {"ok":bool,"error":"...","dropped":["identifier"...]}
+     *         dropped = 被黑名单挡掉、没有下发的插件（白名单可以放行）
+     */
+    DLL_EXPORT const char* setPluginChain(const char* slotsJson);
+
+    /** @brief 整链旁通开关（1 = 旁通整条链，声音回到干声） */
+    DLL_EXPORT void setPluginChainBypassAll(int bypass);
+
+    /** @brief 单个插槽旁通开关（slot = 0~7） */
+    DLL_EXPORT void setPluginChainSlotBypass(int slot, int bypass);
+
+    /** @brief 链预设列表 → {"presets":[{id,title,createTime}]} */
+    DLL_EXPORT const char* getAllPluginChainPresets();
+
+    /** @brief 某个预设的配置体 → {"chain":{...}}；找不到时 chain 为 null */
+    DLL_EXPORT const char* getPluginChainPreset(long long id);
+
+    /** @brief 把一份配置存成新预设（前端把当前 8 槽 JSON 传上来）→ 新 id，失败 -1 */
+    DLL_EXPORT long long savePluginChainPreset(const char* title, const char* slotsJson);
+
+    DLL_EXPORT void renamePluginChainPreset(long long id, const char* title);
+    DLL_EXPORT void deletePluginChainPreset(long long id);
+
+    //===================================================================================
+    // 插件黑白名单（host-integration.md §6）
+    //
+    // 两张表分开是刻意的：黑名单是系统观测，白名单是用户意图，后者优先级最高。
+
+    /** @brief {"blacklist":[{identifier,filePath,reason,failureCount,lastFailedAt}],
+     *          "whitelist":[{identifier,filePath,note,createdAt}]} */
+    DLL_EXPORT const char* getPluginPolicyView();
+
+    /** @brief 强制允许某个插件（用户意图）→ {"ok":bool,"error":""} */
+    DLL_EXPORT const char* addPluginWhitelist(const char* identifier, const char* filePath);
+
+    DLL_EXPORT const char* removePluginWhitelist(const char* identifier);
+
+    /** @brief 解除某个插件的黑名单（"重试"） */
+    DLL_EXPORT const char* removePluginBlacklist(const char* identifier);
+
 #ifdef __cplusplus
 }
 #endif

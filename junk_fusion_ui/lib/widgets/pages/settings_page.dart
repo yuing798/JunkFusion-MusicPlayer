@@ -31,6 +31,7 @@ import 'package:junk_fusion_ui/model/plugin_info.dart';
 import 'package:junk_fusion_ui/providers/plugin_provider.dart';
 import 'package:junk_fusion_ui/providers/settings_nav_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/widgets/pages/settings_plugin_policy.dart';
 import 'package:junk_fusion_ui/widgets/pages/settings_plugin_table.dart';
 import 'package:junk_fusion_ui/widgets/pages/settings_scan_dirs.dart';
 import 'package:provider/provider.dart';
@@ -194,6 +195,10 @@ class _PluginLibrarySection extends StatelessWidget {
         _buildToolbar(context, theme, provider),
         const SizedBox(height: 8),
         const SettingsPluginTable(),
+        // 名单表单独一张、放在扫描表下面：并排放的话横向要滚很远，
+        // 而"黑名单/白名单"恰恰是最需要一眼看到的那一列
+        const SizedBox(height: 20),
+        const SettingsPluginPolicy(),
       ],
     );
   }

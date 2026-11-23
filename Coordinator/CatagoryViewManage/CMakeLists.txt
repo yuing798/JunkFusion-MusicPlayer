@@ -8,4 +8,7 @@ target_sources(JunkFusionCoordinator
         SongsManage.cpp
         EqPresetManage.cpp
         LyricsManage.cpp
+        # 插件：全局效果器链的预设 + 黑白名单
+        PluginChainPresetManage.cpp
+        PluginPolicyManage.cpp
 )

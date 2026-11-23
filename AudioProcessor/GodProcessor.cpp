@@ -120,6 +120,23 @@ GodProcessor::GodProcessor(
     };
     mWorker.receiver->onSpectrumEnabled = [this](bool enabled) { mSpectrum.setEnabled(enabled); };
 
+    // ── 全局效果器链 ──
+    // 整链重建会实例化插件（LoadLibrary，几十~几百毫秒），只可能在 puller 线程做；
+    // 音频线程只通过 mActiveChain 读一个指针，见 processBlock
+    mWorker.receiver->onPluginChainConfig = [this](const Yvar& config) {
+        applyPluginChain(config);
+    };
+    mWorker.receiver->onPluginChainBypassAll = [this](bool bypassAll) {
+        if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+            chain->setBypassAll(bypassAll);
+        }
+    };
+    mWorker.receiver->onPluginChainSlotBypass = [this](int slot, bool bypass) {
+        if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+            chain->setSlotBypass(slot, bypass);
+        }
+    };
+
     // 完全静音的切换态
     mPlayPauseControl.onPauseOver = [this]() {
         mPlayCount.pauseCount();
@@ -209,6 +226,13 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         buffer,
         buffer.getNumSamples()
     ); // 交叉淡化
+
+    // 全局效果器链：交叉淡化之后、EQ 之前
+    // 单条路径 → 不需要 PDC；块大小 = 设备块，插件不会看到变长的块。
+    // 理由见 docs/audio-routing.md §4.1
+    if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+        chain->process(buffer);
+    }
 
     mEq.process(buffer, buffer.getNumSamples()); // 均衡器：交叉淡化之后、主音量之前
 
@@ -334,6 +358,54 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
 }
 
 GodProcessor::~GodProcessor() {}
+
+void GodProcessor::applyPluginChain(const Yvar& config) {
+    auto logger{spdlog::get(LogAudioID)};
+
+    const int channels = mNumChannels > 0 ? mNumChannels : 2;
+    const double sampleRate = mSampleRate > 0.0f ? static_cast<double>(mSampleRate) : 44100.0;
+    const int blockSize = getBlockSize() > 0 ? getBlockSize() : 512;
+
+    if (logger) logger->info("[PluginChain] 开始重建（{} 槽，{}Hz/{}）", 8, sampleRate, blockSize);
+
+    // 1. 在**离线**对象上把整条链建好：实例化插件、prepare、恢复状态
+    auto newChain = std::make_unique<PluginHost::PluginChain>();
+    newChain->applyConfig(config, mPluginFactory, sampleRate, blockSize, channels);
+
+    // 2. 原子换指针：音频线程从下一块开始用新链
+    mActiveChain.store(newChain.get(), std::memory_order_release);
+
+    // 3. 等两个块（441@44.1k ≈ 10ms/块），确保没有音频线程还在旧链里
+    juce::Thread::sleep(50);
+
+    // 4. 销毁旧链（赋值时旧对象析构）。
+    //    插件析构可能挂死（实验台实测 Dexed），但这里在 puller 线程：
+    //    只会拖慢后续指令处理，不会卡音频线程。
+    //    TODO(异步销毁): 真遇到挂死的插件，要改成丢后台线程 + 超时后宁可泄漏。
+    mPluginChain = std::move(newChain);
+
+    sendPluginChainState();
+
+    if (logger) {
+        logger->info(
+            "[PluginChain] 重建完成：loaded={} 总延迟={} 采样",
+            mActiveChain.load()->isAnyLoaded(),
+            mActiveChain.load()->totalLatencySamples()
+        );
+    }
+}
+
+void GodProcessor::sendPluginChainState() {
+    Yvar envelope = Yvar::object();
+
+    if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+        envelope.set(AudioMacro::pluginChainState, chain->statusJson());
+    } else {
+        envelope.set(AudioMacro::pluginChainState, Yvar{});
+    }
+
+    mWorker.sender->sendMessage(envelope.dump());
+}
 
 void GodProcessor::applyEqMessage(const EqWire::Message& message) {
     switch (message.kind) {

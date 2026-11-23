@@ -36,6 +36,15 @@ public:
     /** @brief 打开/关闭频谱分析 */
     std::function<void(bool enabled)> onSpectrumEnabled;
 
+    /** @brief 重建整条全局效果器链（参数是 {"bypassAll":..,"slots":[..]}） */
+    std::function<void(const Yvar& config)> onPluginChainConfig;
+
+    /** @brief 整链旁通开关 */
+    std::function<void(bool bypassAll)> onPluginChainBypassAll;
+
+    /** @brief 单个插槽旁通开关 */
+    std::function<void(int slot, bool bypass)> onPluginChainSlotBypass;
+
     void run() override;
 };
 

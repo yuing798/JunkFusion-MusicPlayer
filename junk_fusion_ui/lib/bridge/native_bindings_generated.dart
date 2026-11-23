@@ -49,6 +49,31 @@ class JunkFusionDLLBindings {
   late final _addPluginDir = _addPluginDirPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief 强制允许某个插件（用户意图）→ {"ok":bool,"error":""}
+  ffi.Pointer<ffi.Char> addPluginWhitelist(
+    ffi.Pointer<ffi.Char> identifier,
+    ffi.Pointer<ffi.Char> filePath,
+  ) {
+    return _addPluginWhitelist(identifier, filePath);
+  }
+
+  late final _addPluginWhitelistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+          )
+        >
+      >('addPluginWhitelist');
+  late final _addPluginWhitelist = _addPluginWhitelistPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+        )
+      >();
+
   void closeBackend() {
     return _closeBackend();
   }
@@ -93,6 +118,17 @@ class JunkFusionDLLBindings {
         'deletePlaylist',
       );
   late final _deletePlaylist = _deletePlaylistPtr
+      .asFunction<void Function(int)>();
+
+  void deletePluginChainPreset(int id) {
+    return _deletePluginChainPreset(id);
+  }
+
+  late final _deletePluginChainPresetPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
+        'deletePluginChainPreset',
+      );
+  late final _deletePluginChainPreset = _deletePluginChainPresetPtr
       .asFunction<void Function(int)>();
 
   /// @brief dll初始化
@@ -163,6 +199,18 @@ class JunkFusionDLLBindings {
         'getAllPlaylistView',
       );
   late final _getAllPlaylistView = _getAllPlaylistViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 链预设列表 → {"presets":[{id,title,createTime}]}
+  ffi.Pointer<ffi.Char> getAllPluginChainPresets() {
+    return _getAllPluginChainPresets();
+  }
+
+  late final _getAllPluginChainPresetsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllPluginChainPresets',
+      );
+  late final _getAllPluginChainPresets = _getAllPluginChainPresetsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief 插件列表
@@ -342,6 +390,35 @@ class JunkFusionDLLBindings {
   late final _getPlaylistBasicInfo = _getPlaylistBasicInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// @brief 某个预设的配置体 → {"chain":{...}}；找不到时 chain 为 null
+  ffi.Pointer<ffi.Char> getPluginChainPreset(int id) {
+    return _getPluginChainPreset(id);
+  }
+
+  late final _getPluginChainPresetPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getPluginChainPreset',
+      );
+  late final _getPluginChainPreset = _getPluginChainPresetPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  /// @brief 当前链的加载状态（音频进程回传）
+  ///
+  /// @return {"chain":{"bypassAll":bool,"anyLoaded":bool,"latency":int,
+  /// "slots":[{"index","loaded","bypass","name","identifier",
+  /// "filePath","latency","error"}]}}
+  /// 还没收到过状态时 chain 为 null
+  ffi.Pointer<ffi.Char> getPluginChainState() {
+    return _getPluginChainState();
+  }
+
+  late final _getPluginChainStatePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getPluginChainState',
+      );
+  late final _getPluginChainState = _getPluginChainStatePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   /// @brief 扫描目录列表 → {"dirs":[{"path":"...","isBuiltin":bool}]}
   ffi.Pointer<ffi.Char> getPluginDirs() {
     return _getPluginDirs();
@@ -352,6 +429,19 @@ class JunkFusionDLLBindings {
         'getPluginDirs',
       );
   late final _getPluginDirs = _getPluginDirsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief {"blacklist":[{identifier,filePath,reason,failureCount,lastFailedAt}],
+  /// "whitelist":[{identifier,filePath,note,createdAt}]}
+  ffi.Pointer<ffi.Char> getPluginPolicyView() {
+    return _getPluginPolicyView();
+  }
+
+  late final _getPluginPolicyViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getPluginPolicyView',
+      );
+  late final _getPluginPolicyView = _getPluginPolicyViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief 扫描状态（前端用来画"扫描中 5/12"）
@@ -647,6 +737,22 @@ class JunkFusionDLLBindings {
   late final _registerOnPlayNextOrPreviousSong =
       _registerOnPlayNextOrPreviousSongPtr.asFunction<void Function(IntFunc)>();
 
+  /// @brief 解除某个插件的黑名单（"重试"）
+  ffi.Pointer<ffi.Char> removePluginBlacklist(
+    ffi.Pointer<ffi.Char> identifier,
+  ) {
+    return _removePluginBlacklist(identifier);
+  }
+
+  late final _removePluginBlacklistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('removePluginBlacklist');
+  late final _removePluginBlacklist = _removePluginBlacklistPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   /// @brief 删一个扫描目录 → {"ok":bool,"error":"..."}（系统默认目录会被拒绝）
   ffi.Pointer<ffi.Char> removePluginDir(ffi.Pointer<ffi.Char> path) {
     return _removePluginDir(path);
@@ -659,6 +765,21 @@ class JunkFusionDLLBindings {
         >
       >('removePluginDir');
   late final _removePluginDir = _removePluginDirPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
+  ffi.Pointer<ffi.Char> removePluginWhitelist(
+    ffi.Pointer<ffi.Char> identifier,
+  ) {
+    return _removePluginWhitelist(identifier);
+  }
+
+  late final _removePluginWhitelistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('removePluginWhitelist');
+  late final _removePluginWhitelist = _removePluginWhitelistPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
   void removeSongsInPlaylist(
@@ -703,6 +824,19 @@ class JunkFusionDLLBindings {
   late final _renamePlaylist = _renamePlaylistPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  void renamePluginChainPreset(int id, ffi.Pointer<ffi.Char> title) {
+    return _renamePluginChainPreset(id, title);
+  }
+
+  late final _renamePluginChainPresetPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('renamePluginChainPreset');
+  late final _renamePluginChainPreset = _renamePluginChainPresetPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
   void requestOnPlayStateSync(IntFunc cb) {
     return _requestOnPlayStateSync(cb);
   }
@@ -727,6 +861,23 @@ class JunkFusionDLLBindings {
       );
   late final _saveEqPreset = _saveEqPresetPtr
       .asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+
+  /// @brief 把一份配置存成新预设（前端把当前 8 槽 JSON 传上来）→ 新 id，失败 -1
+  int savePluginChainPreset(
+    ffi.Pointer<ffi.Char> title,
+    ffi.Pointer<ffi.Char> slotsJson,
+  ) {
+    return _savePluginChainPreset(title, slotsJson);
+  }
+
+  late final _savePluginChainPresetPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.LongLong Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+        >
+      >('savePluginChainPreset');
+  late final _savePluginChainPreset = _savePluginChainPresetPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>();
 
   /// @brief 联网搜索某张专辑的封面并写进 albums.hash
   ///
@@ -846,6 +997,49 @@ class JunkFusionDLLBindings {
       );
   late final _setEqMaster = _setEqMasterPtr
       .asFunction<void Function(int, double)>();
+
+  /// @brief 下发整链配置（前端编辑完点"应用"）
+  ///
+  /// @param slotsJson {"bypassAll":bool,"slots":[{"index":0,"filePath":"...",
+  /// "identifier":"...","bypass":false,"state":"<base64>"}]}
+  /// @return {"ok":bool,"error":"...","dropped":["identifier"...]}
+  /// dropped = 被黑名单挡掉、没有下发的插件（白名单可以放行）
+  ffi.Pointer<ffi.Char> setPluginChain(ffi.Pointer<ffi.Char> slotsJson) {
+    return _setPluginChain(slotsJson);
+  }
+
+  late final _setPluginChainPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('setPluginChain');
+  late final _setPluginChain = _setPluginChainPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
+  /// @brief 整链旁通开关（1 = 旁通整条链，声音回到干声）
+  void setPluginChainBypassAll(int bypass) {
+    return _setPluginChainBypassAll(bypass);
+  }
+
+  late final _setPluginChainBypassAllPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>(
+        'setPluginChainBypassAll',
+      );
+  late final _setPluginChainBypassAll = _setPluginChainBypassAllPtr
+      .asFunction<void Function(int)>();
+
+  /// @brief 单个插槽旁通开关（slot = 0~7）
+  void setPluginChainSlotBypass(int slot, int bypass) {
+    return _setPluginChainSlotBypass(slot, bypass);
+  }
+
+  late final _setPluginChainSlotBypassPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int, ffi.Int)>>(
+        'setPluginChainSlotBypass',
+      );
+  late final _setPluginChainSlotBypass = _setPluginChainSlotBypassPtr
+      .asFunction<void Function(int, int)>();
 
   /// @brief 手动改插件类型（前端唯一允许改的字段）
   ///

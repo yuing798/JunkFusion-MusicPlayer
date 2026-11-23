@@ -27,6 +27,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart' show malloc;
 import 'package:flutter/foundation.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
+import 'package:junk_fusion_ui/model/plugin_chain.dart';
 import 'package:junk_fusion_ui/model/plugin_info.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 
@@ -69,6 +70,7 @@ class PluginProvider extends ChangeNotifier {
 
     refresh();
     refreshDirs();
+    refreshPolicy();
     _refreshScanState();
     if (_scan.isRunning) _startPolling();
   }
@@ -151,6 +153,94 @@ class PluginProvider extends ChangeNotifier {
         : '删除扫描目录失败';
     notifyListeners();
     return false;
+  }
+
+  // ── 黑白名单（host-integration.md §6）────────────────────────────
+  List<PluginBanItem> _blacklist = const <PluginBanItem>[];
+  List<PluginAllowItem> _whitelist = const <PluginAllowItem>[];
+
+  List<PluginBanItem> get blacklist => _blacklist;
+  List<PluginAllowItem> get whitelist => _whitelist;
+
+  /// 拉一次黑名单 + 白名单（设置页展示用，**全量显示不隐藏**）
+  void refreshPolicy() {
+    final envelope = _readJsonObject(bindings.getPluginPolicyView());
+
+    final rawBlack = envelope?['blacklist'];
+    _blacklist = rawBlack is List
+        ? <PluginBanItem>[
+            for (final item in rawBlack)
+              if (item is Map)
+                PluginBanItem.fromJson(item.cast<String, dynamic>()),
+          ]
+        : const <PluginBanItem>[];
+
+    final rawWhite = envelope?['whitelist'];
+    _whitelist = rawWhite is List
+        ? <PluginAllowItem>[
+            for (final item in rawWhite)
+              if (item is Map)
+                PluginAllowItem.fromJson(item.cast<String, dynamic>()),
+          ]
+        : const <PluginAllowItem>[];
+
+    notifyListeners();
+  }
+
+  bool isWhitelisted(String identifier) =>
+      _whitelist.any((item) => item.identifier == identifier);
+
+  /// 强制允许某个插件（白名单优先于黑名单）
+  bool addWhitelist(String identifier, String filePath) {
+    if (identifier.isEmpty) return false;
+
+    final ok = _callTwoStrings(
+      identifier,
+      filePath,
+      (idPtr, pathPtr) => bindings.addPluginWhitelist(idPtr, pathPtr),
+    );
+    refreshPolicy();
+    return ok;
+  }
+
+  bool removeWhitelist(String identifier) {
+    final ok = _callOneString(
+      identifier,
+      (ptr) => bindings.removePluginWhitelist(ptr),
+    );
+    refreshPolicy();
+    return ok;
+  }
+
+  /// 解除黑名单（"重试"）
+  bool removeBlacklist(String identifier) {
+    final ok = _callOneString(
+      identifier,
+      (ptr) => bindings.removePluginBlacklist(ptr),
+    );
+    refreshPolicy();
+    return ok;
+  }
+
+  bool _callOneString(
+    String text,
+    Pointer<Char> Function(Pointer<Char>) action,
+  ) {
+    final result = _withCString(text, (ptr) => _readJsonObject(action(ptr)));
+    return result?['ok'] == true;
+  }
+
+  bool _callTwoStrings(
+    String first,
+    String second,
+    Pointer<Char> Function(Pointer<Char>, Pointer<Char>) action,
+  ) {
+    final result = _withCString(first, (firstPtr) {
+      return _withCString(second, (secondPtr) {
+        return _readJsonObject(action(firstPtr, secondPtr));
+      });
+    });
+    return result?['ok'] == true;
   }
 
   // ── 扫描 ──────────────────────────────────────────────────────────

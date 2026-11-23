@@ -596,27 +596,221 @@ extern "C" {
         return ConvertUtils::object2Uint8t(envelope);
     }
 
-    const char* setPluginType(const char* identifier, const char* type) {
+    //===================================================================================
+    // 全局效果器链 + 黑白名单
+    const char* getPluginChainState() {
+        try {
+            auto* controller = dllManager::getInstance().getPluginChainController();
+            // controller->getState() 本身已经是 {"chain":...} 这个形状，别再包一层
+            if (controller != nullptr) return ConvertUtils::object2Uint8t(controller->getState());
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginChainState 异常:{}", e.what());
+        }
+
+        Yvar envelope = Yvar::object();
+        envelope.set("chain", Yvar{});
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* setPluginChain(const char* slotsJson) {
         Yvar envelope = Yvar::object();
 
         try {
-            auto* catalog = dllManager::getInstance().getPluginCatalog();
-            if (catalog == nullptr || identifier == nullptr || type == nullptr) {
+            auto* controller = dllManager::getInstance().getPluginChainController();
+            if (controller == nullptr) {
                 envelope.set("ok", false);
-                envelope.set("error", "插件模块未初始化");
+                envelope.set("error", "插件链未初始化");
                 return ConvertUtils::object2Uint8t(envelope);
             }
 
-            const bool ok = catalog->setType(identifier, type);
-            envelope.set("ok", ok);
-            envelope.set("error", ok ? "" : "identifier 不存在或 type 非法");
+            const Yvar config = slotsJson != nullptr ? Yvar::parse(slotsJson) : Yvar::object();
+            const Yvar result = controller->apply(config);
+            envelope.set("ok", result.read("ok").toBool());
+            envelope.set("error", result.read("error").toString());
+            envelope.set("dropped", result.read("dropped"));
         } catch (const std::exception& e) {
-            if (auto log = spdlog::get(LogDllID))
-                log->error("setPluginType 异常:{}", e.what());
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("setPluginChain 异常:{}", e.what());
             envelope.set("ok", false);
-            envelope.set("error", "修改失败");
+            envelope.set("error", "下发效果器链失败");
         }
 
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    void setPluginChainBypassAll(int bypass) {
+        try {
+            if (auto* controller = dllManager::getInstance().getPluginChainController()) {
+                controller->setBypassAll(bypass != 0);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("setPluginChainBypassAll 异常:{}", e.what());
+        }
+    }
+
+    void setPluginChainSlotBypass(int slot, int bypass) {
+        try {
+            if (auto* controller = dllManager::getInstance().getPluginChainController()) {
+                controller->setSlotBypass(slot, bypass != 0);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("setPluginChainSlotBypass 异常:{}", e.what());
+        }
+    }
+
+    const char* getAllPluginChainPresets() {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext != nullptr) {
+                envelope.set("presets", dbContext->pluginChainPresetManage.getAllPresets());
+            } else {
+                envelope.set("presets", Yvar::array());
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getAllPluginChainPresets 异常:{}", e.what());
+            envelope.set("presets", Yvar::array());
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getPluginChainPreset(long long id) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            Yvar slots = dbContext != nullptr
+                             ? dbContext->pluginChainPresetManage.getPresetSlots(id)
+                             : Yvar{};
+            envelope.set("chain", slots);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginChainPreset 异常:{}", e.what());
+            envelope.set("chain", Yvar{});
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    long long savePluginChainPreset(const char* title, const char* slotsJson) {
+        if (title == nullptr || slotsJson == nullptr) return -1;
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr) return -1;
+            return dbContext->pluginChainPresetManage.createPreset(title, slotsJson);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("savePluginChainPreset 异常:{}", e.what());
+            return -1;
+        }
+    }
+
+    void renamePluginChainPreset(long long id, const char* title) {
+        if (title == nullptr) return;
+        try {
+            if (auto* dbContext = dllManager::getInstance().getDbContext())
+                dbContext->pluginChainPresetManage.renamePreset(id, title);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("renamePluginChainPreset 异常:{}", e.what());
+        }
+    }
+
+    void deletePluginChainPreset(long long id) {
+        try {
+            if (auto* dbContext = dllManager::getInstance().getDbContext())
+                dbContext->pluginChainPresetManage.deletePreset(id);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("deletePluginChainPreset 异常:{}", e.what());
+        }
+    }
+
+    const char* getPluginPolicyView() {
+        Yvar envelope = Yvar::object();
+        try {
+            if (auto* dbContext = dllManager::getInstance().getDbContext()) {
+                const Yvar view = dbContext->pluginPolicyManage.getAll();
+                envelope.set("blacklist", view.read("blacklist"));
+                envelope.set("whitelist", view.read("whitelist"));
+            } else {
+                envelope.set("blacklist", Yvar::array());
+                envelope.set("whitelist", Yvar::array());
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginPolicyView 异常:{}", e.what());
+            envelope.set("blacklist", Yvar::array());
+            envelope.set("whitelist", Yvar::array());
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* addPluginWhitelist(const char* identifier, const char* filePath) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || identifier == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginPolicyManage.addWhite(
+                identifier,
+                filePath != nullptr ? filePath : ""
+            );
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("addPluginWhitelist 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "写入白名单失败");
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* removePluginWhitelist(const char* identifier) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || identifier == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginPolicyManage.removeWhite(identifier);
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("removePluginWhitelist 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "移除白名单失败");
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* removePluginBlacklist(const char* identifier) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || identifier == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginPolicyManage.clearBlack(identifier);
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("removePluginBlacklist 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "解除黑名单失败");
+        }
         return ConvertUtils::object2Uint8t(envelope);
     }
 }

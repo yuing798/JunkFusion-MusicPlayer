@@ -3,6 +3,7 @@ import 'package:junk_fusion_ui/model/album_basic_info.dart';
 import 'package:junk_fusion_ui/model/playlist_basic_info.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/widgets/pages/album_view_page.dart';
+import 'package:junk_fusion_ui/widgets/pages/effect_chain_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/eq_view_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/folder_content_page.dart';
 import 'package:junk_fusion_ui/widgets/pages/playlist_view_page.dart';
@@ -74,6 +75,9 @@ abstract class PagesRouteTable {
   /// 左侧导航栏「均衡器」的 id
   static const int eqViewId = 9;
 
+  /// 左侧导航栏「效果器」的 id（全局效果器链）
+  static const int effectViewId = 8;
+
   /// 左侧导航栏「设置」的 id
   static const int settingsViewId = 11;
 
@@ -102,6 +106,13 @@ abstract class PagesRouteTable {
     navId: folderViewId,
     title: '文件夹',
     builder: _buildFolderContent,
+  );
+
+  /// 效果器（全局效果器链：8 个插槽 + 预设）
+  static const PagesRouteEntry effectView = PagesRouteEntry(
+    navId: effectViewId,
+    title: '效果器',
+    builder: _buildEffectChainView,
   );
 
   /// 均衡器（曲线 + 底部 inspector；中间栏是预设列表）
@@ -172,6 +183,7 @@ abstract class PagesRouteTable {
     if (navId == playlistViewId) return playlistView;
     if (navId == folderViewId) return folderView;
     if (navId == eqViewId) return eqView;
+    if (navId == effectViewId) return effectView;
     if (navId == settingsViewId) return settingsView;
     return null;
   }
@@ -184,6 +196,8 @@ Widget _buildPlaylistView(BuildContext context) => const PlaylistViewPage();
 Widget _buildFolderContent(BuildContext context) => const FolderContentPage();
 
 Widget _buildEqView(BuildContext context) => const EqViewPage();
+
+Widget _buildEffectChainView(BuildContext context) => const EffectChainPage();
 
 Widget _buildSettingsView(BuildContext context) => const SettingsPage();
 

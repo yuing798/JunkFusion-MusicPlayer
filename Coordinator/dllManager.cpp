@@ -86,6 +86,8 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
         if (restartLogger) restartLogger->warn("音频进程已重启（第 {} 次）", attempt);
 
         if (mSpectrumController != nullptr) mSpectrumController->reannounce();
+        // 链**不重发**：刚死过一次的插件自动恢复就是崩溃循环（host-integration §6.2）
+        if (mPluginChainController != nullptr) mPluginChainController->resetAfterRestart();
         if (onAudioProcessRestarted) onAudioProcessRestarted(attempt);
     };
 
@@ -124,6 +126,13 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     // 数据面是两端直连共享内存；Coordinator 只负责递名片 + 给前端读快照。
     mSpectrumController = std::make_unique<SpectrumController>();
     mSpectrumController->init(
+        [this](const std::string& message) { sendMessage2AudioProcess(message); }
+    );
+
+    // ── 全局效果器链（8 槽）──
+    // 权威副本在这里，音频进程只是"执行 + 回报状态"
+    mPluginChainController = std::make_unique<PluginChainController>();
+    mPluginChainController->init(
         [this](const std::string& message) { sendMessage2AudioProcess(message); }
     );
 

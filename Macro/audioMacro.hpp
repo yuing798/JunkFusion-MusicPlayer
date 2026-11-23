@@ -49,4 +49,18 @@ namespace AudioMacro {
     static constexpr const char* heartbeat = "heartbeat";
     static constexpr const char* heartbeatSeq = "seq";
     static constexpr const char* heartbeatTs = "ts";
+
+    // ── 全局效果器链 ──
+    // Coordinator → 音频进程：整链重建
+    //   {"pluginChain":{"bypassAll":false,"slots":[
+    //       {"index":0,"filePath":"...","identifier":"...","bypass":false,"state":"base64"}]}}
+    static constexpr const char* pluginChain = "pluginChain";
+    // Coordinator → 音频进程：{"pluginChainBypassAll":true}
+    static constexpr const char* pluginChainBypassAll = "pluginChainBypassAll";
+    // Coordinator → 音频进程：{"pluginChainSlotBypass":{"slot":0,"bypass":true}}
+    static constexpr const char* pluginChainSlotBypass = "pluginChainSlotBypass";
+    static constexpr const char* pluginChainSlot = "slot";
+    static constexpr const char* pluginChainBypass = "bypass";
+    // 音频进程 → Coordinator：{"pluginChainState":{...}}（进槽加载结果 / 延迟 / 是否旁通）
+    static constexpr const char* pluginChainState = "pluginChainState";
 } // namespace AudioMacro
