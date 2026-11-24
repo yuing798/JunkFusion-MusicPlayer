@@ -44,6 +44,12 @@
 library;
 
 import 'package:animated_reorderable_list/animated_reorderable_list.dart';
+// 这个包的文档写的是 Flutter 自带的 ReorderableDragStartListener，但实现里用的是
+// 它自己的 ReorderableGridDragStartListener，而且**没有从主库导出**。
+// 挂 Flutter 那个的话祖先查不到 ReorderableAnimatedBuilder，拖拽压根不会启动，
+// 所以这里只能引它的 src（升级包时如果路径变了，编译期就会报错，不会静默失效）。
+// ignore: implementation_imports
+import 'package:animated_reorderable_list/src/component/drag_listener.dart';
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import 'package:flutter_smooth_wheel_scroll/flutter_smooth_wheel_scroll.dart';
@@ -105,6 +111,7 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
   Widget build(BuildContext context) {
     final theme = context.watch<AppTheme>();
     final showRuntime = widget.status != null;
+    final hasSlots = widget.slots.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,40 +119,47 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
         _buildTerminal(theme, '输入', '交叉淡化之后'),
         _buildArrow(theme),
 
-        // Flexible + shrinkWrap：链短的时候「输出」紧跟最后一张卡，
-        // 链长的时候列表自己在剩余高度里滚
-        Flexible(
-          child: widget.slots.isEmpty
-              ? _buildEmptyCard(theme)
-              : AnimatedReorderableListView<ChainSlot>(
-                  scrollDirection: Axis.vertical,
-                  controller: _scrollController,
-                  physics: const ClampingScrollPhysics(),
-                  shrinkWrap: true,
-                  // 默认拖动（长按）会和滚动抢手势，改成左侧手柄触发
-                  buildDefaultDragHandles: false,
-                  padding: EdgeInsets.zero,
-                  dragStartBehavior: DragStartBehavior.start,
-                  items: widget.slots,
-                  // 配置对象每次改都会换新实例，身份靠前端分配的 uid
-                  isSameItem: (a, b) => a.uid == b.uid,
-                  onReorder: widget.onReorder ?? (_, __) {},
-                  itemBuilder: (context, index) {
-                    final slot = widget.slots[index];
-                    return Column(
-                      key: ValueKey<int>(slot.uid),
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildCard(theme, index, slot, showRuntime),
-                        _buildArrow(theme),
-                      ],
-                    );
-                  },
-                ),
-        ),
+        if (hasSlots) ...[
+          // Flexible + shrinkWrap：链短的时候下面的「添加」和「输出」
+          // 紧跟最后一张卡，链长的时候列表自己在剩余高度里滚
+          Flexible(child: _buildList(theme, showRuntime)),
+          _buildArrow(theme),
+        ],
 
+        // 没满上限就一直在链尾给一个「添加效果器」按钮
+        if (widget.slots.length < widget.maxSlots) _buildAddCard(theme),
+
+        _buildArrow(theme),
         _buildTerminal(theme, '输出', '→ 均衡器'),
       ],
+    );
+  }
+
+  Widget _buildList(AppTheme theme, bool showRuntime) {
+    return AnimatedReorderableListView<ChainSlot>(
+      scrollDirection: Axis.vertical,
+      controller: _scrollController,
+      physics: const ClampingScrollPhysics(),
+      shrinkWrap: true,
+      // 默认拖动（长按/自绘手柄）会和滚动抢手势，改成只在左侧手柄上拖
+      buildDefaultDragHandles: false,
+      padding: EdgeInsets.zero,
+      dragStartBehavior: DragStartBehavior.start,
+      items: widget.slots,
+      // 配置对象每次改都会换新实例，身份靠前端分配的 uid
+      isSameItem: (a, b) => a.uid == b.uid,
+      onReorder: widget.onReorder ?? (_, __) {},
+      itemBuilder: (context, index) {
+        final slot = widget.slots[index];
+        return Column(
+          key: ValueKey<int>(slot.uid),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildCard(theme, index, slot, showRuntime),
+            _buildArrow(theme),
+          ],
+        );
+      },
     );
   }
 
@@ -182,13 +196,13 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
     );
   }
 
-  // ── 空链 ──────────────────────────────────────────────────────────
-  Widget _buildEmptyCard(AppTheme theme) {
+  // ── 链尾的「添加效果器」 ──────────────────────────────────────────
+  Widget _buildAddCard(AppTheme theme) {
     return InkWell(
       onTap: widget.onAdd,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        height: _cardHeight,
+        height: 46,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: theme.colorEdge),
@@ -196,7 +210,7 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add, size: 22, color: theme.colorTextSecond),
+            Icon(Icons.add, size: 20, color: theme.colorTextSecond),
             const SizedBox(width: 8),
             Text('添加效果器', style: theme.littleTextStyle),
           ],
@@ -249,7 +263,11 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
       child: Row(
         children: [
           // ── 左侧整条拖动手柄（通栏高度，拖起来没有歧义）──
-          ReorderableDragStartListener(
+          //
+          // 必须用**这个包自己的** ReorderableGridDragStartListener：
+          // Flutter 自带的那个查的是 SliverReorderableList 的祖先，这里是
+          // ReorderableAnimatedBuilder，挂上去不会启动拖拽（踩过）。
+          ReorderableGridDragStartListener(
             index: position,
             child: MouseRegion(
               cursor: SystemMouseCursors.grab,

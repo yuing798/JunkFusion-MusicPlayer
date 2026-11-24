@@ -315,6 +315,22 @@ static const char* createPluginBlacklistTableSQL = R"(
 )";
 
 /**
+ * @brief 当前全局效果器链的**状态**（不是预设）
+ *
+ * 只有一行（id 恒为 1），每次成功下发都覆盖。和 pluginChainPresets 的区别：
+ *   · 预设是"用户主动存下来的、可能有很多份"；
+ *   · 这一行是"上次应用的那条链"，用来在下次启动时恢复现场，
+ *     所以它不需要 id/title，也不需要保留历史。
+ */
+static const char* createPluginChainStateTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginChainState(
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        slots TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+    )
+)";
+
+/**
  * @brief 插件白名单（**用户意图，优先级最高**）
  *
  * 语义（host-integration.md §6.2）：
@@ -351,6 +367,7 @@ CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OP
         db.exec(createPluginsTableSQL);
         db.exec(createPluginDirsTableSQL);
         db.exec(createPluginChainPresetsTableSQL);
+        db.exec(createPluginChainStateTableSQL);
         db.exec(createPluginBlacklistTableSQL);
         db.exec(createPluginWhitelistTableSQL);
 

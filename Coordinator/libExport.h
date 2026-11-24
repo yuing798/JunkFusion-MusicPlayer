@@ -403,6 +403,13 @@ extern "C" {
      */
     DLL_EXPORT void openPluginSlotEditor(int slot);
 
+    /**
+     * @brief 读回"上次应用的链"（pluginChainState 表里那一行）
+     *
+     * @return {"chain":{"slots":[...],"bypassAll":bool}}；从没应用过时 chain 为 null
+     */
+    DLL_EXPORT const char* getSavedPluginChain();
+
     /** @brief 链预设列表 → {"presets":[{id,title,createTime}]} */
     DLL_EXPORT const char* getAllPluginChainPresets();
 

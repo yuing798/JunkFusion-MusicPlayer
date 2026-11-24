@@ -459,6 +459,20 @@ class JunkFusionDLLBindings {
   late final _getPluginScanState = _getPluginScanStatePtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
+  /// @brief 读回"上次应用的链"（pluginChainState 表里那一行）
+  ///
+  /// @return {"chain":{"slots":[...],"bypassAll":bool}}；从没应用过时 chain 为 null
+  ffi.Pointer<ffi.Char> getSavedPluginChain() {
+    return _getSavedPluginChain();
+  }
+
+  late final _getSavedPluginChainPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getSavedPluginChain',
+      );
+  late final _getSavedPluginChain = _getSavedPluginChainPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   /// @brief 获得单独导入的文件的songIdList，作为独立虚拟文件夹节点渲染在前端
   ///
   /// @return [songId1,songId2,......]

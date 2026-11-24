@@ -139,6 +139,42 @@ void PluginChainPresetManage::renamePreset(int64_t id, const std::string& title)
     }
 }
 
+void PluginChainPresetManage::saveCurrentChain(const std::string& slotsJson) {
+    if (slotsJson.empty()) return;
+
+    try {
+        mDbManage.write([&](SQLite::Database& db) {
+            SQLite::Statement sql{
+                db,
+                "INSERT INTO pluginChainState(id, slots, updatedAt) "
+                "VALUES(1, :slots, datetime('now','localtime')) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "slots = excluded.slots, updatedAt = excluded.updatedAt"
+            };
+            sql.bind(":slots", slotsJson);
+            sql.exec();
+        });
+    } catch (const SQLite::Exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("PluginChainPresetManage::saveCurrentChain 失败:{}", e.what());
+    }
+}
+
+Yvar PluginChainPresetManage::getCurrentChain() {
+    try {
+        SQLite::Statement sql{
+            mDbManage.readDb(),
+            "SELECT slots FROM pluginChainState WHERE id = 1"
+        };
+        if (!sql.executeStep()) return Yvar{};
+        return Yvar::parse(sql.getColumn("slots").getString());
+    } catch (const SQLite::Exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("PluginChainPresetManage::getCurrentChain 失败:{}", e.what());
+    }
+    return Yvar{};
+}
+
 void PluginChainPresetManage::deletePreset(int64_t id) {
     try {
         mDbManage.write([&](SQLite::Database& db) {

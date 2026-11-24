@@ -89,6 +89,41 @@ class PluginChainProvider extends ChangeNotifier {
     _initialized = true;
     refreshPresets();
     refreshState();
+    _restoreSavedChain();
+  }
+
+  /// 启动时把"上次应用的链"恢复回来
+  ///
+  /// 存在 pluginChainState 表里（Coordinator 在每次 apply 成功后写），
+  /// 所以这里只负责读回来 + 重新下发一次。音频进程可能还没起来，
+  /// 所以第一次下发失败会再补一次（总共两次，不做无限重试——
+  /// 无限重试遇到坏插件就变成崩溃循环了）。
+  void _restoreSavedChain() {
+    final envelope = _readJsonObject(bindings.getSavedPluginChain());
+    final raw = envelope?['chain'];
+    if (raw is! Map) return;
+
+    final parsed = _parseChain(raw.cast<String, dynamic>());
+    if (parsed.slots.isEmpty) return;
+
+    loadChain(parsed.slots, bypassAll: parsed.bypassAll);
+    _dirty = true;
+    _applyRestoredChain(hasRetry: true);
+  }
+
+  Future<void> _applyRestoredChain({required bool hasRetry}) async {
+    // 给音频进程一点启动时间
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (_slots.isEmpty) return;
+
+    apply();
+
+    if (!hasRetry) return;
+    await Future<void>.delayed(const Duration(seconds: 4));
+    if (_status.anyLoaded || _slots.isEmpty) return;
+
+    // 第二次也是最后一次
+    apply();
   }
 
   void refreshState() {

@@ -672,6 +672,24 @@ extern "C" {
         }
     }
 
+    const char* getSavedPluginChain() {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr) {
+                envelope.set("chain", Yvar{});
+            } else {
+                const Yvar saved = dbContext->pluginChainPresetManage.getCurrentChain();
+                envelope.set("chain", saved);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getSavedPluginChain 异常:{}", e.what());
+            envelope.set("chain", Yvar{});
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
     const char* getAllPluginChainPresets() {
         Yvar envelope = Yvar::object();
         try {

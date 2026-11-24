@@ -76,6 +76,13 @@ Yvar PluginChainController::apply(const Yvar& config) {
     envelope.set(AudioMacro::pluginChain, filtered);
     mSend(envelope.dump());
 
+    // 存现场：下次启动要知道"上次应用的是哪条链"。
+    // 存在 apply 里而不是前端，是因为预设应用 / 启动恢复 / 手动应用都会走这里，
+    // 只在前端存容易漏（比如从中间栏点预设）。
+    if (auto* dbContext = dllManager::getInstance().getDbContext()) {
+        dbContext->pluginChainPresetManage.saveCurrentChain(filtered.dump());
+    }
+
     Yvar droppedArray = Yvar::array();
     for (const auto& id : dropped) droppedArray.push_back(id);
 

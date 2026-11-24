@@ -48,6 +48,17 @@ public:
     void renamePreset(int64_t id, const std::string& title);
     void deletePreset(int64_t id);
 
+    // ── 当前链的现场（pluginChainState，只有一行）──────────────────────
+    //
+    // 和预设的区别：预设是用户主动存的、可以有很多份；这一行只是"上次应用的
+    // 那条链"，用来在下次启动时恢复，所以没有 title，每次覆盖。
+
+    /** @brief 覆盖保存当前链的配置体（apply 成功后调） */
+    void saveCurrentChain(const std::string& slotsJson);
+
+    /** @brief 读回上次保存的链；没有时返回空值（isVoid() == true） */
+    Yvar getCurrentChain();
+
 private:
     /// 侧边栏里最多显示几个插件名（再多就 "→ …"）
     static constexpr int kPreviewLimit = 4;
