@@ -364,8 +364,10 @@ void GodProcessor::openPluginEditor(int slot) {
     // 编辑器是 GUI 对象：创建、显示都必须在消息线程
     juce::MessageManager::callAsync([this, slot]() {
         if (auto it = mEditorWindows.find(slot); it != mEditorWindows.end()) {
+            // 已经开过了：显示出来，并且重新"抬一次"最上层
+            // （只 setVisible 的话窗口会留在上次被压到的那一层）
             it->second->setVisible(true);
-            it->second->toFront(true);
+            it->second->bringToFrontOnce();
             return;
         }
 
