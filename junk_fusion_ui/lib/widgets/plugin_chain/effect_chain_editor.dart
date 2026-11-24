@@ -55,6 +55,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smooth_wheel_scroll/flutter_smooth_wheel_scroll.dart';
 import 'package:junk_fusion_ui/model/plugin_chain.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/widgets/helper_widget/safe_hover_tip.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
@@ -93,7 +94,7 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
   final ScrollController _scrollController = SmoothScrollController();
 
   /// 一张卡片的高度（拖动手柄整条可拖，所以这里要够高）
-  static const double _cardHeight = 66;
+  static const double _cardHeight = 70;
 
   /// 上下两端假卡的高度
   static const double _terminalHeight = 42;
@@ -365,7 +366,7 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
                 ? null
                 : () => widget.onRemove!(position),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 20),
         ],
       ),
     );
@@ -388,21 +389,24 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
       label: tooltip,
       button: true,
       enabled: onPressed != null,
-      child: MouseRegion(
-        cursor: onPressed == null
-            ? SystemMouseCursors.basic
-            : SystemMouseCursors.click,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(4),
-          child: Padding(
-            padding: const EdgeInsets.all(5),
-            child: Icon(
-              icon,
-              size: 18,
-              color: onPressed == null
-                  ? theme.colorEdge
-                  : theme.colorTextSecond,
+      child: SafeHoverTip(
+        message: tooltip,
+        child: MouseRegion(
+          cursor: onPressed == null
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.click,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(5),
+              child: Icon(
+                icon,
+                size: 24,
+                color: onPressed == null
+                    ? theme.colorEdge
+                    : theme.colorTextSecond,
+              ),
             ),
           ),
         ),
