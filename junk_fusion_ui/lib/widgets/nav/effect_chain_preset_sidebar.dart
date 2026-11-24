@@ -121,32 +121,48 @@ class _EffectChainPresetSidebarState extends State<EffectChainPresetSidebar> {
     AppTheme theme,
     ChainPresetItem preset,
   ) {
-    return InkWell(
-      // 单击直接载入并下发（播放器场景不需要二次确认）
-      onTap: () => _applyPreset(chain, preset),
-      // 双击改名 / 改链
-      onDoubleTap: () => _openPresetDialog(chain, preset: preset),
-      onSecondaryTapDown: (details) =>
-          _showMenu(chain, preset, details.globalPosition),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              preset.title,
-              style: theme.midTextStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              preset.preview,
-              style: theme.littleTextStyle.copyWith(fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+    // 使用 Material 包裹，确保水波纹能正常渲染
+    return Material(
+      type: MaterialType.transparency, // 保持背景透明，不影响你原有的背景色
+      child: InkWell(
+        onTap: () => _applyPreset(chain, preset),
+        onDoubleTap: () => _openPresetDialog(chain, preset: preset),
+        onSecondaryTapDown: (details) =>
+            _showMenu(chain, preset, details.globalPosition),
+
+        // 1. 鼠标悬停时的高亮颜色（用主题色的低透明度版本）
+        hoverColor: theme.colorHover.withValues(alpha: 0.7),
+
+        // 2. 点击时的水波纹颜色
+        splashColor: theme.colorHover.withValues(alpha: 0.22),
+
+        // 3. 鼠标放上去变成“小手”指针
+        mouseCursor: SystemMouseCursors.click,
+
+        // 4. 稍微加点圆角，好看些
+        borderRadius: BorderRadius.circular(6),
+
+        child: Container(
+          // 注意：margin 会撑开外部尺寸，如果水波纹被裁切，可以把 margin 移到外面
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                preset.title,
+                style: theme.midTextStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                preset.preview,
+                style: theme.littleTextStyle.copyWith(fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
