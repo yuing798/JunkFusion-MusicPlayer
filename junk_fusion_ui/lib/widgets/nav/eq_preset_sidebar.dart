@@ -237,8 +237,7 @@ class _EqPresetSidebarState extends State<EqPresetSidebar> {
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(controller.text.trim()),
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
             child: Text(confirmText),
           ),
         ],
