@@ -13,13 +13,14 @@ Yvar PluginChainPresetManage::getAllPresets() {
     try {
         SQLite::Statement sql{
             mDbManage.readDb(),
-            "SELECT id, title, createTime FROM pluginChainPresets ORDER BY id DESC"
+            "SELECT id, title, createTime, slots FROM pluginChainPresets ORDER BY id DESC"
         };
         while (sql.executeStep()) {
             Yvar item = Yvar::object();
             item.set("id", static_cast<int64_t>(sql.getColumn("id").getInt64()));
             item.set("title", sql.getColumn("title").getString());
             item.set("createTime", sql.getColumn("createTime").getString());
+            item.set("preview", buildPreview(sql.getColumn("slots").getString()));
             results.push(item);
         }
     } catch (const SQLite::Exception& e) {
@@ -28,6 +29,30 @@ Yvar PluginChainPresetManage::getAllPresets() {
     }
 
     return results;
+}
+
+std::string PluginChainPresetManage::buildPreview(const std::string& slotsJson) {
+    const Yvar config = Yvar::parse(slotsJson);
+    const Yvar slots = config.read("slots");
+
+    std::string preview;
+    int shown = 0;
+    for (int i = 0; i < slots.size(); ++i) {
+        if (shown >= kPreviewLimit) {
+            preview += " → …";
+            break;
+        }
+
+        std::string name = slots.read(i).read("name").toString();
+        if (name.empty()) name = slots.read(i).read("identifier").toString();
+        if (name.empty()) continue;
+
+        if (!preview.empty()) preview += " → ";
+        preview += name;
+        ++shown;
+    }
+
+    return preview.empty() ? "（空链）" : preview;
 }
 
 Yvar PluginChainPresetManage::getPresetSlots(int64_t id) {
@@ -69,6 +94,30 @@ int64_t PluginChainPresetManage::createPreset(
         if (auto logger = spdlog::get(LogDllID))
             logger->error("PluginChainPresetManage::createPreset 失败:{}", e.what());
         return -1;
+    }
+}
+
+void PluginChainPresetManage::updatePreset(
+    int64_t id,
+    const std::string& title,
+    const std::string& slotsJson
+) {
+    if (title.empty() || slotsJson.empty()) return;
+
+    try {
+        mDbManage.write([&](SQLite::Database& db) {
+            SQLite::Statement sql{
+                db,
+                "UPDATE pluginChainPresets SET title = :title, slots = :slots WHERE id = :id"
+            };
+            sql.bind(":title", title);
+            sql.bind(":slots", slotsJson);
+            sql.bind(":id", id);
+            sql.exec();
+        });
+    } catch (const SQLite::Exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("PluginChainPresetManage::updatePreset 失败:{}", e.what());
     }
 }
 

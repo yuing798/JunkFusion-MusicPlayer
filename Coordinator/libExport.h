@@ -412,6 +412,13 @@ extern "C" {
     /** @brief 把一份配置存成新预设（前端把当前 8 槽 JSON 传上来）→ 新 id，失败 -1 */
     DLL_EXPORT long long savePluginChainPreset(const char* title, const char* slotsJson);
 
+    /** @brief 覆盖已有预设（双击预设改完保存）→ {"ok":bool,"error":""} */
+    DLL_EXPORT const char* updatePluginChainPreset(
+        long long id,
+        const char* title,
+        const char* slotsJson
+    );
+
     DLL_EXPORT void renamePluginChainPreset(long long id, const char* title);
     DLL_EXPORT void deletePluginChainPreset(long long id);
 

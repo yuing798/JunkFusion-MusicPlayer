@@ -718,6 +718,27 @@ extern "C" {
         }
     }
 
+    const char* updatePluginChainPreset(long long id, const char* title, const char* slotsJson) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || title == nullptr || slotsJson == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginChainPresetManage.updatePreset(id, title, slotsJson);
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("updatePluginChainPreset 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "更新预设失败");
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
     void renamePluginChainPreset(long long id, const char* title) {
         if (title == nullptr) return;
         try {

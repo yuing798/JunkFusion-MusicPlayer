@@ -1,25 +1,31 @@
 /// 全局效果器链的数据层（Provider）
 ///
 /// ── 职责 ──────────────────────────────────────────────────────────────
-///   1. 持有"8 个插槽的配置"（用户意图）与"音频进程回报的状态"（实际加载结果）；
-///   2. 把配置下发给音频进程（`setPluginChain`），旁通开关单独走轻量指令；
-///   3. 链预设的增删查（存的是配置体 JSON，含每个插件的 state）。
+///   1. 持有"当前全局链"（0~8 个插件的有序列表）与"音频进程回报的状态"；
+///   2. 把链下发给音频进程（`setPluginChain`），旁通开关单独走轻量指令；
+///   3. 链预设的增删改查（预设 = 一条完整的链，含每个插件的 state）。
 ///
-/// ── 为什么配置放前端 ──────────────────────────────────────────────────
-///   和 EQ 一样是"编辑态"：用户在页面上挑插件、改旁通、点应用。
-///   Coordinator 只在下发时留一份副本（用于重发/查询），权威永远是用户刚点的那一下。
+/// ── 全局链 vs 预设 ────────────────────────────────────────────────────
+///   · 全局链：用户正在编辑的那条，会真的插在交叉淡化之后出声；
+///   · 预设：存下来的链，可以贴到全局（现在）或贴到某个分轨（以后）。
+///   两者用同一份数据结构 [ChainSlot]，所以"存为预设"和"载入预设"都只是搬运。
 ///
-/// ── 状态为什么要轮询 ──────────────────────────────────────────────────
-///   实例化插件要几十~几百毫秒，音频进程加载完才回传 `pluginChainState`。
-///   只在"应用之后"轮询 3 秒，平时不轮询（FFI 调用本身很便宜，但没必要）。
+/// ── 顺序 / 脏标记 ─────────────────────────────────────────────────────
+///   增删、更换插件、拖动排序都**只改前端**并标脏，点「应用」才重建：
+///   重建要重新实例化插件（实测 CHOWTapeModel 1.86 秒），拖动一次就重建的话没法用。
+///   重建期间音频照常放旧链，只是"新链生效前那一段还是旧声音"。
+///   旁通是纯开关，立即生效。
 ///
 /// ── 用法 ─────────────────────────────────────────────────────────────
 /// ```dart
-/// context.read<PluginChainProvider>().ensureInitialized();
-/// provider.loadSlot(0, pluginItem);       // 选插件
-/// provider.toggleSlotBypass(0);           // 单槽旁通（立即生效）
-/// provider.apply();                        // 下发整链
-/// provider.savePreset('我的母带链');
+/// chain.ensureInitialized();
+/// chain.addSlot(pluginItem);        // 追加
+/// chain.moveSlot(0, 2);             // 拖动排序（前端）
+/// chain.toggleSlotBypass(0);        // 立即生效
+/// chain.apply();                    // 重建整链
+/// chain.applyPreset(id);            // 载入预设并立即下发
+/// chain.saveChainAsPreset('母带');  // 存当前链
+/// chain.updatePresetChain(id, '名字', slots);  // 双击预设改完保存
 /// ```
 library;
 
@@ -35,45 +41,49 @@ import 'package:junk_fusion_ui/model/plugin_info.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
 
 class PluginChainProvider extends ChangeNotifier {
-  /// 槽位数：和后端 `PluginChain::kSlotCount` 必须一致
-  static const int slotCount = 8;
+  /// 一条链最多几个插件：和后端 `PluginChain::kSlotCount` 必须一致
+  static const int maxSlots = 8;
 
-  List<ChainSlot> _slots = List<ChainSlot>.generate(
-    slotCount,
-    (index) => ChainSlot.empty(index),
-  );
-  ChainStatus _status = const ChainStatus.none();
-  List<ChainPresetItem> _presets = const <ChainPresetItem>[];
-
+  // ── 全局链 ────────────────────────────────────────────────────────
+  List<ChainSlot> _slots = const <ChainSlot>[];
   bool _bypassAll = false;
-  bool _initialized = false;
-
-  /// 配置改过但还没应用（页面上给"应用"按钮加高亮）
   bool _dirty = false;
 
+  // ── 运行状态（音频进程回传）────────────────────────────────────────
+  ChainStatus _status = const ChainStatus.none();
+
+  // ── 预设 ──────────────────────────────────────────────────────────
+  List<ChainPresetItem> _presets = const <ChainPresetItem>[];
+
+  bool _initialized = false;
   String? _lastError;
+
   Timer? _pollTimer;
   int _pollTries = 0;
 
-  // ── 只读状态 ──────────────────────────────────────────────────────
+  // ── 只读 ──────────────────────────────────────────────────────────
   List<ChainSlot> get slots => _slots;
   ChainStatus get status => _status;
   List<ChainPresetItem> get presets => _presets;
   bool get bypassAll => _bypassAll;
   bool get isDirty => _dirty;
+  bool get isFull => _slots.length >= maxSlots;
+  int get length => _slots.length;
   String? get lastError => _lastError;
 
   int get totalLatency => _status.latency;
   bool get anyLoaded => _status.anyLoaded;
 
-  ChainSlotStatus statusOf(int slot) =>
-      _status.slots[slot] ?? const ChainSlotStatus.none();
+  ChainSlotStatus statusOf(int position) =>
+      _status.slots[position] ?? const ChainSlotStatus.none();
 
   void clearError() {
     _lastError = null;
   }
 
-  // ── 初始化 ────────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // 初始化 / 刷新
+  // ════════════════════════════════════════════════════════════════
   void ensureInitialized() {
     if (_initialized) return;
     _initialized = true;
@@ -81,7 +91,6 @@ class PluginChainProvider extends ChangeNotifier {
     refreshState();
   }
 
-  // ── 读状态 ────────────────────────────────────────────────────────
   void refreshState() {
     final envelope = _readJsonObject(bindings.getPluginChainState());
     final raw = envelope?['chain'];
@@ -104,35 +113,80 @@ class PluginChainProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── 编辑 ──────────────────────────────────────────────────────────
-  /// 给某个槽选一个插件（状态 blob 清空：新插件没有旧状态）
-  void loadSlot(int slot, PluginItem plugin) {
-    if (slot < 0 || slot >= slotCount) return;
-    _slots[slot] = ChainSlot(
-      index: slot,
-      filePath: plugin.filePath,
-      identifier: plugin.identifier,
-      name: plugin.name,
-      bypass: false,
-      state: '',
-    );
+  // ════════════════════════════════════════════════════════════════
+  // 编辑全局链（都只改前端 + 标脏）
+  // ════════════════════════════════════════════════════════════════
+  /// 追加一个插件；满了返回 false
+  bool addSlot(PluginItem plugin) {
+    if (isFull) return false;
+    if (plugin.identifier.isEmpty) {
+      _lastError = '这个插件没有 identifier，无法加载（重新扫一遍试试）';
+      notifyListeners();
+      return false;
+    }
+
+    _slots = [
+      ..._slots,
+      ChainSlot.create(
+        index: _slots.length,
+        filePath: plugin.filePath,
+        identifier: plugin.identifier,
+        name: plugin.name,
+      ),
+    ];
+    _dirty = true;
+    notifyListeners();
+    return true;
+  }
+
+  void removeSlot(int position) {
+    if (position < 0 || position >= _slots.length) return;
+    _slots = [..._slots]..removeAt(position);
+    _renumber();
     _dirty = true;
     notifyListeners();
   }
 
-  void clearSlot(int slot) {
-    if (slot < 0 || slot >= slotCount) return;
-    _slots[slot] = ChainSlot.empty(slot);
+  /// 拖动排序（前端）
+  ///
+  /// 入参与 `ReorderableListView.onReorder` 一致（newIndex 是"插入到哪个下标之前"，
+  /// 往下拖时要减 1）。
+  void moveSlot(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= _slots.length) return;
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    if (target < 0) target = 0;
+    if (target >= _slots.length) target = _slots.length - 1;
+    if (target == oldIndex) return;
+
+    final next = [..._slots];
+    final moved = next.removeAt(oldIndex);
+    next.insert(target, moved);
+    _slots = next;
+    _renumber();
     _dirty = true;
     notifyListeners();
   }
 
-  /// 单槽旁通：立即生效，不需要点"应用"
-  void toggleSlotBypass(int slot) {
-    if (slot < 0 || slot >= slotCount) return;
-    final next = !_slots[slot].bypass;
-    _slots[slot] = _slots[slot].copyWith(bypass: next);
-    bindings.setPluginChainSlotBypass(slot, next ? 1 : 0);
+  /// 整链替换（载入预设 / 对话框里"保存并应用"）
+  void loadChain(List<ChainSlot> chain, {bool? bypassAll}) {
+    _slots = [...chain];
+    _renumber();
+    if (bypassAll != null) _bypassAll = bypassAll;
+    _dirty = true;
+    notifyListeners();
+  }
+
+  /// 某个条目的旁通：立即生效，不需要点应用
+  void toggleSlotBypass(int position) {
+    if (position < 0 || position >= _slots.length) return;
+
+    final next = [..._slots];
+    final bypass = !next[position].bypass;
+    next[position] = next[position].copyWith(bypass: bypass);
+    _slots = next;
+
+    bindings.setPluginChainSlotBypass(position, bypass ? 1 : 0);
     notifyListeners();
   }
 
@@ -143,31 +197,26 @@ class PluginChainProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 打开某个槽的插件编辑器
-  ///
-  /// 窗口开在**音频进程**里（插件实例在那边，消息循环也在那边）。
-  /// 音频进程重启后窗口会消失，再点一次即可。
-  void openEditor(int slot) {
-    if (slot < 0 || slot >= slotCount) return;
-    bindings.openPluginSlotEditor(slot);
+  /// 打开某个条目的插件编辑器（窗口开在音频进程里）
+  void openEditor(int position) {
+    if (position < 0 || position >= _slots.length) return;
+    bindings.openPluginSlotEditor(position);
   }
 
-  // ── 下发 ──────────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // 下发
+  // ════════════════════════════════════════════════════════════════
   Map<String, dynamic> _configJson() {
     return {
       'bypassAll': _bypassAll,
-      'slots': [
-        for (final slot in _slots)
-          if (!slot.isEmpty) slot.toJson(),
-      ],
+      'slots': [for (final slot in _slots) slot.toJson()],
     };
   }
 
   /// 下发整链；返回 false 时原因在 [lastError]
   bool apply() {
-    final json = jsonEncode(_configJson());
     final result = _withCString(
-      json,
+      jsonEncode(_configJson()),
       (ptr) => _readJsonObject(bindings.setPluginChain(ptr)),
     );
 
@@ -179,10 +228,10 @@ class PluginChainProvider extends ChangeNotifier {
       return false;
     }
 
-    // 黑名单挡掉的插件：告诉用户，别让人以为"没生效"
+    // 黑名单挡掉的插件：用 warning 通知，别让人以为"没生效"
     final dropped = result?['dropped'];
     if (dropped is List && dropped.isNotEmpty) {
-      _lastError = '有 ${dropped.length} 个插件在黑名单里，没有下发（可在设置页强制启用）';
+      _lastError = '有 ${dropped.length} 个插件在黑名单里，没有下发（设置页可强制启用）';
     }
 
     _dirty = false;
@@ -194,26 +243,57 @@ class PluginChainProvider extends ChangeNotifier {
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTries = 0;
-    _pollTimer = Timer.periodic(const Duration(milliseconds: 300), (_) {
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
       _pollTries++;
       refreshState();
+      // 加载完（anyLoaded）或者超时 3 秒就停
       final stillBusy = !_status.anyLoaded && _pollTries < 10;
       if (!stillBusy) {
-        _pollTimer?.cancel();
+        timer.cancel();
         _pollTimer = null;
       }
     });
   }
 
-  // ── 预设 ──────────────────────────────────────────────────────────
-  /// 把当前 8 槽存成新预设；返回新 id（-1 = 失败）
-  int savePreset(String title) {
-    if (title.trim().isEmpty) return -1;
+  // ════════════════════════════════════════════════════════════════
+  // 预设
+  // ════════════════════════════════════════════════════════════════
+  /// 载入预设并立即下发
+  bool applyPreset(int id) {
+    final parsed = _readPresetChain(id);
+    if (parsed == null) {
+      _lastError = '预设读不出来，可能数据损坏';
+      notifyListeners();
+      return false;
+    }
 
-    final json = jsonEncode(_configJson());
+    loadChain(parsed.slots, bypassAll: parsed.bypassAll);
+    return apply();
+  }
+
+  /// 读一个预设的配置体（不应用）
+  ({List<ChainSlot> slots, bool bypassAll})? _readPresetChain(int id) {
+    final envelope = _readJsonObject(bindings.getPluginChainPreset(id));
+    final raw = envelope?['chain'];
+    if (raw is! Map) return null;
+    return _parseChain(raw.cast<String, dynamic>());
+  }
+
+  /// 把一个预设的链读出来（双击预设打开对话框时用）
+  ({List<ChainSlot> slots, bool bypassAll})? readPresetChain(int id) =>
+      _readPresetChain(id);
+
+  /// 存当前链为新预设；返回新 id（-1 = 失败）
+  int saveCurrentChainAsPreset(String title) =>
+      saveChainAsPreset(title, _slots);
+
+  /// 把任意一条链存为新预设
+  int saveChainAsPreset(String title, List<ChainSlot> chain) {
+    if (title.trim().isEmpty || chain.isEmpty) return -1;
+
     final id = _withCString(
       title.trim(),
-      (titlePtr) => _withCString(json, (jsonPtr) {
+      (titlePtr) => _withCString(_jsonOf(chain), (jsonPtr) {
         return bindings.savePluginChainPreset(titlePtr, jsonPtr);
       }),
     );
@@ -222,38 +302,21 @@ class PluginChainProvider extends ChangeNotifier {
     return id;
   }
 
-  /// 载入预设并立即下发
-  bool applyPreset(int id) {
-    final envelope = _readJsonObject(bindings.getPluginChainPreset(id));
-    final raw = envelope?['chain'];
-    if (raw is! Map) {
-      _lastError = '预设读不出来，可能数据损坏';
-      notifyListeners();
-      return false;
-    }
+  /// 覆盖已有预设（双击预设 → 改名 / 改链 → 保存）
+  bool updatePresetChain(int id, String title, List<ChainSlot> chain) {
+    if (title.trim().isEmpty) return false;
 
-    final config = raw.cast<String, dynamic>();
-    final parsed = List<ChainSlot>.generate(
-      slotCount,
-      (index) => ChainSlot.empty(index),
-    );
+    final result = _withCString(title.trim(), (titlePtr) {
+      return _withCString(_jsonOf(chain), (jsonPtr) {
+        return _readJsonObject(
+          bindings.updatePluginChainPreset(id, titlePtr, jsonPtr),
+        );
+      });
+    });
 
-    final rawSlots = config['slots'];
-    if (rawSlots is List) {
-      for (final item in rawSlots) {
-        if (item is! Map) continue;
-        final slot = ChainSlot.fromJson(item.cast<String, dynamic>());
-        if (slot.index < 0 || slot.index >= slotCount) continue;
-        parsed[slot.index] = slot;
-      }
-    }
-
-    _slots = parsed;
-    _bypassAll = config['bypassAll'] == true;
-    _dirty = true;
-    notifyListeners();
-
-    return apply();
+    final ok = result?['ok'] == true;
+    if (ok) refreshPresets();
+    return ok;
   }
 
   void deletePreset(int id) {
@@ -277,7 +340,45 @@ class PluginChainProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  // ── 内部：FFI 字符串转换 ──────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // 内部
+  // ════════════════════════════════════════════════════════════════
+
+  /// 把顺序号按当前位置重排（去掉空洞之后 index 就是位置）
+  void _renumber() {
+    _slots = [
+      for (var position = 0; position < _slots.length; position++)
+        _slots[position].copyWith(index: position),
+    ];
+  }
+
+  String _jsonOf(List<ChainSlot> chain) {
+    final renumbered = [
+      for (var position = 0; position < chain.length; position++)
+        chain[position].copyWith(index: position),
+    ];
+    return jsonEncode({
+      'bypassAll': false,
+      'slots': [for (final slot in renumbered) slot.toJson()],
+    });
+  }
+
+  ({List<ChainSlot> slots, bool bypassAll}) _parseChain(
+    Map<String, dynamic> json,
+  ) {
+    final slots = <ChainSlot>[];
+    final rawSlots = json['slots'];
+    if (rawSlots is List) {
+      for (final item in rawSlots) {
+        if (item is! Map) continue;
+        final slot = ChainSlot.fromJson(item.cast<String, dynamic>());
+        if (slot.isEmpty) continue; // 老数据里可能有空槽，忽略
+        slots.add(slot.copyWith(index: slots.length));
+      }
+    }
+    return (slots: slots, bypassAll: json['bypassAll'] == true);
+  }
+
   T _withCString<T>(String text, T Function(Pointer<Char>) action) {
     final ptr = UtilFunction.string2cPtr(text);
     try {

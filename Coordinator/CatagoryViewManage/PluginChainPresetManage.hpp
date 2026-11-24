@@ -29,7 +29,11 @@ class PluginChainPresetManage {
 public:
     explicit PluginChainPresetManage(CenterDbManage& dbManage) : mDbManage(dbManage) {}
 
-    /** @brief [{id, title, createTime}]，失败返回空数组 */
+    /** @brief [{id, title, createTime, preview}]，失败返回空数组
+     *
+     *  preview 是"TDR Nova → CHOWTapeModel"这种链预览，顺手在 SQL 循环里算好，
+     *  省得前端为每个预设再发一次 FFI 去读配置体。
+     */
     Yvar getAllPresets();
 
     /** @brief 取配置体（找不到返回空值） */
@@ -38,9 +42,18 @@ public:
     /** @brief 新建；成功返回 id，失败 -1 */
     int64_t createPreset(const std::string& title, const std::string& slotsJson);
 
+    /** @brief 覆盖已有预设的名字和配置体（双击预设改完保存） */
+    void updatePreset(int64_t id, const std::string& title, const std::string& slotsJson);
+
     void renamePreset(int64_t id, const std::string& title);
     void deletePreset(int64_t id);
 
 private:
+    /// 侧边栏里最多显示几个插件名（再多就 "→ …"）
+    static constexpr int kPreviewLimit = 4;
+
+    /// 从配置体 JSON 里拼出 "A → B → C" 的预览串
+    static std::string buildPreview(const std::string& slotsJson);
+
     CenterDbManage& mDbManage;
 };

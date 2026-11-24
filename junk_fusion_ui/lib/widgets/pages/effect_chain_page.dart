@@ -1,18 +1,22 @@
-/// 效果器页（左侧导航 id = 8）：全局效果器链
+/// 效果器页（左侧导航 id = 8）：全局效果器链 + 链预设
 ///
-/// ── 这一页是什么 ──────────────────────────────────────────────────────
-/// 8 个插槽，串在**交叉淡化之后、EQ 之前**（单条路径、全局共享、不需要 PDC）。
-/// 路由理由见 docs/audio-routing.md §4.1。
+/// ── 两个板块怎么分 ────────────────────────────────────────────────────
+///   · **右（主内容区）**：全局效果器链。它真的插在交叉淡化之后、EQ 之前出声，
+///     所以有"应用 / 整链旁通 / 打开插件编辑器 / 已加载延迟"这些运行时概念。
+///   · **左（sidebar）**：链预设。预设 = 一条完整的链（0~8 个插件），
+///     可以贴到全局链上（现在），以后也可以贴到某个分轨上。
+///     和 EQ 页一个分工：预设列表住 sidebar，工作区住主区。
 ///
 /// ── 交互 ──────────────────────────────────────────────────────────────
-///   · 每个槽：选插件 / 清除 / 单槽旁通（旁通**立即生效**，不用点应用）
-///   · 整链旁通：一键回到干声（插件行为异常时的逃生口）
-///   · 「应用」：把 8 槽配置下发给音频进程（会实例化插件，几百毫秒）
-///   · 预设：把当前 8 槽（含每个插件的 state）存下来 / 一键切回
+///   · 主区：+ 添加 / 拖动 ⠿ 排序（只改前端，点应用才重建）/ 单卡旁通（立即生效）
+///           / 🎛 打开插件编辑器 / ✕ 移除 / 整链旁通（立即生效）
+///   · 侧边栏：单击预设 = 载入并立即下发；双击 = 打开对话框改名 + 改链；
+///            + = 新建预设（默认拷一份当前全局链，省得从零搭）；
+///            右键 = 编辑 / 应用到全局链 / 删除
 ///
-/// ── 为什么要有"应用"这个按钮而不是改了就生效 ──────────────────────────
-/// 换插件要实例化（LoadLibrary + prepare），每次改动都重建链会又慢又吵；
-/// 而且用户常常一次改好几个槽。旁通这种纯开关才做成即时。
+/// ── 为什么"改"了还要点应用 ────────────────────────────────────────────
+///   换插件/换顺序要重新实例化（实测 CHOWTapeModel 1.86 秒）。重建期间旧链照常出声，
+///   所以这个按钮不是"省 CPU"，而是"让用户决定什么时候切声音"。
 ///
 /// 用法（只有 pages_route.dart 引用）：
 ///     const EffectChainPage()
@@ -26,6 +30,9 @@ import 'package:junk_fusion_ui/providers/plugin_chain_provider.dart';
 import 'package:junk_fusion_ui/providers/plugin_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
+import 'package:junk_fusion_ui/widgets/plugin_chain/effect_chain_editor.dart';
+import 'package:junk_fusion_ui/widgets/plugin_chain/plugin_picker_dialog.dart';
+import 'package:junk_fusion_ui/widgets/plugin_chain/preset_edit_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
@@ -37,6 +44,9 @@ class EffectChainPage extends StatefulWidget {
 }
 
 class _EffectChainPageState extends State<EffectChainPage> {
+  /// sidebar 宽度（和 EQ 页的预设列一个量级）
+  static const double _sidebarWidth = 236;
+
   @override
   void initState() {
     super.initState();
@@ -53,384 +63,326 @@ class _EffectChainPageState extends State<EffectChainPage> {
     final chain = context.watch<PluginChainProvider>();
     final plugins = context.watch<PluginProvider>().plugins;
 
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(theme, chain),
-        const SizedBox(height: 6),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              for (int i = 0; i < PluginChainProvider.slotCount; i++)
-                _buildSlotRow(theme, chain, plugins, i),
-              const SizedBox(height: 18),
-              _buildPresetArea(theme, chain),
-            ],
-          ),
-        ),
+        SizedBox(width: _sidebarWidth, child: _buildSidebar(theme, chain)),
+        const VerticalDivider(width: 1),
+        Expanded(child: _buildMainArea(theme, chain, plugins)),
       ],
     );
   }
 
-  // ── 顶部：标题 + 整链旁通 + 应用 ────────────────────────────────────
-  Widget _buildHeader(AppTheme theme, PluginChainProvider chain) {
-    final latencyMs = chain.totalLatency / 44.1; // 只是给个量级，采样率未知
-    return SizedBox(
-      height: 56,
-      child: Row(
-        children: [
-          Text('效果器链', style: theme.bigTextStyle),
-          const SizedBox(width: 10),
-          Text('全局 · 交叉淡化之后', style: theme.littleTextStyle),
-          if (chain.totalLatency > 0) ...[
-            const SizedBox(width: 10),
-            Tooltip(
-              message: '整条链的插件延迟（采样）。单路径不需要补偿，只影响"听到"比"显示"晚一点',
-              child: Text(
-                '延迟 ${chain.totalLatency} 采样（≈${latencyMs.toStringAsFixed(0)}ms）',
-                style: theme.littleTextStyle,
-              ),
-            ),
-          ],
-          const Spacer(),
-
-          // 整链旁通：逃生口，立即生效
-          Text('整链旁通', style: theme.littleTextStyle),
-          Switch(
-            value: chain.bypassAll,
-            onChanged: (_) => chain.toggleBypassAll(),
-          ),
-          const SizedBox(width: 8),
-
-          FilledButton.tonal(
-            onPressed: () => _applyChain(chain),
-            style: chain.isDirty
-                ? FilledButton.styleFrom(
-                    backgroundColor: theme.colorStress,
-                    foregroundColor: theme.colorOnStress,
-                  )
-                : null,
-            child: Text(chain.isDirty ? '应用 *' : '应用'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── 一个插槽 ──────────────────────────────────────────────────────
-  Widget _buildSlotRow(
-    AppTheme theme,
-    PluginChainProvider chain,
-    List<PluginItem> plugins,
-    int index,
-  ) {
-    final slot = chain.slots[index];
-    final status = chain.statusOf(index);
-
-    // 运行状态优先级：加载报错 > 已加载 > 未应用 / 空槽
-    String statusText;
-    Color statusColor = theme.colorTextSecond;
-    if (status.error.isNotEmpty) {
-      statusText = status.error;
-      statusColor = theme.colorError;
-    } else if (status.loaded) {
-      statusText = status.latency > 0 ? '已加载 · 延迟 ${status.latency}' : '已加载';
-    } else if (slot.isEmpty) {
-      statusText = '空插槽';
-    } else {
-      statusText = '未应用';
-    }
-
-    return Container(
-      height: 62,
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: theme.colorCell,
-        border: Border.all(color: theme.colorEdge),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 26,
-            child: Text('${index + 1}', style: theme.midTextStyle),
-          ),
-          const SizedBox(width: 4),
-          Icon(
-            slot.isEmpty ? TablerIcons.plugOff : TablerIcons.plugConnected,
-            size: 18,
-            color: slot.isEmpty ? theme.colorEdge : theme.colorStress,
-          ),
-          const SizedBox(width: 8),
-
-          // 名字 + 状态
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+  // ════════════════════════════════════════════════════════════════
+  // sidebar：链预设
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildSidebar(AppTheme theme, PluginChainProvider chain) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 52,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12, right: 4),
+            child: Row(
               children: [
-                Text(
-                  slot.isEmpty ? '（空插槽）' : slot.name,
-                  style: theme.midTextStyle.copyWith(
-                    color: slot.isEmpty
-                        ? theme.colorTextSecond
-                        : theme.colorTextMain,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  statusText,
-                  style: theme.littleTextStyle.copyWith(
-                    fontSize: 12,
-                    color: statusColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Text('链预设', style: theme.midTextStyle),
+                const Spacer(),
+                IconButton(
+                  tooltip: '新建预设',
+                  icon: const Icon(Icons.add, size: 20),
+                  onPressed: () => _openPresetDialog(chain, preset: null),
                 ),
               ],
             ),
           ),
-
-          Text(slot.bypass ? '已旁通' : '', style: theme.littleTextStyle),
-          Switch(
-            value: slot.bypass,
-            onChanged: slot.isEmpty
-                ? null
-                : (_) => chain.toggleSlotBypass(index),
-          ),
-          TextButton(
-            onPressed: () => _pickPlugin(context, index, plugins),
-            child: Text(slot.isEmpty ? '选择' : '更换'),
-          ),
-          // 打开插件自己的界面：**没有这个就没法调音**，
-          // 只能听插件默认参数（而且很多插件默认是干的）
-          IconButton(
-            tooltip: status.loaded ? '打开插件编辑器' : '先点「应用」，插件加载后才有编辑器',
-            icon: const Icon(Icons.tune, size: 18),
-            onPressed: status.loaded
-                ? () {
-                    chain.openEditor(index);
-                    UtilFunction.showInfoMessage('正在打开「${slot.name}」的编辑器…');
-                  }
-                : null,
-          ),
-          IconButton(
-            tooltip: '清空这个插槽',
-            icon: const Icon(Icons.close, size: 16),
-            onPressed: slot.isEmpty ? null : () => chain.clearSlot(index),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── 预设区 ────────────────────────────────────────────────────────
-  Widget _buildPresetArea(AppTheme theme, PluginChainProvider chain) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('链预设', style: theme.midTextStyle),
-            const SizedBox(width: 8),
-            Text('存的是"用了哪些插件 + 每个插件的状态"', style: theme.littleTextStyle),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: () => _savePreset(context, chain),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('把当前链存为预设'),
-            ),
-          ],
         ),
-        const SizedBox(height: 6),
-        if (chain.presets.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text('还没有预设', style: theme.littleTextStyle),
-          )
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final preset in chain.presets)
-                _buildPresetChip(theme, chain, preset),
-            ],
+        Container(height: 1, color: theme.colorEdge),
+        Expanded(
+          child: chain.presets.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      '还没有预设\n\n调好全局链之后，\n点右上角的 + 存一条',
+                      textAlign: TextAlign.center,
+                      style: theme.littleTextStyle,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  itemCount: chain.presets.length,
+                  itemBuilder: (context, index) {
+                    return _buildPresetRow(theme, chain, chain.presets[index]);
+                  },
+                ),
+        ),
+        Container(height: 1, color: theme.colorEdge),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          child: Text(
+            '当前全局链：${chain.length} 个 · 延迟 ${chain.totalLatency} 采样',
+            style: theme.littleTextStyle.copyWith(fontSize: 12),
           ),
+        ),
       ],
     );
   }
 
-  Widget _buildPresetChip(
+  Widget _buildPresetRow(
     AppTheme theme,
     PluginChainProvider chain,
     ChainPresetItem preset,
   ) {
-    return GestureDetector(
+    return InkWell(
+      // 单击 = 载入并立即下发
       onTap: () => _applyPreset(chain, preset),
-      // 右键删除（项目规范：右键菜单统一走 showRootContextMenu）
-      onSecondaryTapDown: (details) {
-        showRootContextMenu(
-          context: context,
-          position: details.globalPosition,
-          useBarrier: true,
-          items: [
-            ContextMenuItem(
-              label: '删除预设',
-              onTap: () => chain.deletePreset(preset.id),
-            ),
-          ],
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: theme.colorHover,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: theme.colorEdge),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+      // 双击 = 改名 + 改链
+      onDoubleTap: () => _openPresetDialog(chain, preset: preset),
+      onSecondaryTapDown: (details) =>
+          _showPresetMenu(context, chain, preset, details.globalPosition),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(TablerIcons.playlist, size: 16, color: theme.colorTextSecond),
-            const SizedBox(width: 6),
-            Text(preset.title, style: theme.littleTextStyle),
+            Text(
+              preset.title,
+              style: theme.midTextStyle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              preset.preview,
+              style: theme.littleTextStyle.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
     );
   }
 
-  // ── 交互 ──────────────────────────────────────────────────────────
-  Future<void> _pickPlugin(
+  void _showPresetMenu(
     BuildContext context,
-    int slot,
-    List<PluginItem> allPlugins,
-  ) async {
-    // 只列"能当效果器用"的：类型是 effect、扫描成功、有 identifier（没有它没法定位加载）
-    final candidates =
-        allPlugins
-            .where(
-              (plugin) =>
-                  plugin.type == PluginType.effect &&
-                  !plugin.isFailed &&
-                  plugin.identifier.isNotEmpty,
-            )
-            .toList()
-          ..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-          );
-
-    final selected = await showDialog<PluginItem>(
+    PluginChainProvider chain,
+    ChainPresetItem preset,
+    Offset position,
+  ) {
+    showRootContextMenu(
       context: context,
-      builder: (dialogContext) {
-        final theme = dialogContext.watch<AppTheme>();
-        return AlertDialog(
-          title: Text('选择插件（插槽 ${slot + 1}）'),
-          content: SizedBox(
-            width: 520,
-            height: 420,
-            child: candidates.isEmpty
-                ? Center(
-                    child: Text(
-                      '没有可用的效果器插件\n先去设置页扫描，或把分类改成「效果器」',
-                      textAlign: TextAlign.center,
-                      style: theme.littleTextStyle,
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: candidates.length,
-                    itemBuilder: (context, index) {
-                      final plugin = candidates[index];
-                      return ListTile(
-                        dense: true,
-                        title: Text(plugin.name, style: theme.midTextStyle),
-                        subtitle: Text(
-                          plugin.vendor.isEmpty
-                              ? plugin.filePath
-                              : plugin.vendor,
-                          style: theme.littleTextStyle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () => Navigator.of(dialogContext).pop(plugin),
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('取消'),
-            ),
-          ],
-        );
-      },
+      position: position,
+      useBarrier: true,
+      items: [
+        ContextMenuItem(
+          label: '编辑（改名 / 改链）',
+          onTap: () => _openPresetDialog(chain, preset: preset),
+        ),
+        ContextMenuItem(
+          label: '应用到全局链',
+          onTap: () => _applyPreset(chain, preset),
+        ),
+        ContextMenuItem(
+          label: '删除',
+          onTap: () {
+            chain.deletePreset(preset.id);
+            UtilFunction.showInfoMessage('已删除预设「${preset.title}」');
+          },
+        ),
+      ],
     );
+  }
 
-    if (selected == null || !context.mounted) return;
-    context.read<PluginChainProvider>().loadSlot(slot, selected);
+  // ════════════════════════════════════════════════════════════════
+  // 主区：全局效果器链
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildMainArea(
+    AppTheme theme,
+    PluginChainProvider chain,
+    List<PluginItem> plugins,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 56,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Text('全局效果器链', style: theme.bigTextStyle),
+                const SizedBox(width: 10),
+                Text('交叉淡化之后 · 全局共享', style: theme.littleTextStyle),
+                const Spacer(),
+                Text('整链旁通', style: theme.littleTextStyle),
+                Switch(
+                  value: chain.bypassAll,
+                  onChanged: (_) => chain.toggleBypassAll(),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: chain.isFull
+                      ? () => UtilFunction.showWarnMessage(
+                          '一条链最多 ${PluginChainProvider.maxSlots} 个效果器',
+                        )
+                      : () => _addPlugin(chain, plugins),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('添加'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () => _applyChain(chain),
+                  style: chain.isDirty
+                      ? FilledButton.styleFrom(
+                          backgroundColor: theme.colorStress,
+                          foregroundColor: theme.colorOnStress,
+                        )
+                      : null,
+                  child: Text(chain.isDirty ? '应用 *' : '应用'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: EffectChainEditor(
+                slots: chain.slots,
+                status: chain.status,
+                onReorder: chain.moveSlot,
+                onRemove: chain.removeSlot,
+                onBypass: chain.toggleSlotBypass,
+                onOpenEditor: chain.openEditor,
+                onAdd: () => _addPlugin(chain, plugins),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: Text(
+            '拖动卡片左侧的 ⠿ 调整顺序；改完点「应用」才重建（重建期间还在放旧链）。'
+            '旁通是立即生效的。',
+            style: theme.littleTextStyle.copyWith(fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // 交互
+  // ════════════════════════════════════════════════════════════════
+  Future<void> _addPlugin(
+    PluginChainProvider chain,
+    List<PluginItem> plugins,
+  ) async {
+    final selected = await showPluginPickerDialog(context, plugins);
+    if (selected == null || !mounted) return;
+
+    if (!chain.addSlot(selected)) {
+      final error = chain.lastError;
+      chain.clearError();
+      UtilFunction.showWarnMessage(error ?? '添加失败');
+    }
   }
 
   void _applyChain(PluginChainProvider chain) {
-    if (chain.apply()) {
-      UtilFunction.showInfoMessage('已下发效果器链，正在加载插件…');
+    if (!chain.apply()) {
+      final error = chain.lastError;
+      chain.clearError();
+      UtilFunction.showErrorMessage(error ?? '下发效果器链失败');
       return;
     }
-    final error = chain.lastError;
+
+    // apply() 可能留下"被黑名单挡住"的提示
+    final warning = chain.lastError;
     chain.clearError();
-    UtilFunction.showErrorMessage(error ?? '下发效果器链失败');
+    if (warning != null) {
+      UtilFunction.showWarnMessage(warning);
+    } else {
+      UtilFunction.showInfoMessage('已下发，正在加载插件…');
+    }
   }
 
   void _applyPreset(PluginChainProvider chain, ChainPresetItem preset) {
-    if (chain.applyPreset(preset.id)) {
-      UtilFunction.showInfoMessage('已切换到「${preset.title}」');
+    if (!chain.applyPreset(preset.id)) {
+      final error = chain.lastError;
+      chain.clearError();
+      UtilFunction.showErrorMessage(error ?? '载入预设失败');
       return;
     }
-    final error = chain.lastError;
-    chain.clearError();
-    UtilFunction.showErrorMessage(error ?? '切换预设失败');
+    UtilFunction.showInfoMessage('已载入预设「${preset.title}」');
   }
 
-  Future<void> _savePreset(
-    BuildContext context,
-    PluginChainProvider chain,
-  ) async {
-    final controller = TextEditingController();
-    final title = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('保存为预设'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: '例如：母带 · 温暖'),
-          onSubmitted: (value) => Navigator.of(dialogContext).pop(value.trim()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    ).whenComplete(controller.dispose);
-
-    if (title == null || title.isEmpty || !context.mounted) return;
-
-    final id = chain.savePreset(title);
-    if (id > 0) {
-      UtilFunction.showInfoMessage('已保存预设「$title」');
+  /// 打开预设对话框：preset == null 表示新建（默认拷一份当前全局链）
+  Future<void> _openPresetDialog(
+    PluginChainProvider chain, {
+    required ChainPresetItem? preset,
+  }) async {
+    var initialSlots = chain.slots;
+    if (preset != null) {
+      final loaded = chain.readPresetChain(preset.id);
+      if (loaded == null) {
+        UtilFunction.showErrorMessage('预设读不出来，可能数据损坏');
+        return;
+      }
+      initialSlots = loaded.slots;
     } else {
-      UtilFunction.showErrorMessage('保存预设失败');
+      // 新建：拷当前链，省得从零搭
+      initialSlots = _cloneChain(chain.slots);
     }
+
+    final result = await showDialog<PresetEditResult>(
+      context: context,
+      builder: (_) => PresetEditDialog(
+        presetId: preset?.id,
+        initialTitle: preset?.title ?? '',
+        initialSlots: initialSlots,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    if (preset == null) {
+      final id = chain.saveChainAsPreset(result.title, result.slots);
+      if (id <= 0) {
+        UtilFunction.showErrorMessage('保存预设失败');
+        return;
+      }
+      UtilFunction.showInfoMessage('已保存预设「${result.title}」');
+    } else {
+      final ok = chain.updatePresetChain(preset.id, result.title, result.slots);
+      if (!ok) {
+        UtilFunction.showErrorMessage('更新预设失败');
+        return;
+      }
+      UtilFunction.showInfoMessage('已更新预设「${result.title}」');
+    }
+
+    if (!result.applyToGlobal) return;
+
+    chain.loadChain(result.slots);
+    _applyChain(chain);
+  }
+
+  /// 拷一条链（生成新的 uid，避免和全局链的条目撞身份）
+  List<ChainSlot> _cloneChain(List<ChainSlot> source) {
+    return [
+      for (var index = 0; index < source.length; index++)
+        ChainSlot.create(
+          index: index,
+          filePath: source[index].filePath,
+          identifier: source[index].identifier,
+          name: source[index].name,
+          bypass: source[index].bypass,
+          state: source[index].state,
+        ),
+    ];
   }
 }

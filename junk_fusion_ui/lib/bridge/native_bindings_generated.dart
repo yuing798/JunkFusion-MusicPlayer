@@ -1174,6 +1174,34 @@ class JunkFusionDLLBindings {
       >('updateEqBandLive');
   late final _updateEqBandLive = _updateEqBandLivePtr
       .asFunction<void Function(int, double, double, double, double)>();
+
+  /// @brief 覆盖已有预设（双击预设改完保存）→ {"ok":bool,"error":""}
+  ffi.Pointer<ffi.Char> updatePluginChainPreset(
+    int id,
+    ffi.Pointer<ffi.Char> title,
+    ffi.Pointer<ffi.Char> slotsJson,
+  ) {
+    return _updatePluginChainPreset(id, title, slotsJson);
+  }
+
+  late final _updatePluginChainPresetPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.LongLong,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+          )
+        >
+      >('updatePluginChainPreset');
+  late final _updatePluginChainPreset = _updatePluginChainPresetPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          int,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+        )
+      >();
 }
 
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;

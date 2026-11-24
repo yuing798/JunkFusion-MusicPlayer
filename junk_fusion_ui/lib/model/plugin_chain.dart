@@ -1,34 +1,51 @@
-/// 全局效果器链的前端模型（8 个插槽）
+/// 全局效果器链的前端模型
+///
+/// ── 一条链 = 0~8 个插件的有序列表（不是 8 个固定槽位）──────────────
+///   为什么去掉"空洞"：链在界面上是 `输入 → [卡] → [卡] → 输出` 这种箭头流，
+///   中间空一格在视觉上没有意义（还会让人以为信号会跳过它）。
+///   所以 `index` 只是"下发给后端时的顺序号"，由前端在每次增删/拖动后重新编号；
+///   后端本来就是按下标顺序处理，不需要改。
 ///
 /// ── 两份数据，别混 ────────────────────────────────────────────────────
-///   1. **配置**（[ChainSlot]）：index / filePath / identifier / name / bypass / state，
+///   1. **配置**（[ChainSlot]）：插件是谁、旁通没有、插件状态 blob，
 ///      是"用户想要什么"。权威副本在 Coordinator，前端改完通过 `setPluginChain` 推上去；
 ///      预设（pluginChainPresets.slots）存的也是这一坨。
 ///   2. **状态**（[ChainSlotStatus]）：loaded / latency / error，
 ///      是"音频进程实际加载成什么样"，由音频进程回传，前端只读。
 ///
-///   `state` 是插件自己的 getStateInformation（base64），**前端只是个搬运工**：
-///   选新插件时清空，切预设时原样带回去。不要在前端解析它。
+///   `state` 是插件自己的 getStateInformation（base64），前端只是个搬运工：
+///   换插件时清空，切预设时原样带回去，不要解析它。
 ///
-/// ── 为什么不用 freezed ────────────────────────────────────────────────
-///   和 model/plugin_info.dart 同一个理由：只是 JSON 的投影 + 几个 copyWith，
-///   手写更直接，也不用为了编译先跑 build_runner。
+/// ── uid 是什么 ────────────────────────────────────────────────────────
+///   拖动排序的动画库要求 `isSameItem(a, b)` 能判断"是不是同一个条目"，
+///   而配置本身是可变的（改旁通就换了一个对象），所以给每个条目一个前端自增的
+///   `uid`，**只用于列表身份，不落库、不下发**。
 library;
 
-/// 一个插槽的**配置**（用户意图）
+/// 前端自增的条目身份（只用来做列表动画，不落库）
+int _nextSlotUid = 0;
+
+int _allocateSlotUid() => _nextSlotUid++;
+
+/// 链上的一个效果器（用户意图）
 class ChainSlot {
+  /// 列表身份（拖动动画用），不落库、不下发
+  final int uid;
+
+  /// 在链里的顺序号：**每次增删/拖动后由前端重新编号**，下发时用它
   final int index;
 
-  /// 空串 = 空槽
+  /// 空串 = 这个条目没有插件（理论上不该出现，防御性判断）
   final String filePath;
   final String identifier;
   final String name;
   final bool bypass;
 
-  /// 插件状态 blob（base64，不透明）。选新插件时为空，切预设时原样保留。
+  /// 插件状态 blob（base64，不透明）
   final String state;
 
-  const ChainSlot({
+  ChainSlot({
+    required this.uid,
     required this.index,
     required this.filePath,
     required this.identifier,
@@ -37,44 +54,49 @@ class ChainSlot {
     required this.state,
   });
 
-  const ChainSlot.empty(this.index)
-    : filePath = '',
-      identifier = '',
-      name = '',
-      bypass = false,
-      state = '';
-
-  bool get isEmpty => filePath.isEmpty;
-
-  ChainSlot copyWith({bool? bypass, bool clearPlugin = false, String? state}) {
-    if (clearPlugin) {
-      return ChainSlot(
-        index: index,
-        filePath: '',
-        identifier: '',
-        name: '',
-        bypass: false,
-        state: '',
-      );
-    }
+  /// 新建一个条目（分配新的 uid）
+  factory ChainSlot.create({
+    required int index,
+    required String filePath,
+    required String identifier,
+    required String name,
+    bool bypass = false,
+    String state = '',
+  }) {
     return ChainSlot(
+      uid: _allocateSlotUid(),
       index: index,
       filePath: filePath,
       identifier: identifier,
       name: name,
-      bypass: bypass ?? this.bypass,
-      state: state ?? this.state,
+      bypass: bypass,
+      state: state,
     );
   }
 
   factory ChainSlot.fromJson(Map<String, dynamic> json) {
     return ChainSlot(
+      uid: _allocateSlotUid(),
       index: _asInt(json['index']),
       filePath: _asString(json['filePath']),
       identifier: _asString(json['identifier']),
       name: _asString(json['name']),
       bypass: json['bypass'] == true,
       state: _asString(json['state']),
+    );
+  }
+
+  bool get isEmpty => filePath.isEmpty;
+
+  ChainSlot copyWith({int? index, bool? bypass, String? state}) {
+    return ChainSlot(
+      uid: uid,
+      index: index ?? this.index,
+      filePath: filePath,
+      identifier: identifier,
+      name: name,
+      bypass: bypass ?? this.bypass,
+      state: state ?? this.state,
     );
   }
 
@@ -172,10 +194,14 @@ class ChainPresetItem {
   final String title;
   final String createTime;
 
+  /// "TDR Nova → CHOWTapeModel" 这种链预览，后端在查列表时顺手拼好
+  final String preview;
+
   const ChainPresetItem({
     required this.id,
     required this.title,
     required this.createTime,
+    required this.preview,
   });
 
   factory ChainPresetItem.fromJson(Map<String, dynamic> json) {
@@ -185,6 +211,7 @@ class ChainPresetItem {
       createTime: json['createTime'] is String
           ? json['createTime'] as String
           : '',
+      preview: json['preview'] is String ? json['preview'] as String : '',
     );
   }
 }
