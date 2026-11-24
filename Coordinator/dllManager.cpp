@@ -135,6 +135,10 @@ void dllManager::init(const char* cacheDirId, const char* exeDirPtr) {
     mPluginChainController->init(
         [this](const std::string& message) { sendMessage2AudioProcess(message); }
     );
+    // 预检用的扫描子进程：和批量扫描同一个 exe，只是走 --preflight 模式
+    mPluginChainController->setScanExe(
+        juce::File{exeDirPtr}.getChildFile("JunkFusionPluginScan.exe")
+    );
 
     juce::File dbFile{cacheDir.getChildFile("JunkFusion.db")};
 

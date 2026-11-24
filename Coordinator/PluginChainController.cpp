@@ -13,6 +13,56 @@ void PluginChainController::init(const std::function<void(const std::string&)>& 
     mSend = send;
 }
 
+void PluginChainController::setScanExe(juce::File scanExe) {
+    if (!scanExe.existsAsFile()) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn(
+                "[Preflight] 没找到扫描子进程，插件将不做预检: {}",
+                scanExe.getFullPathName().toStdString()
+            );
+        return;
+    }
+
+    mPreflightRunner = std::make_unique<PluginHost::PluginPreflightRunner>(std::move(scanExe));
+}
+
+bool PluginChainController::runPreflightIfNeeded(
+    const std::string& filePath,
+    const std::string& identifier,
+    std::string& reason
+) {
+    const std::string key = identifier + "|" + filePath;
+
+    {
+        std::lock_guard<std::mutex> lock{mMutex};
+        const auto it = mPreflightCache.find(key);
+        if (it != mPreflightCache.end()) return it->second;
+    }
+
+    if (mPreflightRunner == nullptr) {
+        // 没有预检器（开发环境没打包 scan exe）：放行，不因此拒绝用户
+        return true;
+    }
+
+    // 采样率/块大小用真实设备值（44100/441）：延迟值跟块大小有关，
+    // 实验台 512 块下 CHOWTapeModel 报 39，441 下报 37
+    const auto result = mPreflightRunner->run(
+        juce::File{juce::String::fromUTF8(filePath.c_str())},
+        identifier,
+        44100.0,
+        441,
+        10000
+    );
+
+    {
+        std::lock_guard<std::mutex> lock{mMutex};
+        mPreflightCache[key] = result.ok;
+    }
+
+    if (!result.ok) reason = result.error;
+    return result.ok;
+}
+
 Yvar PluginChainController::filterByPolicy(
     const Yvar& config,
     std::vector<std::string>& dropped
@@ -23,24 +73,30 @@ Yvar PluginChainController::filterByPolicy(
     auto* dbContext = dllManager::getInstance().getDbContext();
     PluginPolicyManage* policy = dbContext != nullptr ? &dbContext->pluginPolicyManage : nullptr;
 
-    // 黑名单只取一次，别在循环里反复查库
-    std::vector<std::string> banned;
-    if (policy != nullptr) banned = policy->getBlacklisted();
-
     Yvar slots = Yvar::array();
     const auto input = config.read("slots");
     for (int i = 0; i < input.size(); ++i) {
         const auto item = input.read(i);
         const std::string identifier = item.read("identifier").toString();
+        const std::string filePath = item.read("filePath").toString();
 
         if (policy != nullptr && !identifier.empty()) {
-            const bool isBanned =
-                std::find(banned.begin(), banned.end(), identifier) != banned.end();
-            // 白名单优先级最高：它只解除"自动禁止"，不改变别的规则
-            if (isBanned && !policy->isWhitelisted(identifier)) {
+            // 1) 已经在黑名单里（且不在白名单）→ 直接不下发
+            if (policy->isBlocked(identifier)) {
                 dropped.push_back(identifier);
                 if (auto logger = spdlog::get(LogDllID))
                     logger->warn("[PluginChain] 跳过黑名单插件: {}", identifier);
+                continue;
+            }
+
+            // 2) 没预检过的，先在一个临时子进程里走一遍完整生命周期
+            std::string reason;
+            if (!runPreflightIfNeeded(filePath, identifier, reason)) {
+                // 预检失败 = 确定性复现，直接拉黑 + 不下发
+                policy->ban(identifier, filePath, "preflight-failed");
+                dropped.push_back(identifier);
+                if (auto logger = spdlog::get(LogDllID))
+                    logger->error("[PluginChain] 预检失败已拉黑 {}: {}", identifier, reason);
                 continue;
             }
         }
@@ -75,6 +131,18 @@ Yvar PluginChainController::apply(const Yvar& config) {
     Yvar envelope = Yvar::object();
     envelope.set(AudioMacro::pluginChain, filtered);
     mSend(envelope.dump());
+
+    // 记下"这次下发包含哪些插件"：如果音频进程在回报状态之前就崩了，
+    // 说明是它们中的某一个把进程带走的（resetAfterRestart 里会拉黑）
+    {
+        std::lock_guard<std::mutex> lock{mMutex};
+        mPendingIdentifiers.clear();
+        const auto sentSlots = filtered.read("slots");
+        for (int i = 0; i < sentSlots.size(); ++i) {
+            const std::string identifier = sentSlots.read(i).read("identifier").toString();
+            if (!identifier.empty()) mPendingIdentifiers.insert(identifier);
+        }
+    }
 
     // 存现场：下次启动要知道"上次应用的是哪条链"。
     // 存在 apply 里而不是前端，是因为预设应用 / 启动恢复 / 手动应用都会走这里，
@@ -131,8 +199,12 @@ void PluginChainController::openEditor(int slot) {
 }
 
 void PluginChainController::onStateFromAudio(const Yvar& state) {
-    std::lock_guard<std::mutex> lock{mMutex};
-    mState = state;
+    {
+        std::lock_guard<std::mutex> lock{mMutex};
+        mState = state;
+        // 音频进程回话了 → 说明它扛过了这次下发，待观察名单可以清了
+        mPendingIdentifiers.clear();
+    }
 }
 
 Yvar PluginChainController::getState() {
@@ -151,7 +223,29 @@ Yvar PluginChainController::getConfig() {
     return mConfig;
 }
 
+void PluginChainController::banPendingAsRuntimeCrash() {
+    std::set<std::string> pending;
+    {
+        std::lock_guard<std::mutex> lock{mMutex};
+        pending.swap(mPendingIdentifiers);
+    }
+    if (pending.empty()) return;
+
+    auto* dbContext = dllManager::getInstance().getDbContext();
+    if (dbContext == nullptr) return;
+
+    for (const auto& identifier : pending) {
+        // filePath 这里拿不到（配置里可能有），留空不影响按 identifier 判定
+        dbContext->pluginPolicyManage.ban(identifier, "", "runtime-crash");
+        if (auto logger = spdlog::get(LogDllID))
+            logger->warn("[PluginChain] 音频进程在下发后崩溃，已记录运行期崩溃: {}", identifier);
+    }
+}
+
 void PluginChainController::resetAfterRestart() {
+    // 先看"崩之前是不是正在加载插件"：是的话这是运行期崩溃，要记账
+    banPendingAsRuntimeCrash();
+
     {
         std::lock_guard<std::mutex> lock{mMutex};
         mState = Yvar{};

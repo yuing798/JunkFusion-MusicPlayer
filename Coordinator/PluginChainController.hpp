@@ -23,10 +23,14 @@
  */
 #pragma once
 
+#include "PluginHost/PluginPreflightRunner.hpp"
 #include "Utils/Yvar.hpp"
 
 #include <functional>
+#include <map>
+#include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 
 class PluginChainController {
@@ -34,6 +38,9 @@ public:
     static constexpr int kSlotCount = 8;
 
     void init(const std::function<void(const std::string&)>& send);
+
+    /** @brief 注入扫描子进程（预检用）；不存在时预检会被跳过并记警告 */
+    void setScanExe(juce::File scanExe);
 
     /**
      * @brief 下发一份链配置
@@ -75,9 +82,33 @@ private:
     /// 按黑白名单过滤 slots（黑名单且非白名单 → 丢弃），被丢弃的 identifier 进 dropped
     Yvar filterByPolicy(const Yvar& config, std::vector<std::string>& dropped);
 
+    /**
+     * @brief 没预检过就先预检一次（同一个插件本次会话只跑一次）
+     *
+     * 预检在临时子进程里跑（PluginPreflightRunner），崩了/挂了只影响子进程。
+     * 采样率/块大小用 44100/441（真实设备值；延迟跟块大小有关）。
+     */
+    bool runPreflightIfNeeded(
+        const std::string& filePath,
+        const std::string& identifier,
+        std::string& reason
+    );
+
+    /// 音频进程在"刚下发完、还没回状态"这段时间里重启 → 判定为运行期崩溃，拉黑
+    void banPendingAsRuntimeCrash();
+
     std::function<void(const std::string&)> mSend;
 
     mutable std::mutex mMutex;
     Yvar mConfig;
     Yvar mState;
+
+    /// 预检器（没有扫描子进程时为空 → 跳过预检）
+    std::unique_ptr<PluginHost::PluginPreflightRunner> mPreflightRunner;
+
+    /// "identifier|filePath" -> 预检是否通过（本次会话缓存，避免每次应用都重跑）
+    std::map<std::string, bool> mPreflightCache;
+
+    /// 刚下发、还没等到音频进程回报状态的插件（用来判"运行期崩溃"）
+    std::set<std::string> mPendingIdentifiers;
 };

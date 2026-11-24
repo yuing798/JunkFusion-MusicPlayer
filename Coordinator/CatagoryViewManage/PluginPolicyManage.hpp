@@ -35,6 +35,16 @@ public:
 
     bool isWhitelisted(const std::string& identifier);
 
+    /**
+     * @brief 这个插件现在**是否该被拦住**（下发链配置时用）
+     *
+     * 规则（host-integration.md §6.1）：
+     *   · 白名单最高优先：白名单里的永远不拦；
+     *   · 预检/扫描类失败是**确定性复现**的 → 一次就拦；
+     *   · 运行期崩溃可能是偶发（也可能是我们自己或驱动的问题）→ 两次才拦。
+     */
+    bool isBlocked(const std::string& identifier);
+
     /** @brief 记一次失败：已有则计数 +1 并刷新原因，没有则插入 */
     void ban(const std::string& identifier, const std::string& filePath, const std::string& reason);
 

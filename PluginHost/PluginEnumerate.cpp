@@ -130,4 +130,111 @@ namespace PluginHost {
         return true;
     }
 
+    void Enumerator::preflight(
+        const juce::File& module,
+        const std::string& identifier,
+        double sampleRate,
+        int blockSize,
+        const std::function<void(const PreflightResult&)>& onReport
+    ) noexcept {
+        PreflightResult result;
+
+        // 报告函数只允许被调用一次；任何提前 return 都靠它把结果送出去
+        bool reported = false;
+        auto report = [&]() {
+            if (reported) return;
+            reported = true;
+            if (onReport) onReport(result);
+        };
+
+        try {
+            std::string error;
+            juce::OwnedArray<juce::PluginDescription> descriptions;
+            if (!collectDescriptions(module, descriptions, error)) {
+                result.error = error.empty() ? "枚举失败" : error;
+                report();
+                return;
+            }
+
+            const juce::PluginDescription* target = nullptr;
+            for (const auto* description : descriptions) {
+                if (description == nullptr) continue;
+                if (identifier.empty() ||
+                    toStd(description->createIdentifierString()) == identifier) {
+                    target = description;
+                    break;
+                }
+            }
+            if (target == nullptr) {
+                result.error = "找不到匹配的插件类型（identifier 对不上）";
+                report();
+                return;
+            }
+
+            juce::String juceError;
+            auto instance = mFormats.createPluginInstance(*target, sampleRate, blockSize, juceError);
+            if (instance == nullptr) {
+                result.error =
+                    juceError.isNotEmpty() ? toStd(juceError) : "createPluginInstance 返回空";
+                report();
+                return;
+            }
+
+            // ── 和主项目 PluginSlot::load 保持一致的准备步骤 ──
+            // 只留主总线，把侧链/辅助输出关掉（TDR Nova 是 3 进 2 出）
+            instance->enableAllBuses();
+            {
+                auto layout = instance->getBusesLayout();
+                const auto targetLayout = juce::AudioChannelSet::canonicalChannelSet(2);
+                const auto disabled = juce::AudioChannelSet::disabled();
+                for (int i = 0; i < layout.inputBuses.size(); ++i) {
+                    layout.inputBuses.set(i, i == 0 ? targetLayout : disabled);
+                }
+                for (int i = 0; i < layout.outputBuses.size(); ++i) {
+                    layout.outputBuses.set(i, i == 0 ? targetLayout : disabled);
+                }
+                instance->setBusesLayout(layout);
+            }
+
+            result.inputChannels = instance->getTotalNumInputChannels();
+            result.outputChannels = instance->getTotalNumOutputChannels();
+            result.name = toStd(instance->getName());
+            result.numParameters = instance->getParameters().size();
+            result.hasEditor = instance->hasEditor();
+
+            if (result.inputChannels != 2 || result.outputChannels != 2) {
+                result.error = "通道数不是 2/2（实测 " + std::to_string(result.inputChannels) +
+                               "/" + std::to_string(result.outputChannels) + "）";
+                report();
+                return;
+            }
+
+            instance->setPlayConfigDetails(2, 2, sampleRate, blockSize);
+            instance->prepareToPlay(sampleRate, blockSize);
+
+            // 过一块静音：这一步才是真正跑 DSP（有的插件在 processBlock 里
+            // 第一次分配缓冲/读文件，崩都崩在这里）
+            juce::AudioBuffer<float> buffer{2, juce::jmax(1, blockSize)};
+            buffer.clear();
+            juce::MidiBuffer midi;
+            instance->processBlock(buffer, midi);
+
+            // 延迟必须在这一步之后读（实验台：prepare 前 0、后 184）
+            result.latencySamples = instance->getLatencySamples();
+            result.ok = true;
+            report();
+
+            // 报告已经送出，之后析构挂死也不影响父进程
+            instance->releaseResources();
+        } catch (const std::exception& e) {
+            result.ok = false;
+            result.error = std::string{"预检抛出异常: "} + e.what();
+            report();
+        } catch (...) {
+            result.ok = false;
+            result.error = "预检抛出未知异常";
+            report();
+        }
+    }
+
 } // namespace PluginHost

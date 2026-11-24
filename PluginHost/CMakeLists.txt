@@ -33,10 +33,11 @@ set(PLUGIN_HOST_JUCE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginEnumerate.cpp
 )
 
-# Coordinator 侧：入库 + 监管子进程 + 后台任务
+# Coordinator 侧：入库 + 监管子进程 + 后台任务 + 预检
 set(PLUGIN_HOST_COORDINATOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginCatalogManage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginScannerProcess.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PluginPreflightRunner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginScanJob.cpp
 )
 

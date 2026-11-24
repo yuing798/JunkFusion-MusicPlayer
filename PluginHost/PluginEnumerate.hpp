@@ -34,6 +34,7 @@
 
 #include <juce_audio_processors_headless/juce_audio_processors_headless.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -72,6 +73,46 @@ namespace PluginHost {
             int& numOutputs,
             std::string& error
         );
+
+        // ── 预检（host-integration.md §7.1）────────────────────────────────
+        //
+        // 在**扫描子进程**里跑：实例化 + 开总线 + prepareToPlay + 过一块静音 +
+        // 读延迟/通道/参数数。目的不是"测准"，而是"确认这个插件在我们的宿主
+        // 里能活着走完一次完整生命周期"。
+        //
+        // 为什么必须在子进程：坏插件在这一步会 0xC0000005 带走整个进程，
+        // 而它不能在音频进程里死（那会中断播放）。
+
+        /** @brief 预检结果（ok=false 时 error 说明原因） */
+        struct PreflightResult {
+            bool ok{false};
+            std::string error;
+            std::string name;
+            int inputChannels{0};
+            int outputChannels{0};
+            int latencySamples{0};
+            int numParameters{0};
+            bool hasEditor{false};
+        };
+
+        /**
+         * @brief 跑一次预检
+         *
+         * @param sampleRate / blockSize 用**设备实际值**（延迟和块大小有关，
+         *        实验台：512 块下 CHOWTapeModel 报 39，441 下报 37）
+         * @param onReport **在销毁实例之前**调用一次（成功失败都调）：
+         *        有的插件析构会挂死（实验台：Dexed），报告必须先落盘，
+         *        否则父进程等到的只是"进程超时"，分不清是崩溃还是挂死。
+         *
+         * 本函数 `noexcept`：插件抛异常也不会把扫描子进程带崩。
+         */
+        void preflight(
+            const juce::File& module,
+            const std::string& identifier,
+            double sampleRate,
+            int blockSize,
+            const std::function<void(const PreflightResult&)>& onReport
+        ) noexcept;
 
     private:
         /** @brief 找出所有认领这个文件的格式，收集它们的 PluginDescription */

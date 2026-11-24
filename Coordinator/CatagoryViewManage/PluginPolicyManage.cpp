@@ -83,6 +83,35 @@ bool PluginPolicyManage::isWhitelisted(const std::string& identifier) {
     }
 }
 
+bool PluginPolicyManage::isBlocked(const std::string& identifier) {
+    if (identifier.empty()) return false;
+    // 白名单优先级最高：它只解除"自动禁止"，不改变别的规则
+    if (isWhitelisted(identifier)) return false;
+
+    try {
+        SQLite::Statement sql{
+            mDbManage.readDb(),
+            "SELECT reason, failureCount FROM pluginBlacklist WHERE identifier = :id"
+        };
+        sql.bind(":id", identifier);
+        if (!sql.executeStep()) return false;
+
+        const std::string reason = sql.getColumn("reason").getString();
+        const int count = sql.getColumn("failureCount").getInt();
+
+        // 预检/扫描类失败是确定性复现的：一次就拦
+        // 运行期崩溃可能是偶发（我们自己的代码、驱动、系统都可能崩）：两次才拦
+        const bool deterministic =
+            reason.rfind("preflight", 0) == 0 || reason.rfind("scan", 0) == 0;
+        return count >= (deterministic ? 1 : 2);
+    } catch (const SQLite::Exception& e) {
+        if (auto logger = spdlog::get(LogDllID))
+            logger->error("PluginPolicyManage::isBlocked 失败:{}", e.what());
+    }
+
+    return false;
+}
+
 void PluginPolicyManage::ban(
     const std::string& identifier,
     const std::string& filePath,
