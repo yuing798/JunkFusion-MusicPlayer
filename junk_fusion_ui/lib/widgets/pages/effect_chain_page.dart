@@ -66,18 +66,16 @@ class _EffectChainPageState extends State<EffectChainPage> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: EffectChainEditor(
-                slots: chain.slots,
-                status: chain.status,
-                onReorder: chain.moveSlot,
-                onRemove: chain.removeSlot,
-                onBypass: chain.toggleSlotBypass,
-                onOpenEditor: chain.openEditor,
-                onAdd: () => _addPlugin(chain, plugins),
-                maxSlots: PluginChainProvider.maxSlots,
-              ),
+            // 上下排布：编辑区自己撑满高度，中间那段在链长时自己滚
+            child: EffectChainEditor(
+              slots: chain.slots,
+              status: chain.status,
+              onReorder: chain.moveSlot,
+              onRemove: chain.removeSlot,
+              onBypass: chain.toggleSlotBypass,
+              onOpenEditor: chain.openEditor,
+              onAdd: () => _addPlugin(chain, plugins),
+              maxSlots: PluginChainProvider.maxSlots,
             ),
           ),
         ),

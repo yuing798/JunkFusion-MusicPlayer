@@ -19,6 +19,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_smooth_wheel_scroll/flutter_smooth_wheel_scroll.dart';
 import 'package:junk_fusion_ui/model/plugin_chain.dart';
 import 'package:junk_fusion_ui/providers/plugin_chain_provider.dart';
 import 'package:junk_fusion_ui/providers/plugin_provider.dart';
@@ -37,6 +38,9 @@ class EffectChainPresetSidebar extends StatefulWidget {
 }
 
 class _EffectChainPresetSidebarState extends State<EffectChainPresetSidebar> {
+  /// 滚轮平滑滚动（项目规范：新写的滚动器都用 SmoothScrollController）
+  final ScrollController _scrollController = SmoothScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +50,12 @@ class _EffectChainPresetSidebarState extends State<EffectChainPresetSidebar> {
       context.read<PluginChainProvider>().ensureInitialized();
       context.read<PluginProvider>().ensureInitialized();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -98,6 +108,7 @@ class _EffectChainPresetSidebarState extends State<EffectChainPresetSidebar> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 4),
       itemCount: chain.presets.length,
       itemBuilder: (context, index) =>

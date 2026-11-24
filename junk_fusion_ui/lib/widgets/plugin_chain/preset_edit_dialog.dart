@@ -163,18 +163,23 @@ class _PresetEditDialogState extends State<PresetEditDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<AppTheme>();
-    // 940 是舒展宽度；窗口窄的时候按 80% 收，别让对话框撑出屏幕
+    // 820 是舒展宽度；窗口窄的时候按 80% 收，别让对话框撑出屏幕
     final dialogWidth = (MediaQuery.sizeOf(context).width * 0.8).clamp(
-      560.0,
-      940.0,
+      520.0,
+      820.0,
+    );
+    // 上下排布的链编辑区要给它一个有界高度：链长了在里面滚
+    final dialogHeight = (MediaQuery.sizeOf(context).height * 0.72).clamp(
+      420.0,
+      620.0,
     );
 
     return AlertDialog(
       title: Text(_isEditing ? '编辑预设' : '新建预设'),
       content: SizedBox(
         width: dialogWidth,
+        height: dialogHeight,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -202,19 +207,21 @@ class _PresetEditDialogState extends State<PresetEditDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Text(
               '拖动卡片左侧的 ⠿ 调整顺序；这条链可以贴到全局，也可以（以后）贴到某个分轨',
               style: theme.littleTextStyle.copyWith(fontSize: 12),
             ),
             const SizedBox(height: 8),
-            EffectChainEditor(
-              slots: _slots,
-              status: null, // 预设没有实例在跑，不显示"已加载/延迟"
-              onReorder: _moveSlot,
-              onRemove: _removeSlot,
-              onBypass: _toggleBypass,
-              onAdd: _addSlot,
+            Expanded(
+              child: EffectChainEditor(
+                slots: _slots,
+                status: null, // 预设没有实例在跑，不显示"已加载/延迟"
+                onReorder: _moveSlot,
+                onRemove: _removeSlot,
+                onBypass: _toggleBypass,
+                onAdd: _addSlot,
+              ),
             ),
           ],
         ),

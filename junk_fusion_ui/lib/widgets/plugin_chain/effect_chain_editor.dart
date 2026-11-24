@@ -1,21 +1,37 @@
-/// 效果器链的「箭头 + 卡片」编辑区（**全局链和预设对话框共用**）
+/// 效果器链的「上下箭头 + 卡片」编辑区（**全局链和预设对话框共用**）
 ///
 /// ── 长什么样 ──────────────────────────────────────────────────────────
 /// ```
-/// [输入] → [+ 卡片 ⠿] → [卡片 ⠿] → [输出 EQ]
+/// ┌───────────────────────────────┐
+/// │ 输入 · 交叉淡化之后            │
+/// └───────────────────────────────┘
+///              ↓
+/// ┌───────────────────────────────┐
+/// │ ⠿ ① ChowMatrix        未应用   │
+/// │        ⏻   🎛   ✕             │
+/// └───────────────────────────────┘
+///              ↓
+/// ┌───────────────────────────────┐
+/// │ 输出 · → 均衡器                │
+/// └───────────────────────────────┘
 /// ```
-/// 两端是假卡（输入 / 输出），中间是真正可拖动的插件卡。
-/// 拖动排序**只改前端的顺序**（标脏），点「应用」才重建 —— 重建要重新实例化
-/// 插件（实测 CHOWTapeModel 1.86 秒），每拖一次就重建的话没法用。
+/// **为什么是上下排**：横向排的时候一屏只放得下 3~4 张卡，第 5 张开始就被裁掉；
+/// 而且横向的拖动和横向滚动会抢手势，实际很难拖。上下排每个条目都是通栏，
+/// 左侧一整条 32px 的拖动手柄区，拖起来没有歧义。
+///
+/// ── 拖动 ──────────────────────────────────────────────────────────────
+///   用 animated_reorderable_list，但**关掉默认拖动**，只在左侧手柄上挂
+///   `ReorderableDragStartListener` —— 桌面端长按拖动很别扭，而且默认拖动
+///   会和滚动打架。
 ///
 /// ── 为什么单独抽出来 ──────────────────────────────────────────────────
-/// 页面主区和"预设编辑对话框"是同一个东西：8 张卡、箭头、拖动、增删。
-/// 抽成一个纯展示 + 回调的控件，两处只差 `showRuntime`（对话框里不显示
-/// "已加载/延迟"，因为预设没有实例在跑）。
+///   页面主区和"预设编辑对话框"是同一个东西：卡片、箭头、拖动、增删。
+///   抽成一个纯展示 + 回调的控件，两处只差 `status`（对话框里传 null，
+///   因为预设没有实例在跑，不该显示"已加载/延迟"）。
 ///
 /// ── 用法 ─────────────────────────────────────────────────────────────
 /// ```dart
-/// EffectChainEditor(
+/// EffectChainEditor(                  // 放进 Expanded 里
 ///   slots: provider.slots,
 ///   status: provider.status,          // 预设对话框里传 null
 ///   onReorder: provider.moveSlot,
@@ -30,12 +46,13 @@ library;
 import 'package:animated_reorderable_list/animated_reorderable_list.dart';
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
+import 'package:flutter_smooth_wheel_scroll/flutter_smooth_wheel_scroll.dart';
 import 'package:junk_fusion_ui/model/plugin_chain.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
-class EffectChainEditor extends StatelessWidget {
+class EffectChainEditor extends StatefulWidget {
   const EffectChainEditor({
     super.key,
     required this.slots,
@@ -61,77 +78,92 @@ class EffectChainEditor extends StatelessWidget {
   final VoidCallback? onAdd;
   final int maxSlots;
 
-  /// 卡片尺寸：改这里就能整体放大/缩小
-  static const double _cardWidth = 204;
-  static const double _cardHeight = 124;
+  @override
+  State<EffectChainEditor> createState() => _EffectChainEditorState();
+}
+
+class _EffectChainEditorState extends State<EffectChainEditor> {
+  /// 滚轮平滑滚动（项目规范：新写的滚动器都用 SmoothScrollController）
+  final ScrollController _scrollController = SmoothScrollController();
+
+  /// 一张卡片的高度（拖动手柄整条可拖，所以这里要够高）
+  static const double _cardHeight = 66;
+
+  /// 上下两端假卡的高度
+  static const double _terminalHeight = 42;
+
+  /// 箭头那一行的高度
+  static const double _arrowHeight = 18;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<AppTheme>();
-    final showRuntime = status != null;
+    final showRuntime = widget.status != null;
 
-    return SizedBox(
-      height: _cardHeight + 16,
-      child: Row(
-        children: [
-          _buildTerminal(theme, '输入', '交叉淡化之后'),
-          _buildArrow(theme),
-          Expanded(
-            child: slots.isEmpty
-                ? Align(
-                    alignment: Alignment.centerLeft,
-                    child: _buildEmptyCard(theme),
-                  )
-                : AnimatedReorderableListView<ChainSlot>(
-                    scrollDirection: Axis.horizontal,
-                    shrinkWrap: true,
-                    // 自己画拖动手柄（桌面端长按拖动很别扭）
-                    buildDefaultDragHandles: false,
-                    padding: EdgeInsets.zero,
-                    dragStartBehavior: DragStartBehavior.start,
-                    items: slots,
-                    // 配置对象每次改都会换新实例，所以身份靠前端分配的 uid
-                    isSameItem: (a, b) => a.uid == b.uid,
-                    onReorder: onReorder ?? (_, __) {},
-                    itemBuilder: (context, index) {
-                      final slot = slots[index];
-                      return Row(
-                        key: ValueKey<int>(slot.uid),
-                        children: [
-                          _buildCard(theme, index, slot, showRuntime),
-                          _buildArrow(theme),
-                        ],
-                      );
-                    },
-                  ),
-          ),
-          _buildArrow(theme),
-          _buildTerminal(theme, '输出', '→ 均衡器'),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildTerminal(theme, '输入', '交叉淡化之后'),
+        _buildArrow(theme),
+
+        // Flexible + shrinkWrap：链短的时候「输出」紧跟最后一张卡，
+        // 链长的时候列表自己在剩余高度里滚
+        Flexible(
+          child: widget.slots.isEmpty
+              ? _buildEmptyCard(theme)
+              : AnimatedReorderableListView<ChainSlot>(
+                  scrollDirection: Axis.vertical,
+                  controller: _scrollController,
+                  physics: const ClampingScrollPhysics(),
+                  shrinkWrap: true,
+                  // 默认拖动（长按）会和滚动抢手势，改成左侧手柄触发
+                  buildDefaultDragHandles: false,
+                  padding: EdgeInsets.zero,
+                  dragStartBehavior: DragStartBehavior.start,
+                  items: widget.slots,
+                  // 配置对象每次改都会换新实例，身份靠前端分配的 uid
+                  isSameItem: (a, b) => a.uid == b.uid,
+                  onReorder: widget.onReorder ?? (_, __) {},
+                  itemBuilder: (context, index) {
+                    final slot = widget.slots[index];
+                    return Column(
+                      key: ValueKey<int>(slot.uid),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildCard(theme, index, slot, showRuntime),
+                        _buildArrow(theme),
+                      ],
+                    );
+                  },
+                ),
+        ),
+
+        _buildTerminal(theme, '输出', '→ 均衡器'),
+      ],
     );
   }
 
-  // ── 两端假卡 ──────────────────────────────────────────────────────
+  // ── 两端的假卡 ────────────────────────────────────────────────────
   Widget _buildTerminal(AppTheme theme, String title, String subtitle) {
     return Container(
-      width: 96,
-      height: _cardHeight,
+      height: _terminalHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: theme.colorCell.withValues(alpha: 0.4),
-        border: Border.all(color: theme.colorEdge, style: BorderStyle.solid),
+        border: Border.all(color: theme.colorEdge),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
           Text(title, style: theme.midTextStyle),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: theme.littleTextStyle.copyWith(fontSize: 11),
-          ),
+          const SizedBox(width: 8),
+          Text(subtitle, style: theme.littleTextStyle),
         ],
       ),
     );
@@ -139,12 +171,13 @@ class EffectChainEditor extends StatelessWidget {
 
   Widget _buildArrow(AppTheme theme) {
     return SizedBox(
-      width: 26,
-      height: _cardHeight,
-      child: Icon(
-        TablerIcons.arrowRight,
-        size: 18,
-        color: theme.colorTextSecond.withValues(alpha: 0.7),
+      height: _arrowHeight,
+      child: Center(
+        child: Icon(
+          TablerIcons.arrowDown,
+          size: 15,
+          color: theme.colorTextSecond.withValues(alpha: 0.7),
+        ),
       ),
     );
   }
@@ -152,20 +185,19 @@ class EffectChainEditor extends StatelessWidget {
   // ── 空链 ──────────────────────────────────────────────────────────
   Widget _buildEmptyCard(AppTheme theme) {
     return InkWell(
-      onTap: onAdd,
+      onTap: widget.onAdd,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        width: _cardWidth,
         height: _cardHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: theme.colorEdge),
         ),
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add, size: 26, color: theme.colorTextSecond),
-            const SizedBox(height: 6),
+            Icon(Icons.add, size: 22, color: theme.colorTextSecond),
+            const SizedBox(width: 8),
             Text('添加效果器', style: theme.littleTextStyle),
           ],
         ),
@@ -180,11 +212,11 @@ class EffectChainEditor extends StatelessWidget {
     ChainSlot slot,
     bool showRuntime,
   ) {
-    final slotStatus = status?.slots[position];
+    final slotStatus = widget.status?.slots[position];
     final error = slotStatus?.error ?? '';
     final loaded = slotStatus?.loaded ?? false;
 
-    // 状态行：错误 > 已加载(+延迟) > 未应用
+    // 状态行：错误 > 未应用 / 已加载(+延迟)
     final String statusText;
     final Color statusColor;
     if (error.isNotEmpty) {
@@ -204,10 +236,7 @@ class EffectChainEditor extends StatelessWidget {
     }
 
     return Container(
-      width: _cardWidth,
       height: _cardHeight,
-      margin: const EdgeInsets.only(right: 2),
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
       decoration: BoxDecoration(
         color: theme.colorCell,
         borderRadius: BorderRadius.circular(6),
@@ -216,40 +245,51 @@ class EffectChainEditor extends StatelessWidget {
           width: slot.bypass ? 1 : 1.5,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Row(
         children: [
-          Row(
-            children: [
-              // 拖动手柄
-              ReorderableDragStartListener(
-                index: position,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.grab,
-                  child: Icon(
-                    TablerIcons.gripVertical,
-                    size: 16,
-                    color: theme.colorTextSecond,
-                  ),
+          // ── 左侧整条拖动手柄（通栏高度，拖起来没有歧义）──
+          ReorderableDragStartListener(
+            index: position,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.grab,
+              child: Container(
+                width: 32,
+                height: double.infinity,
+                color: theme.colorHover,
+                child: Icon(
+                  TablerIcons.gripVertical,
+                  size: 16,
+                  color: theme.colorTextSecond,
                 ),
               ),
-              const SizedBox(width: 4),
-              Container(
-                width: 18,
-                height: 18,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: theme.colorHover,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${position + 1}',
-                  style: theme.littleTextStyle.copyWith(fontSize: 11),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // 序号
+          Container(
+            width: 20,
+            height: 20,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: theme.colorHover,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '${position + 1}',
+              style: theme.littleTextStyle.copyWith(fontSize: 11),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // 名字 + 状态
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
                   slot.name.isEmpty ? slot.identifier : slot.name,
                   style: theme.midTextStyle.copyWith(
                     color: slot.bypass
@@ -259,45 +299,46 @@ class EffectChainEditor extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            statusText,
-            style: theme.littleTextStyle.copyWith(
-              fontSize: 11,
-              color: statusColor,
+                const SizedBox(height: 2),
+                Text(
+                  statusText,
+                  style: theme.littleTextStyle.copyWith(
+                    fontSize: 11,
+                    color: statusColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
-          const Spacer(),
-          Row(
-            children: [
-              _iconButton(
-                theme,
-                tooltip: slot.bypass ? '取消旁通' : '旁通这个插件',
-                icon: slot.bypass ? Icons.toggle_off : Icons.toggle_on,
-                onPressed: onBypass == null ? null : () => onBypass!(position),
-              ),
-              _iconButton(
-                theme,
-                tooltip: loaded ? '打开插件编辑器' : '应用到全局链之后才有编辑器',
-                icon: Icons.tune,
-                onPressed: (loaded && onOpenEditor != null)
-                    ? () => onOpenEditor!(position)
-                    : null,
-              ),
-              const Spacer(),
-              _iconButton(
-                theme,
-                tooltip: '从链里移除',
-                icon: Icons.close,
-                onPressed: onRemove == null ? null : () => onRemove!(position),
-              ),
-            ],
+
+          // 三个操作
+          _iconButton(
+            theme,
+            tooltip: slot.bypass ? '取消旁通（立即生效）' : '旁通这个插件（立即生效）',
+            icon: slot.bypass ? Icons.toggle_off : Icons.toggle_on,
+            onPressed: widget.onBypass == null
+                ? null
+                : () => widget.onBypass!(position),
           ),
+          _iconButton(
+            theme,
+            tooltip: loaded ? '打开插件编辑器' : '应用到全局链之后才有编辑器',
+            icon: Icons.tune,
+            onPressed: (loaded && widget.onOpenEditor != null)
+                ? () => widget.onOpenEditor!(position)
+                : null,
+          ),
+          _iconButton(
+            theme,
+            tooltip: '从链里移除',
+            icon: Icons.close,
+            onPressed: widget.onRemove == null
+                ? null
+                : () => widget.onRemove!(position),
+          ),
+          const SizedBox(width: 6),
         ],
       ),
     );
@@ -315,10 +356,10 @@ class EffectChainEditor extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(5),
           child: Icon(
             icon,
-            size: 17,
+            size: 18,
             color: onPressed == null ? theme.colorEdge : theme.colorTextSecond,
           ),
         ),

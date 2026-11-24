@@ -58,6 +58,9 @@ class Yvar {
 2. flutter的测试基本不需要，因为flutter基本只是UI布局，不怎么涉及业务和安全逻辑
 3. 右键菜单，更多信息...按钮使用showRootContextMenu实现
 4. 调试语句直接使用print函数，因为我的flutter前端基本只用于绘图，没有多少业务逻辑，不需要写入日志，如果你觉得某个地方必须写日志，请向我询问
+5. 用户信息通知请使用toast和fatalDialog,具体函数请见UtilFunction
+6. 前端布局: 图标区|sidebar区域|主内容区，下方为playbar,请遵循这个布局方案
+7. 滚动器请使用SmoothScrollController，以前使用的滚动器不需要再改动
 
 ## 代码架构
 
