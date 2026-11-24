@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Model/EqInfo.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
@@ -26,9 +25,6 @@ public:
     std::function<void(float)> onMasterVolumeChange;
     std::function<void(float)> onSpeedShifterChange;
     std::function<void(float)> onPitchShifterChange;
-
-    /** @brief EQ 的 JSON 报文（结构变更 / 拖拽结束的最终值 / 预设），非 EQ 报文不会走到这里 */
-    std::function<void(const EqWire::Message& message)> onEqMessage;
 
     /** @brief Coordinator 要求接上频谱共享内存（参数是完整名字和字节数） */
     std::function<void(const std::string& name, size_t bytes)> onSpectrumAttach;

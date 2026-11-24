@@ -1,5 +1,4 @@
 #include "AudioProcessCoordinator.h"
-#include "../EqController.hpp"
 #include "../dllManager.hpp"
 #include "Macro/audioMacro.hpp"
 #include "Utils/Yvar.hpp"
@@ -258,13 +257,6 @@ void AudioProcessSuber::run() {
                     chainController->onStateFromAudio(
                         obj.read(AudioMacro::pluginChainState)
                     );
-                }
-                continue;
-            }
-            // 音频进程上报采样率（UI 画频响曲线要用同一个 fs），处理完就走
-            if (auto sampleRate = EqWire::decodeSampleRate(obj)) {
-                if (auto* eqController = dllManager::getInstance().getEqController()) {
-                    eqController->setSampleRate(*sampleRate);
                 }
                 continue;
             }

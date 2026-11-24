@@ -7,6 +7,5 @@ target_sources(JunkFusionAudioProcess
         CrossFadeArea.cpp
         SmoothSliderControl.cpp
         PlayPauseControl.cpp
-        Eq.cpp
         SpectrumAnalyzer.cpp
 )

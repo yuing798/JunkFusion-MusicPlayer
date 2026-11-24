@@ -38,7 +38,6 @@ target_sources(JunkFusionCoordinator
     PRIVATE
         libExport.cpp
         dllManager.cpp
-        EqController.cpp
         SpectrumController.cpp
         PluginChainController.cpp
 )

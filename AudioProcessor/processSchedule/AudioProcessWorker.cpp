@@ -37,11 +37,6 @@ void AudioProcessorPuller::run() {
             if (!jsonObj.isObject()) {
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
-                // EQ 报文自己走一条分支，处理完就结束，不要落到下面播放指令的判断里
-                if (auto eqMessage = EqWire::parse(jsonObj)) {
-                    if (onEqMessage) onEqMessage(*eqMessage);
-                    continue;
-                }
                 // 频谱共享内存：Coordinator 把名字和大小发过来
                 if (jsonObj.has(AudioMacro::spectrumShm)) {
                     const Yvar shmObj = jsonObj.read(AudioMacro::spectrumShm);

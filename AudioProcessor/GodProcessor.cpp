@@ -103,16 +103,6 @@ GodProcessor::GodProcessor(
     // 停止播放，不代表现在开始完全静音
     mWorker.receiver->onPausePlay = [this]() { pausePlay(); };
 
-    // ── EQ 的两条输入通道 ──
-    // 拖拽中的连续量走 OSC/UDP（高频、允许丢帧）
-    mOscReceiver.onEqBandLive =
-        [this](int idx, float freqHz, float gainDb, float q, float shelfSlope, uint32_t rev) {
-            mEq.setBandLive(idx, freqHz, gainDb, q, shelfSlope, rev);
-        };
-    // 结构变更 / 拖拽结束的最终值 / 预设走 ZMQ JSON（必达、权威）
-    mWorker.receiver->onEqMessage = [this](const EqWire::Message& message) {
-        applyEqMessage(message);
-    };
 
     // ── 频谱：共享内存由 Coordinator 创建，这里只负责接上并开关 ──
     mWorker.receiver->onSpectrumAttach = [this](const std::string& name, size_t bytes) {
@@ -196,11 +186,8 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
 
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
     mNumChannels = outputLayout.size();
-    mEq.prepare(sampleRate, maximumExpectedSamplesPerBlock, mNumChannels); // 均衡器
-    mSpectrum.prepare(sampleRate);                                         // 频谱分析
+    mSpectrum.prepare(sampleRate); // 频谱分析
 
-    // 把当前采样率告诉协调者：UI 画频响曲线要和 DSP 用同一个 fs
-    mWorker.sender->sendMessage(EqWire::encodeSampleRate(sampleRate).dump());
     mProgressBar.prepareToPlay(mSampleRate);
     mPlayCount.prepareToPlay(mSampleRate);
     mSmooth.prepareToPlay(mSampleRate);
@@ -234,8 +221,6 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
     if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
         chain->process(buffer);
     }
-
-    mEq.process(buffer, buffer.getNumSamples()); // 均衡器：交叉淡化之后、主音量之前
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         auto currentMasterVolume = mSmooth.masterVolume.getNextValue();
@@ -452,17 +437,6 @@ void GodProcessor::sendPluginChainState() {
     mWorker.sender->sendMessage(envelope.dump());
 }
 
-void GodProcessor::applyEqMessage(const EqWire::Message& message) {
-    switch (message.kind) {
-    case EqWire::Kind::band: mEq.setBand(message.band, message.rev); break;
-    case EqWire::Kind::master:
-        mEq.setMaster(message.masterEnabled, message.masterGainDb, message.rev);
-        break;
-    case EqWire::Kind::all: mEq.setAll(message.all, message.rev); break;
-    case EqWire::Kind::none:
-    default: break;
-    }
-}
 
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {
     juce::ignoreUnused(data);

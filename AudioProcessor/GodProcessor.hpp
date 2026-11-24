@@ -6,7 +6,6 @@
 #include "./DSPModule/PlayPauseControl.hpp"
 #include "./DSPModule/ProgressBarWatch.hpp"
 #include "./DSPModule/SmoothSliderControl.hpp"
-#include "DSPModule/Eq.hpp"
 #include "DSPModule/SpectrumAnalyzer.hpp"
 #include "DeviceManager.hpp"
 #include "Model/PlayInfo.hpp"
@@ -45,7 +44,6 @@ private:
     PlayPauseControl mPlayPauseControl;
     CrossFadeArea mCrossFade;
     SmoothSliderControl mSmooth;
-    Eq mEq; // 均衡器
     SpectrumAnalyzer mSpectrum; // 实时频谱（写共享内存，前端读）
 
     // ── 全局效果器链（交叉淡化之后、EQ 之前）──
@@ -107,9 +105,6 @@ private:
     void continuePlay(double targetSeconds);
     void pausePlay();
     void play(PlayInfo info, double targetSeconds, bool isSeek, bool isNewSong);
-
-    /** @brief 把一条 EQ 报文分派给 DSP（band / master / all） */
-    void applyEqMessage(const EqWire::Message& message);
 
 public:
     GodProcessor(

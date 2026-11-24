@@ -30,8 +30,8 @@
  *         [](const char* addr, const float* args, int n, uint32_t rev) { ...OSC... },
  *         [](const Yvar& payload) { ...ZMQ PUSH... });
  *
- *     link.sendLive("/eq/band/3", {1200.0f, 3.5f, 1.2f, 1.0f});  // 拖拽中，自动节流
- *     link.sendCommit("eqBand", EqWire::encodeBand(param));       // 松手，立即发
+ *     link.sendLive("/plugin/param", {1200.0f, 3.5f});        // 拖拽中，自动节流
+ *     link.sendCommit("pluginParam", Yvar::object());        // 松手，立即发
  *
  * ── 节流策略 ─────────────────────────────────────────────────────────
  * **丢弃式**：距离上次发送不足 1/rateLimitHz 秒就直接丢弃这一帧，不排队、不补发。

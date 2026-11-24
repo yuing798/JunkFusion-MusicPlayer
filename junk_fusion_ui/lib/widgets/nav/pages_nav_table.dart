@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/widgets/nav/effect_chain_preset_sidebar.dart';
-import 'package:junk_fusion_ui/widgets/nav/eq_preset_sidebar.dart';
 import 'package:junk_fusion_ui/widgets/nav/folder_tree_sidebar.dart';
 import 'package:junk_fusion_ui/widgets/nav/settings_sidebar.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
@@ -89,14 +88,6 @@ abstract class PagesNavTable {
         sidebar: _buildEffectChainPresetSidebar,
       ),
       PagesNavSection(
-        id: 9,
-        icon: TablerIcons.adjustmentsHorizontal,
-        title: '均衡器',
-        // 均衡器这一段的中间栏是预设列表
-        sidebar: _buildEqPresetSidebar,
-      ),
-      PagesNavSection(id: 10, icon: TablerIcons.deviceSpeaker, title: '音箱阵列'),
-      PagesNavSection(
         id: 11,
         icon: TablerIcons.settings,
         title: '设置',
@@ -133,9 +124,6 @@ abstract class PagesNavTable {
 /// 「文件夹」段的中间栏：文件夹树
 Widget _buildFolderTreeSidebar(BuildContext context) =>
     const FolderTreeSidebar();
-
-/// 「均衡器」段的中间栏：EQ 预设列表
-Widget _buildEqPresetSidebar(BuildContext context) => const EqPresetSidebar();
 
 /// 「效果器」段的中间栏：链预设列表
 Widget _buildEffectChainPresetSidebar(BuildContext context) =>

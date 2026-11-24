@@ -6,7 +6,6 @@ target_sources(JunkFusionCoordinator
         SongFolderManage.cpp
         PlayListManage.cpp
         SongsManage.cpp
-        EqPresetManage.cpp
         LyricsManage.cpp
         # 插件：全局效果器链的预设 + 黑白名单
         PluginChainPresetManage.cpp

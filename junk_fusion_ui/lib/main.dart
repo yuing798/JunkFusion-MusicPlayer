@@ -24,7 +24,6 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app.dart'; // 根组件
 import 'providers/album_provider.dart';
-import 'providers/eq_provider.dart';
 import 'providers/folder_provider.dart';
 import 'providers/lyric_provider.dart';
 import 'providers/play_page_provider.dart';
@@ -308,8 +307,6 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),
-        // 均衡器：第一次被页面读到时才创建（不在启动时碰 FFI）
-        ChangeNotifierProvider<EqProvider>(create: (_) => EqProvider()),
         // 全屏播放页的开关（播放栏点封面打开，页面里点 ⌄ 关闭）
         ChangeNotifierProvider<PlayPageProvider>(
           create: (_) => PlayPageProvider(),
