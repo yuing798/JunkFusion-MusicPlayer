@@ -41,7 +41,7 @@ import 'package:flutter/material.dart';
 
 /// 明亮模式：蓝白
 const FlexSchemeColor _blueWhiteColors = FlexSchemeColor(
-  primary: Color.fromARGB(255, 134, 188, 234), // 蓝：沿用原来 --color-shadow 的主蓝
+  primary: Color.fromARGB(255, 12, 188, 234), // 蓝：沿用原来 --color-shadow 的主蓝
   primaryContainer: Color(0xFFCFE6FF),
   secondary: Color(0xFF4FACFE), // 浅蓝：原来的 --color-super-stress
   secondaryContainer: Color(0xFFDCEFFF),

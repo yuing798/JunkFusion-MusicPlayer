@@ -123,14 +123,17 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
           // Flexible + shrinkWrap：链短的时候下面的「添加」和「输出」
           // 紧跟最后一张卡，链长的时候列表自己在剩余高度里滚
           Flexible(child: _buildList(theme, showRuntime)),
-          _buildArrow(theme),
+          // _buildArrow(theme),
         ],
 
         // 没满上限就一直在链尾给一个「添加效果器」按钮
-        if (widget.slots.length < widget.maxSlots) _buildAddCard(theme),
+        if (widget.slots.length < widget.maxSlots) ...[
+          _buildAddCard(theme),
+          _buildArrow(theme),
+        ],
 
-        _buildArrow(theme),
-        _buildTerminal(theme, '输出', '→ 均衡器'),
+        // _buildArrow(theme),
+        _buildTerminal(theme, '输出', ''),
       ],
     );
   }
@@ -179,6 +182,7 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(title, style: theme.midTextStyle),
           const SizedBox(width: 8),
