@@ -19,13 +19,4 @@ public:
     std::function<void(float)> onMasterVolumeChange;
     std::function<void(float)> onSpeedShifterChange;
     std::function<void(float)> onPitchShifterChange;
-
-    /**
-     * @brief EQ band 拖拽（地址 /eq/band/<idx>）
-     *
-     * 参数依次是 freqHz, gainDb, q, shelfSlope, rev(int32)。
-     * 这条只在拖拽时高频触发，所以走 UDP；松手后的最终值走 ZMQ JSON。
-     */
-    std::function<void(int idx, float freqHz, float gainDb, float q, float shelfSlope, uint32_t rev)>
-        onEqBandLive;
 };

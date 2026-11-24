@@ -7,7 +7,7 @@
 ///   numInputs / numOutputs / scanStatus / scanError
 ///
 /// ── 为什么不用 freezed ────────────────────────────────────────────────
-///   和 `model/eq_param.dart` 同一个理由：这只是后端 JSON 的只读投影，
+///   和 `model/plugin_chain.dart` 同一个理由：这只是后端 JSON 的只读投影，
 ///   只需要 fromJson + 一个改 type 的 copyWith，手写更直接，
 ///   也不用为了编译先跑一轮 build_runner。
 ///

@@ -33,10 +33,11 @@ set(PLUGIN_HOST_JUCE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginEnumerate.cpp
 )
 
-# Coordinator 侧：入库 + 监管子进程 + 后台任务
+# Coordinator 侧：入库 + 监管子进程 + 后台任务 + 预检
 set(PLUGIN_HOST_COORDINATOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginCatalogManage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginScannerProcess.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PluginPreflightRunner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PluginScanJob.cpp
 )
 
@@ -106,6 +107,33 @@ if(MSVC)
         LINK_FLAGS "/ENTRY:wmainCRTStartup"
     )
 endif()
+
+# =============================================================================
+# 音频进程侧的插件宿主（全局效果器链）
+#
+# 这一步会让 JunkFusionAudioProcess **第一次**把整个 VST3 SDK 编进去
+# （juce_audio_processors 的模块源码带 JUCE_PLUGINHOST_VST3=1 重编），
+# 大约多花几分钟，属于一次性成本。
+#
+# 为什么音频进程用的是「带 UI」的格式管理器而不是 headless：
+# 按实验台结论，插件编辑器最终要在音频进程里开（那边有消息循环），
+# headless 装出来的实例 hasEditor() 恒为 false，迟早要换。
+# =============================================================================
+target_sources(JunkFusionAudioProcess
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/PluginInstanceFactory.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/PluginChain.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/PluginEditorWindow.cpp
+)
+
+target_compile_definitions(JunkFusionAudioProcess
+    PRIVATE
+        JUCE_PLUGINHOST_VST3=1
+        JUCE_PLUGINHOST_VST=0
+        JUCE_PLUGINHOST_AU=0
+        JUCE_PLUGINHOST_LADSPA=0
+        JUCE_PLUGINHOST_LV2=0
+)
 
 # =============================================================================
 # Coordinator 侧：直接加进 DLL 的源码清单（不新建 target）

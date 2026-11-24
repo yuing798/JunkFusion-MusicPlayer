@@ -24,7 +24,7 @@ class DialogUtil {
     );
   }
 
-  /// 致命错误弹窗（非致命错误不走这里，走 widgets/popupWindow/error_toast.dart）
+  /// 致命错误弹窗（非致命错误不走这里，走 widgets/popupWindow/app_toast.dart）
   ///
   /// 和 showInfoDialog 的区别只有两点：顶上有「致命错误」的红色标题，
   /// 而且不能点蒙版关掉 —— 必须点右上角的 × 表示自己看见了。

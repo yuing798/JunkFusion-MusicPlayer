@@ -1,5 +1,4 @@
 #include "./libExport.h"
-#include "./EqController.hpp"
 #include "./SpectrumController.hpp"
 #include "./dllManager.hpp"
 #include "Coordinator/libExport.h"
@@ -269,83 +268,6 @@ extern "C" {
     void refreshForntend() { dllManager::getInstance().getFolderCheckTimer()->checkOnce(); }
 
     //===================================================================================
-    // EQ 均衡器
-    void updateEqBandLive(int idx, double freqHz, double gainDb, double q, double shelfSlope) {
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr) return;
-
-        eqController->updateBandLive(
-            idx,
-            static_cast<float>(freqHz),
-            static_cast<float>(gainDb),
-            static_cast<float>(q),
-            static_cast<float>(shelfSlope)
-        );
-    }
-
-    void setEqBand(
-        int idx,
-        int enabled,
-        const char* type,
-        double freqHz,
-        double gainDb,
-        double q,
-        double shelfSlope,
-        int cutSlopeDbPerOct
-    ) {
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr) return;
-
-        EqBandParam band{};
-        band.idx = idx;
-        band.enabled = enabled != 0;
-        if (type != nullptr) {
-            // 认不出来的类型保持默认（bell），不要静默改成别的形状
-            if (auto parsed = EqBandParam::typeFromName(type)) band.type = *parsed;
-        }
-        band.freqHz = static_cast<float>(freqHz);
-        band.gainDb = static_cast<float>(gainDb);
-        band.q = static_cast<float>(q);
-        band.shelfSlope = static_cast<float>(shelfSlope);
-        band.cutSlopeDbPerOct = cutSlopeDbPerOct > 0 ? cutSlopeDbPerOct : 12;
-
-        eqController->setBand(band);
-    }
-
-    void setEqMaster(int enabled, double masterGainDb) {
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr) return;
-
-        eqController->setMaster(enabled != 0, static_cast<float>(masterGainDb));
-    }
-
-    void setEqAll(const char* eqAllJson) {
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr || eqAllJson == nullptr) return;
-
-        const Yvar envelope = Yvar::parse(eqAllJson);
-        Yvar body = envelope.read("eqAll");
-        if (!body.isObject()) body = envelope; // 允许直接传内层的参数体
-
-        eqController->setAll(EqWire::decodeAll(body));
-    }
-
-    const char* getEqAllState() {
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr) return ConvertUtils::object2Uint8t(Yvar::object());
-
-        Yvar envelope = Yvar::object();
-        envelope.set("eqAll", EqWire::encodeAll(eqController->getState()));
-        return ConvertUtils::object2Uint8t(envelope);
-    }
-
-    const float* getEqCurve(int numPoints) {
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr) return nullptr;
-        return eqController->getCurve(numPoints);
-    }
-
-    //===================================================================================
     // 实时频谱
     int getSpectrumBandCount() { return SpectrumController::bandCount(); }
 
@@ -367,47 +289,6 @@ extern "C" {
         spectrumController->setEnabled(enabled != 0);
     }
 
-    //===================================================================================
-    // EQ 预设
-    const char* getAllEqPresets() {
-        Yvar envelope = Yvar::object();
-        envelope.set(
-            "eqPresets",
-            dllManager::getInstance().getDbContext()->eqPresetManage.getAllPresets()
-        );
-        return ConvertUtils::object2Uint8t(envelope);
-    }
-
-    const char* getEqPresetParams(long long id) {
-        Yvar envelope = Yvar::object();
-        envelope.set(
-            "eqAll",
-            dllManager::getInstance().getDbContext()->eqPresetManage.getPresetParams(id)
-        );
-        return ConvertUtils::object2Uint8t(envelope);
-    }
-
-    long long saveEqPreset(const char* title) {
-        if (title == nullptr) return -1;
-
-        auto* eqController = dllManager::getInstance().getEqController();
-        if (eqController == nullptr) return -1;
-
-        const std::string paramsText = EqWire::encodeAll(eqController->getState()).dump();
-        return dllManager::getInstance().getDbContext()->eqPresetManage.createPreset(
-            title,
-            paramsText
-        );
-    }
-
-    void renameEqPreset(long long id, const char* title) {
-        if (title == nullptr) return;
-        dllManager::getInstance().getDbContext()->eqPresetManage.renamePreset(id, title);
-    }
-
-    void deleteEqPreset(long long id) {
-        dllManager::getInstance().getDbContext()->eqPresetManage.deletePreset(id);
-    }
 
     //===================================================================================
     // 固定歌单（我喜欢 / 最近播放 / 最多播放）
@@ -596,27 +477,271 @@ extern "C" {
         return ConvertUtils::object2Uint8t(envelope);
     }
 
-    const char* setPluginType(const char* identifier, const char* type) {
+    //===================================================================================
+    // 全局效果器链 + 黑白名单
+    const char* getPluginChainState() {
+        try {
+            auto* controller = dllManager::getInstance().getPluginChainController();
+            // controller->getState() 本身已经是 {"chain":...} 这个形状，别再包一层
+            if (controller != nullptr) return ConvertUtils::object2Uint8t(controller->getState());
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginChainState 异常:{}", e.what());
+        }
+
+        Yvar envelope = Yvar::object();
+        envelope.set("chain", Yvar{});
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* setPluginChain(const char* slotsJson) {
         Yvar envelope = Yvar::object();
 
         try {
-            auto* catalog = dllManager::getInstance().getPluginCatalog();
-            if (catalog == nullptr || identifier == nullptr || type == nullptr) {
+            auto* controller = dllManager::getInstance().getPluginChainController();
+            if (controller == nullptr) {
                 envelope.set("ok", false);
-                envelope.set("error", "插件模块未初始化");
+                envelope.set("error", "插件链未初始化");
                 return ConvertUtils::object2Uint8t(envelope);
             }
 
-            const bool ok = catalog->setType(identifier, type);
-            envelope.set("ok", ok);
-            envelope.set("error", ok ? "" : "identifier 不存在或 type 非法");
+            const Yvar config = slotsJson != nullptr ? Yvar::parse(slotsJson) : Yvar::object();
+            const Yvar result = controller->apply(config);
+            envelope.set("ok", result.read("ok").toBool());
+            envelope.set("error", result.read("error").toString());
+            envelope.set("dropped", result.read("dropped"));
         } catch (const std::exception& e) {
-            if (auto log = spdlog::get(LogDllID))
-                log->error("setPluginType 异常:{}", e.what());
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("setPluginChain 异常:{}", e.what());
             envelope.set("ok", false);
-            envelope.set("error", "修改失败");
+            envelope.set("error", "下发效果器链失败");
         }
 
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    void setPluginChainBypassAll(int bypass) {
+        try {
+            if (auto* controller = dllManager::getInstance().getPluginChainController()) {
+                controller->setBypassAll(bypass != 0);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("setPluginChainBypassAll 异常:{}", e.what());
+        }
+    }
+
+    void setPluginChainSlotBypass(int slot, int bypass) {
+        try {
+            if (auto* controller = dllManager::getInstance().getPluginChainController()) {
+                controller->setSlotBypass(slot, bypass != 0);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("setPluginChainSlotBypass 异常:{}", e.what());
+        }
+    }
+
+    void openPluginSlotEditor(int slot) {
+        try {
+            if (auto* controller = dllManager::getInstance().getPluginChainController()) {
+                controller->openEditor(slot);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("openPluginSlotEditor 异常:{}", e.what());
+        }
+    }
+
+    const char* getSavedPluginChain() {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr) {
+                envelope.set("chain", Yvar{});
+            } else {
+                const Yvar saved = dbContext->pluginChainPresetManage.getCurrentChain();
+                envelope.set("chain", saved);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getSavedPluginChain 异常:{}", e.what());
+            envelope.set("chain", Yvar{});
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getAllPluginChainPresets() {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext != nullptr) {
+                envelope.set("presets", dbContext->pluginChainPresetManage.getAllPresets());
+            } else {
+                envelope.set("presets", Yvar::array());
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getAllPluginChainPresets 异常:{}", e.what());
+            envelope.set("presets", Yvar::array());
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* getPluginChainPreset(long long id) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            Yvar slots = dbContext != nullptr
+                             ? dbContext->pluginChainPresetManage.getPresetSlots(id)
+                             : Yvar{};
+            envelope.set("chain", slots);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginChainPreset 异常:{}", e.what());
+            envelope.set("chain", Yvar{});
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    long long savePluginChainPreset(const char* title, const char* slotsJson) {
+        if (title == nullptr || slotsJson == nullptr) return -1;
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr) return -1;
+            return dbContext->pluginChainPresetManage.createPreset(title, slotsJson);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("savePluginChainPreset 异常:{}", e.what());
+            return -1;
+        }
+    }
+
+    const char* updatePluginChainPreset(long long id, const char* title, const char* slotsJson) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || title == nullptr || slotsJson == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginChainPresetManage.updatePreset(id, title, slotsJson);
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("updatePluginChainPreset 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "更新预设失败");
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    void renamePluginChainPreset(long long id, const char* title) {
+        if (title == nullptr) return;
+        try {
+            if (auto* dbContext = dllManager::getInstance().getDbContext())
+                dbContext->pluginChainPresetManage.renamePreset(id, title);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("renamePluginChainPreset 异常:{}", e.what());
+        }
+    }
+
+    void deletePluginChainPreset(long long id) {
+        try {
+            if (auto* dbContext = dllManager::getInstance().getDbContext())
+                dbContext->pluginChainPresetManage.deletePreset(id);
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("deletePluginChainPreset 异常:{}", e.what());
+        }
+    }
+
+    const char* getPluginPolicyView() {
+        Yvar envelope = Yvar::object();
+        try {
+            if (auto* dbContext = dllManager::getInstance().getDbContext()) {
+                const Yvar view = dbContext->pluginPolicyManage.getAll();
+                envelope.set("blacklist", view.read("blacklist"));
+                envelope.set("whitelist", view.read("whitelist"));
+            } else {
+                envelope.set("blacklist", Yvar::array());
+                envelope.set("whitelist", Yvar::array());
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("getPluginPolicyView 异常:{}", e.what());
+            envelope.set("blacklist", Yvar::array());
+            envelope.set("whitelist", Yvar::array());
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* addPluginWhitelist(const char* identifier, const char* filePath) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || identifier == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginPolicyManage.addWhite(
+                identifier,
+                filePath != nullptr ? filePath : ""
+            );
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("addPluginWhitelist 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "写入白名单失败");
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* removePluginWhitelist(const char* identifier) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || identifier == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginPolicyManage.removeWhite(identifier);
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("removePluginWhitelist 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "移除白名单失败");
+        }
+        return ConvertUtils::object2Uint8t(envelope);
+    }
+
+    const char* removePluginBlacklist(const char* identifier) {
+        Yvar envelope = Yvar::object();
+        try {
+            auto* dbContext = dllManager::getInstance().getDbContext();
+            if (dbContext == nullptr || identifier == nullptr) {
+                envelope.set("ok", false);
+                envelope.set("error", "参数无效");
+                return ConvertUtils::object2Uint8t(envelope);
+            }
+            dbContext->pluginPolicyManage.clearBlack(identifier);
+            envelope.set("ok", true);
+            envelope.set("error", "");
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("removePluginBlacklist 异常:{}", e.what());
+            envelope.set("ok", false);
+            envelope.set("error", "解除黑名单失败");
+        }
         return ConvertUtils::object2Uint8t(envelope);
     }
 }

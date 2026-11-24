@@ -12,7 +12,7 @@ import 'package:junk_fusion_ui/utils/alone_lock.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
-import 'package:junk_fusion_ui/widgets/popupWindow/error_toast.dart';
+import 'package:junk_fusion_ui/widgets/popupWindow/app_toast.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -24,13 +24,13 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app.dart'; // 根组件
 import 'providers/album_provider.dart';
-import 'providers/eq_provider.dart';
 import 'providers/folder_provider.dart';
 import 'providers/lyric_provider.dart';
 import 'providers/play_page_provider.dart';
 import 'providers/playlist_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/playback_provider.dart';
+import 'providers/plugin_chain_provider.dart';
 import 'providers/plugin_provider.dart';
 import 'providers/settings_nav_provider.dart';
 
@@ -307,8 +307,6 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider<PlaybackProvider>.value(
           value: widget.playbackProvider,
         ),
-        // 均衡器：第一次被页面读到时才创建（不在启动时碰 FFI）
-        ChangeNotifierProvider<EqProvider>(create: (_) => EqProvider()),
         // 全屏播放页的开关（播放栏点封面打开，页面里点 ⌄ 关闭）
         ChangeNotifierProvider<PlayPageProvider>(
           create: (_) => PlayPageProvider(),
@@ -317,6 +315,10 @@ class JunkFusionAppState extends State<JunkFusionApp>
         ChangeNotifierProvider<LyricProvider>(create: (_) => LyricProvider()),
         // 插件库（设置页用）：同样懒创建，不在启动时碰 FFI
         ChangeNotifierProvider<PluginProvider>(create: (_) => PluginProvider()),
+        // 全局效果器链（效果器页用）
+        ChangeNotifierProvider<PluginChainProvider>(
+          create: (_) => PluginChainProvider(),
+        ),
         // 设置页的目录 → 内容区跳转（中间栏和主内容区是两棵子树，靠它传话）
         ChangeNotifierProvider<SettingsNavProvider>(
           create: (_) => SettingsNavProvider(),
@@ -328,7 +330,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
         builder: (context, appTheme, _) => ToastificationWrapper(
           // 错误卡片通知的全局配置（位置/宽度/同时显示几条），
           // 具体样式和去重逻辑在 widgets/popupWindow/error_toast.dart
-          config: ErrorToast.config,
+          config: AppToast.config,
           //有画布,且overlay就在这里面
           child: MaterialApp(
             title: 'JunkFusion',

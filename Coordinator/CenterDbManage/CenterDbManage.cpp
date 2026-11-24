@@ -174,23 +174,6 @@ static const std::string createPlaylistSongsTableSQL = std::format(
 static const char* createPlaylistsSongsOrderByUserIndex =
     "CREATE INDEX IF NOT EXISTS orderByUserIndex ON playlistSongs(playlistId,orderByUser,songId)";
 
-/**
- * @brief EQ 预设表
- * @param title 预设名（用户可改名）
- * @param params EQ 参数体 JSON，形状就是 EqWire::encodeAll 的输出（不含信封、不含 rev）。
- *               和"当前 EQ 状态"完全同构，所以读出来可以直接喂给 setEqAll 下发。
- * @param createTime 创建时间
- *
- * 本表只存用户显式保存过的预设；"当前 EQ 状态"由 EqController 持有，不入库。
- */
-static const char* createEqPresetTableSQL = R"(
-    CREATE TABLE IF NOT EXISTS eqPresets(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        createTime TEXT NOT NULL DEFAULT (date('now', 'localtime')),
-        params TEXT NOT NULL
-    )
-)";
 
 /**
  * @brief 歌词表
@@ -274,6 +257,78 @@ static const char* createPluginDirsTableSQL = R"(
     )
 )";
 
+/**
+ * @brief 全局效果器链的预设
+ *
+ * @param slots 8 个插槽的配置体 JSON：
+ *        {"bypassAll":false,"slots":[{"index":0,"filePath":"...","identifier":"...",
+ *                                    "bypass":false,"state":"<base64>"}]}
+ *        `state` 是插件自己的 getStateInformation，用 base64 存——不存它这个
+ *        预设就只是"用了哪些插件"，恢复不出声音。
+ *
+ * 只存用户显式保存的东西，"当前链"由 PluginChainController 持有，
+ * 现场存在 pluginChainState 表里（见下）。
+ */
+static const char* createPluginChainPresetsTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginChainPresets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        createTime TEXT NOT NULL DEFAULT (date('now', 'localtime')),
+        slots TEXT NOT NULL
+    )
+)";
+
+/**
+ * @brief 插件黑名单（系统观测，见 host-integration.md §6）
+ *
+ * @param reason 'scan-crash' | 'scan-hung' | 'runtime-crash' | 'runtime-hang'
+ * @param failureCount 失败次数：单次可能只是偶发，用计数而不是一次就拉黑
+ *
+ * 只由程序写（扫描子进程崩溃 / 音频进程因它崩溃），用户只能"解除"。
+ * 和 pluginWhitelist 分开是刻意的：一个是系统观测，一个是用户意图。
+ */
+static const char* createPluginBlacklistTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginBlacklist(
+        identifier TEXT PRIMARY KEY,
+        filePath TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        failureCount INTEGER NOT NULL DEFAULT 1,
+        lastFailedAt TEXT NOT NULL
+    )
+)";
+
+/**
+ * @brief 当前全局效果器链的**状态**（不是预设）
+ *
+ * 只有一行（id 恒为 1），每次成功下发都覆盖。和 pluginChainPresets 的区别：
+ *   · 预设是"用户主动存下来的、可能有很多份"；
+ *   · 这一行是"上次应用的那条链"，用来在下次启动时恢复现场，
+ *     所以它不需要 id/title，也不需要保留历史。
+ */
+static const char* createPluginChainStateTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginChainState(
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        slots TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+    )
+)";
+
+/**
+ * @brief 插件白名单（**用户意图，优先级最高**）
+ *
+ * 语义（host-integration.md §6.2）：
+ *   · 只解除"自动禁止"，不放弃隔离；
+ *   · 不自动撤销：它又崩了也只加 failureCount，不静默改回黑名单。
+ */
+static const char* createPluginWhitelistTableSQL = R"(
+    CREATE TABLE IF NOT EXISTS pluginWhitelist(
+        identifier TEXT PRIMARY KEY,
+        filePath TEXT NOT NULL,
+        note TEXT,
+        createdAt TEXT NOT NULL
+    )
+)";
+
 CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
 
     try {
@@ -290,10 +345,13 @@ CenterDbManage::CenterDbManage(const std::string& path)    : db(path, SQLite::OP
         db.exec(createPlaylistTableSQL);
         db.exec(createPlaylistSongsTableSQL);
         db.exec(createSongFolderTableSQL);
-        db.exec(createEqPresetTableSQL);
         db.exec(createLyricsTableSQL);
         db.exec(createPluginsTableSQL);
         db.exec(createPluginDirsTableSQL);
+        db.exec(createPluginChainPresetsTableSQL);
+        db.exec(createPluginChainStateTableSQL);
+        db.exec(createPluginBlacklistTableSQL);
+        db.exec(createPluginWhitelistTableSQL);
 
         db.exec(createPlaylistsSongsOrderByUserIndex);
         db.exec(createAlbumDiscTrackIndexSQL);

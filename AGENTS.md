@@ -58,29 +58,34 @@ class Yvar {
 2. flutter的测试基本不需要，因为flutter基本只是UI布局，不怎么涉及业务和安全逻辑
 3. 右键菜单，更多信息...按钮使用showRootContextMenu实现
 4. 调试语句直接使用print函数，因为我的flutter前端基本只用于绘图，没有多少业务逻辑，不需要写入日志，如果你觉得某个地方必须写日志，请向我询问
+5. 用户信息通知请使用toast和fatalDialog,具体函数请见UtilFunction
+6. 前端布局: 图标区|sidebar区域|主内容区，下方为playbar,请遵循这个布局方案
+7. 滚动器请使用SmoothScrollController，以前使用的滚动器不需要再改动
 
 ## 代码架构
 
 Utils/:
-Yvar:放置json安全读写类，其他文件读写json时请使用Yvar,不要使用nlohmann::json
-DbUtils:数据库工具类
-ConvertUtils:类型转换工具
-MathUtils:数学工具(通常只在音频DSP中会使用到)
-StringUtils:字符串工具
-OtherUtils:其他乱七八糟不好分类的工具都放到这里面
-paramLink:进行滑块参数(osc和tcp json两种)同步分发的安全通信类
+  Yvar:放置json安全读写类，其他文件读写json时请使用Yvar,不要使用nlohmann::json
+  DbUtils:数据库工具类
+  ConvertUtils:类型转换工具
+  MathUtils:数学工具(通常只在音频DSP中会使用到)
+  StringUtils:字符串工具
+  OtherUtils:其他乱七八糟不好分类的工具都放到这里面
+  paramLink:进行滑块参数(osc和tcp json两种)同步分发的安全通信类
 Models/:CPP模型类
 Macro/:CPP使用的宏
 junk_fusion_ui/:flutter前端
-lib/:
-utils/:前端工具类
-widgets/:前端UI组件
-helper_widget/:辅助组件
-pages/:页面
-playControl:/播放控制组件
-popupWindow/:弹窗组件
-bridge/:和后端桥接的工具类
-model/:模型类，统一使用freezed生成
+  lib/:
+    utils/:前端工具类
+    widgets/:前端UI组件
+      helper_widget/:辅助组件
+        safe_hover_tip.dart:安全悬浮提示组件，在标准的Tooltip无法使用(例如和animated_reorderable_list撞车)的时候使用它
+        combo_box.dart:下拉选择框组件(不要使用原生的那个)
+      pages/:页面
+      playControl:/播放控制组件
+      popupWindow/:弹窗组件
+    bridge/:和后端桥接的工具类
+    model/:模型类，统一使用freezed生成
 DevScripts/:开发者工具
 Coordinator:协调者，用来数据库读写和协调多模块
 AudioProcessor:音频进程：只能由协调者通信，前端不可直接与其通信

@@ -103,22 +103,30 @@ GodProcessor::GodProcessor(
     // 停止播放，不代表现在开始完全静音
     mWorker.receiver->onPausePlay = [this]() { pausePlay(); };
 
-    // ── EQ 的两条输入通道 ──
-    // 拖拽中的连续量走 OSC/UDP（高频、允许丢帧）
-    mOscReceiver.onEqBandLive =
-        [this](int idx, float freqHz, float gainDb, float q, float shelfSlope, uint32_t rev) {
-            mEq.setBandLive(idx, freqHz, gainDb, q, shelfSlope, rev);
-        };
-    // 结构变更 / 拖拽结束的最终值 / 预设走 ZMQ JSON（必达、权威）
-    mWorker.receiver->onEqMessage = [this](const EqWire::Message& message) {
-        applyEqMessage(message);
-    };
 
     // ── 频谱：共享内存由 Coordinator 创建，这里只负责接上并开关 ──
     mWorker.receiver->onSpectrumAttach = [this](const std::string& name, size_t bytes) {
         mSpectrum.attachSharedMemory(name, bytes);
     };
     mWorker.receiver->onSpectrumEnabled = [this](bool enabled) { mSpectrum.setEnabled(enabled); };
+
+    // ── 全局效果器链 ──
+    // 整链重建会实例化插件（LoadLibrary，几十~几百毫秒），只可能在 puller 线程做；
+    // 音频线程只通过 mActiveChain 读一个指针，见 processBlock
+    mWorker.receiver->onPluginChainConfig = [this](const Yvar& config) {
+        applyPluginChain(config);
+    };
+    mWorker.receiver->onPluginChainBypassAll = [this](bool bypassAll) {
+        if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+            chain->setBypassAll(bypassAll);
+        }
+    };
+    mWorker.receiver->onPluginChainSlotBypass = [this](int slot, bool bypass) {
+        if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+            chain->setSlotBypass(slot, bypass);
+        }
+    };
+    mWorker.receiver->onPluginChainOpenEditor = [this](int slot) { openPluginEditor(slot); };
 
     // 完全静音的切换态
     mPlayPauseControl.onPauseOver = [this]() {
@@ -178,11 +186,8 @@ void GodProcessor::prepareToPlay(double sampleRate, int maximumExpectedSamplesPe
 
     juce::AudioChannelSet outputLayout = getChannelLayoutOfBus(false, 0);
     mNumChannels = outputLayout.size();
-    mEq.prepare(sampleRate, maximumExpectedSamplesPerBlock, mNumChannels); // 均衡器
-    mSpectrum.prepare(sampleRate);                                         // 频谱分析
+    mSpectrum.prepare(sampleRate); // 频谱分析
 
-    // 把当前采样率告诉协调者：UI 画频响曲线要和 DSP 用同一个 fs
-    mWorker.sender->sendMessage(EqWire::encodeSampleRate(sampleRate).dump());
     mProgressBar.prepareToPlay(mSampleRate);
     mPlayCount.prepareToPlay(mSampleRate);
     mSmooth.prepareToPlay(mSampleRate);
@@ -210,7 +215,12 @@ void GodProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuff
         buffer.getNumSamples()
     ); // 交叉淡化
 
-    mEq.process(buffer, buffer.getNumSamples()); // 均衡器：交叉淡化之后、主音量之前
+    // 全局效果器链：交叉淡化之后、EQ 之前
+    // 单条路径 → 不需要 PDC；块大小 = 设备块，插件不会看到变长的块。
+    // 理由见 docs/audio-routing.md §4.1
+    if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+        chain->process(buffer);
+    }
 
     for (int i = 0; i < buffer.getNumSamples(); i++) {
         auto currentMasterVolume = mSmooth.masterVolume.getNextValue();
@@ -335,17 +345,98 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
 
 GodProcessor::~GodProcessor() {}
 
-void GodProcessor::applyEqMessage(const EqWire::Message& message) {
-    switch (message.kind) {
-    case EqWire::Kind::band: mEq.setBand(message.band, message.rev); break;
-    case EqWire::Kind::master:
-        mEq.setMaster(message.masterEnabled, message.masterGainDb, message.rev);
-        break;
-    case EqWire::Kind::all: mEq.setAll(message.all, message.rev); break;
-    case EqWire::Kind::none:
-    default: break;
+void GodProcessor::openPluginEditor(int slot) {
+    // 编辑器是 GUI 对象：创建、显示都必须在消息线程
+    juce::MessageManager::callAsync([this, slot]() {
+        if (auto it = mEditorWindows.find(slot); it != mEditorWindows.end()) {
+            // 已经开过了：显示出来，并且重新"抬一次"最上层
+            // （只 setVisible 的话窗口会留在上次被压到的那一层）
+            it->second->setVisible(true);
+            it->second->bringToFrontOnce();
+            return;
+        }
+
+        auto* chain = mActiveChain.load(std::memory_order_acquire);
+        if (chain == nullptr) return;
+
+        auto* processor = chain->processorAt(slot);
+        if (processor == nullptr) {
+            if (auto logger = spdlog::get(LogAudioID))
+                logger->warn("[PluginEditor] 槽 {} 没有加载插件", slot);
+            return;
+        }
+
+        auto window =
+            std::make_unique<PluginHost::PluginEditorWindow>(*processor, processor->getName());
+        if (!window->isValid()) return;
+        mEditorWindows[slot] = std::move(window);
+    });
+}
+
+void GodProcessor::closeAllPluginEditors() {
+    // 用 shared_ptr 兜住超时后 lambda 迟到的风险（栈上的 WaitableEvent 早就没了）
+    auto finished = std::make_shared<juce::WaitableEvent>(false);
+
+    juce::MessageManager::callAsync([this, finished]() {
+        mEditorWindows.clear();
+        finished->signal();
+    });
+
+    // 换链不能等太久；窗口一般 instantly 就删完了
+    finished->wait(2000);
+}
+
+void GodProcessor::applyPluginChain(const Yvar& config) {
+    auto logger{spdlog::get(LogAudioID)};
+
+    // 0. 先关编辑器：它们还拿着即将析构的 AudioProcessor 指针
+    closeAllPluginEditors();
+
+    const int channels = mNumChannels > 0 ? mNumChannels : 2;
+    const double sampleRate = mSampleRate > 0.0f ? static_cast<double>(mSampleRate) : 44100.0;
+    const int blockSize = getBlockSize() > 0 ? getBlockSize() : 512;
+
+    if (logger) logger->info("[PluginChain] 开始重建（{} 槽，{}Hz/{}）", 8, sampleRate, blockSize);
+
+    // 1. 在**离线**对象上把整条链建好：实例化插件、prepare、恢复状态
+    auto newChain = std::make_unique<PluginHost::PluginChain>();
+    newChain->applyConfig(config, mPluginFactory, sampleRate, blockSize, channels);
+
+    // 2. 原子换指针：音频线程从下一块开始用新链
+    mActiveChain.store(newChain.get(), std::memory_order_release);
+
+    // 3. 等两个块（441@44.1k ≈ 10ms/块），确保没有音频线程还在旧链里
+    juce::Thread::sleep(50);
+
+    // 4. 销毁旧链（赋值时旧对象析构）。
+    //    插件析构可能挂死（实验台实测 Dexed），但这里在 puller 线程：
+    //    只会拖慢后续指令处理，不会卡音频线程。
+    //    TODO(异步销毁): 真遇到挂死的插件，要改成丢后台线程 + 超时后宁可泄漏。
+    mPluginChain = std::move(newChain);
+
+    sendPluginChainState();
+
+    if (logger) {
+        logger->info(
+            "[PluginChain] 重建完成：loaded={} 总延迟={} 采样",
+            mActiveChain.load()->isAnyLoaded(),
+            mActiveChain.load()->totalLatencySamples()
+        );
     }
 }
+
+void GodProcessor::sendPluginChainState() {
+    Yvar envelope = Yvar::object();
+
+    if (auto* chain = mActiveChain.load(std::memory_order_acquire)) {
+        envelope.set(AudioMacro::pluginChainState, chain->statusJson());
+    } else {
+        envelope.set(AudioMacro::pluginChainState, Yvar{});
+    }
+
+    mWorker.sender->sendMessage(envelope.dump());
+}
+
 
 void GodProcessor::setStateInformation(const void* data, int sizeInBytes) {
     juce::ignoreUnused(data);

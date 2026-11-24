@@ -37,11 +37,6 @@ void AudioProcessorPuller::run() {
             if (!jsonObj.isObject()) {
                 spdlog::get(LogAudioID)->debug("puller接收到未知指令：{}", command);
             } else {
-                // EQ 报文自己走一条分支，处理完就结束，不要落到下面播放指令的判断里
-                if (auto eqMessage = EqWire::parse(jsonObj)) {
-                    if (onEqMessage) onEqMessage(*eqMessage);
-                    continue;
-                }
                 // 频谱共享内存：Coordinator 把名字和大小发过来
                 if (jsonObj.has(AudioMacro::spectrumShm)) {
                     const Yvar shmObj = jsonObj.read(AudioMacro::spectrumShm);
@@ -55,6 +50,31 @@ void AudioProcessorPuller::run() {
                 if (jsonObj.has(AudioMacro::spectrumEnable)) {
                     const bool enabled = jsonObj.read(AudioMacro::spectrumEnable).toBool();
                     if (onSpectrumEnabled) onSpectrumEnabled(enabled);
+                    continue;
+                }
+                // 全局效果器链：整链重建（实例化插件，会比较慢，但这是在 puller 线程）
+                if (jsonObj.has(AudioMacro::pluginChain)) {
+                    if (onPluginChainConfig) onPluginChainConfig(jsonObj.read(AudioMacro::pluginChain));
+                    continue;
+                }
+                if (jsonObj.has(AudioMacro::pluginChainBypassAll)) {
+                    const bool bypassAll =
+                        jsonObj.read(AudioMacro::pluginChainBypassAll).toBool();
+                    if (onPluginChainBypassAll) onPluginChainBypassAll(bypassAll);
+                    continue;
+                }
+                if (jsonObj.has(AudioMacro::pluginChainSlotBypass)) {
+                    const auto inner = jsonObj.read(AudioMacro::pluginChainSlotBypass);
+                    const int slot = inner.read(AudioMacro::pluginChainSlot).toInt();
+                    const bool bypass = inner.read(AudioMacro::pluginChainBypass).toBool();
+                    if (onPluginChainSlotBypass) onPluginChainSlotBypass(slot, bypass);
+                    continue;
+                }
+                // 打开插件编辑器窗口（在音频进程的消息线程上建）
+                if (jsonObj.has(AudioMacro::pluginChainOpenEditor)) {
+                    const auto inner = jsonObj.read(AudioMacro::pluginChainOpenEditor);
+                    const int slot = inner.read(AudioMacro::pluginChainSlot).toInt();
+                    if (onPluginChainOpenEditor) onPluginChainOpenEditor(slot);
                     continue;
                 }
                 if (jsonObj.has(AudioMacro::killAudioProcess)) {

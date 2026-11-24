@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Model/EqInfo.hpp"
 #include "Model/PlayInfo.hpp"
 #include "Utils/Yvar.hpp"
 #include "juce_core/juce_core.h"
@@ -27,14 +26,23 @@ public:
     std::function<void(float)> onSpeedShifterChange;
     std::function<void(float)> onPitchShifterChange;
 
-    /** @brief EQ 的 JSON 报文（结构变更 / 拖拽结束的最终值 / 预设），非 EQ 报文不会走到这里 */
-    std::function<void(const EqWire::Message& message)> onEqMessage;
-
     /** @brief Coordinator 要求接上频谱共享内存（参数是完整名字和字节数） */
     std::function<void(const std::string& name, size_t bytes)> onSpectrumAttach;
 
     /** @brief 打开/关闭频谱分析 */
     std::function<void(bool enabled)> onSpectrumEnabled;
+
+    /** @brief 重建整条全局效果器链（参数是 {"bypassAll":..,"slots":[..]}） */
+    std::function<void(const Yvar& config)> onPluginChainConfig;
+
+    /** @brief 整链旁通开关 */
+    std::function<void(bool bypassAll)> onPluginChainBypassAll;
+
+    /** @brief 单个插槽旁通开关 */
+    std::function<void(int slot, bool bypass)> onPluginChainSlotBypass;
+
+    /** @brief 打开某个插槽的插件编辑器窗口 */
+    std::function<void(int slot)> onPluginChainOpenEditor;
 
     void run() override;
 };

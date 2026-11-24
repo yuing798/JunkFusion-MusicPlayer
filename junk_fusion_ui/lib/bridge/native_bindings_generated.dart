@@ -49,6 +49,31 @@ class JunkFusionDLLBindings {
   late final _addPluginDir = _addPluginDirPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief 强制允许某个插件（用户意图）→ {"ok":bool,"error":""}
+  ffi.Pointer<ffi.Char> addPluginWhitelist(
+    ffi.Pointer<ffi.Char> identifier,
+    ffi.Pointer<ffi.Char> filePath,
+  ) {
+    return _addPluginWhitelist(identifier, filePath);
+  }
+
+  late final _addPluginWhitelistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+          )
+        >
+      >('addPluginWhitelist');
+  late final _addPluginWhitelist = _addPluginWhitelistPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+        )
+      >();
+
   void closeBackend() {
     return _closeBackend();
   }
@@ -73,17 +98,6 @@ class JunkFusionDLLBindings {
   late final _createNewPlaylist = _createNewPlaylistPtr
       .asFunction<int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>();
 
-  void deleteEqPreset(int id) {
-    return _deleteEqPreset(id);
-  }
-
-  late final _deleteEqPresetPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
-        'deleteEqPreset',
-      );
-  late final _deleteEqPreset = _deleteEqPresetPtr
-      .asFunction<void Function(int)>();
-
   void deletePlaylist(int playlistId) {
     return _deletePlaylist(playlistId);
   }
@@ -93,6 +107,17 @@ class JunkFusionDLLBindings {
         'deletePlaylist',
       );
   late final _deletePlaylist = _deletePlaylistPtr
+      .asFunction<void Function(int)>();
+
+  void deletePluginChainPreset(int id) {
+    return _deletePluginChainPreset(id);
+  }
+
+  late final _deletePluginChainPresetPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.LongLong)>>(
+        'deletePluginChainPreset',
+      );
+  late final _deletePluginChainPreset = _deletePluginChainPresetPtr
       .asFunction<void Function(int)>();
 
   /// @brief dll初始化
@@ -142,18 +167,6 @@ class JunkFusionDLLBindings {
   late final _getAllAlbumView = _getAllAlbumViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
-  /// @brief 所有预设的列表，返回 {"eqPresets":[{id,title,createTime}]}（不含参数体）
-  ffi.Pointer<ffi.Char> getAllEqPresets() {
-    return _getAllEqPresets();
-  }
-
-  late final _getAllEqPresetsPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-        'getAllEqPresets',
-      );
-  late final _getAllEqPresets = _getAllEqPresetsPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function()>();
-
   ffi.Pointer<ffi.Char> getAllPlaylistView() {
     return _getAllPlaylistView();
   }
@@ -163,6 +176,18 @@ class JunkFusionDLLBindings {
         'getAllPlaylistView',
       );
   late final _getAllPlaylistView = _getAllPlaylistViewPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 链预设列表 → {"presets":[{id,title,createTime}]}
+  ffi.Pointer<ffi.Char> getAllPluginChainPresets() {
+    return _getAllPluginChainPresets();
+  }
+
+  late final _getAllPluginChainPresetsPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getAllPluginChainPresets',
+      );
+  late final _getAllPluginChainPresets = _getAllPluginChainPresetsPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief 插件列表
@@ -264,50 +289,6 @@ class JunkFusionDLLBindings {
   late final _getDetailSongInfo = _getDetailSongInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  /// @brief 取当前整机参数，返回 {"eqAll":{...}}，可以直接喂回 setEqAll
-  ffi.Pointer<ffi.Char> getEqAllState() {
-    return _getEqAllState();
-  }
-
-  late final _getEqAllStatePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-        'getEqAllState',
-      );
-  late final _getEqAllState = _getEqAllStatePtr
-      .asFunction<ffi.Pointer<ffi.Char> Function()>();
-
-  /// @brief 取整机频响曲线（dB 值数组）
-  ///
-  /// 频率轴：freq(i) = 20 * (20000/20)^(i / (numPoints-1))，i = 0 .. numPoints-1
-  /// 返回的指针指向内部缓冲，**下一次调用会被覆盖**，请拿到后立刻拷贝。
-  ///
-  /// @param numPoints 采样点数（会被钳到 2~2048）
-  /// @return 长度 numPoints 的 float 数组；未初始化时返回 nullptr
-  ffi.Pointer<ffi.Float> getEqCurve(int numPoints) {
-    return _getEqCurve(numPoints);
-  }
-
-  late final _getEqCurvePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Float> Function(ffi.Int)>>(
-        'getEqCurve',
-      );
-  late final _getEqCurve = _getEqCurvePtr
-      .asFunction<ffi.Pointer<ffi.Float> Function(int)>();
-
-  /// @brief 取某个预设的参数，返回 {"eqAll":{...}}，可以直接喂给 setEqAll()
-  ///
-  /// 找不到这个 id 时内层是空值（"eqAll": null），前端按"预设不存在"处理。
-  ffi.Pointer<ffi.Char> getEqPresetParams(int id) {
-    return _getEqPresetParams(id);
-  }
-
-  late final _getEqPresetParamsPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
-        'getEqPresetParams',
-      );
-  late final _getEqPresetParams = _getEqPresetParamsPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
-
   /// @brief 固定歌单的歌曲（我喜欢 / 最近播放 / 最多播放）
   ///
   /// 这三个**不是** playlists 表里的行，而是对 songs 表的三种固定查询：
@@ -342,6 +323,35 @@ class JunkFusionDLLBindings {
   late final _getPlaylistBasicInfo = _getPlaylistBasicInfoPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// @brief 某个预设的配置体 → {"chain":{...}}；找不到时 chain 为 null
+  ffi.Pointer<ffi.Char> getPluginChainPreset(int id) {
+    return _getPluginChainPreset(id);
+  }
+
+  late final _getPluginChainPresetPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.LongLong)>>(
+        'getPluginChainPreset',
+      );
+  late final _getPluginChainPreset = _getPluginChainPresetPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+
+  /// @brief 当前链的加载状态（音频进程回传）
+  ///
+  /// @return {"chain":{"bypassAll":bool,"anyLoaded":bool,"latency":int,
+  /// "slots":[{"index","loaded","bypass","name","identifier",
+  /// "filePath","latency","error"}]}}
+  /// 还没收到过状态时 chain 为 null
+  ffi.Pointer<ffi.Char> getPluginChainState() {
+    return _getPluginChainState();
+  }
+
+  late final _getPluginChainStatePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getPluginChainState',
+      );
+  late final _getPluginChainState = _getPluginChainStatePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
   /// @brief 扫描目录列表 → {"dirs":[{"path":"...","isBuiltin":bool}]}
   ffi.Pointer<ffi.Char> getPluginDirs() {
     return _getPluginDirs();
@@ -352,6 +362,19 @@ class JunkFusionDLLBindings {
         'getPluginDirs',
       );
   late final _getPluginDirs = _getPluginDirsPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief {"blacklist":[{identifier,filePath,reason,failureCount,lastFailedAt}],
+  /// "whitelist":[{identifier,filePath,note,createdAt}]}
+  ffi.Pointer<ffi.Char> getPluginPolicyView() {
+    return _getPluginPolicyView();
+  }
+
+  late final _getPluginPolicyViewPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getPluginPolicyView',
+      );
+  late final _getPluginPolicyView = _getPluginPolicyViewPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief 扫描状态（前端用来画"扫描中 5/12"）
@@ -367,6 +390,20 @@ class JunkFusionDLLBindings {
         'getPluginScanState',
       );
   late final _getPluginScanState = _getPluginScanStatePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+
+  /// @brief 读回"上次应用的链"（pluginChainState 表里那一行）
+  ///
+  /// @return {"chain":{"slots":[...],"bypassAll":bool}}；从没应用过时 chain 为 null
+  ffi.Pointer<ffi.Char> getSavedPluginChain() {
+    return _getSavedPluginChain();
+  }
+
+  late final _getSavedPluginChainPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
+        'getSavedPluginChain',
+      );
+  late final _getSavedPluginChain = _getSavedPluginChainPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
 
   /// @brief 获得单独导入的文件的songIdList，作为独立虚拟文件夹节点渲染在前端
@@ -466,6 +503,21 @@ class JunkFusionDLLBindings {
       );
   late final _importSongs = _importSongsPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  /// @brief 打开某个插槽的插件编辑器窗口
+  ///
+  /// 窗口出现在**音频进程**里（那边有消息循环）；同一个槽再点一次 = 把窗口叫回前台。
+  /// 换链/音频进程重启后窗口会消失。
+  void openPluginSlotEditor(int slot) {
+    return _openPluginSlotEditor(slot);
+  }
+
+  late final _openPluginSlotEditorPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>(
+        'openPluginSlotEditor',
+      );
+  late final _openPluginSlotEditor = _openPluginSlotEditorPtr
+      .asFunction<void Function(int)>();
 
   void pausePlay() {
     return _pausePlay();
@@ -647,6 +699,22 @@ class JunkFusionDLLBindings {
   late final _registerOnPlayNextOrPreviousSong =
       _registerOnPlayNextOrPreviousSongPtr.asFunction<void Function(IntFunc)>();
 
+  /// @brief 解除某个插件的黑名单（"重试"）
+  ffi.Pointer<ffi.Char> removePluginBlacklist(
+    ffi.Pointer<ffi.Char> identifier,
+  ) {
+    return _removePluginBlacklist(identifier);
+  }
+
+  late final _removePluginBlacklistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('removePluginBlacklist');
+  late final _removePluginBlacklist = _removePluginBlacklistPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
   /// @brief 删一个扫描目录 → {"ok":bool,"error":"..."}（系统默认目录会被拒绝）
   ffi.Pointer<ffi.Char> removePluginDir(ffi.Pointer<ffi.Char> path) {
     return _removePluginDir(path);
@@ -659,6 +727,21 @@ class JunkFusionDLLBindings {
         >
       >('removePluginDir');
   late final _removePluginDir = _removePluginDirPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
+  ffi.Pointer<ffi.Char> removePluginWhitelist(
+    ffi.Pointer<ffi.Char> identifier,
+  ) {
+    return _removePluginWhitelist(identifier);
+  }
+
+  late final _removePluginWhitelistPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
+        >
+      >('removePluginWhitelist');
+  late final _removePluginWhitelist = _removePluginWhitelistPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
   void removeSongsInPlaylist(
@@ -677,19 +760,6 @@ class JunkFusionDLLBindings {
   late final _removeSongsInPlaylist = _removeSongsInPlaylistPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
-  void renameEqPreset(int id, ffi.Pointer<ffi.Char> title) {
-    return _renameEqPreset(id, title);
-  }
-
-  late final _renameEqPresetPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
-        >
-      >('renameEqPreset');
-  late final _renameEqPreset = _renameEqPresetPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
-
   void renamePlaylist(int playlistId, ffi.Pointer<ffi.Char> title) {
     return _renamePlaylist(playlistId, title);
   }
@@ -703,6 +773,19 @@ class JunkFusionDLLBindings {
   late final _renamePlaylist = _renamePlaylistPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
 
+  void renamePluginChainPreset(int id, ffi.Pointer<ffi.Char> title) {
+    return _renamePluginChainPreset(id, title);
+  }
+
+  late final _renamePluginChainPresetPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.LongLong, ffi.Pointer<ffi.Char>)
+        >
+      >('renamePluginChainPreset');
+  late final _renamePluginChainPreset = _renamePluginChainPresetPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Char>)>();
+
   void requestOnPlayStateSync(IntFunc cb) {
     return _requestOnPlayStateSync(cb);
   }
@@ -714,19 +797,22 @@ class JunkFusionDLLBindings {
   late final _requestOnPlayStateSync = _requestOnPlayStateSyncPtr
       .asFunction<void Function(IntFunc)>();
 
-  /// @brief 把「当前 EQ 状态」存成一个新预设
-  ///
-  /// @return 新预设的 id；失败返回 -1
-  int saveEqPreset(ffi.Pointer<ffi.Char> title) {
-    return _saveEqPreset(title);
+  /// @brief 把一份配置存成新预设（前端把当前 8 槽 JSON 传上来）→ 新 id，失败 -1
+  int savePluginChainPreset(
+    ffi.Pointer<ffi.Char> title,
+    ffi.Pointer<ffi.Char> slotsJson,
+  ) {
+    return _savePluginChainPreset(title, slotsJson);
   }
 
-  late final _saveEqPresetPtr =
-      _lookup<ffi.NativeFunction<ffi.LongLong Function(ffi.Pointer<ffi.Char>)>>(
-        'saveEqPreset',
-      );
-  late final _saveEqPreset = _saveEqPresetPtr
-      .asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+  late final _savePluginChainPresetPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.LongLong Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+        >
+      >('savePluginChainPreset');
+  late final _savePluginChainPreset = _savePluginChainPresetPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>();
 
   /// @brief 联网搜索某张专辑的封面并写进 albums.hash
   ///
@@ -762,90 +848,48 @@ class JunkFusionDLLBindings {
   late final _sendSliderValue = _sendSliderValuePtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, double, int)>();
 
-  /// @brief 整机参数（预设 / 初始化）
+  /// @brief 下发整链配置（前端编辑完点"应用"）
   ///
-  /// @param eqAllJson {"eqAll":{...}}，也可以直接传内层的 {...}
-  void setEqAll(ffi.Pointer<ffi.Char> eqAllJson) {
-    return _setEqAll(eqAllJson);
+  /// @param slotsJson {"bypassAll":bool,"slots":[{"index":0,"filePath":"...",
+  /// "identifier":"...","bypass":false,"state":"<base64>"}]}
+  /// @return {"ok":bool,"error":"...","dropped":["identifier"...]}
+  /// dropped = 被黑名单挡掉、没有下发的插件（白名单可以放行）
+  ffi.Pointer<ffi.Char> setPluginChain(ffi.Pointer<ffi.Char> slotsJson) {
+    return _setPluginChain(slotsJson);
   }
 
-  late final _setEqAllPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
-        'setEqAll',
-      );
-  late final _setEqAll = _setEqAllPtr
-      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
-
-  /// @brief 一条 band 的完整参数（换类型、开关、拖拽结束的最终值），走 TCP JSON
-  ///
-  /// @param idx            0 ~ 7
-  /// @param enabled        0/1
-  /// @param type           "bell" / "lowPass" / "highPass" / "notch" / "bandPass"
-  /// / "allPass" / "lowShelf" / "highShelf" / "tile" / "flatTile"
-  /// （认不出来的按 bell 处理）
-  /// @param cutSlopeDbPerOct LowPass/HighPass 用：12 = 一段，24 = 两段级联
-  void setEqBand(
-    int idx,
-    int enabled,
-    ffi.Pointer<ffi.Char> type,
-    double freqHz,
-    double gainDb,
-    double q,
-    double shelfSlope,
-    int cutSlopeDbPerOct,
-  ) {
-    return _setEqBand(
-      idx,
-      enabled,
-      type,
-      freqHz,
-      gainDb,
-      q,
-      shelfSlope,
-      cutSlopeDbPerOct,
-    );
-  }
-
-  late final _setEqBandPtr =
+  late final _setPluginChainPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Int,
-            ffi.Int,
-            ffi.Pointer<ffi.Char>,
-            ffi.Double,
-            ffi.Double,
-            ffi.Double,
-            ffi.Double,
-            ffi.Int,
-          )
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)
         >
-      >('setEqBand');
-  late final _setEqBand = _setEqBandPtr
-      .asFunction<
-        void Function(
-          int,
-          int,
-          ffi.Pointer<ffi.Char>,
-          double,
-          double,
-          double,
-          double,
-          int,
-        )
-      >();
+      >('setPluginChain');
+  late final _setPluginChain = _setPluginChainPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
-  /// @brief 整机开关 + 输出增益
-  void setEqMaster(int enabled, double masterGainDb) {
-    return _setEqMaster(enabled, masterGainDb);
+  /// @brief 整链旁通开关（1 = 旁通整条链，声音回到干声）
+  void setPluginChainBypassAll(int bypass) {
+    return _setPluginChainBypassAll(bypass);
   }
 
-  late final _setEqMasterPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int, ffi.Double)>>(
-        'setEqMaster',
+  late final _setPluginChainBypassAllPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>(
+        'setPluginChainBypassAll',
       );
-  late final _setEqMaster = _setEqMasterPtr
-      .asFunction<void Function(int, double)>();
+  late final _setPluginChainBypassAll = _setPluginChainBypassAllPtr
+      .asFunction<void Function(int)>();
+
+  /// @brief 单个插槽旁通开关（slot = 0~7）
+  void setPluginChainSlotBypass(int slot, int bypass) {
+    return _setPluginChainSlotBypass(slot, bypass);
+  }
+
+  late final _setPluginChainSlotBypassPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int, ffi.Int)>>(
+        'setPluginChainSlotBypass',
+      );
+  late final _setPluginChainSlotBypass = _setPluginChainSlotBypassPtr
+      .asFunction<void Function(int, int)>();
 
   /// @brief 手动改插件类型（前端唯一允许改的字段）
   ///
@@ -938,33 +982,33 @@ class JunkFusionDLLBindings {
   late final _updateCoverBySongId = _updateCoverBySongIdPtr
       .asFunction<void Function(int, int)>();
 
-  /// @brief 拖拽中的连续参数（高频，走 OSC/UDP）
-  ///
-  /// 只改 freqHz / gainDb / q / shelfSlope 四个连续量，类型和开关不变。
-  void updateEqBandLive(
-    int idx,
-    double freqHz,
-    double gainDb,
-    double q,
-    double shelfSlope,
+  /// @brief 覆盖已有预设（双击预设改完保存）→ {"ok":bool,"error":""}
+  ffi.Pointer<ffi.Char> updatePluginChainPreset(
+    int id,
+    ffi.Pointer<ffi.Char> title,
+    ffi.Pointer<ffi.Char> slotsJson,
   ) {
-    return _updateEqBandLive(idx, freqHz, gainDb, q, shelfSlope);
+    return _updatePluginChainPreset(id, title, slotsJson);
   }
 
-  late final _updateEqBandLivePtr =
+  late final _updatePluginChainPresetPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Int,
-            ffi.Double,
-            ffi.Double,
-            ffi.Double,
-            ffi.Double,
+          ffi.Pointer<ffi.Char> Function(
+            ffi.LongLong,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
           )
         >
-      >('updateEqBandLive');
-  late final _updateEqBandLive = _updateEqBandLivePtr
-      .asFunction<void Function(int, double, double, double, double)>();
+      >('updatePluginChainPreset');
+  late final _updatePluginChainPreset = _updatePluginChainPresetPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          int,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+        )
+      >();
 }
 
 typedef DoubleFunc = ffi.Pointer<ffi.NativeFunction<DoubleFuncFunction>>;

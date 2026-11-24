@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:junk_fusion_ui/providers/plugin_chain_provider.dart';
 import 'package:junk_fusion_ui/widgets/PlayControl/song_play_page.dart';
 import 'package:junk_fusion_ui/widgets/layout/three_column_layout.dart';
 import 'package:junk_fusion_ui/widgets/pages/pages_route.dart';
@@ -35,6 +36,17 @@ class _AppState extends State<App> {
   // 具体有哪些页面、怎么跳转全在 widgets/pages/pages_route.dart 里，
   // 这里只负责拿着这一份状态，让图标栏 / 中间栏 / 内容区都能读到
   final PagesRouteController _pagesRoute = PagesRouteController();
+
+  @override
+  void initState() {
+    super.initState();
+    // 启动时就把"上次应用的全局效果器链"恢复回来 —— 不要等用户点开效果器页，
+    // 否则不放歌时链是空的，用户会以为设置丢了
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<PluginChainProvider>().ensureInitialized();
+    });
+  }
 
   @override
   void dispose() {
