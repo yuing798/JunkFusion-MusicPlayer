@@ -208,6 +208,12 @@ namespace PluginHost {
         return anyLoaded;
     }
 
+    juce::AudioProcessor* PluginChain::processorAt(int slot) const {
+        if (slot < 0 || slot >= kSlotCount) return nullptr;
+        const auto& target = mSlots[static_cast<size_t>(slot)];
+        return target != nullptr ? target->processor() : nullptr;
+    }
+
     Yvar PluginChain::statusJson() const {
         Yvar out = Yvar::object();
         out.set("bypassAll", isBypassAll());

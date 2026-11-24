@@ -557,6 +557,21 @@ class JunkFusionDLLBindings {
   late final _importSongs = _importSongsPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
+  /// @brief 打开某个插槽的插件编辑器窗口
+  ///
+  /// 窗口出现在**音频进程**里（那边有消息循环）；同一个槽再点一次 = 把窗口叫回前台。
+  /// 换链/音频进程重启后窗口会消失。
+  void openPluginSlotEditor(int slot) {
+    return _openPluginSlotEditor(slot);
+  }
+
+  late final _openPluginSlotEditorPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int)>>(
+        'openPluginSlotEditor',
+      );
+  late final _openPluginSlotEditor = _openPluginSlotEditorPtr
+      .asFunction<void Function(int)>();
+
   void pausePlay() {
     return _pausePlay();
   }

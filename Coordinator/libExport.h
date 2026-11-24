@@ -395,6 +395,14 @@ extern "C" {
     /** @brief 单个插槽旁通开关（slot = 0~7） */
     DLL_EXPORT void setPluginChainSlotBypass(int slot, int bypass);
 
+    /**
+     * @brief 打开某个插槽的插件编辑器窗口
+     *
+     * 窗口出现在**音频进程**里（那边有消息循环）；同一个槽再点一次 = 把窗口叫回前台。
+     * 换链/音频进程重启后窗口会消失。
+     */
+    DLL_EXPORT void openPluginSlotEditor(int slot);
+
     /** @brief 链预设列表 → {"presets":[{id,title,createTime}]} */
     DLL_EXPORT const char* getAllPluginChainPresets();
 

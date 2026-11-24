@@ -661,6 +661,17 @@ extern "C" {
         }
     }
 
+    void openPluginSlotEditor(int slot) {
+        try {
+            if (auto* controller = dllManager::getInstance().getPluginChainController()) {
+                controller->openEditor(slot);
+            }
+        } catch (const std::exception& e) {
+            if (auto logger = spdlog::get(LogDllID))
+                logger->error("openPluginSlotEditor 异常:{}", e.what());
+        }
+    }
+
     const char* getAllPluginChainPresets() {
         Yvar envelope = Yvar::object();
         try {

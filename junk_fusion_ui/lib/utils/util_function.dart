@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:junk_fusion_ui/bridge/cpp_func_manager.dart';
-import 'package:junk_fusion_ui/widgets/popupWindow/error_toast.dart';
+import 'package:junk_fusion_ui/widgets/popupWindow/app_toast.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 
 class UtilFunction {
@@ -73,7 +73,17 @@ class UtilFunction {
     return l != null ? l.join(" / ") : "未知艺术家";
   }
 
-  /// 非致命错误：右下角卡片通知（见 widgets/popupWindow/error_toast.dart）
+  /// 提示：操作成功 / 状态变化（见 widgets/popupWindow/app_toast.dart）
+  static void showInfoMessage(String message) {
+    InfoToast.show(message);
+  }
+
+  /// 注意：部分成功、可疑但能继续
+  static void showWarnMessage(String message) {
+    WarnToast.show(message);
+  }
+
+  /// 非致命错误：右下角卡片通知（见 widgets/popupWindow/app_toast.dart）
   ///
   /// 会自动消失、点一下就消失、鼠标悬停暂停计时，不打断用户正在做的事。
   /// 用在「这首歌解码失败」「这个文件导入失败」这种可以继续操作的情况。

@@ -25,6 +25,7 @@ import 'package:junk_fusion_ui/model/plugin_info.dart';
 import 'package:junk_fusion_ui/providers/plugin_chain_provider.dart';
 import 'package:junk_fusion_ui/providers/plugin_provider.dart';
 import 'package:junk_fusion_ui/theme/app_theme.dart';
+import 'package:junk_fusion_ui/utils/util_function.dart';
 import 'package:provider/provider.dart';
 import 'package:tabler_icons_plus/tabler_icons_plus.dart';
 
@@ -204,6 +205,18 @@ class _EffectChainPageState extends State<EffectChainPage> {
             onPressed: () => _pickPlugin(context, index, plugins),
             child: Text(slot.isEmpty ? '选择' : '更换'),
           ),
+          // 打开插件自己的界面：**没有这个就没法调音**，
+          // 只能听插件默认参数（而且很多插件默认是干的）
+          IconButton(
+            tooltip: status.loaded ? '打开插件编辑器' : '先点「应用」，插件加载后才有编辑器',
+            icon: const Icon(Icons.tune, size: 18),
+            onPressed: status.loaded
+                ? () {
+                    chain.openEditor(index);
+                    UtilFunction.showInfoMessage('正在打开「${slot.name}」的编辑器…');
+                  }
+                : null,
+          ),
           IconButton(
             tooltip: '清空这个插槽',
             icon: const Icon(Icons.close, size: 16),
@@ -364,22 +377,22 @@ class _EffectChainPageState extends State<EffectChainPage> {
 
   void _applyChain(PluginChainProvider chain) {
     if (chain.apply()) {
-      _showMessage(context, '已下发，正在加载…');
+      UtilFunction.showInfoMessage('已下发效果器链，正在加载插件…');
       return;
     }
     final error = chain.lastError;
     chain.clearError();
-    _showMessage(context, error ?? '下发失败');
+    UtilFunction.showErrorMessage(error ?? '下发效果器链失败');
   }
 
   void _applyPreset(PluginChainProvider chain, ChainPresetItem preset) {
     if (chain.applyPreset(preset.id)) {
-      _showMessage(context, '已切换到「${preset.title}」');
+      UtilFunction.showInfoMessage('已切换到「${preset.title}」');
       return;
     }
     final error = chain.lastError;
     chain.clearError();
-    _showMessage(context, error ?? '切换预设失败');
+    UtilFunction.showErrorMessage(error ?? '切换预设失败');
   }
 
   Future<void> _savePreset(
@@ -414,13 +427,10 @@ class _EffectChainPageState extends State<EffectChainPage> {
     if (title == null || title.isEmpty || !context.mounted) return;
 
     final id = chain.savePreset(title);
-    _showMessage(context, id > 0 ? '已保存预设「$title」' : '保存失败');
-  }
-
-  void _showMessage(BuildContext context, String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(SnackBar(content: Text(message)));
+    if (id > 0) {
+      UtilFunction.showInfoMessage('已保存预设「$title」');
+    } else {
+      UtilFunction.showErrorMessage('保存预设失败');
+    }
   }
 }

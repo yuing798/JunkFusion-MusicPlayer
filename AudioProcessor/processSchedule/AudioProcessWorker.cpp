@@ -75,6 +75,13 @@ void AudioProcessorPuller::run() {
                     if (onPluginChainSlotBypass) onPluginChainSlotBypass(slot, bypass);
                     continue;
                 }
+                // 打开插件编辑器窗口（在音频进程的消息线程上建）
+                if (jsonObj.has(AudioMacro::pluginChainOpenEditor)) {
+                    const auto inner = jsonObj.read(AudioMacro::pluginChainOpenEditor);
+                    const int slot = inner.read(AudioMacro::pluginChainSlot).toInt();
+                    if (onPluginChainOpenEditor) onPluginChainOpenEditor(slot);
+                    continue;
+                }
                 if (jsonObj.has(AudioMacro::killAudioProcess)) {
                     juce::MessageManager::callAsync([]() {
                         juce::MessageManager::getInstance()->stopDispatchLoop();

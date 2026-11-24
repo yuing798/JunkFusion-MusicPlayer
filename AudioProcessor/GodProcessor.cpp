@@ -136,6 +136,7 @@ GodProcessor::GodProcessor(
             chain->setSlotBypass(slot, bypass);
         }
     };
+    mWorker.receiver->onPluginChainOpenEditor = [this](int slot) { openPluginEditor(slot); };
 
     // 完全静音的切换态
     mPlayPauseControl.onPauseOver = [this]() {
@@ -359,8 +360,50 @@ void GodProcessor::play(PlayInfo info, double targetSeconds, bool isSeek, bool i
 
 GodProcessor::~GodProcessor() {}
 
+void GodProcessor::openPluginEditor(int slot) {
+    // 编辑器是 GUI 对象：创建、显示都必须在消息线程
+    juce::MessageManager::callAsync([this, slot]() {
+        if (auto it = mEditorWindows.find(slot); it != mEditorWindows.end()) {
+            it->second->setVisible(true);
+            it->second->toFront(true);
+            return;
+        }
+
+        auto* chain = mActiveChain.load(std::memory_order_acquire);
+        if (chain == nullptr) return;
+
+        auto* processor = chain->processorAt(slot);
+        if (processor == nullptr) {
+            if (auto logger = spdlog::get(LogAudioID))
+                logger->warn("[PluginEditor] 槽 {} 没有加载插件", slot);
+            return;
+        }
+
+        auto window =
+            std::make_unique<PluginHost::PluginEditorWindow>(*processor, processor->getName());
+        if (!window->isValid()) return;
+        mEditorWindows[slot] = std::move(window);
+    });
+}
+
+void GodProcessor::closeAllPluginEditors() {
+    // 用 shared_ptr 兜住超时后 lambda 迟到的风险（栈上的 WaitableEvent 早就没了）
+    auto finished = std::make_shared<juce::WaitableEvent>(false);
+
+    juce::MessageManager::callAsync([this, finished]() {
+        mEditorWindows.clear();
+        finished->signal();
+    });
+
+    // 换链不能等太久；窗口一般 instantly 就删完了
+    finished->wait(2000);
+}
+
 void GodProcessor::applyPluginChain(const Yvar& config) {
     auto logger{spdlog::get(LogAudioID)};
+
+    // 0. 先关编辑器：它们还拿着即将析构的 AudioProcessor 指针
+    closeAllPluginEditors();
 
     const int channels = mNumChannels > 0 ? mNumChannels : 2;
     const double sampleRate = mSampleRate > 0.0f ? static_cast<double>(mSampleRate) : 44100.0;

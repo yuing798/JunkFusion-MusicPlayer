@@ -12,7 +12,7 @@ import 'package:junk_fusion_ui/utils/alone_lock.dart';
 import 'package:junk_fusion_ui/utils/global_key_defs.dart';
 import 'package:junk_fusion_ui/utils/app_cache.dart';
 import 'package:junk_fusion_ui/utils/util_function.dart';
-import 'package:junk_fusion_ui/widgets/popupWindow/error_toast.dart';
+import 'package:junk_fusion_ui/widgets/popupWindow/app_toast.dart';
 import 'package:junk_fusion_ui/widgets/popup_window.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -333,7 +333,7 @@ class JunkFusionAppState extends State<JunkFusionApp>
         builder: (context, appTheme, _) => ToastificationWrapper(
           // 错误卡片通知的全局配置（位置/宽度/同时显示几条），
           // 具体样式和去重逻辑在 widgets/popupWindow/error_toast.dart
-          config: ErrorToast.config,
+          config: AppToast.config,
           //有画布,且overlay就在这里面
           child: MaterialApp(
             title: 'JunkFusion',

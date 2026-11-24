@@ -61,6 +61,8 @@ namespace AudioMacro {
     static constexpr const char* pluginChainSlotBypass = "pluginChainSlotBypass";
     static constexpr const char* pluginChainSlot = "slot";
     static constexpr const char* pluginChainBypass = "bypass";
+    // Coordinator → 音频进程：{"pluginChainOpenEditor":{"slot":0}}（打开插件编辑器窗口）
+    static constexpr const char* pluginChainOpenEditor = "pluginChainOpenEditor";
     // 音频进程 → Coordinator：{"pluginChainState":{...}}（进槽加载结果 / 延迟 / 是否旁通）
     static constexpr const char* pluginChainState = "pluginChainState";
 } // namespace AudioMacro

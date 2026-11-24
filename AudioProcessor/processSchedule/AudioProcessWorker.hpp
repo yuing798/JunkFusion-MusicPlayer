@@ -45,6 +45,9 @@ public:
     /** @brief 单个插槽旁通开关 */
     std::function<void(int slot, bool bypass)> onPluginChainSlotBypass;
 
+    /** @brief 打开某个插槽的插件编辑器窗口 */
+    std::function<void(int slot)> onPluginChainOpenEditor;
+
     void run() override;
 };
 

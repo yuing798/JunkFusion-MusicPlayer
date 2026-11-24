@@ -46,6 +46,14 @@ public:
     void setBypassAll(bool bypassAll);
     void setSlotBypass(int slot, bool bypass);
 
+    /**
+     * @brief 打开某个槽的插件编辑器窗口
+     *
+     * 窗口开在**音频进程**里（那边有消息循环，插件实例也在那边）。
+     * 音频进程重启后窗口就没了，再点一次即可。
+     */
+    void openEditor(int slot);
+
     /** @brief 音频进程回传的状态（SUB 线程调） */
     void onStateFromAudio(const Yvar& state);
 

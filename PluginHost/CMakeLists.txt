@@ -122,6 +122,7 @@ target_sources(JunkFusionAudioProcess
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/PluginInstanceFactory.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/PluginChain.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/PluginEditorWindow.cpp
 )
 
 target_compile_definitions(JunkFusionAudioProcess

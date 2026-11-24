@@ -74,6 +74,10 @@ namespace PluginHost {
         juce::String error() const;
         void setError(const juce::String& error) { mError = error; }
 
+        /// 插件实例（没加载时返回 nullptr）。**只能在消息线程用来开编辑器**，
+        /// 音频线程不要碰它。
+        juce::AudioProcessor* processor() const noexcept { return mInstance.get(); }
+
         juce::String getStateBase64() const;
         bool setStateBase64(const juce::String& base64);
 
@@ -126,6 +130,9 @@ namespace PluginHost {
 
         /** @brief 给 Coordinator / 前端看的当前状态 */
         Yvar statusJson() const;
+
+        /** @brief 某个槽的插件实例（开编辑器用；没加载返回 nullptr） */
+        juce::AudioProcessor* processorAt(int slot) const;
 
         /** @brief 每块都要清空的 MIDI 缓冲（乐器插件需要；效果器插件忽略） */
         juce::MidiBuffer mMidi;

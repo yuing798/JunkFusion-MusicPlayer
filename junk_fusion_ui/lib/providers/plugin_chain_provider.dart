@@ -143,6 +143,15 @@ class PluginChainProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 打开某个槽的插件编辑器
+  ///
+  /// 窗口开在**音频进程**里（插件实例在那边，消息循环也在那边）。
+  /// 音频进程重启后窗口会消失，再点一次即可。
+  void openEditor(int slot) {
+    if (slot < 0 || slot >= slotCount) return;
+    bindings.openPluginSlotEditor(slot);
+  }
+
   // ── 下发 ──────────────────────────────────────────────────────────
   Map<String, dynamic> _configJson() {
     return {

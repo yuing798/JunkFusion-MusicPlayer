@@ -111,6 +111,18 @@ void PluginChainController::setSlotBypass(int slot, bool bypass) {
     mSend(envelope.dump());
 }
 
+void PluginChainController::openEditor(int slot) {
+    if (!mSend) return;
+    if (slot < 0 || slot >= kSlotCount) return;
+
+    Yvar inner = Yvar::object();
+    inner.set(AudioMacro::pluginChainSlot, slot);
+
+    Yvar envelope = Yvar::object();
+    envelope.set(AudioMacro::pluginChainOpenEditor, inner);
+    mSend(envelope.dump());
+}
+
 void PluginChainController::onStateFromAudio(const Yvar& state) {
     std::lock_guard<std::mutex> lock{mMutex};
     mState = state;
