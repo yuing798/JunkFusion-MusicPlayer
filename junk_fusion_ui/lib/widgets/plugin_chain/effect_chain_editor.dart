@@ -149,6 +149,11 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
       // 配置对象每次改都会换新实例，身份靠前端分配的 uid
       isSameItem: (a, b) => a.uid == b.uid,
       onReorder: widget.onReorder ?? (_, __) {},
+      // 删除动画会把这棵子树重新 activate 一次，如果子树里有 OverlayPortal
+      // （比如 Tooltip）就会在 layout 中往 Overlay 插节点，触发 Flutter 的
+      // "_RenderLayoutBuilder was mutated in performLayout"。
+      // 删插件本来也不需要动画，直接归零最省事。
+      removeDuration: Duration.zero,
       itemBuilder: (context, index) {
         final slot = widget.slots[index];
         return Column(
@@ -362,23 +367,39 @@ class _EffectChainEditorState extends State<EffectChainEditor> {
     );
   }
 
+  /// 卡片上的小图标按钮
+  ///
+  /// **刻意不用 Tooltip**：Tooltip 内部是 OverlayPortal，而这个列表在删除条目时
+  /// 会把即将消失的子树重新 activate 一次，OverlayPortal 在 layout 期间往
+  /// Overlay 插节点会触发 Flutter 的断言
+  /// （`_RenderLayoutBuilder was mutated in performLayout`，实测删插件必现）。
+  /// 读屏信息用 Semantics 补，鼠标指针自己管。
   Widget _iconButton(
     AppTheme theme, {
     required String tooltip,
     required IconData icon,
     VoidCallback? onPressed,
   }) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.all(5),
-          child: Icon(
-            icon,
-            size: 18,
-            color: onPressed == null ? theme.colorEdge : theme.colorTextSecond,
+    return Semantics(
+      label: tooltip,
+      button: true,
+      enabled: onPressed != null,
+      child: MouseRegion(
+        cursor: onPressed == null
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.click,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: Icon(
+              icon,
+              size: 18,
+              color: onPressed == null
+                  ? theme.colorEdge
+                  : theme.colorTextSecond,
+            ),
           ),
         ),
       ),
